@@ -180,4 +180,41 @@ describe('BackupImportManager', () => {
             { title: 'Fusion réussie' }
         );
     });
+
+    it('should leave apiKeys checkbox unchecked by default and escape HTML in _meta.appVersion', async () => {
+        const backupWithKeysAndMaliciousMeta = JSON.stringify({
+            _meta: {
+                exportType: 'full_backup',
+                appVersion: '1.0"><img src=x onerror=alert(1)>',
+                exportedAt: '2026-11-06T14:32:00.000Z'
+            },
+            settings: {
+                subjects: { math: { name: 'Mathématiques' } },
+                openaiApiKey: 'sk-test-secret'
+            },
+            classes: [{ id: 'c1', name: '3eA' }],
+            generatedResults: []
+        });
+
+        await BackupImportManager.showSelectionModal(backupWithKeysAndMaliciousMeta);
+        const modal = document.getElementById('backupImportModal');
+        const apiKeysCb = modal.querySelector('input[data-cat="apiKeys"]');
+        const studentsCb = modal.querySelector('input[data-cat="students"]');
+
+        expect(apiKeysCb).not.toBeNull();
+        expect(apiKeysCb.checked).toBe(false);
+        expect(studentsCb).toBeNull();
+        expect(modal.querySelector('.backup-meta-line img')).toBeNull();
+        expect(modal.querySelector('.backup-meta-line')?.textContent).toContain('<img src=x onerror=alert(1)>');
+
+        modal.querySelector('#backupImportConfirmBtn').click();
+        await vi.runAllTimersAsync();
+
+        expect(StorageManager.importBackup).toHaveBeenCalledWith(
+            backupWithKeysAndMaliciousMeta,
+            expect.objectContaining({
+                categories: expect.objectContaining({ apiKeys: false })
+            })
+        );
+    });
 });

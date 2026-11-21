@@ -31,6 +31,7 @@
 import { appState, userSettings, runtimeState } from '../state/State.js';
 import { CONFIG, APP_VERSION, DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_EVOLUTION_THRESHOLDS, DEFAULT_PRIVACY_SETTINGS, DEFAULT_SEATING_STATUS_DOTS, PROVIDER_DEFAULT_MODELS, migrateLegacyModelId } from '../config/Config.js';
 import { API_KEY_PROVIDER_IDS, getProviderForModel, hasValidApiKey } from '../config/providers.js';
+import { OLLAMA_CONFIG } from '../config/aiRegistry.js';
 import { DBService } from '../services/DBService.js';
 import { Utils } from '../utils/Utils.js';
 import { SafeStorage, STORAGE_KEYS } from '../utils/SafeStorage.js';
@@ -241,8 +242,7 @@ export const StorageManager = {
     },
 
     _isValidLocalOllamaUrl(url) {
-        if (typeof url !== 'string' || !url.trim()) return false;
-        return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/.*)?$/i.test(url.trim());
+        return Boolean(Utils.normalizeLocalOllamaUrl(url));
     },
 
     _hashString(str) {
@@ -319,9 +319,10 @@ export const StorageManager = {
         if (settings.apiKeyStatus !== undefined) runtimeState.apiStatus = settings.apiKeyStatus;
         if (settings.validatedApiKeys !== undefined) runtimeState.validatedApiKeys = settings.validatedApiKeys;
 
-        // Ollama Settings (restricted to local loopback addresses)
+        // Ollama Settings (restricted to local loopback port 11434)
         if (settings.ollamaEnabled !== undefined) userSettings.api.ollamaEnabled = settings.ollamaEnabled;
-        if (this._isValidLocalOllamaUrl(settings.ollamaBaseUrl)) userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
+        const normalizedOllamaUrl = Utils.normalizeLocalOllamaUrl(settings.ollamaBaseUrl);
+        if (normalizedOllamaUrl) userSettings.api.ollamaBaseUrl = normalizedOllamaUrl;
         if (settings.ollamaInstalledModels !== undefined) userSettings.api.ollamaInstalledModels = settings.ollamaInstalledModels;
 
         // Import Settings
@@ -565,7 +566,7 @@ export const StorageManager = {
             const snapshot = {
                 key: 'pre_restore_backup',
                 createdAt: Date.now(),
-                settings: this.getExportableSettings({ includeApiKeys: true }),
+                settings: this.getExportableSettings({ includeApiKeys: false }),
                 classes: userSettings.academic.classes || [],
                 deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
                 generatedResults: results
@@ -603,7 +604,7 @@ export const StorageManager = {
     async restorePreRestoreSnapshot() {
         const backup = await this.getPreRestoreSnapshot();
         if (!backup) return false;
-        const res = await this.importBackup(backup, { mergeData: false, includeApiKeys: true, silent: true, skipSnapshot: true });
+        const res = await this.importBackup(backup, { mergeData: false, includeApiKeys: false, silent: true, skipSnapshot: true });
         if (res?.success) {
             await this.clearPreRestoreSnapshot();
             return true;
@@ -947,11 +948,11 @@ export const StorageManager = {
 
     /**
      * Retourne un snapshot des paramètres utilisateur expurgé des états de navigation transitoires,
-     * de la configuration matérielle locale (Ollama), des classes et des tombstones (transportés à la
-     * racine des exports via `classes` et `deletedItems`). Les clés API sont exclues par défaut
-     * (exports JSON) mais peuvent être incluses pour la synchronisation Cloud privée.
+     * de la configuration matérielle locale (Ollama), des classes, des tombstones (transportés à la
+     * racine des exports via `classes` et `deletedItems`) et, par défaut, des clés API (exclues des
+     * exports JSON locaux mais incluses sur demande pour la synchronisation Cloud privée `appDataFolder`).
      * @param {Object} [options]
-     * @param {boolean} [options.includeApiKeys=false] - Inclure les clés API dans le snapshot
+     * @param {boolean} [options.includeApiKeys=false] - Inclure explicitement les clés API dans le snapshot
      * @returns {Object} Paramètres expurgés
      */
     getExportableSettings({ includeApiKeys = false } = {}) {
@@ -1110,6 +1111,11 @@ export const StorageManager = {
      */
     async resetAllSettings() {
         const apiKeyCount = API_KEY_SETTINGS_KEYS.filter(k => Boolean(appState[k])).length;
+        const hasOllamaConfig = Boolean(
+            appState.ollamaEnabled ||
+            (appState.ollamaBaseUrl && appState.ollamaBaseUrl !== OLLAMA_CONFIG.defaultBaseUrl) ||
+            (Array.isArray(appState.ollamaInstalledModels) && appState.ollamaInstalledModels.length > 0)
+        );
 
         const subjectCount = appState.subjects ? Object.keys(appState.subjects).length : 0;
 
@@ -1119,9 +1125,9 @@ export const StorageManager = {
                 label: 'Clés API',
                 sublabel: apiKeyCount > 0
                     ? `Efface les ${apiKeyCount} clé${apiKeyCount > 1 ? 's' : ''} configurée${apiKeyCount > 1 ? 's' : ''} (Google, OpenAI…).`
-                    : 'Aucune clé configurée.',
+                    : (hasOllamaConfig ? 'Réinitialise la configuration locale Ollama.' : 'Aucune clé configurée.'),
                 checked: false,
-                disabled: apiKeyCount === 0
+                disabled: apiKeyCount === 0 && !hasOllamaConfig
             },
             {
                 id: 'subjects',
@@ -1177,9 +1183,16 @@ export const StorageManager = {
 
             if (resetApiKeys) {
                 API_KEY_SETTINGS_KEYS.forEach(k => {
-                    const provider = k.replace('ApiKey', '');
                     userSettings.api[k] = '';
                     appState[k] = '';
+                });
+                userSettings.api.ollamaEnabled = false;
+                appState.ollamaEnabled = false;
+                userSettings.api.ollamaBaseUrl = OLLAMA_CONFIG.defaultBaseUrl;
+                appState.ollamaBaseUrl = OLLAMA_CONFIG.defaultBaseUrl;
+                userSettings.api.ollamaInstalledModels = [];
+                appState.ollamaInstalledModels = [];
+                [...API_KEY_PROVIDER_IDS, 'ollama'].forEach(provider => {
                     if (runtimeState.validatedApiKeys) runtimeState.validatedApiKeys[provider] = false;
                     if (appState.validatedApiKeys) appState.validatedApiKeys[provider] = false;
                     if (runtimeState.apiStatus) runtimeState.apiStatus[provider] = null;
@@ -1278,6 +1291,7 @@ export const StorageManager = {
                     STORAGE_KEYS.PWA_INSTALL_DISMISSED
                 ]
             });
+            SafeStorage.removeSession(STORAGE_KEYS.GOOGLE_TOKEN);
 
             UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
 
@@ -1906,22 +1920,30 @@ export const StorageManager = {
                 }
             }
 
-            // Import API keys (only when explicitly selected; never overwrite an existing key by default or with empty)
+            // Import API keys (only when explicitly selected; in merge mode never silently overwrite an existing valid key)
             const shouldImportApiKeys = Boolean(cats?.apiKeys === true || options.includeApiKeys === true);
             if (shouldImportApiKeys && settings) {
                 API_KEY_SETTINGS_KEYS.forEach(k => {
                     const importedKey = typeof settings[k] === 'string' ? settings[k].trim() : '';
-                    if (importedKey) {
-                        this._applyImportedApiKey(k, importedKey);
-                        stats.apiKeysImported++;
+                    if (!importedKey) return;
+                    if (options.mergeData && !options.overwriteExistingApiKeys) {
+                        const localKey = (userSettings.api[k] || appState[k] || '').trim();
+                        const provider = k.replace('ApiKey', '');
+                        const localStatus = runtimeState.apiStatus?.[provider] ?? appState.apiKeyStatus?.[provider];
+                        if (localKey && localStatus !== 'invalid') return;
                     }
+                    this._applyImportedApiKey(k, importedKey);
+                    stats.apiKeysImported++;
                 });
             }
 
-            // Never overwrite ollamaBaseUrl by default; if explicitly requested, restrict to local loopback
-            if (options.importOllamaConfig === true && this._isValidLocalOllamaUrl(settings?.ollamaBaseUrl)) {
-                userSettings.api.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
-                appState.ollamaBaseUrl = settings.ollamaBaseUrl.trim();
+            // Never overwrite ollamaBaseUrl by default; if explicitly requested, restrict to local loopback port 11434
+            const normalizedImportedOllama = options.importOllamaConfig === true
+                ? Utils.normalizeLocalOllamaUrl(settings?.ollamaBaseUrl)
+                : null;
+            if (normalizedImportedOllama) {
+                userSettings.api.ollamaBaseUrl = normalizedImportedOllama;
+                appState.ollamaBaseUrl = normalizedImportedOllama;
             }
 
             // Import classes if present
@@ -2082,9 +2104,10 @@ export const StorageManager = {
 
         const { deletedStudentsMap, deletedClassesMap } = this._consolidateTombstones(remoteData);
 
-        // 0. Fusion non-destructive des clés API et préférences IA distantes
+        // 0. Fusion non-destructive des clés API et préférences IA distantes (espace privé Google Drive appDataFolder)
         if (remoteData.settings && typeof remoteData.settings === 'object') {
             const rSettings = remoteData.settings;
+            // Fusion non-destructive des clés API distantes (espace privé Google Drive appDataFolder)
             API_KEY_SETTINGS_KEYS.forEach(k => {
                 const remoteKey = typeof rSettings[k] === 'string' ? rSettings[k].trim() : '';
                 const localKey = (userSettings.api[k] || appState[k] || '').trim();

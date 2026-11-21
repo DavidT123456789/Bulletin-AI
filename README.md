@@ -27,7 +27,7 @@ Bulletin AI est une application web qui utilise l'Intelligence Artificielle pour
 - 🎙️ **Dictée vocale** — Reconnaissance vocale pour le contexte et les appréciations
 - 🌙 **Mode sombre** — Thème clair/sombre adaptatif
 - 💾 **Architecture Local-First** — Données stockées exclusivement dans le navigateur (`IndexedDB` & `LocalStorage`), sans serveur tiers
-- ☁️ **Synchronisation cloud optionnelle** — Sauvegarde manuelle vers votre propre Google Drive (clés API isolées)
+- ☁️ **Synchronisation cloud optionnelle** — Sauvegarde manuelle vers l'espace privé (`appDataFolder`) de votre propre Google Drive (clés API exclues par défaut des exports JSON locaux)
 
 ## 🚀 Installation
 

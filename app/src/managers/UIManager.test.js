@@ -68,6 +68,15 @@ vi.mock('../utils/Utils.js', () => ({
         getPeriodLabel: vi.fn((p, long) => long ? `Trimestre ${p.slice(1)}` : p),
         validateGrade: vi.fn(),
         countWords: vi.fn(() => 50),
+        escapeHtml: vi.fn((text) => {
+            if (!text) return text;
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }),
         getStopSquareHTML: vi.fn((size = 13) => `<svg class="cancel-svg stop-square-svg" width="${size}" height="${size}"><rect x="2" y="2" width="12" height="12" rx="2.75"></rect></svg>`),
         getGradeClass: vi.fn((grade) => {
             if (grade === null || grade === undefined || isNaN(grade)) return '';
@@ -275,6 +284,29 @@ describe('UIManager', () => {
             expect(allUndoToasts.length).toBe(1);
             expect(second.element.querySelector('.notification-title')?.textContent).toBe('Données effacées');
             expect(second.element.querySelector('.notification-subtitle')?.textContent).toBe('19 appréciations, 2 photos.');
+        });
+
+        it('should escape HTML payloads in notification message, title, icon, and undo notifications', () => {
+            document.body.innerHTML = '';
+            const payload = '<img src=x onerror="alert(1)">';
+            const n1 = UI.showNotification(payload, 'error', 4000, {
+                title: '<b>Titre</b>',
+                icon: 'x" onload="alert(2)'
+            });
+            expect(n1.element.querySelector('img')).toBeNull();
+            expect(n1.element.querySelector('.notification-title b')).toBeNull();
+            expect(n1.element.querySelector('.notification-title')?.textContent).toBe('<b>Titre</b>');
+            expect(n1.element.querySelector('.notification-subtitle')?.textContent).toBe(payload);
+            expect(n1.element.querySelector('iconify-icon')?.getAttribute('onload')).toBeNull();
+            n1.dismiss();
+
+            const n2 = UI.showUndoNotification(`Suppression : ${payload}`, vi.fn(), {
+                title: '<svg onload=alert(3)>'
+            });
+            expect(n2.element.querySelector('img')).toBeNull();
+            expect(n2.element.querySelector('svg')).toBeNull();
+            expect(n2.element.querySelector('.notification-title')?.textContent).toBe('<svg onload=alert(3)>');
+            expect(n2.element.querySelector('.notification-subtitle')?.textContent).toBe(`Suppression : ${payload}`);
         });
     });
 

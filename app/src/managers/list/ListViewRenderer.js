@@ -509,7 +509,7 @@ export const ListViewRenderer = {
                 const rowStyleAttr = shouldAnimateEntrance ? ` style="--row-delay: ${rowDelay}ms"` : '';
 
                 tbodyContent += `
-                    <tr data-student-id="${result.id}" class="${rowClass}"${tabIndexAttr}${rowStyleAttr}>
+                    <tr data-student-id="${Utils.escapeHtml(String(result.id ?? ''))}" class="${rowClass}"${tabIndexAttr}${rowStyleAttr}>
                         ${this._renderRowCellsHTML(result, periods, currentPeriodIndex, { searchQuery, currentClassName, isSelected, renderOptions })}
                     </tr>
                 `;
@@ -517,7 +517,7 @@ export const ListViewRenderer = {
                 console.error("Erreur rendu élève:", result?.nom, e);
                 tbodyContent += `
                     <tr class="error-row">
-                        <td colspan="${headerPeriodCount * 2 + 3}">Erreur d'affichage pour ${result?.nom || 'Élève inconnu'}</td>
+                        <td colspan="${headerPeriodCount * 2 + 3}">Erreur d'affichage pour ${Utils.escapeHtml(String(result?.nom || 'Élève inconnu'))}</td>
                     </tr>
                 `;
             }

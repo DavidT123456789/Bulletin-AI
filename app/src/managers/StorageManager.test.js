@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StorageManager } from './StorageManager.js';
 import { appState, userSettings, runtimeState } from '../state/State.js';
+import { ModalUI } from './ModalUIManager.js';
 
 // Mock DBService
 vi.mock('../services/DBService.js', () => ({
@@ -784,15 +785,17 @@ describe('StorageManager', () => {
             vi.clearAllMocks();
         });
 
-        it('should save pre-restore snapshot when results exist', async () => {
+        it('should save pre-restore snapshot without API keys when results exist', async () => {
             runtimeState.data.generatedResults = [{ id: 's1' }];
             userSettings.academic.classes = [{ id: 'c1' }];
+            userSettings.api.openaiApiKey = 'sk-secret-local';
 
             expect(await StorageManager.savePreRestoreSnapshot()).toBe(true);
 
             expect(DBService.put).toHaveBeenCalledWith('appData', expect.objectContaining({
                 key: 'pre_restore_backup',
-                generatedResults: [{ id: 's1' }]
+                generatedResults: [{ id: 's1' }],
+                settings: expect.not.objectContaining({ openaiApiKey: 'sk-secret-local' })
             }));
         });
 
@@ -1258,12 +1261,9 @@ describe('StorageManager', () => {
             userSettings.api.enableApiFallback = true;
             const baseHash = StorageManager.computeCurrentDataHash();
 
-            // Changing API key must change data hash
+            // Changing API key must mark Cloud sync dirty (synced in private Google Drive appDataFolder)
             userSettings.api.googleApiKey = 'key-v2';
-            const hashWithNewKey = StorageManager.computeCurrentDataHash();
-            expect(hashWithNewKey).not.toBe(baseHash);
-
-            // Reverting API key restores exact same hash
+            expect(StorageManager.computeCurrentDataHash()).not.toBe(baseHash);
             userSettings.api.googleApiKey = 'key-v1';
             expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
 
@@ -1285,51 +1285,70 @@ describe('StorageManager', () => {
             expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
         });
 
-        it('should not overwrite API keys or ollamaBaseUrl by default during importBackup, and only import non-empty API keys when categories.apiKeys is true', async () => {
+        it('should protect valid local API keys in merge mode, fill missing/invalid keys, reject bad ollamaBaseUrl, and allow explicit overwrite', async () => {
             userSettings.api.googleApiKey = 'existing-google-key';
             appState.googleApiKey = 'existing-google-key';
             userSettings.api.openaiApiKey = 'existing-openai-key';
             appState.openaiApiKey = 'existing-openai-key';
+            userSettings.api.groqApiKey = '';
+            appState.groqApiKey = '';
+            userSettings.api.mistralApiKey = 'invalid-local-mistral';
+            appState.mistralApiKey = 'invalid-local-mistral';
             userSettings.api.ollamaBaseUrl = 'http://localhost:11434';
             appState.ollamaBaseUrl = 'http://localhost:11434';
             runtimeState.validatedApiKeys.google = true;
             runtimeState.apiStatus.google = 'valid';
             runtimeState.validatedApiKeys.openai = true;
             runtimeState.apiStatus.openai = 'valid';
+            runtimeState.apiStatus.mistral = 'invalid';
 
             const backupWithKeysAndExternalOllama = JSON.stringify({
                 appVersion: '4.3.0',
                 settings: {
                     googleApiKey: '',
                     openaiApiKey: 'new-openai-key',
+                    groqApiKey: 'new-groq-key',
+                    mistralApiKey: 'replacement-mistral-key',
                     ollamaBaseUrl: 'https://attacker.example.com:11434'
                 }
             });
 
-            // 1. Default importBackup (no categories.apiKeys) -> never overwrites API keys or ollamaBaseUrl
+            // 1. Default importBackup (no categories.apiKeys) -> never touches API keys or ollamaBaseUrl
             const defaultRes = await StorageManager.importBackup(backupWithKeysAndExternalOllama, { mergeData: true, silent: true });
             expect(defaultRes.stats.apiKeysImported).toBe(0);
             expect(userSettings.api.googleApiKey).toBe('existing-google-key');
             expect(userSettings.api.openaiApiKey).toBe('existing-openai-key');
+            expect(userSettings.api.groqApiKey).toBe('');
             expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
 
-            // 2. Explicit categories.apiKeys = true -> imports non-empty key, ignores empty key, and still rejects external ollamaBaseUrl
-            const explicitRes = await StorageManager.importBackup(backupWithKeysAndExternalOllama, {
+            // 2. Explicit categories.apiKeys = true in merge mode -> fills missing/invalid keys, preserves valid local openai key, rejects external ollamaBaseUrl
+            const mergeExplicitRes = await StorageManager.importBackup(backupWithKeysAndExternalOllama, {
                 mergeData: true,
                 categories: { apiKeys: true },
                 importOllamaConfig: true,
                 silent: true
             });
-            expect(explicitRes.stats.apiKeysImported).toBe(1);
+            expect(mergeExplicitRes.stats.apiKeysImported).toBe(2);
             expect(userSettings.api.googleApiKey).toBe('existing-google-key');
-            expect(runtimeState.validatedApiKeys.google).toBe(true);
+            expect(userSettings.api.openaiApiKey).toBe('existing-openai-key');
+            expect(runtimeState.validatedApiKeys.openai).toBe(true);
+            expect(userSettings.api.groqApiKey).toBe('new-groq-key');
+            expect(userSettings.api.mistralApiKey).toBe('replacement-mistral-key');
+            expect(runtimeState.apiStatus.mistral).toBeNull();
+            expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
+
+            // 3. Non-merge overwrite with categories.apiKeys = true replaces valid key explicitly
+            const replaceRes = await StorageManager.importBackup(backupWithKeysAndExternalOllama, {
+                mergeData: false,
+                categories: { apiKeys: true },
+                silent: true
+            });
+            expect(replaceRes.stats.apiKeysImported).toBe(3);
             expect(userSettings.api.openaiApiKey).toBe('new-openai-key');
             expect(runtimeState.validatedApiKeys.openai).toBe(false);
-            expect(runtimeState.apiStatus.openai).toBeNull();
-            expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
         });
 
-        it('should accept a pre-parsed object in importBackup and restore Albert API key + model when includeApiKeys is true (Cloud restore flow)', async () => {
+        it('should accept a pre-parsed object in importBackup and restore Albert API key + model when includeApiKeys is true', async () => {
             userSettings.api.albertApiKey = '';
             appState.albertApiKey = '';
             userSettings.api.currentAIModel = 'gemini-4-hydrogen';
@@ -1401,6 +1420,36 @@ describe('StorageManager', () => {
             expect(runtimeState.apiStatus.openrouter).toBeNull();
         });
 
+        it('should reset Ollama config alongside Cloud API keys in resetAllSettings({ apiKeys: true })', async () => {
+            userSettings.api.googleApiKey = 'local-google';
+            appState.googleApiKey = 'local-google';
+            userSettings.api.ollamaEnabled = true;
+            appState.ollamaEnabled = true;
+            userSettings.api.ollamaBaseUrl = 'http://127.0.0.1:11434';
+            appState.ollamaBaseUrl = 'http://127.0.0.1:11434';
+            userSettings.api.ollamaInstalledModels = ['qwen2.5:7b'];
+            appState.ollamaInstalledModels = ['qwen2.5:7b'];
+            runtimeState.validatedApiKeys.ollama = true;
+            runtimeState.apiStatus.ollama = 'valid';
+
+            const choicesSpy = vi.spyOn(ModalUI, 'showChoicesModal').mockResolvedValueOnce({
+                confirmed: true,
+                values: { apiKeys: true, subjects: false, thresholds: false, preferences: false }
+            });
+
+            await StorageManager.resetAllSettings();
+
+            expect(choicesSpy).toHaveBeenCalled();
+            expect(userSettings.api.googleApiKey).toBe('');
+            expect(userSettings.api.ollamaEnabled).toBe(false);
+            expect(appState.ollamaEnabled).toBe(false);
+            expect(userSettings.api.ollamaBaseUrl).toBe('http://localhost:11434');
+            expect(appState.ollamaBaseUrl).toBe('http://localhost:11434');
+            expect(userSettings.api.ollamaInstalledModels).toEqual([]);
+            expect(runtimeState.validatedApiKeys.ollama).toBe(false);
+            expect(runtimeState.apiStatus.ollama).toBeNull();
+        });
+
         it('should adopt remote currentAIModel when local device is on default model without a local API key for that provider', async () => {
             // Fresh smartphone state: default model is gemini-4-hydrogen, but no Google API key is configured locally
             userSettings.api.googleApiKey = '';
@@ -1432,6 +1481,7 @@ describe('StorageManager', () => {
             });
 
             expect(userSettings.api.currentAIModel).toBe('albert-openweight-medium');
+            expect(userSettings.api.openaiApiKey).toBe('sk-proj-remote-openai-key');
         });
     });
 

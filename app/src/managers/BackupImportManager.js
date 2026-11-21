@@ -8,6 +8,7 @@ import { StorageManager } from './StorageManager.js';
 import { RestoreTransitionManager } from './RestoreTransitionManager.js';
 import { UI } from './UIManager.js';
 import { ModalUI } from './ModalUIManager.js';
+import { Utils } from '../utils/Utils.js';
 
 const CATEGORY_ICONS = {
     settings: 'solar:settings-linear',
@@ -47,28 +48,31 @@ export const BackupImportManager = {
                 const isChild = !!info.parent;
                 const icon = CATEGORY_ICONS[key] || 'solar:document-text-linear';
                 const countLabel = this._formatCount(key, info.count);
+                const safeKey = Utils.escapeHtml(String(key));
+                const safeParent = isChild ? Utils.escapeHtml(String(info.parent)) : '';
+                const isCheckedByDefault = key !== 'apiKeys';
 
                 return `
-                <label class="backup-category-item${isChild ? ' sub-item' : ''}" data-category="${key}"${isChild ? ` data-parent="${info.parent}"` : ''}>
+                <label class="backup-category-item${isChild ? ' sub-item' : ''}" data-category="${safeKey}"${isChild ? ` data-parent="${safeParent}"` : ''}>
                     <div class="backup-category-check">
-                        <input type="checkbox" checked data-cat="${key}">
+                        <input type="checkbox"${isCheckedByDefault ? ' checked' : ''} data-cat="${safeKey}">
                         <span class="backup-checkmark">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </span>
                     </div>
                     <div class="backup-category-icon">
-                        <iconify-icon icon="${icon}"></iconify-icon>
+                        <iconify-icon icon="${Utils.escapeHtml(icon)}"></iconify-icon>
                     </div>
                     <div class="backup-category-info">
-                        <span class="backup-category-name">${info.label}</span>
-                        <span class="backup-category-desc">${info.description}</span>
+                        <span class="backup-category-name">${Utils.escapeHtml(String(info.label ?? ''))}</span>
+                        <span class="backup-category-desc">${Utils.escapeHtml(String(info.description ?? ''))}</span>
                     </div>
-                    <span class="backup-category-count">${countLabel}</span>
+                    <span class="backup-category-count">${Utils.escapeHtml(String(countLabel ?? ''))}</span>
                 </label>`;
             }).join('');
 
         const metaLine = exportDate
-            ? `<div class="backup-meta-line"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${exportDate}${version ? ` · v${version}` : ''}</div>`
+            ? `<div class="backup-meta-line"><iconify-icon icon="solar:calendar-linear"></iconify-icon> ${Utils.escapeHtml(String(exportDate))}${version ? ` · v${Utils.escapeHtml(String(version))}` : ''}</div>`
             : '';
 
         modal.innerHTML = `

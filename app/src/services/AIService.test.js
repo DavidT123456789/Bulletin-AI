@@ -620,7 +620,7 @@ describe('AIService', () => {
             expect(AIService._hasApiKeyForModel('mistral-direct-small-latest')).toBe(false);
         });
 
-        it('should check ollama status for ollama models', async () => {
+        it('should check ollama status and reject invalid or non-loopback Ollama URLs without fetching', async () => {
             const { appState } = await import('../state/State.js');
             appState.ollamaEnabled = true;
             appState.ollamaInstalledModels = ['qwen2.5:7b'];
@@ -628,18 +628,36 @@ describe('AIService', () => {
 
             appState.ollamaEnabled = false;
             expect(AIService._hasApiKeyForModel('ollama-qwen2.5:7b')).toBe(false);
+
+            appState.ollamaEnabled = true;
+            try {
+                for (const badUrl of ['https://evil.com', 'http://localhost:9222', 'http://localhost:11434/admin#x']) {
+                    appState.ollamaBaseUrl = badUrl;
+                    expect(() => AIService._getApiConfig('Test', { modelOverride: 'ollama-qwen2.5:7b' })).toThrow(/URL Ollama invalide/);
+                    const fetchSpy = vi.fn();
+                    globalThis.fetch = fetchSpy;
+                    expect(await AIService.checkOllamaAvailability()).toBe(false);
+                    expect(await AIService.getOllamaModels()).toEqual([]);
+                    expect(fetchSpy).not.toHaveBeenCalled();
+                }
+            } finally {
+                appState.ollamaEnabled = false;
+                appState.ollamaInstalledModels = [];
+                appState.ollamaBaseUrl = 'http://localhost:11434';
+            }
         });
     });
 
     describe('Cloudflare Pages Albert API Relay Function ([[path]].js)', () => {
-        it('should forward allowed endpoints (models, me, chat/completions) statelessly and preserve rate-limit headers', async () => {
+        it('should forward allowed endpoints with same-origin headers and Bearer auth and enforce response hygiene', async () => {
             const { onRequest } = await import('../../functions/api/albert/v1/[[path]].js');
             globalThis.fetch = vi.fn().mockResolvedValueOnce(
                 new Response(JSON.stringify({ choices: [{ message: { content: 'Bonjour' } }] }), {
                     status: 200,
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-ratelimit-reset-requests': '4s'
+                        'x-ratelimit-reset-requests': '4s',
+                        'Set-Cookie': 'secret=leaked'
                     }
                 })
             );
@@ -647,6 +665,8 @@ describe('AIService', () => {
             const req = new Request('https://bulletin-ai.pages.dev/api/albert/v1/chat/completions', {
                 method: 'POST',
                 headers: {
+                    'Origin': 'https://bulletin-ai.pages.dev',
+                    'Sec-Fetch-Site': 'same-origin',
                     'Authorization': 'Bearer sk-albert-test',
                     'Content-Type': 'application/json'
                 },
@@ -656,33 +676,233 @@ describe('AIService', () => {
             const res = await onRequest({ request: req, params: { path: ['chat', 'completions'] } });
             expect(res.status).toBe(200);
             expect(res.headers.get('Cache-Control')).toBe('no-store');
+            expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+            expect(res.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
             expect(res.headers.get('x-ratelimit-reset-requests')).toBe('4s');
+            expect(res.headers.get('Set-Cookie')).toBeNull();
             expect(globalThis.fetch).toHaveBeenCalledWith(
                 'https://albert.api.etalab.gouv.fr/v1/chat/completions',
                 expect.objectContaining({ method: 'POST' })
             );
         });
 
-        it('should handle OPTIONS preflight, reject unauthorized endpoints (404) and methods (405), and return 502 on upstream failure', async () => {
+        it('should allow GET /models via Referer same-origin fallback (Safari / school proxies) and reject cross-origin requests', async () => {
+            const { onRequest } = await import('../../functions/api/albert/v1/[[path]].js');
+            globalThis.fetch = vi.fn().mockResolvedValueOnce(
+                new Response(JSON.stringify({ data: [] }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                })
+            );
+
+            const refererReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                method: 'GET',
+                headers: {
+                    'Referer': 'https://bulletin-ai.pages.dev/app.html',
+                    'Authorization': 'Bearer sk-albert-test'
+                }
+            });
+            const refererRes = await onRequest({ request: refererReq, params: { path: ['models'] } });
+            expect(refererRes.status).toBe(200);
+
+            const evilOriginRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'GET',
+                    headers: { 'Origin': 'https://evil.example', 'Authorization': 'Bearer sk-albert-test' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(evilOriginRes.status).toBe(403);
+
+            const crossSiteRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'GET',
+                    headers: { 'Sec-Fetch-Site': 'cross-site', 'Authorization': 'Bearer sk-albert-test' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(crossSiteRes.status).toBe(403);
+
+            const noOriginRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer sk-albert-test' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(noOriginRes.status).toBe(403);
+        });
+
+        it('should enforce strict OPTIONS origin, method/route coupling, Bearer auth, JSON Content-Type, body size limit, upstream timeout and non-JSON blocking', async () => {
             const { onRequest } = await import('../../functions/api/albert/v1/[[path]].js');
 
-            const optionsReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'OPTIONS' });
-            const optionsRes = await onRequest({ request: optionsReq, params: { path: ['models'] } });
-            expect(optionsRes.status).toBe(204);
-            expect(optionsRes.headers.get('Access-Control-Allow-Origin')).toBe('https://bulletin-ai.pages.dev');
+            const optionsOk = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'OPTIONS',
+                    headers: { 'Origin': 'https://bulletin-ai.pages.dev' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(optionsOk.status).toBe(204);
+            expect(optionsOk.headers.get('Access-Control-Allow-Origin')).toBe('https://bulletin-ai.pages.dev');
+            expect(optionsOk.headers.get('Vary')).toBe('Origin');
+            expect(optionsOk.headers.get('X-Content-Type-Options')).toBe('nosniff');
 
-            const deleteReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'DELETE' });
-            const deleteRes = await onRequest({ request: deleteReq, params: { path: ['models'] } });
+            const optionsCross = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'OPTIONS',
+                    headers: { 'Origin': 'https://attacker.example' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(optionsCross.status).toBe(403);
+
+            const deleteRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'DELETE' }),
+                params: { path: ['models'] }
+            });
             expect(deleteRes.status).toBe(405);
+            expect(deleteRes.headers.get('X-Content-Type-Options')).toBe('nosniff');
+            expect(deleteRes.headers.get('Cache-Control')).toBe('no-store');
 
-            const forbiddenPathReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/admin/users', { method: 'GET' });
-            const forbiddenPathRes = await onRequest({ request: forbiddenPathReq, params: { path: ['admin', 'users'] } });
+            const forbiddenPathRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/admin/users', { method: 'GET' }),
+                params: { path: ['admin', 'users'] }
+            });
             expect(forbiddenPathRes.status).toBe(404);
 
+            // Method/route mismatch: POST on models, GET on chat/completions
+            const postModelsRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'POST',
+                    headers: { 'Origin': 'https://bulletin-ai.pages.dev', 'Authorization': 'Bearer sk-albert-test', 'Content-Type': 'application/json' },
+                    body: '{}'
+                }),
+                params: { path: ['models'] }
+            });
+            expect(postModelsRes.status).toBe(405);
+            expect(postModelsRes.headers.get('Allow')).toBe('GET, OPTIONS');
+
+            const getChatRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/chat/completions', {
+                    method: 'GET',
+                    headers: { 'Sec-Fetch-Site': 'same-origin', 'Authorization': 'Bearer sk-albert-test' }
+                }),
+                params: { path: ['chat', 'completions'] }
+            });
+            expect(getChatRes.status).toBe(405);
+            expect(getChatRes.headers.get('Allow')).toBe('POST, OPTIONS');
+
+            // Missing or malformed Authorization
+            const noAuthRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'GET',
+                    headers: { 'Sec-Fetch-Site': 'same-origin' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(noAuthRes.status).toBe(401);
+
+            // Invalid Content-Type on POST
+            const badCtRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Origin': 'https://bulletin-ai.pages.dev', 'Authorization': 'Bearer sk-albert-test', 'Content-Type': 'text/plain' },
+                    body: '{}'
+                }),
+                params: { path: ['chat', 'completions'] }
+            });
+            expect(badCtRes.status).toBe(415);
+
+            // Oversized Content-Length
+            const bigClRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Origin': 'https://bulletin-ai.pages.dev',
+                        'Authorization': 'Bearer sk-albert-test',
+                        'Content-Type': 'application/json',
+                        'Content-Length': String(300 * 1024)
+                    },
+                    body: '{}'
+                }),
+                params: { path: ['chat', 'completions'] }
+            });
+            expect(bigClRes.status).toBe(413);
+
+            // Oversized streaming body without Content-Length
+            const chunk = new Uint8Array(150 * 1024).fill(97);
+            const stream = new ReadableStream({
+                start(controller) {
+                    controller.enqueue(chunk);
+                    controller.enqueue(chunk);
+                    controller.close();
+                }
+            });
+            const streamRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Origin': 'https://bulletin-ai.pages.dev',
+                        'Authorization': 'Bearer sk-albert-test',
+                        'Content-Type': 'application/json'
+                    },
+                    body: stream,
+                    duplex: 'half'
+                }),
+                params: { path: ['chat', 'completions'] }
+            });
+            expect(streamRes.status).toBe(413);
+
+            // Non-JSON upstream HTML response blocked
+            globalThis.fetch = vi.fn().mockResolvedValueOnce(
+                new Response('<html><body>WAF</body></html>', {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                })
+            );
+            const htmlRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'GET',
+                    headers: { 'Sec-Fetch-Site': 'same-origin', 'Authorization': 'Bearer sk-albert-test' }
+                }),
+                params: { path: ['models'] }
+            });
+            expect(htmlRes.status).toBe(502);
+            expect(htmlRes.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+            expect(htmlRes.headers.get('X-Content-Type-Options')).toBe('nosniff');
+
+            // Network failure -> 502
             globalThis.fetch = vi.fn().mockRejectedValueOnce(new Error('Network down'));
-            const failReq = new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', { method: 'GET' });
-            const failRes = await onRequest({ request: failReq, params: { path: ['models'] } });
+            const failRes = await onRequest({
+                request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                    method: 'GET',
+                    headers: { 'Sec-Fetch-Site': 'same-origin', 'Authorization': 'Bearer sk-albert-test' }
+                }),
+                params: { path: ['models'] }
+            });
             expect(failRes.status).toBe(502);
+
+            // Upstream timeout -> 504
+            vi.useFakeTimers();
+            try {
+                globalThis.fetch = vi.fn((_url, { signal }) => new Promise((_resolve, reject) => {
+                    signal.addEventListener('abort', () => reject(signal.reason));
+                }));
+                const timeoutPromise = onRequest({
+                    request: new Request('https://bulletin-ai.pages.dev/api/albert/v1/models', {
+                        method: 'GET',
+                        headers: { 'Sec-Fetch-Site': 'same-origin', 'Authorization': 'Bearer sk-albert-test' }
+                    }),
+                    params: { path: ['models'] }
+                });
+                await vi.advanceTimersByTimeAsync(45_100);
+                const timeoutRes = await timeoutPromise;
+                expect(timeoutRes.status).toBe(504);
+                expect(timeoutRes.headers.get('Cache-Control')).toBe('no-store');
+            } finally {
+                vi.useRealTimers();
+            }
         });
     });
 

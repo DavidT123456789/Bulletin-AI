@@ -172,6 +172,7 @@ export const SeatingRenderer = {
                 : '';
             const nameInfo = this._getStudentCellNameInfo(student);
 
+            const safeStudentId = Utils.escapeHtml(String(student.id ?? ''));
             cell.innerHTML = `
                 <div class="sc-cell-avatar-wrap">
                     ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
@@ -179,10 +180,10 @@ export const SeatingRenderer = {
                 </div>
                 <span class="sc-cell-name${nameInfo.modifierClass}${groupBadgeHTML ? ' has-group-tag' : ''}">${groupBadgeHTML ? `<span class="sc-cell-name-text${nameInfo.modifierClass}">${nameInfo.html}</span>${groupBadgeHTML}` : nameInfo.html}</span>
                 ${stationBadgeHTML}
-                <button type="button" class="sc-cell-remove" data-result-id="${student.id}" aria-label="Retirer du plan" data-tooltip="Retirer du plan">
+                <button type="button" class="sc-cell-remove" data-result-id="${safeStudentId}" aria-label="Retirer du plan" data-tooltip="Retirer du plan">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
-                <button type="button" class="sc-cell-pin" data-result-id="${student.id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
+                <button type="button" class="sc-cell-pin" data-result-id="${safeStudentId}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
                     <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                 </button>
                 ${this._getEvolutionDotHTML(student)}
@@ -225,8 +226,9 @@ export const SeatingRenderer = {
                 const memberDotHtml = memberBadge
                     ? `<span class="sc-cell-status-badge ${memberBadge.className}" aria-label="${Utils.escapeHtml(memberBadge.label)}">${Utils.escapeHtml(memberBadge.label)}</span>`
                     : '';
+                const safeMemberId = Utils.escapeHtml(String(s.id ?? ''));
                 return `
-                <div class="sc-stacked-avatar${isMemberDeparted ? ' sc-member-departed' : ''}" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${s.id}" draggable="${canExtractMember}" data-tooltip="${Utils.escapeHtml(tooltip)}">
+                <div class="sc-stacked-avatar${isMemberDeparted ? ' sc-member-departed' : ''}" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${safeMemberId}" draggable="${canExtractMember}" data-tooltip="${Utils.escapeHtml(tooltip)}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     ${memberDotHtml}
                 </div>
@@ -238,18 +240,20 @@ export const SeatingRenderer = {
                 const memberGroupTagHtml = (memberClassInfo?.isVirtual && memberClassInfo.shortLabel)
                     ? `<span class="sc-stacked-group-tag" aria-label="${Utils.escapeHtml(memberClassInfo.tooltipLabel)}">${Utils.escapeHtml(memberClassInfo.shortLabel)}</span>`
                     : '';
-                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(tooltip)}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${Utils.escapeHtml(String(s.id))}']"`;
+                const safeMemberId = Utils.escapeHtml(String(s.id ?? ''));
+                const memberTooltipAttr = ` data-tooltip="${Utils.escapeHtml(tooltip)}" data-tooltip-anchor=".sc-stacked-avatar[data-result-id='${safeMemberId}']"`;
                 return `
-                <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}${memberNameInfo.modifierClass}" data-result-id="${s.id}" draggable="${canExtractMember}"${memberTooltipAttr}>
+                <span class="sc-stacked-member sc-stacked-name${isMemberDeparted ? ' sc-member-departed' : ''}${memberNameInfo.modifierClass}" data-result-id="${safeMemberId}" draggable="${canExtractMember}"${memberTooltipAttr}>
                     <span class="sc-stacked-name-text${memberNameInfo.modifierClass}">${memberNameInfo.html}</span>
                     ${memberGroupTagHtml}
-                    <button type="button" class="sc-stacked-member-remove" data-member-id="${s.id}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
+                    <button type="button" class="sc-stacked-member-remove" data-member-id="${safeMemberId}" aria-label="Retirer ${Utils.escapeHtml(s.prenom || s.nom)} du groupe">
                         <iconify-icon icon="ph:x-bold"></iconify-icon>
                     </button>
                 </span>
             `;
             }).join('');
 
+            const safeLeadStudentId = Utils.escapeHtml(String(students[0].id ?? ''));
             cell.innerHTML = `
                 <div class="sc-stacked-avatar-cluster">
                     ${avatarsHtml}
@@ -258,10 +262,10 @@ export const SeatingRenderer = {
                     ${namesHtml}
                 </div>
                 ${stationBadgeHTML}
-                <button type="button" class="sc-cell-remove" data-result-id="${students[0].id}" aria-label="Libérer le poste" data-tooltip="Libérer le poste">
+                <button type="button" class="sc-cell-remove" data-result-id="${safeLeadStudentId}" aria-label="Libérer le poste" data-tooltip="Libérer le poste">
                     <iconify-icon icon="ph:x"></iconify-icon>
                 </button>
-                <button type="button" class="sc-cell-pin" data-result-id="${students[0].id}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
+                <button type="button" class="sc-cell-pin" data-result-id="${safeLeadStudentId}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
                     <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                 </button>
             `;
@@ -319,7 +323,7 @@ export const SeatingRenderer = {
                     cell.innerHTML = `
                         <iconify-icon icon="solar:forbidden-circle-linear" class="sc-special-icon"></iconify-icon>
                         <span class="sc-cell-name">Condamné</span>
-                        <span class="sc-cell-scope-badge ${isClassScope ? 'scope-class' : 'scope-global'}" data-tooltip="${scopeTooltip}">${scopeLabel}</span>
+                        <span class="sc-cell-scope-badge ${isClassScope ? 'scope-class' : 'scope-global'}" data-tooltip="${Utils.escapeHtml(scopeTooltip)}">${scopeLabel}</span>
                     `;
                 }
             }

@@ -168,9 +168,11 @@ export const UI = {
      */
     _buildNotificationBodyHtml(message, explicitTitle = null) {
         const { title, subtitle } = this._parseNotificationContent(message, explicitTitle);
-        return title
-            ? `<div class="notification-content"><div class="notification-title">${title}</div><div class="notification-subtitle">${subtitle}</div></div>`
-            : `<span class="notification-message">${subtitle}</span>`;
+        const safeTitle = title ? Utils.escapeHtml(String(title)) : '';
+        const safeSubtitle = Utils.escapeHtml(subtitle == null ? '' : String(subtitle));
+        return safeTitle
+            ? `<div class="notification-content"><div class="notification-title">${safeTitle}</div><div class="notification-subtitle">${safeSubtitle}</div></div>`
+            : `<span class="notification-message">${safeSubtitle}</span>`;
     },
 
     /**
@@ -292,7 +294,7 @@ export const UI = {
         }
 
         const iconHtml = coalescingOptions?.icon
-            ? `<iconify-icon icon="${coalescingOptions.icon}" aria-hidden="true"></iconify-icon>`
+            ? `<iconify-icon icon="${Utils.escapeHtml(String(coalescingOptions.icon))}" aria-hidden="true"></iconify-icon>`
             : (NOTIF_ICONS[type] || NOTIF_ICONS.info);
 
         const bodyHtml = this._buildNotificationBodyHtml(message, coalescingOptions?.title);

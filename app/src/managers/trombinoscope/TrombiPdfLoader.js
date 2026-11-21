@@ -190,7 +190,7 @@ export const TrombiPdfLoader = {
                         footerInfo.innerHTML = `${parsed.students.length} élèves détectés • Tous déjà inscrits <span class="footer-info-dimmed">(mise à jour photos)</span>`;
                     }
                 } else {
-                    footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${displayClassName}`;
+                    footerInfo.innerHTML = `${parsed.students.length} élèves détectés • ${parsed.isGroup ? 'Groupe' : 'Classe'} ${Utils.escapeHtml(String(displayClassName ?? ''))}`;
                 }
             }
 

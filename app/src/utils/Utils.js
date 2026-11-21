@@ -1833,6 +1833,34 @@ export const Utils = {
     },
 
     /**
+     * Valide et normalise une URL locale de serveur Ollama vers `http://localhost:11434` ou `http://127.0.0.1:11434`.
+     * @param {string} url - URL brute saisie ou stockée
+     * @returns {string|null} Origine normalisée ou `null` si non autorisée
+     */
+    normalizeLocalOllamaUrl(url) {
+        if (typeof url !== 'string' || !url.trim()) return null;
+        try {
+            const parsed = new URL(url.trim());
+            const isAllowedHost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+            if (
+                parsed.protocol !== 'http:' ||
+                !isAllowedHost ||
+                parsed.port !== '11434' ||
+                parsed.username ||
+                parsed.password ||
+                parsed.pathname !== '/' ||
+                parsed.search !== '' ||
+                parsed.hash !== ''
+            ) {
+                return null;
+            }
+            return parsed.origin;
+        } catch {
+            return null;
+        }
+    },
+
+    /**
      * Échappe les caractères spéciaux HTML pour prévenir les injections XSS
      * @param {string} text - Texte à échapper
      * @returns {string} Texte échappé

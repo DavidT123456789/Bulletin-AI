@@ -120,7 +120,7 @@ export const ClassStudentTransferModal = {
                             const isGroup = Utils.isGroupClassName(cls.name);
                             const count = classStudentCounts.get(cls.id) || 0;
                             return `
-                                <button type="button" class="btn btn-secondary move-target-btn" data-class-id="${cls.id}">
+                                <button type="button" class="btn btn-secondary move-target-btn" data-class-id="${this._escapeHtml(String(cls.id ?? ''))}">
                                     <iconify-icon icon="${isGroup ? 'solar:users-group-rounded-bold' : 'solar:square-academic-cap-bold'}"></iconify-icon>
                                     <span class="move-target-name">${this._escapeHtml(Utils.formatClassDisplayName(cls.name))}</span>
                                     <span class="move-target-year">${count} élève${count > 1 ? 's' : ''}</span>
@@ -459,7 +459,7 @@ export const ClassStudentTransferModal = {
                         </div>
                         <div class="pick-students-chips" id="pickStudentsChips" role="tablist" aria-label="Filtrer par classe">
                             ${filterChips.map(chip => `
-                                <button type="button" class="pick-class-chip ${chip.id === 'all' ? 'active' : ''}" data-filter-id="${chip.id}" role="tab" aria-selected="${chip.id === 'all'}">
+                                <button type="button" class="pick-class-chip ${chip.id === 'all' ? 'active' : ''}" data-filter-id="${this._escapeHtml(String(chip.id ?? ''))}" role="tab" aria-selected="${chip.id === 'all'}">
                                     ${chip.isVirtual ? '<iconify-icon icon="solar:diploma-linear"></iconify-icon>' : ''}
                                     <span>${this._escapeHtml(chip.label)}</span>
                                     <span class="pick-chip-count">${chip.count}</span>
@@ -600,7 +600,7 @@ export const ClassStudentTransferModal = {
 
                 return `
                     <div class="pick-student-row ${isSelected ? 'selected' : ''} ${isPresent ? 'already-present' : ''}"
-                         data-student-id="${cand.id}"
+                         data-student-id="${this._escapeHtml(String(cand.id ?? ''))}"
                          role="option"
                          aria-selected="${isSelected || isPresent}"
                          tabindex="${isPresent ? '-1' : '0'}">

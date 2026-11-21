@@ -404,12 +404,13 @@ export const ClassDropdown = {
             });
         } else {
             const classItemsHtml = allItems.map(item => {
+                const safeItemId = this._escapeHtml(String(item.id ?? ''));
                 if (item.isVirtual) {
                     const isCollapsed = !this._showVirtualClasses;
                     const sourceNames = item.sourceGroupNames?.join(' & ') || '';
                     return `
                     <div class="class-dropdown-item class-dropdown-item--virtual ${isCollapsed ? 'is-collapsed' : ''} ${item.id === currentClassId ? 'active' : ''}"
-                         data-class-id="${item.id}"
+                         data-class-id="${safeItemId}"
                          tabindex="${isCollapsed ? '-1' : '0'}"
                          role="option"
                          aria-selected="${item.id === currentClassId ? 'true' : 'false'}"
@@ -426,7 +427,7 @@ export const ClassDropdown = {
                                 </span>
                             </span>
                         </div>
-                        <div class="class-progress-badge" data-class-id="${item.id}">
+                        <div class="class-progress-badge" data-class-id="${safeItemId}">
                             <span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <span class="progress-count-value">${item.studentCount}</span></span>
                         </div>
                     </div>
@@ -439,7 +440,7 @@ export const ClassDropdown = {
 
                 return `
                 <div class="class-dropdown-item ${item.id === currentClassId ? 'active' : ''}"
-                     data-class-id="${item.id}"
+                     data-class-id="${safeItemId}"
                      tabindex="0"
                      role="option"
                      aria-selected="${item.id === currentClassId ? 'true' : 'false'}">
@@ -449,11 +450,11 @@ export const ClassDropdown = {
                         </span>
                         <span class="class-meta">
                             <span class="class-meta-year"><iconify-icon icon="solar:calendar-linear"></iconify-icon> <span class="class-meta-year-text">${this._escapeHtml(item.year || 'Non définie')}</span></span>
-                            <span class="class-seating-badge is-hidden" data-class-id="${item.id}"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></span>
-                            <span class="class-note-badge ${hasNote ? 'tooltip' : 'is-hidden'}" data-class-id="${item.id}"${noteTooltipAttr}><iconify-icon icon="solar:bookmark-bold"></iconify-icon></span>
+                            <span class="class-seating-badge is-hidden" data-class-id="${safeItemId}"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></span>
+                            <span class="class-note-badge ${hasNote ? 'tooltip' : 'is-hidden'}" data-class-id="${safeItemId}"${noteTooltipAttr}><iconify-icon icon="solar:bookmark-bold"></iconify-icon></span>
                         </span>
                     </div>
-                    <div class="class-progress-badge" data-class-id="${item.id}">
+                    <div class="class-progress-badge" data-class-id="${safeItemId}">
                         <span class="progress-count"><iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon> <span class="progress-count-value">0</span></span>
                     </div>
                 </div>

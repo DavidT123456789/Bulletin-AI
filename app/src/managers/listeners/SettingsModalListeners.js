@@ -18,7 +18,7 @@ import { AppreciationsManager } from '../AppreciationsManager.js';
 import { FormUI } from '../FormUIManager.js';
 
 import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG } from '../../config/Config.js';
-import { MODEL_SHORT_NAMES } from '../../config/models.js';
+import { MODEL_SHORT_NAMES, OLLAMA_CONFIG } from '../../config/models.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
 
 let App = null;
@@ -285,7 +285,16 @@ export const SettingsModalListeners = {
 
         if (DOM.ollamaBaseUrl) {
             DOM.ollamaBaseUrl.addEventListener('change', (e) => {
-                appState.ollamaBaseUrl = e.target.value.trim();
+                const raw = e.target.value.trim();
+                const normalized = raw ? Utils.normalizeLocalOllamaUrl(raw) : OLLAMA_CONFIG.defaultBaseUrl;
+                if (!normalized) {
+                    const fallbackUrl = Utils.normalizeLocalOllamaUrl(appState.ollamaBaseUrl) || OLLAMA_CONFIG.defaultBaseUrl;
+                    e.target.value = fallbackUrl;
+                    UI.showNotification('URL Ollama invalide : utilisez http://localhost:11434 ou http://127.0.0.1:11434.', 'warning');
+                    return;
+                }
+                e.target.value = normalized;
+                appState.ollamaBaseUrl = normalized;
                 StorageManager.saveAppState();
             });
         }
@@ -588,11 +597,14 @@ export const SettingsModalListeners = {
     _renderPreviewError(title, message, hint = '') {
         this._setResultState('error');
         if (!DOM.settingsPreviewResult) return;
+        const safeTitle = Utils.escapeHtml(title == null ? '' : String(title));
+        const safeMessage = Utils.escapeHtml(message == null ? '' : String(message));
+        const safeHint = hint ? Utils.escapeHtml(String(hint)) : '';
         DOM.settingsPreviewResult.innerHTML = `
             <div class="preview-error-message">
-                <strong><iconify-icon icon="solar:danger-circle-linear"></iconify-icon> ${title}</strong>
-                <p>${message}</p>
-                ${hint ? `<small>${hint}</small>` : ''}
+                <strong><iconify-icon icon="solar:danger-circle-linear"></iconify-icon> ${safeTitle}</strong>
+                <p>${safeMessage}</p>
+                ${safeHint ? `<small>${safeHint}</small>` : ''}
             </div>`;
     },
 
@@ -622,7 +634,8 @@ export const SettingsModalListeners = {
                 studentData: { currentAIModel: entry.modelUsed },
                 tokenUsage: entry.tokenUsage
             });
-            DOM.previewModelBadge.innerHTML = `<iconify-icon icon="solar:stars-line-duotone"></iconify-icon> ${MODEL_SHORT_NAMES[entry.modelUsed] || entry.modelUsed}`;
+            const modelLabel = MODEL_SHORT_NAMES[entry.modelUsed] || entry.modelUsed || '';
+            DOM.previewModelBadge.innerHTML = `<iconify-icon icon="solar:stars-line-duotone"></iconify-icon> ${Utils.escapeHtml(String(modelLabel))}`;
             DOM.previewModelBadge.setAttribute('data-tooltip', tooltip);
             DOM.previewModelBadge.hidden = false;
             UI.initTooltips();

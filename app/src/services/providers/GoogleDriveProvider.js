@@ -100,17 +100,27 @@ export const GoogleDriveProvider = {
     },
 
     /**
+     * Purge any legacy OAuth access token previously persisted in localStorage.
+     * @private
+     */
+    _purgeLegacyLocalToken() {
+        SafeStorage.remove(STORAGE_KEYS.GOOGLE_TOKEN);
+    },
+
+    /**
      * Authorize with Google.
      * @param {Object} options - { silent: boolean, forcePrompt: boolean }
      * @returns {Promise<boolean>} Success
      */
     async authorize(options = {}) {
         try {
-            // Check for saved token first (avoids loading external Google scripts at boot if token is already expired)
-            const savedToken = SafeStorage.get(STORAGE_KEYS.GOOGLE_TOKEN);
+            this._purgeLegacyLocalToken();
+
+            // Check for saved session token first (avoids loading external Google scripts at boot if token is missing or expired)
+            const savedToken = SafeStorage.getSession(STORAGE_KEYS.GOOGLE_TOKEN);
             let hasValidSavedToken = false;
             if (savedToken) {
-                const parsedToken = SafeStorage.getJSON(STORAGE_KEYS.GOOGLE_TOKEN, null, { removeOnCorrupt: true });
+                const parsedToken = SafeStorage.getSessionJSON(STORAGE_KEYS.GOOGLE_TOKEN, null, { removeOnCorrupt: true });
                 if (parsedToken) {
                     this._token = parsedToken;
                     if (this._token.expiry && (Date.now() + 60000) < this._token.expiry) {
@@ -125,6 +135,14 @@ export const GoogleDriveProvider = {
 
             // In silent mode, never try to open OAuth popup and skip loading GAPI/GSI if token is missing or expired
             if (options.silent && !hasValidSavedToken) {
+                const hasKnownAccount = Boolean(
+                    savedToken ||
+                    this._readCachedUser() ||
+                    SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER) === 'google'
+                );
+                if (hasKnownAccount) {
+                    this._needsReconnect = true;
+                }
                 return false;
             }
 
@@ -173,7 +191,8 @@ export const GoogleDriveProvider = {
                             expiry: Date.now() + (tokenResponse.expires_in * 1000)
                         };
 
-                        SafeStorage.setJSON(STORAGE_KEYS.GOOGLE_TOKEN, this._token);
+                        SafeStorage.setSessionJSON(STORAGE_KEYS.GOOGLE_TOKEN, this._token);
+                        this._purgeLegacyLocalToken();
                         window.gapi.client.setToken({ access_token: this._token.access_token });
                         this._needsReconnect = false;
                         this.getUserInfo().catch(() => {});
@@ -211,7 +230,7 @@ export const GoogleDriveProvider = {
      */
     isConnected() {
         if (!this._token) {
-            this._token = SafeStorage.getJSON(STORAGE_KEYS.GOOGLE_TOKEN, null);
+            this._token = SafeStorage.getSessionJSON(STORAGE_KEYS.GOOGLE_TOKEN, null);
         }
         return this._token !== null && (Date.now() + 60000) < (this._token.expiry || 0);
     },
@@ -276,7 +295,8 @@ export const GoogleDriveProvider = {
         }
         this._token = null;
         this._fileId = null;
-        SafeStorage.remove(STORAGE_KEYS.GOOGLE_TOKEN);
+        SafeStorage.removeSession(STORAGE_KEYS.GOOGLE_TOKEN);
+        this._purgeLegacyLocalToken();
         SafeStorage.remove(STORAGE_KEYS.GOOGLE_USER);
     },
 
@@ -307,7 +327,8 @@ export const GoogleDriveProvider = {
         if (isAuthError) {
             this._needsReconnect = true;
             this._token = null;
-            SafeStorage.remove(STORAGE_KEYS.GOOGLE_TOKEN);
+            SafeStorage.removeSession(STORAGE_KEYS.GOOGLE_TOKEN);
+            this._purgeLegacyLocalToken();
         }
 
         const message = rawMsg || (isAuthError ? 'Session Google Drive expirée. Veuillez vous reconnecter.' : defaultMsg);

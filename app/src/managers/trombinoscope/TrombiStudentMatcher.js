@@ -509,9 +509,9 @@ export const TrombiStudentMatcher = {
                 }
 
                 return `
-                    <button type="button" class="trombi-popover-option ${isSelected ? 'is-selected' : ''}" role="option" aria-selected="${isSelected}" data-student-id="${s.id}">
+                    <button type="button" class="trombi-popover-option ${isSelected ? 'is-selected' : ''}" role="option" aria-selected="${isSelected}" data-student-id="${Utils.escapeHtml(String(s.id ?? ''))}">
                         <span class="trombi-option-main">
-                            <span class="trombi-option-label">${studentNameFormatted}</span>
+                            <span class="trombi-option-label">${Utils.escapeHtml(String(studentNameFormatted ?? ''))}</span>
                         </span>
                         ${badges.length > 0 ? `<span class="trombi-option-meta">${badges.join('')}</span>` : ''}
                     </button>
@@ -708,11 +708,14 @@ export const TrombiStudentMatcher = {
                     ? `<span class="trombi-student-badge is-new" data-tooltip="Nouvel élève à ajouter"><iconify-icon icon="solar:user-plus-rounded-bold"></iconify-icon>Nouveau</span>`
                     : '';
 
+                const safeZoneId = Utils.escapeHtml(String(zone.id ?? ''));
+                const safeAssignedName = Utils.escapeHtml(String(assignedName ?? ''));
+
                 return `
-                    <div class="assignment-row ${isNewRow ? 'is-new-student' : ''} ${!isAssigned ? 'is-unassigned' : ''} ${isFocused ? 'focused' : ''}" data-zone-id="${zone.id}">
+                    <div class="assignment-row ${isNewRow ? 'is-new-student' : ''} ${!isAssigned ? 'is-unassigned' : ''} ${isFocused ? 'focused' : ''}" data-zone-id="${safeZoneId}">
                         <div class="assignment-preview">
                             <canvas class="live-preview-canvas" 
-                                    data-zone-id="${zone.id}" 
+                                    data-zone-id="${safeZoneId}" 
                                     width="80" height="80"></canvas>
                         </div>
                         <div class="assignment-id">
@@ -721,17 +724,17 @@ export const TrombiStudentMatcher = {
                         <div class="assignment-student-select">
                             <div class="assignment-select-wrapper">
                                 <div class="assignment-select-box">
-                                    <select class="assignment-select" data-zone-id="${zone.id}" tabindex="-1" aria-hidden="true">
+                                    <select class="assignment-select" data-zone-id="${safeZoneId}" tabindex="-1" aria-hidden="true">
                                         <option value="">Choisir un élève...</option>
-                                        ${dropdownStudents.map(s => `<option value="${s.id}" ${zone.studentId === s.id ? 'selected' : ''}>${Utils.formatStudentName(s.nom, s.prenom)}</option>`).join('')}
+                                        ${dropdownStudents.map(s => `<option value="${Utils.escapeHtml(String(s.id ?? ''))}" ${zone.studentId === s.id ? 'selected' : ''}>${Utils.escapeHtml(Utils.formatStudentName(s.nom, s.prenom))}</option>`).join('')}
                                     </select>
                                     <button type="button"
                                             class="assignment-combobox-btn ${isAssigned ? 'is-assigned' : 'is-placeholder'}"
-                                            data-zone-id="${zone.id}"
+                                            data-zone-id="${safeZoneId}"
                                             aria-haspopup="listbox"
                                             aria-expanded="false"
-                                            aria-label="${isAssigned ? `Zone #${zoneNumber} : ${assignedName}` : `Choisir un élève pour la zone #${zoneNumber}`}">
-                                        <span class="assignment-combobox-text">${isAssigned ? assignedName : 'Choisir un élève...'}</span>
+                                            aria-label="${isAssigned ? `Zone #${zoneNumber} : ${safeAssignedName}` : `Choisir un élève pour la zone #${zoneNumber}`}">
+                                        <span class="assignment-combobox-text">${isAssigned ? safeAssignedName : 'Choisir un élève...'}</span>
                                         <iconify-icon icon="solar:alt-arrow-down-linear" class="assignment-select-chevron" aria-hidden="true"></iconify-icon>
                                     </button>
                                 </div>
@@ -740,21 +743,21 @@ export const TrombiStudentMatcher = {
                         </div>
                         <div class="assignment-actions">
                             <button type="button" class="assignment-action-btn shift-down-btn ${!hasStudentFromHere ? 'disabled' : ''}" 
-                                    data-zone-id="${zone.id}" 
+                                    data-zone-id="${safeZoneId}" 
                                     aria-disabled="${!hasStudentFromHere}"
                                     aria-label="${shiftDownTooltip}"
                                     data-tooltip="${shiftDownTooltip}">
                                 <iconify-icon icon="ph:caret-double-down"></iconify-icon>
                             </button>
                             <button type="button" class="assignment-action-btn shift-up-btn ${!hasStudentFromHere ? 'disabled' : ''}" 
-                                    data-zone-id="${zone.id}" 
+                                    data-zone-id="${safeZoneId}" 
                                     aria-disabled="${!hasStudentFromHere}"
                                     aria-label="${shiftUpTooltip}"
                                     data-tooltip="${shiftUpTooltip}">
                                 <iconify-icon icon="ph:caret-double-up"></iconify-icon>
                             </button>
                             <button type="button" class="assignment-action-btn delete-zone-btn danger" 
-                                    data-zone-id="${zone.id}" 
+                                    data-zone-id="${safeZoneId}" 
                                     aria-label="Supprimer la zone #${zoneNumber}"
                                     data-tooltip="Supprimer la zone #${zoneNumber}">
                                 <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>

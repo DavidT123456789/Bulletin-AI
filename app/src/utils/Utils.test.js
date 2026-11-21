@@ -1129,5 +1129,35 @@ describe('Utils', () => {
             }
         });
     });
+
+    describe('normalizeLocalOllamaUrl', () => {
+        it('accepte et normalise localhost et 127.0.0.1 sur le port 11434', () => {
+            expect(Utils.normalizeLocalOllamaUrl('http://localhost:11434')).toBe('http://localhost:11434');
+            expect(Utils.normalizeLocalOllamaUrl('  http://localhost:11434/  ')).toBe('http://localhost:11434');
+            expect(Utils.normalizeLocalOllamaUrl('http://127.0.0.1:11434/')).toBe('http://127.0.0.1:11434');
+        });
+
+        it('rejette les URLs non autorisées, ports alternatifs, chemins, query strings et fragments', () => {
+            const rejected = [
+                null,
+                undefined,
+                '',
+                '   ',
+                'not-a-url',
+                'https://localhost:11434',
+                'http://[::1]:11434',
+                'http://localhost:9222',
+                'http://localhost:11434/api',
+                'http://localhost:11434/?x=1',
+                'http://localhost:11434/#frag',
+                'http://user:pass@localhost:11434',
+                'https://evil.example:11434',
+                'http://192.168.1.10:11434'
+            ];
+            for (const candidate of rejected) {
+                expect(Utils.normalizeLocalOllamaUrl(candidate)).toBeNull();
+            }
+        });
+    });
 });
 

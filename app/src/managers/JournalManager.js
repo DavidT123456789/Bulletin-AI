@@ -468,8 +468,10 @@ export const JournalManager = {
                 ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
                 : '';
 
+            const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
+
             return `
-                <div class="journal-entry ${animationClass} ${isolatedClass}" data-entry-id="${entry.id}">
+                <div class="journal-entry ${animationClass} ${isolatedClass}" data-entry-id="${safeEntryId}">
                     <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
                     <div class="journal-entry-content">
                         <div class="journal-entry-tags">
@@ -479,10 +481,10 @@ export const JournalManager = {
                         ${entry.note ? `<div class="journal-entry-note">${Utils.escapeHtml(entry.note)}</div>` : ''}
                     </div>
                     <div class="journal-entry-actions">
-                        <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${entry.id}" aria-label="Modifier l'observation" data-tooltip="Modifier">
+                        <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${safeEntryId}" aria-label="Modifier l'observation" data-tooltip="Modifier">
                             <iconify-icon icon="solar:pen-linear"></iconify-icon>
                         </button>
-                        <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${entry.id}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
+                        <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${safeEntryId}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
                             <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                         </button>
                     </div>

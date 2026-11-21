@@ -9,8 +9,9 @@
 
 import { appState, UIState } from '../state/State.js';
 import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
-import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, PROVIDER_SHOWCASE_MODELS, getProviderForModel, buildFallbackQueue } from '../config/models.js';
+import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, PROVIDER_SHOWCASE_MODELS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
+import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { FormUI } from './FormUIManager.js';
 import { StorageManager } from './StorageManager.js';
@@ -171,7 +172,21 @@ export const SettingsUIManager = {
             if (DOM.aiModelSelect) appState.currentAIModel = DOM.aiModelSelect.value;
             // Ollama
             if (DOM.ollamaEnabledToggle) appState.ollamaEnabled = DOM.ollamaEnabledToggle.checked;
-            if (DOM.ollamaBaseUrl) appState.ollamaBaseUrl = DOM.ollamaBaseUrl.value.trim();
+            if (DOM.ollamaBaseUrl) {
+                const rawOllamaUrl = DOM.ollamaBaseUrl.value.trim();
+                const normalizedOllamaUrl = rawOllamaUrl
+                    ? Utils.normalizeLocalOllamaUrl(rawOllamaUrl)
+                    : OLLAMA_CONFIG.defaultBaseUrl;
+                if (normalizedOllamaUrl) {
+                    appState.ollamaBaseUrl = normalizedOllamaUrl;
+                    DOM.ollamaBaseUrl.value = normalizedOllamaUrl;
+                } else {
+                    const fallbackOllamaUrl = Utils.normalizeLocalOllamaUrl(appState.ollamaBaseUrl) || OLLAMA_CONFIG.defaultBaseUrl;
+                    appState.ollamaBaseUrl = fallbackOllamaUrl;
+                    DOM.ollamaBaseUrl.value = fallbackOllamaUrl;
+                    UI.showNotification('URL Ollama invalide : utilisez http://localhost:11434 ou http://127.0.0.1:11434.', 'warning');
+                }
+            }
 
             // Confidentialité
             if (DOM.settingsPrivacyAnonymizeToggle) {
@@ -827,9 +842,29 @@ export const SettingsUIManager = {
         }
 
         try {
-            // Mettre à jour l'URL depuis le champ
+            // Mettre à jour et valider l'URL depuis le champ avant tout appel réseau
             if (DOM.ollamaBaseUrl) {
-                appState.ollamaBaseUrl = DOM.ollamaBaseUrl.value.trim();
+                const rawUrl = DOM.ollamaBaseUrl.value.trim();
+                const normalizedUrl = rawUrl
+                    ? Utils.normalizeLocalOllamaUrl(rawUrl)
+                    : OLLAMA_CONFIG.defaultBaseUrl;
+                if (!normalizedUrl) {
+                    this.updateOllamaStatus('error');
+                    const errMsg = 'URL Ollama invalide : utilisez http://localhost:11434 ou http://127.0.0.1:11434.';
+                    if (DOM.ollamaError) {
+                        DOM.ollamaError.textContent = errMsg;
+                        DOM.ollamaError.style.display = 'block';
+                    }
+                    if (DOM.validateOllamaBtn) {
+                        DOM.validateOllamaBtn.classList.remove('btn-validated', 'btn-needs-validation');
+                        DOM.validateOllamaBtn.innerHTML = 'Vérifier';
+                        DOM.validateOllamaBtn.disabled = false;
+                    }
+                    UI.showNotification(errMsg, 'warning');
+                    return false;
+                }
+                DOM.ollamaBaseUrl.value = normalizedUrl;
+                appState.ollamaBaseUrl = normalizedUrl;
             }
 
             const isAvailable = await AIService.checkOllamaAvailability();
@@ -954,8 +989,9 @@ export const SettingsUIManager = {
             });
 
             if (otherModels.length > 0) {
+                const escapedOtherModels = otherModels.slice(0, 3).map(m => Utils.escapeHtml(String(m ?? ''))).join(', ');
                 html += `<div style="margin-top:6px; font-size:0.8em; color:var(--text-secondary);">
-                    + ${otherModels.length} autre(s) modèle(s) installé(s): ${otherModels.slice(0, 3).join(', ')}${otherModels.length > 3 ? '...' : ''}
+                    + ${otherModels.length} autre(s) modèle(s) installé(s): ${escapedOtherModels}${otherModels.length > 3 ? '...' : ''}
                 </div>`;
             }
 

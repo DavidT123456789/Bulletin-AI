@@ -6,6 +6,7 @@ describe('SafeStorage', () => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         localStorage.clear();
+        sessionStorage.clear();
     });
 
     afterEach(() => {
@@ -128,5 +129,66 @@ describe('SafeStorage', () => {
         expect(removed).toBe(1);
         expect(store.k1).toBeUndefined();
         expect(store.k2).toBe('2');
+    });
+
+    describe('sessionStorage helpers', () => {
+        it('performs nominal getSession, setSession, removeSession, getSessionJSON and setSessionJSON', () => {
+            expect(SafeStorage.getSession('missing')).toBeNull();
+            expect(SafeStorage.getSession('missing', 'fallback')).toBe('fallback');
+
+            expect(SafeStorage.setSession('s_key', 'tok')).toBe(true);
+            expect(SafeStorage.getSession('s_key')).toBe('tok');
+            expect(SafeStorage.get('s_key')).toBeNull();
+
+            expect(SafeStorage.setSessionJSON('s_json', { access_token: 'abc', expiry: 123 })).toBe(true);
+            expect(SafeStorage.getSessionJSON('s_json')).toEqual({ access_token: 'abc', expiry: 123 });
+
+            expect(SafeStorage.removeSession('s_key')).toBe(true);
+            expect(SafeStorage.getSession('s_key')).toBeNull();
+        });
+
+        it('handles corrupt JSON and removeOnCorrupt on sessionStorage', () => {
+            sessionStorage.setItem('bad_s_json', '{corrupt');
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+            expect(SafeStorage.getSessionJSON('bad_s_json', 'fallback')).toBe('fallback');
+            expect(sessionStorage.getItem('bad_s_json')).toBe('{corrupt');
+
+            expect(SafeStorage.getSessionJSON('bad_s_json', null, { removeOnCorrupt: true })).toBeNull();
+            expect(sessionStorage.getItem('bad_s_json')).toBeNull();
+            expect(warnSpy).toHaveBeenCalled();
+        });
+
+        it('recovers gracefully when sessionStorage throws SecurityError/QuotaExceededError or getter throws', () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.stubGlobal('sessionStorage', {
+                getItem: vi.fn(() => { throw new DOMException('Blocked', 'SecurityError'); }),
+                setItem: vi.fn(() => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); }),
+                removeItem: vi.fn(() => { throw new DOMException('Blocked', 'SecurityError'); })
+            });
+
+            expect(SafeStorage.getSession('k', 'safe')).toBe('safe');
+            expect(SafeStorage.setSession('k', 'v')).toBe(false);
+            expect(SafeStorage.removeSession('k')).toBe(false);
+            expect(SafeStorage.setSessionJSON('k', { a: 1 })).toBe(false);
+            expect(warnSpy).toHaveBeenCalled();
+
+            const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+            Object.defineProperty(globalThis, 'sessionStorage', {
+                configurable: true,
+                get() {
+                    throw new DOMException('Denied', 'SecurityError');
+                }
+            });
+            try {
+                expect(SafeStorage.getSession('k', 'fallback')).toBe('fallback');
+                expect(SafeStorage.setSession('k', 'v')).toBe(false);
+                expect(SafeStorage.removeSession('k')).toBe(false);
+            } finally {
+                if (originalDescriptor) {
+                    Object.defineProperty(globalThis, 'sessionStorage', originalDescriptor);
+                }
+            }
+        });
     });
 });

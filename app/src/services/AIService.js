@@ -126,6 +126,15 @@ export const AIService = {
     },
 
     /**
+     * Valide et normalise l'URL de base d'Ollama sur boucle locale port 11434 uniquement.
+     * @returns {string|null}
+     * @private
+     */
+    _getSafeOllamaBaseUrl() {
+        return Utils.normalizeLocalOllamaUrl(appState.ollamaBaseUrl || OLLAMA_CONFIG.defaultBaseUrl);
+    },
+
+    /**
      * Génère la configuration API pour un provider donné
      * @private
      * @param {string} prompt - Le prompt à envoyer
@@ -190,8 +199,11 @@ export const AIService = {
             },
             ollama: {
                 apiKey: appState.ollamaEnabled ? 'local' : null,
-                apiUrl: (m) => {
-                    const baseUrl = appState.ollamaBaseUrl || OLLAMA_CONFIG.defaultBaseUrl;
+                apiUrl: () => {
+                    const baseUrl = this._getSafeOllamaBaseUrl();
+                    if (!baseUrl) {
+                        throw new Error('URL Ollama invalide : utilisez http://localhost:11434 ou http://127.0.0.1:11434.');
+                    }
                     return `${baseUrl}${OLLAMA_CONFIG.apiEndpoint}`;
                 },
                 headers: () => ({ 'Content-Type': 'application/json' }),
@@ -621,7 +633,8 @@ export const AIService = {
      */
     async checkOllamaAvailability() {
         try {
-            const baseUrl = appState.ollamaBaseUrl || OLLAMA_CONFIG.defaultBaseUrl;
+            const baseUrl = this._getSafeOllamaBaseUrl();
+            if (!baseUrl) return false;
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
 
@@ -649,7 +662,8 @@ export const AIService = {
      */
     async getOllamaModels() {
         try {
-            const baseUrl = appState.ollamaBaseUrl || OLLAMA_CONFIG.defaultBaseUrl;
+            const baseUrl = this._getSafeOllamaBaseUrl();
+            if (!baseUrl) return [];
             const response = await Utils.fetchWithTimeout(`${baseUrl}/api/tags`, {}, OLLAMA_MODELS_TIMEOUT_MS);
             if (response.ok) {
                 const data = await response.json();

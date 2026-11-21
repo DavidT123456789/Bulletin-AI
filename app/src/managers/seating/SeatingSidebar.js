@@ -602,12 +602,13 @@ export const SeatingSidebar = {
                     ? `<span class="sc-chip-badge sc-chip-badge-${badgeInfo.type}">${Utils.escapeHtml(chipBadgeLabel)}</span>`
                     : '';
                 const canDragChip = this._isNativeDraggableAllowed();
+                const safeStudentId = Utils.escapeHtml(String(s.id ?? ''));
                 return `
-                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="${canDragChip}" data-result-id="${s.id}">
+                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="${canDragChip}" data-result-id="${safeStudentId}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                     ${chipBadgeHtml}
-                    <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
+                    <button type="button" class="sc-chip-profile-btn" data-profile-id="${safeStudentId}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                         <iconify-icon icon="solar:user-id-linear"></iconify-icon>
                     </button>
                 </div>
@@ -621,16 +622,19 @@ export const SeatingSidebar = {
                     <span>Élève${filteredDeparted.length > 1 ? 's' : ''} parti${filteredDeparted.length > 1 ? 's' : ''} (${filteredDeparted.length})</span>
                 </div>
                 <div class="sc-sidebar-departed-list">
-                    ${filteredDeparted.map(s => `
-                        <div class="sc-student-chip sc-chip-departed" draggable="${this._isNativeDraggableAllowed()}" data-result-id="${s.id}">
+                    ${filteredDeparted.map(s => {
+                        const safeDepartedId = Utils.escapeHtml(String(s.id ?? ''));
+                        return `
+                        <div class="sc-student-chip sc-chip-departed" draggable="${this._isNativeDraggableAllowed()}" data-result-id="${safeDepartedId}">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                             <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
-                            <button type="button" class="sc-chip-profile-btn" data-profile-id="${s.id}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
+                            <button type="button" class="sc-chip-profile-btn" data-profile-id="${safeDepartedId}" aria-label="Voir la fiche de ${Utils.escapeHtml(s.prenom || s.nom)}" data-tooltip="Voir la fiche élève">
                                 <iconify-icon icon="solar:user-id-linear"></iconify-icon>
                             </button>
                         </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </div>
             </div>`
             : '';

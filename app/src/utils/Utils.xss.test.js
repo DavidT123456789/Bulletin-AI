@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Utils } from './Utils.js';
 import { JournalManager } from '../managers/JournalManager.js';
 import { StudentPhotoManager } from '../managers/StudentPhotoManager.js';
+import { ClassUIManager } from '../managers/ClassUIManager.js';
+import { userSettings } from '../state/State.js';
 
 describe('Utils & Managers — Protection XSS (T-05 / Bug B-04)', () => {
     it('Utils.escapeHtml échappe correctement les 5 caractères spéciaux HTML', () => {
@@ -87,5 +89,40 @@ describe('Utils & Managers — Protection XSS (T-05 / Bug B-04)', () => {
 
         // Mode texte brut préservé sans sur-échappement
         expect(Utils.formatStudentInitialLabel('Dupont', 'Léo & Mia', false)).toBe('Léo & Mia D.');
+    });
+
+    it('échappe guillemets/chevrons dans ClassUIManager._escapeHtml, _formatNoteTooltip et cls.year de showManageClassesModal', () => {
+        const notePayload = 'Test " onmouseenter="alert(1)\nLigne 2 <img src=x onerror=alert(2)>';
+        const formattedTooltip = ClassUIManager._formatNoteTooltip(notePayload);
+        expect(formattedTooltip).not.toContain('" onmouseenter=');
+        expect(formattedTooltip).toContain('&quot;');
+        expect(formattedTooltip).toContain('&lt;img src=x');
+
+        const host = document.createElement('div');
+        host.innerHTML = `<span class="class-note-badge" data-tooltip="${formattedTooltip}"></span>`;
+        const badge = host.querySelector('.class-note-badge');
+        expect(badge).not.toBeNull();
+        expect(badge.getAttribute('onmouseenter')).toBeNull();
+
+        const prevClasses = userSettings.academic.classes;
+        try {
+            userSettings.academic.classes = [
+                { id: 'c" onclick="alert(1)', name: '3A', year: '<img src=x onerror=alert(1)>' },
+                { id: 'c2', name: '4B', year: '2025' }
+            ];
+            ClassUIManager.showManageClassesModal();
+            const modal = document.getElementById('classManagementModal');
+            expect(modal).not.toBeNull();
+            expect(modal.querySelector('img')).toBeNull();
+            const items = Array.from(modal.querySelectorAll('.class-management-item'));
+            const injectedItem = items.find(el => el.dataset.classId?.includes('onclick='));
+            expect(injectedItem).toBeDefined();
+            expect(injectedItem.getAttribute('onclick')).toBeNull();
+            expect(injectedItem.textContent).toContain('<img src=x onerror=alert(1)>');
+            modal.remove();
+        } finally {
+            userSettings.academic.classes = prevClasses;
+            document.body.innerHTML = '';
+        }
     });
 });

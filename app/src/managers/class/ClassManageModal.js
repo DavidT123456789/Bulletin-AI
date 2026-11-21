@@ -832,7 +832,7 @@ export const ClassManageModal = {
                         const yearMetaHtml = !allSameYear ? `
                             <span class="meta-item-inline" data-tooltip="Année scolaire">
                                 <iconify-icon icon="solar:calendar-linear"></iconify-icon>
-                                <span>${cls.year || primaryYear}</span>
+                                <span>${this._escapeHtml(cls.year || primaryYear)}</span>
                             </span>
                             <span class="meta-separator">•</span>
                         ` : '';
@@ -870,10 +870,11 @@ export const ClassManageModal = {
                             `;
 
                         const isNew = highlightClassId && cls.id === highlightClassId;
+                        const safeClassId = this._escapeHtml(String(cls.id ?? ''));
 
                         return `
                             <div class="class-management-item ${isActive ? 'active-switch' : ''} ${isNew ? 'class-item-just-created' : ''}"
-                                 data-class-id="${cls.id}"
+                                 data-class-id="${safeClassId}"
                                  draggable="true"
                                  tabindex="0"
                                  role="option"
@@ -894,15 +895,15 @@ export const ClassManageModal = {
                                 </div>
 
                                 <div class="class-management-actions">
-                                    <button type="button" class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${cls.id}"
+                                    <button type="button" class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${safeClassId}"
                                             data-tooltip="Dupliquer la classe" aria-label="Dupliquer la classe">
                                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                     </button>
-                                    <button type="button" class="manage-rename-btn btn-icon-small tooltip" data-class-id="${cls.id}"
+                                    <button type="button" class="manage-rename-btn btn-icon-small tooltip" data-class-id="${safeClassId}"
                                             data-tooltip="Renommer" aria-label="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
                                     </button>
-                                    <button type="button" class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${cls.id}"
+                                    <button type="button" class="manage-delete-btn btn-icon-small danger tooltip" data-class-id="${safeClassId}"
                                             data-tooltip="Supprimer la classe" aria-label="Supprimer la classe">
                                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
                                     </button>

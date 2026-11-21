@@ -218,7 +218,7 @@ export const TrombiCropExporter = {
                             const studentLabel = (newAssignedCount === 1 && newStudentObj)
                                 ? `Ajouter ${Utils.formatStudentName(newStudentObj.nom, newStudentObj.prenom)}`
                                 : `Ajouter ${newAssignedCount > 1 ? `les ${newAssignedCount} nouveaux élèves` : `le nouvel élève`}`;
-                            confirmBtn.innerHTML = `<svg aria-hidden="true"><use href="#icon-user-plus"></use></svg> ${studentLabel}`;
+                            confirmBtn.innerHTML = `<svg aria-hidden="true"><use href="#icon-user-plus"></use></svg> ${Utils.escapeHtml(studentLabel)}`;
                         } else {
                             confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}${realPhotoCount > 0 ? `, ${realPhotoCount} photo${realPhotoCount > 1 ? 's' : ''}` : ''})`;
                         }
@@ -259,7 +259,7 @@ export const TrombiCropExporter = {
 
             previewItem.innerHTML = `
                 <div class="preview-canvas-wrapper">
-                    ${item.zone.isPlaceholder ? `<div class="student-avatar preview-canvas">${StudentPhotoManager.getInitialsFromName(student.nom, student.prenom)}</div>` : '<canvas class="preview-canvas" width="160" height="160"></canvas>'}
+                    ${item.zone.isPlaceholder ? `<div class="student-avatar preview-canvas">${Utils.escapeHtml(StudentPhotoManager.getInitialsFromName(student.nom, student.prenom))}</div>` : '<canvas class="preview-canvas" width="160" height="160"></canvas>'}
                     ${badgeHtml}
                 </div>
                 <span class="preview-student-name">${Utils.formatStudentName(student.nom, student.prenom, true)}</span>

@@ -6,6 +6,7 @@
 
 import { appState } from '../../state/State.js';
 import { ModalUI } from '../ModalUIManager.js';
+import { Utils } from '../../utils/Utils.js';
 
 export const TrombiZoneEditor = {
     setupControlPanel(manager, options = {}) {
@@ -667,9 +668,10 @@ export const TrombiZoneEditor = {
 
         overlay.innerHTML = manager._zones.map((zone, idx) => {
             const m = getZoneMetrics(zone, idx);
+            const safeZoneId = Utils.escapeHtml(String(zone.id ?? ''));
             return `
                 <div class="trombi-zone ${m.isSel ? 'is-selected' : ''} ${m.isFocused ? 'focused' : ''} ${m.isUnassigned ? 'is-unassigned' : ''}" 
-                     data-zone-id="${zone.id}"
+                     data-zone-id="${safeZoneId}"
                      style="left: ${m.dispCx}px; top: ${m.dispCy}px; 
                             width: ${m.diameter}px; height: ${m.diameter}px;
                             border-width: ${m.borderWidth}px;">
@@ -679,8 +681,8 @@ export const TrombiZoneEditor = {
                         min-width: ${m.labelHeight}px;
                         padding: 0 ${m.labelPadding}px;
                         border-radius: ${m.labelHeight / 2}px;
-                    ">${m.label}</span>
-                    <button type="button" class="zone-delete" data-zone-id="${zone.id}" style="
+                    ">${Utils.escapeHtml(String(m.label ?? ''))}</span>
+                    <button type="button" class="zone-delete" data-zone-id="${safeZoneId}" style="
                         width: ${m.deleteSize}px;
                         height: ${m.deleteSize}px;
                         font-size: ${m.deleteFontSize}px;

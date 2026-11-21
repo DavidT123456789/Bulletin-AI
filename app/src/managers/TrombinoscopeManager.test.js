@@ -84,12 +84,23 @@ vi.mock('../utils/DOM.js', () => ({
     DOM: {}
 }));
 
-vi.mock('../utils/Utils.js', () => ({
-    Utils: {
-        getPeriods: () => ['T1', 'T2', 'T3'],
-        debounce: (fn) => fn,
-        normalizeName: (nom, prenom) => `${nom || ''} ${prenom || ''}`.trim().toLowerCase(),
-        formatStudentName: (nom, prenom) => `${nom} ${prenom}`,
+vi.mock('../utils/Utils.js', () => {
+    const escapeHtml = (text) => {
+        if (!text) return text;
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+    return {
+        Utils: {
+            getPeriods: () => ['T1', 'T2', 'T3'],
+            debounce: (fn) => fn,
+            escapeHtml,
+            normalizeName: (nom, prenom) => `${nom || ''} ${prenom || ''}`.trim().toLowerCase(),
+            formatStudentName: (nom, prenom, html = false) => html ? `${escapeHtml(nom)} ${escapeHtml(prenom)}` : `${nom} ${prenom}`,
         normalizeClassName: (name) => {
             if (!name || typeof name !== 'string') return '';
             return name
@@ -102,7 +113,8 @@ vi.mock('../utils/Utils.js', () => ({
                 .trim();
         }
     }
-}));
+    };
+});
 
 describe('TrombinoscopeManager Selection & Multi-Drag', () => {
     beforeEach(() => {

@@ -668,7 +668,7 @@ export const ClassDashboardManager = {
                     const unit = Math.abs(s.evolution) >= 2 ? 'pts' : 'pt';
                     const tooltipText = `${s.fullName} — Moyenne : ${formattedGrade}/20 (+${formattedEvolution} ${unit})`;
                     return `
-                        <div class="highlight-item" data-student-id="${s.id}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
+                        <div class="highlight-item" data-student-id="${Utils.escapeHtml(String(s.id ?? ''))}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                             <div class="highlight-item-left">
                                 ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                                 <span class="highlight-student-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>
@@ -728,7 +728,7 @@ export const ClassDashboardManager = {
                     }
 
                     return `
-                        <div class="highlight-item" data-student-id="${s.id}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
+                        <div class="highlight-item" data-student-id="${Utils.escapeHtml(String(s.id ?? ''))}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                             <div class="highlight-item-left">
                                 ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                                 <span class="highlight-student-name">${Utils.formatStudentName(s.nom, s.prenom, true)}</span>

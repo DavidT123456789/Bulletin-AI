@@ -608,4 +608,49 @@ describe('SettingsUIManager', () => {
             expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('');
         });
     });
+
+    describe('Sécurité Ollama (URL loopback & XSS /api/tags)', () => {
+        it('rejette une URL Ollama non autorisée dans saveSettings() et validateOllamaConnection() sans appel réseau', async () => {
+            appState.ollamaBaseUrl = 'http://localhost:11434';
+            DOM.ollamaBaseUrl.value = 'https://attacker.example/api#';
+
+            SettingsUIManager.saveSettings(false, { skipCloseModal: true });
+            expect(appState.ollamaBaseUrl).toBe('http://localhost:11434');
+            expect(DOM.ollamaBaseUrl.value).toBe('http://localhost:11434');
+
+            DOM.ollamaBaseUrl.value = 'http://localhost:9222';
+            const fetchSpy = vi.fn();
+            const origFetch = globalThis.fetch;
+            globalThis.fetch = fetchSpy;
+            try {
+                const ok = await SettingsUIManager.validateOllamaConnection();
+                expect(ok).toBe(false);
+                expect(fetchSpy).not.toHaveBeenCalled();
+            } finally {
+                globalThis.fetch = origFetch;
+            }
+        });
+
+        it('échappe les noms de modèles retournés par Ollama (/api/tags) dans updateOllamaStatus()', () => {
+            const modelsInfo = document.createElement('div');
+            const modelsText = document.createElement('span');
+            const errorEl = document.createElement('div');
+            const origInfo = DOM.ollamaModelsInfo;
+            const origText = DOM.ollamaModelsText;
+            const origErr = DOM.ollamaError;
+            DOM.ollamaModelsInfo = modelsInfo;
+            DOM.ollamaModelsText = modelsText;
+            DOM.ollamaError = errorEl;
+
+            try {
+                SettingsUIManager.updateOllamaStatus('valid', ['<img src=x onerror=alert(1)>:latest']);
+                expect(modelsText.querySelector('img')).toBeNull();
+                expect(modelsText.textContent).toContain('<img src=x onerror=alert(1)>:latest');
+            } finally {
+                DOM.ollamaModelsInfo = origInfo;
+                DOM.ollamaModelsText = origText;
+                DOM.ollamaError = origErr;
+            }
+        });
+    });
 });

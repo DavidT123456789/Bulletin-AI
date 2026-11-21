@@ -242,7 +242,7 @@ export const SeatingSearch = {
                     const originBadge = Utils.buildOriginBadgeHTML(Utils.getStudentOriginInfo(student, group.className));
                     const avatarHtml = StudentPhotoManager.getAvatarHTML(student, 'sm', false, false);
                     return `
-                        <button class="sc-cross-action" type="button" data-class-id="${group.classId}" data-student-id="${student.id || ''}">
+                        <button class="sc-cross-action" type="button" data-class-id="${Utils.escapeHtml(String(group.classId ?? ''))}" data-student-id="${Utils.escapeHtml(String(student.id ?? ''))}">
                             ${avatarHtml}
                             <span class="sc-cross-action-label"><span class="sc-cross-name-text">${highlightedName}</span>${originBadge}</span>
                             <span class="sc-cross-action-class">${Utils.escapeHtml(group.className)}</span>

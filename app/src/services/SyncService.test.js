@@ -19,6 +19,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
     beforeEach(() => {
         vi.restoreAllMocks();
         localStorage.clear();
+        sessionStorage.clear();
         SyncService._provider = null;
         SyncService.currentProviderName = null;
         GoogleDriveProvider._token = null;
@@ -190,19 +191,48 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(GoogleDriveProvider.isConnected()).toBe(true);
         });
 
-        it('should restore token from localStorage and check its expiry', () => {
+        it('should restore token from sessionStorage and check its expiry', () => {
             const validToken = {
                 access_token: 'stored-token',
                 expiry: Date.now() + 1800000
             };
-            localStorage.setItem('bulletin_google_token', JSON.stringify(validToken));
+            sessionStorage.setItem('bulletin_google_token', JSON.stringify(validToken));
             expect(GoogleDriveProvider.isConnected()).toBe(true);
             expect(GoogleDriveProvider._token).toEqual(validToken);
         });
 
+        it('authorize({ silent: true }) should handle tab reopen (empty sessionStorage + known account) without loading scripts and mark needsReconnect', async () => {
+            const gapiSpy = vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded');
+            localStorage.setItem('bulletin_sync_provider', 'google');
+            localStorage.setItem('bulletin_google_user', JSON.stringify({ email: 'prof@ac-paris.fr' }));
+            localStorage.setItem('bulletin_google_token', JSON.stringify({ access_token: 'legacy-token', expiry: Date.now() + 3600000 }));
+
+            const result = await GoogleDriveProvider.authorize({ silent: true });
+
+            expect(result).toBe(false);
+            expect(GoogleDriveProvider.needsReconnect()).toBe(true);
+            expect(localStorage.getItem('bulletin_google_token')).toBeNull();
+            expect(gapiSpy).not.toHaveBeenCalled();
+
+            vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded').mockResolvedValue();
+            vi.spyOn(GoogleDriveProvider, '_loadGapiClient').mockResolvedValue();
+            vi.spyOn(GoogleDriveProvider, 'getUserInfo').mockResolvedValue(null);
+            const initTokenClient = vi.fn((cfg) => ({
+                requestAccessToken: () => cfg.callback({ access_token: 'reopened-token', expires_in: 3600 })
+            }));
+            window.google = { accounts: { oauth2: { initTokenClient } } };
+            window.gapi = { client: { setToken: vi.fn() } };
+
+            const reconnected = await GoogleDriveProvider.authorize();
+            expect(reconnected).toBe(true);
+            expect(initTokenClient.mock.calls[0][0].login_hint).toBe('prof@ac-paris.fr');
+            expect(JSON.parse(sessionStorage.getItem('bulletin_google_token')).access_token).toBe('reopened-token');
+            expect(localStorage.getItem('bulletin_google_token')).toBeNull();
+        });
+
         it('authorize({ silent: true }) should immediately return false without loading external Google scripts when token is expired', async () => {
             const gapiSpy = vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded');
-            localStorage.setItem('bulletin_google_token', JSON.stringify({
+            sessionStorage.setItem('bulletin_google_token', JSON.stringify({
                 access_token: 'expired-token',
                 expiry: Date.now() - 10000
             }));
@@ -265,6 +295,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             window.google = { accounts: { oauth2: { initTokenClient } } };
             window.gapi = { client: { setToken: vi.fn() } };
             const authorizeWithoutSavedToken = () => {
+                sessionStorage.removeItem('bulletin_google_token');
                 localStorage.removeItem('bulletin_google_token');
                 return GoogleDriveProvider.authorize();
             };
@@ -291,7 +322,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
 
         beforeEach(() => {
             GoogleDriveProvider._token = { access_token: 'valid-token', expiry: Date.now() + 3600000 };
-            localStorage.setItem('bulletin_google_token', JSON.stringify(GoogleDriveProvider._token));
+            sessionStorage.setItem('bulletin_google_token', JSON.stringify(GoogleDriveProvider._token));
             localStorage.setItem('bulletin_google_user', JSON.stringify({ email: 'prof@ac-paris.fr' }));
         });
 
@@ -305,13 +336,14 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(err.isAuthError).toBe(false);
             expect(GoogleDriveProvider._needsReconnect).toBe(false);
             expect(GoogleDriveProvider.isConnected()).toBe(true);
-            expect(localStorage.getItem('bulletin_google_token')).not.toBeNull();
+            expect(sessionStorage.getItem('bulletin_google_token')).not.toBeNull();
         });
 
         it('should treat 403 insufficientPermissions as auth error but keep the cached profile for login_hint', () => {
             const err = GoogleDriveProvider._handleApiError(apiError(403, 'insufficientPermissions'));
             expect(err.isAuthError).toBe(true);
             expect(GoogleDriveProvider._token).toBeNull();
+            expect(sessionStorage.getItem('bulletin_google_token')).toBeNull();
             expect(localStorage.getItem('bulletin_google_token')).toBeNull();
             expect(JSON.parse(localStorage.getItem('bulletin_google_user')).email).toBe('prof@ac-paris.fr');
         });
@@ -346,7 +378,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
 
         it('should detect 401 error, mark needsReconnect, remove token, and return Error with message', () => {
             GoogleDriveProvider._token = { access_token: 'old-token' };
-            localStorage.setItem('bulletin_google_token', 'old-token');
+            sessionStorage.setItem('bulletin_google_token', 'old-token');
 
             const gapiError = {
                 status: 401,
@@ -365,6 +397,7 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(err.isAuthError).toBe(true);
             expect(GoogleDriveProvider._needsReconnect).toBe(true);
             expect(GoogleDriveProvider._token).toBeNull();
+            expect(sessionStorage.getItem('bulletin_google_token')).toBeNull();
             expect(localStorage.getItem('bulletin_google_token')).toBeNull();
         });
 
@@ -429,12 +462,14 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(SyncService.getConnectionState()).toBe('local');
         });
 
-        it('GoogleDriveProvider.disconnect() should clear bulletin_google_user from localStorage', async () => {
-            localStorage.setItem('bulletin_google_token', JSON.stringify({ access_token: 'abc' }));
+        it('GoogleDriveProvider.disconnect() should clear bulletin_google_user and session token', async () => {
+            sessionStorage.setItem('bulletin_google_token', JSON.stringify({ access_token: 'abc' }));
+            localStorage.setItem('bulletin_google_token', JSON.stringify({ access_token: 'legacy' }));
             localStorage.setItem('bulletin_google_user', JSON.stringify({ displayName: 'Test' }));
 
             await GoogleDriveProvider.disconnect();
 
+            expect(sessionStorage.getItem('bulletin_google_token')).toBeNull();
             expect(localStorage.getItem('bulletin_google_token')).toBeNull();
             expect(localStorage.getItem('bulletin_google_user')).toBeNull();
         });
@@ -755,15 +790,15 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             expect(SyncService._computeSyncState()).toBe('cloud-changes');
         });
 
-        it('_getLocalData should request exportable settings with includeApiKeys for Cloud sync and exclude currentClassId', async () => {
+        it('_getLocalData should request exportable settings with includeApiKeys: true for Cloud sync and exclude currentClassId', async () => {
             const { StorageManager } = await import('../managers/StorageManager.js');
             const { userSettings } = await import('../state/State.js');
             userSettings.academic.currentClassId = 'class-3a';
-            StorageManager.getExportableSettings.mockReturnValue({ albertApiKey: 'sk-albert-key', currentAIModel: 'albert-openweight-medium', theme: 'dark' });
+            StorageManager.getExportableSettings.mockReturnValue({ currentAIModel: 'albert-openweight-medium', theme: 'dark' });
             const payload = await SyncService._getLocalData();
 
             expect(StorageManager.getExportableSettings).toHaveBeenCalledWith({ includeApiKeys: true });
-            expect(payload.settings).toEqual({ albertApiKey: 'sk-albert-key', currentAIModel: 'albert-openweight-medium', theme: 'dark' });
+            expect(payload.settings).toEqual({ currentAIModel: 'albert-openweight-medium', theme: 'dark' });
             expect(payload.currentClassId).toBeUndefined();
         });
 

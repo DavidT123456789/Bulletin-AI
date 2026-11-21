@@ -677,13 +677,11 @@ export const ClassUIManager = {
     },
 
     /**
-     * Échappe les caractères HTML
+     * Échappe les caractères HTML (y compris guillemets/apostrophes pour contexte d'attribut)
      * @private
      */
     _escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        return Utils.escapeHtml(text == null ? '' : String(text));
     },
 
     /**
