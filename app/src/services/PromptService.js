@@ -487,7 +487,15 @@ export const PromptService = {
             }
             result = result.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, cleanPrenom);
         }
-        result = result.replace(/\s*\[nom\]/gi, '');
+        result = result
+            .replace(/\s*\[nom\]/gi, '')
+            .replace(/(?<![\p{L}\p{N}_])(des|les|ses|ces|certains|certaines|quelques)\s+\[camarade\]/giu, '$1 camarades')
+            .replace(/(?<![\p{L}\p{N}_])(un|une|le|la|son|sa|ce|cet|cette)\s+\[camarade\]/giu, '$1 camarade')
+            .replace(/\[camarade\]/gi, 'un camarade')
+            .replace(/(?<![\p{L}\p{N}_])(des|les|ses|ces)\s+\[am[eéèê]nagement\]/giu, '$1 aménagements')
+            .replace(/(?<![\p{L}\p{N}_])(un|cet|son|ce)\s+\[am[eéèê]nagement\]/giu, '$1 accompagnement')
+            .replace(/(?<![\p{L}\p{N}_])(l|d)(['’])\s*\[am[eéèê]nagement\]/giu, '$1$2accompagnement')
+            .replace(/\[am[eéèê]nagement\]/gi, 'un accompagnement adapté');
         return result;
     },
 
@@ -871,7 +879,9 @@ export const PromptService = {
             if (classLevel === '3eme') classLevel = 'college';
             const levelMeta = LEVELS[classLevel] || LEVELS.generique;
 
-            classLines.push(`Classe : ${resolvedClassName}`);
+            if (!GDPR_SENSITIVE_STATUS_PATTERN.test(resolvedClassName)) {
+                classLines.push(`Classe : ${resolvedClassName}`);
+            }
             if (classLevel && classLevel !== 'generique') {
                 classLines.push(`Niveau : ${levelMeta.label}`);
             }

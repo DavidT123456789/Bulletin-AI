@@ -835,5 +835,35 @@ describe('PromptService', () => {
             expect(PromptService.deanonymizeText('', 'Arthur')).toBe('');
             expect(PromptService.deanonymizeText(null, 'Arthur')).toBeNull();
         });
+
+        it('nettoie les marqueurs techniques [CAMARADE] et [AMÉNAGEMENT] si un LLM les recopie en sortie', () => {
+            expect(PromptService.deanonymizeText('[PRÉNOM] bavarde avec [CAMARADE].', 'Lucas'))
+                .toBe('Lucas bavarde avec un camarade.');
+            expect(PromptService.deanonymizeText('[PRÉNOM] travaille bien avec un [CAMARADE] et ses [CAMARADE].', 'Lucas'))
+                .toBe('Lucas travaille bien avec un camarade et ses camarades.');
+            expect(PromptService.deanonymizeText("[PRÉNOM] progresse grâce à l'[AMÉNAGEMENT] et ses [AMÉNAGEMENT].", 'Emma'))
+                .toBe("Emma progresse grâce à l'accompagnement et ses aménagements.");
+            expect(PromptService.deanonymizeText('[PRÉNOM] suit [AMÉNAGEMENT] avec sérieux.', 'Emma'))
+                .toBe('Emma suit un accompagnement adapté avec sérieux.');
+        });
+
+        it('omet le nom de classe brut lorsqu\'il contient un terme Art. 9 (ULIS, SEGPA, UPE2A) tout en conservant le niveau', () => {
+            appState.classes = [{ id: 'cls-ulis', name: '3e SEGPA / ULIS 1', level: 'college' }];
+            appState.currentClassId = 'cls-ulis';
+
+            const prompts = PromptService.getAllPrompts({
+                id: 'stu-1',
+                classId: 'cls-ulis',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                statuses: [],
+                currentPeriod: 'T1',
+                periods: { T1: { grade: '12', context: 'Bon investissement' } }
+            });
+
+            expect(prompts.appreciationUser).not.toMatch(/ULIS|SEGPA/i);
+            expect(prompts.appreciationUser).toContain('Niveau :');
+            expect(prompts.analysisUser).not.toMatch(/ULIS|SEGPA/i);
+        });
     });
 });
