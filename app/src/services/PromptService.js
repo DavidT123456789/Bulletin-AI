@@ -2,6 +2,8 @@ import { appState } from '../state/State.js';
 import { DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES } from '../config/Config.js';
 import {
     resolveStudentStatus,
+    resolveSensitiveStatusEntries,
+    GDPR_SENSITIVE_TERMS_SOURCE,
     GDPR_SENSITIVE_STATUS_PATTERN,
     DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION
 } from '../config/academicConstants.js';
@@ -30,37 +32,122 @@ export const PromptService = {
     NOM_PLACEHOLDER: '[NOM]',
 
     /**
+     * Placeholder utilisé pour anonymiser le nom/prénom d'un camarade cité dans les textes libres
+     * @constant {string}
+     */
+    CLASSMATE_PLACEHOLDER: '[CAMARADE]',
+
+    /**
+     * Placeholder utilisé pour neutraliser une mention médico-scolaire (Art. 9 RGPD) dans les textes libres
+     * @constant {string}
+     */
+    SENSITIVE_PLACEHOLDER: '[AMÉNAGEMENT]',
+
+    /**
+     * Particules courtes exclues du découpage individuel des noms composés (ex: "DE LA ROCHE")
+     * afin d'éviter de corrompre les articles et prépositions françaises.
+     * @constant {Set<string>}
+     */
+    NAME_PARTICLES: new Set([
+        'de', 'du', 'la', 'le', 'les', 'des', 'd', 'l', 'au', 'aux', 'en', 'et', 'el', 'al', 'da', 'di', 'del'
+    ]),
+
+    /**
+     * Mots français courants fréquents en début de phrase dans une appréciation
+     * (protégés en début de phrase contre les faux positifs sur les noms de camarades).
+     * @constant {Set<string>}
+     */
+    SENTENCE_START_COMMON_WORDS: new Set([
+        'bon', 'bonne', 'petit', 'petite', 'fort', 'forte', 'grand', 'grande',
+        'clair', 'claire', 'juste', 'constance', 'patience', 'prudence',
+        'calme', 'sage', 'bien', 'aime', 'libre', 'vif', 'doux', 'franc', 'ferme', 'jeune'
+    ]),
+
+    /**
+     * Sigles scolaires ou usuels à 2 lettres exclus du masquage d'initiales "P.N."
+     * @constant {Set<string>}
+     */
+    IGNORED_INITIALISMS: new Set(['DM', 'DS', 'TP', 'TD', 'NB', 'PS', 'CV', 'JC', 'PP', 'AP']),
+
+    /**
+     * Prénoms à h aspiré (pas d'élision de/que -> d'/qu')
+     * @constant {Set<string>}
+     */
+    ASPIRATED_H_PRENOMS: new Set(['harry', 'harold', 'harvey', 'harley', 'hayden', 'hans', 'heidi', 'hao']),
+
+    /**
      * Cache pour les statistiques de classe calculées
      * @type {Map<string, string>}
      */
     _classStatsCache: new Map(),
 
     /**
-     * Construit un motif regex insensible à la casse et aux accents pour un jeton nominal.
-     * @param {string} token
+     * Normalise une chaîne de nom (sans accents, minuscules, trim) pour comparaisons et clés.
+     * @param {string} value
      * @returns {string}
      * @private
      */
-    _buildAccentInsensitivePattern(token) {
+    _normalizeNameKey(value) {
+        if (typeof value !== 'string') return '';
+        return value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    },
+
+    /**
+     * Découpe un nom ou prénom composé en jetons significatifs (>= 2 lettres, hors particules).
+     * @param {string} name
+     * @returns {string[]}
+     * @private
+     */
+    _splitNameParts(name) {
+        if (typeof name !== 'string' || !name.trim()) return [];
+        return name
+            .trim()
+            .split(/[\s'’-]+/)
+            .map(p => p.trim())
+            .filter(part => part.length >= 2 && !this.NAME_PARTICLES.has(this._normalizeNameKey(part)));
+    },
+
+    /**
+     * Construit un motif regex insensible aux accents pour un jeton nominal.
+     * En mode `requireInitialUppercase`, la première lettre doit être majuscule (regex compilée sans flag `i`).
+     * En mode `expandCaseClasses`, toutes les lettres incluent minuscule et majuscule (pour usage en regex sans flag `i`).
+     * @param {string} token
+     * @param {{ requireInitialUppercase?: boolean, expandCaseClasses?: boolean }} [options]
+     * @returns {string}
+     * @private
+     */
+    _buildAccentInsensitivePattern(token, { requireInitialUppercase = false, expandCaseClasses = false } = {}) {
         const charMap = {
-            a: '[aàáâãäåāăą]',
-            c: '[cçćĉċč]',
-            e: '[eèéêëēĕėęě]',
-            i: '[iìíîïĩīĭįı]',
-            n: '[nñńņň]',
-            o: '[oòóôõöøōŏő]',
-            u: '[uùúûüũūŭůűų]',
-            y: '[yýÿŷ]'
+            a: 'aàáâãäåāăą',
+            c: 'cçćĉċč',
+            e: 'eèéêëēĕėęě',
+            i: 'iìíîïĩīĭįı',
+            n: 'nñńņň',
+            o: 'oòóôõöøōŏő',
+            u: 'uùúûüũūŭůűų',
+            y: 'yýÿŷ'
         };
+        const useExplicitCase = requireInitialUppercase || expandCaseClasses;
         const normalized = token.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         let pattern = '';
         for (let i = 0; i < normalized.length; i++) {
             const ch = normalized[i];
             const lower = ch.toLowerCase();
             if (charMap[lower]) {
-                pattern += charMap[lower];
-            } else if (/[\s-]/.test(ch)) {
-                pattern += '[\\s-]+';
+                const chars = charMap[lower];
+                if (requireInitialUppercase && i === 0) {
+                    pattern += `[${chars.toUpperCase()}]`;
+                } else if (useExplicitCase) {
+                    pattern += `[${chars}${chars.toUpperCase()}]`;
+                } else {
+                    pattern += `[${chars}]`;
+                }
+            } else if (/[\s'’-]/.test(ch)) {
+                pattern += "[\\s'’-]+";
+            } else if (useExplicitCase && lower !== ch.toUpperCase()) {
+                const escLower = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const escUpper = ch.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                pattern += (requireInitialUppercase && i === 0) ? escUpper : `[${escLower}${escUpper}]`;
             } else {
                 pattern += ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             }
@@ -69,59 +156,275 @@ export const PromptService = {
     },
 
     /**
-     * Supprime ou pseudonymise toute occurrence du prénom et du nom de l'élève dans un texte libre.
-     * Le nom de famille est systématiquement masqué ; le prénom est masqué lorsque l'anonymisation est active.
-     * @param {string} text - Texte libre (appréciation passée, observation, note du journal, contexte)
-     * @param {Object} [identity] - Identité de l'élève ({ prenom, nom })
-     * @param {Object} [options] - Options ({ anonymizePrenom })
+     * Construit le motif regex de l'initiale d'un prénom ou nom (supporte les formes composées ex: "J.-L.").
+     * @param {string} name
+     * @param {{ uppercaseOnly?: boolean, allowCompound?: boolean }} [options]
+     * @returns {string}
+     * @private
+     */
+    _buildInitialPattern(name, { uppercaseOnly = false, allowCompound = false } = {}) {
+        if (typeof name !== 'string' || !name.trim()) return '';
+        const trimmed = name.trim();
+        const firstChar = trimmed[0];
+        if (!/\p{L}/u.test(firstChar)) return '';
+        const firstPattern = this._buildAccentInsensitivePattern(firstChar, { requireInitialUppercase: uppercaseOnly });
+
+        if (allowCompound) {
+            const parts = this._splitNameParts(trimmed);
+            if (parts.length >= 2 && /\p{L}/u.test(parts[0][0]) && /\p{L}/u.test(parts[1][0])) {
+                const p1 = this._buildAccentInsensitivePattern(parts[0][0], { requireInitialUppercase: uppercaseOnly });
+                const p2 = this._buildAccentInsensitivePattern(parts[1][0], { requireInitialUppercase: uppercaseOnly });
+                return `(?:${p1}\\.?\\s*-?\\s*${p2}|${firstPattern})`;
+            }
+        }
+        return firstPattern;
+    },
+
+    /**
+     * Résout la liste des camarades de la même classe (hors élève cible) pour le masquage [CAMARADE].
+     * @param {Object} [identity={}] - Identité de l'élève cible ({ id, prenom, nom })
+     * @param {string|null} [classId=null] - Identifiant de classe (physique ou virtual_*)
+     * @param {Array<{id?: string, prenom?: string, nom?: string}>|null} [explicitClassmates=null]
+     * @returns {Array<{prenom: string, nom: string}>}
+     * @private
+     */
+    _resolveClassmates(identity = {}, classId = null, explicitClassmates = null) {
+        const source = Array.isArray(explicitClassmates)
+            ? explicitClassmates
+            : (Array.isArray(appState.generatedResults) ? appState.generatedResults : []);
+
+        if (source.length === 0) return [];
+
+        const targetId = identity?.id ?? null;
+        const targetPrenomNorm = this._normalizeNameKey(identity?.prenom);
+        const targetNomNorm = this._normalizeNameKey(identity?.nom);
+        const isVirtualClass = typeof classId === 'string' && classId.startsWith('virtual_');
+        const virtualNorm = isVirtualClass ? classId.slice('virtual_'.length) : '';
+
+        const classmates = [];
+        const seen = new Set();
+
+        for (const item of source) {
+            if (!item || typeof item !== 'object') continue;
+
+            if (!Array.isArray(explicitClassmates)) {
+                const itemClassId = item.classId || item.studentData?.classId || null;
+                if (isVirtualClass) {
+                    const rawOrigin = String(item.studentData?.classe || item.classe || item.originClass || '').trim();
+                    const itemNorm = typeof Utils.normalizeClassName === 'function'
+                        ? Utils.normalizeClassName(rawOrigin)
+                        : rawOrigin.toLowerCase().replace(/\s+/g, '');
+                    if (!itemNorm || itemNorm !== virtualNorm) continue;
+                } else if (classId) {
+                    if (itemClassId !== classId) continue;
+                } else if (itemClassId) {
+                    continue;
+                }
+            }
+
+            const cId = item.id ?? item.studentData?.id ?? null;
+            const cPrenom = String(item.prenom ?? item.studentData?.prenom ?? '').trim();
+            const cNom = String(item.nom ?? item.studentData?.nom ?? '').trim();
+            if (!cPrenom && !cNom) continue;
+
+            if (targetId && cId && cId === targetId) continue;
+            const cPrenomNorm = this._normalizeNameKey(cPrenom);
+            const cNomNorm = this._normalizeNameKey(cNom);
+            if ((targetPrenomNorm || targetNomNorm) && cPrenomNorm === targetPrenomNorm && cNomNorm === targetNomNorm) {
+                continue;
+            }
+
+            const dedupKey = `${cPrenomNorm}|${cNomNorm}`;
+            if (seen.has(dedupKey)) continue;
+            seen.add(dedupKey);
+            classmates.push({ prenom: cPrenom, nom: cNom });
+        }
+
+        return classmates;
+    },
+
+    /**
+     * Neutralise les termes médico-scolaires et données de santé (Art. 9 RGPD) dans un texte libre.
+     * @param {string} text
+     * @returns {string}
+     */
+    scrubSensitiveText(text) {
+        if (!text || typeof text !== 'string') return text || '';
+        const regex = new RegExp(
+            `(?<![\\p{L}\\p{N}_\\[])${GDPR_SENSITIVE_TERMS_SOURCE}(?![\\p{L}\\p{N}_\\]])`,
+            'giu'
+        );
+        return text.replace(regex, this.SENSITIVE_PLACEHOLDER);
+    },
+
+    /**
+     * Supprime ou pseudonymise toute occurrence du prénom/nom/initiales de l'élève cible,
+     * des camarades de classe ([CAMARADE]) et des mentions médico-scolaires Art. 9 ([AMÉNAGEMENT]).
+     * Le nom de famille est systématiquement masqué ; le prénom cible est masqué lorsque l'anonymisation est active.
+     * @param {string} text - Texte libre (appréciation passée, observation, note du journal, contexte, synthèse)
+     * @param {Object} [identity] - Identité de l'élève cible ({ id, prenom, nom, classId })
+     * @param {Object} [options] - Options ({ anonymizePrenom, classId, studentId, classmates, classmatePlaceholder, scrubSensitive })
      * @returns {string} Texte nettoyé
      */
     scrubStudentIdentity(text, identity = {}, options = {}) {
         if (!text || typeof text !== 'string') return text || '';
 
         const isAnonymous = options.anonymizePrenom ?? (appState.anonymizeData ?? true);
+        const shouldScrubSensitive = options.scrubSensitive ?? true;
+        const classmatePlaceholder = options.classmatePlaceholder || this.CLASSMATE_PLACEHOLDER;
         const prenom = typeof identity?.prenom === 'string' ? identity.prenom.trim() : '';
         const nom = typeof identity?.nom === 'string' ? identity.nom.trim() : '';
+
+        const resolvedClassId = options.classId !== undefined
+            ? options.classId
+            : (identity?.classId ?? appState.currentClassId ?? null);
+        const classmates = options.classmates === false
+            ? []
+            : this._resolveClassmates(
+                { id: options.studentId ?? identity?.id ?? null, prenom, nom },
+                resolvedClassId,
+                Array.isArray(options.classmates) ? options.classmates : null
+            );
 
         let result = text;
 
         const replaceToken = (input, rawToken, replacement) => {
             if (!rawToken || rawToken.length < 2) return input;
             const pattern = this._buildAccentInsensitivePattern(rawToken);
-            const regex = new RegExp(`(?<![\\p{L}\\p{N}_])${pattern}(?![\\p{L}\\p{N}_])`, 'giu');
+            const regex = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${pattern}(?![\\p{L}\\p{N}_\\]])`, 'giu');
             return input.replace(regex, replacement);
         };
 
-        // 1. Combinaisons "Prénom Nom" et "Nom Prénom"
+        const replaceCompoundForms = (input, rawPrenom, rawNom, replacement) => {
+            if (rawPrenom.length < 2 || rawNom.length < 2) return input;
+            let out = input;
+            const pPattern = this._buildAccentInsensitivePattern(rawPrenom);
+            const nPattern = this._buildAccentInsensitivePattern(rawNom);
+
+            // "Prénom Nom" et "Nom Prénom"
+            const fullForward = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${pPattern}[\\s-]+${nPattern}(?![\\p{L}\\p{N}_\\]])`, 'giu');
+            const fullBackward = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${nPattern}[\\s-]+${pPattern}(?![\\p{L}\\p{N}_\\]])`, 'giu');
+            out = out.replace(fullForward, replacement).replace(fullBackward, replacement);
+
+            // "Prénom N." (avec point) et "Prénom N" (majuscule stricte hors A/Y)
+            const nInitAny = this._buildInitialPattern(rawNom);
+            if (nInitAny) {
+                const prenomInitDotted = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${pPattern}[\\s-]+${nInitAny}\\.(?![\\p{L}\\p{N}_])`, 'giu');
+                out = out.replace(prenomInitDotted, replacement);
+
+                const nFirstNorm = this._normalizeNameKey(rawNom)[0]?.toUpperCase() || '';
+                if (nFirstNorm && nFirstNorm !== 'A' && nFirstNorm !== 'Y') {
+                    const pAnyCase = this._buildAccentInsensitivePattern(rawPrenom, { expandCaseClasses: true });
+                    const nInitUpper = this._buildInitialPattern(rawNom, { uppercaseOnly: true });
+                    const prenomInitUpper = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${pAnyCase}[\\s-]+${nInitUpper}(?![\\p{L}\\p{N}_.])`, 'gu');
+                    out = out.replace(prenomInitUpper, replacement);
+                }
+            }
+
+            // "P. Nom" (ou "J.-L. Nom")
+            const pInitDotted = this._buildInitialPattern(rawPrenom, { allowCompound: true });
+            if (pInitDotted) {
+                const initNom = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${pInitDotted}\\.\\s*${nPattern}(?![\\p{L}\\p{N}_\\]])`, 'giu');
+                out = out.replace(initNom, replacement);
+            }
+
+            return out;
+        };
+
+        // 1. Formes composées & initiales de l'élève cible ("Prénom Nom", "Nom Prénom", "Prénom N.", "P. Nom", "P.N.")
         if (prenom.length >= 2 && nom.length >= 2) {
             const fullNameReplacement = isAnonymous ? this.PRENOM_PLACEHOLDER : prenom;
-            const pPattern = this._buildAccentInsensitivePattern(prenom);
-            const nPattern = this._buildAccentInsensitivePattern(nom);
-            const fullForward = new RegExp(`(?<![\\p{L}\\p{N}_])${pPattern}[\\s-]+${nPattern}(?![\\p{L}\\p{N}_])`, 'giu');
-            const fullBackward = new RegExp(`(?<![\\p{L}\\p{N}_])${nPattern}[\\s-]+${pPattern}(?![\\p{L}\\p{N}_])`, 'giu');
-            result = result.replace(fullForward, fullNameReplacement).replace(fullBackward, fullNameReplacement);
-        }
+            result = replaceCompoundForms(result, prenom, nom, fullNameReplacement);
 
-        // 2. Nom de famille (toujours masqué, même si anonymizeData === false)
-        if (nom.length >= 2) {
-            result = replaceToken(result, nom, this.NOM_PLACEHOLDER);
-            const nomParts = nom.split(/[\s-]+/).filter(part => part.length >= 2);
-            if (nomParts.length > 1) {
-                for (const part of nomParts) {
-                    result = replaceToken(result, part, this.NOM_PLACEHOLDER);
+            if (isAnonymous) {
+                const pFirstNorm = this._normalizeNameKey(prenom)[0]?.toUpperCase() || '';
+                const nFirstNorm = this._normalizeNameKey(nom)[0]?.toUpperCase() || '';
+                const pairCode = `${pFirstNorm}${nFirstNorm}`;
+                if (pFirstNorm && nFirstNorm && !this.IGNORED_INITIALISMS.has(pairCode)) {
+                    const pInitUpper = this._buildInitialPattern(prenom, { uppercaseOnly: true });
+                    const nInitUpper = this._buildInitialPattern(nom, { uppercaseOnly: true });
+                    const dottedPair = new RegExp(`(?<![\\p{L}\\p{N}_.\\[])${pInitUpper}\\.\\s*${nInitUpper}\\.(?![\\p{L}\\p{N}_])`, 'gu');
+                    result = result.replace(dottedPair, this.PRENOM_PLACEHOLDER);
                 }
             }
         }
 
-        // 3. Prénom (masqué lorsque anonymizeData est actif)
+        // 2. Formes composées des camarades (AVANT les jetons isolés cible pour bien gérer fratries et homonymes)
+        for (const mate of classmates) {
+            result = replaceCompoundForms(result, mate.prenom, mate.nom, classmatePlaceholder);
+        }
+
+        // 3. Nom de famille cible (toujours masqué, même si anonymizeData === false ; particules courtes exclues)
+        if (nom.length >= 2) {
+            if (this.NAME_PARTICLES.has(this._normalizeNameKey(nom))) {
+                const upperNom = nom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').toUpperCase();
+                result = result.replace(new RegExp(`(?<![\\p{L}\\p{N}_\\[])${upperNom}(?![\\p{L}\\p{N}_\\]])`, 'gu'), this.NOM_PLACEHOLDER);
+            } else {
+                result = replaceToken(result, nom, this.NOM_PLACEHOLDER);
+                if (/[\s'’-]+/.test(nom)) {
+                    for (const part of this._splitNameParts(nom)) {
+                        result = replaceToken(result, part, this.NOM_PLACEHOLDER);
+                    }
+                }
+            }
+        }
+
+        // 4. Prénom cible (masqué lorsque anonymizeData est actif ; particules courtes exclues)
         if (isAnonymous && prenom.length >= 2) {
             result = replaceToken(result, prenom, this.PRENOM_PLACEHOLDER);
-            const prenomParts = prenom.split(/[\s-]+/).filter(part => part.length >= 2);
-            if (prenomParts.length > 1) {
-                for (const part of prenomParts) {
+            if (/[\s'’-]+/.test(prenom)) {
+                for (const part of this._splitNameParts(prenom)) {
                     result = replaceToken(result, part, this.PRENOM_PLACEHOLDER);
                 }
             }
+        }
+
+        // 5. Jetons isolés des camarades (majuscule initiale obligatoire + garde mots courants en début de phrase)
+        if (classmates.length > 0) {
+            const protectedTargetTokens = new Set(
+                [prenom, nom, ...this._splitNameParts(prenom), ...this._splitNameParts(nom)]
+                    .map(t => this._normalizeNameKey(t))
+                    .filter(Boolean)
+            );
+            const mateTokenMap = new Map();
+            for (const mate of classmates) {
+                const candidates = [
+                    mate.prenom,
+                    mate.nom,
+                    ...this._splitNameParts(mate.prenom),
+                    ...this._splitNameParts(mate.nom)
+                ];
+                for (const rawTok of candidates) {
+                    const tok = typeof rawTok === 'string' ? rawTok.trim() : '';
+                    if (tok.length < 2) continue;
+                    const norm = this._normalizeNameKey(tok);
+                    if (!norm || this.NAME_PARTICLES.has(norm) || protectedTargetTokens.has(norm)) continue;
+                    if (!mateTokenMap.has(norm)) {
+                        mateTokenMap.set(norm, tok);
+                    }
+                }
+            }
+
+            const sortedMateTokens = Array.from(mateTokenMap.values()).sort((a, b) => b.length - a.length);
+            for (const tok of sortedMateTokens) {
+                const capPattern = this._buildAccentInsensitivePattern(tok, { requireInitialUppercase: true });
+                const regex = new RegExp(`(?<![\\p{L}\\p{N}_\\[])${capPattern}(?![\\p{L}\\p{N}_\\]])`, 'gu');
+                result = result.replace(regex, (match, offset, fullStr) => {
+                    const lowerMatch = match.toLowerCase();
+                    if (this.SENTENCE_START_COMMON_WORDS.has(lowerMatch)) {
+                        const before = fullStr.slice(0, offset);
+                        if (/(?:^|[.!?\n«"]\s*)$/.test(before)) {
+                            return match;
+                        }
+                    }
+                    return classmatePlaceholder;
+                });
+            }
+        }
+
+        // 6. Mentions médico-scolaires / santé (Art. 9 RGPD) en texte libre
+        if (shouldScrubSensitive) {
+            result = this.scrubSensitiveText(result);
         }
 
         return result;
@@ -139,7 +442,34 @@ export const PromptService = {
     },
 
     /**
-     * Réinjecte le vrai prénom à la place du placeholder [PRÉNOM] et nettoie tout [NOM] résiduel.
+     * Détermine si un prénom français déclenche l'élision (voyelle initiale, y + consonne ou h muet).
+     * @param {string} prenom
+     * @returns {boolean}
+     * @private
+     */
+    _needsFrenchElision(prenom) {
+        const trimmed = typeof prenom === 'string' ? prenom.trim() : '';
+        if (!trimmed) return false;
+        const lower = trimmed.toLowerCase();
+        const first = lower[0];
+
+        if (/^[aàáâãäåeèéêëiìíîïoòóôõöœuùúûüæ]/u.test(first)) {
+            return true;
+        }
+        if (first === 'y') {
+            return lower.length > 1 && !/^[aàáâãäåeèéêëiìíîïoòóôõöœuùúûüæy]/u.test(lower[1]);
+        }
+        if (first === 'h') {
+            const baseFirstWord = lower.split(/[\s-]+/)[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (this.ASPIRATED_H_PRENOMS.has(baseFirstWord)) return false;
+            return lower.length > 1 && /^[aàáâãäåeèéêëiìíîïoòóôõöœuùúûüæy]/u.test(lower[1]);
+        }
+        return false;
+    },
+
+    /**
+     * Réinjecte le vrai prénom à la place du placeholder [PRÉNOM] (avec élision française de/que/lorsque/puisque/quoique)
+     * et nettoie tout [NOM] résiduel.
      * @param {string} text
      * @param {string} prenom
      * @returns {string}
@@ -147,8 +477,15 @@ export const PromptService = {
     deanonymizeText(text, prenom) {
         if (!text || typeof text !== 'string') return text;
         let result = text;
-        if (prenom) {
-            result = result.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, prenom);
+        const cleanPrenom = typeof prenom === 'string' ? prenom.trim() : '';
+        if (cleanPrenom) {
+            if (this._needsFrenchElision(cleanPrenom)) {
+                result = result.replace(
+                    /(?<![\p{L}\p{N}_'’])(de|que|lorsque|puisque|quoique)\s+\[pr[eéèêëėẻẽ]nom\]/giu,
+                    (_, prefix) => `${prefix.slice(0, -1)}'${cleanPrenom}`
+                );
+            }
+            result = result.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, cleanPrenom);
         }
         result = result.replace(/\s*\[nom\]/gi, '');
         return result;
@@ -181,10 +518,20 @@ export const PromptService = {
             }
         };
 
+        const addSensitiveInstructionsFor = (rawStatus) => {
+            const sensitiveEntries = resolveSensitiveStatusEntries(rawStatus);
+            if (sensitiveEntries.length > 0) {
+                for (const entry of sensitiveEntries) {
+                    addInstruction(entry.promptInstruction);
+                }
+            } else {
+                addInstruction(DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION);
+            }
+        };
+
         for (const rawStatus of activeStatuses) {
             const trimmed = String(rawStatus || '').trim();
             if (!trimmed) continue;
-            const lower = trimmed.toLowerCase();
 
             const statusMeta = resolveStudentStatus(trimmed);
             if (statusMeta) {
@@ -192,8 +539,12 @@ export const PromptService = {
                     ? statusMeta.formatPromptInstruction(trimmed)
                     : statusMeta.promptInstruction;
                 addInstruction(instruction);
-            } else if (GDPR_SENSITIVE_STATUS_PATTERN.test(lower)) {
-                addInstruction(DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION);
+
+                if (!statusMeta.isGdprSensitive && GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
+                    addSensitiveInstructionsFor(trimmed);
+                }
+            } else if (GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
+                addSensitiveInstructionsFor(trimmed);
             } else {
                 addInstruction(`Contexte pédagogique : ${trimmed}.`);
             }
@@ -297,7 +648,16 @@ export const PromptService = {
         // Si anonymisation désactivée, on utilise le prénom mais JAMAIS le nom de famille
         // [FIX] Utiliser appState.anonymizeData (proxy plat) au lieu de appState.privacy.anonymizeData
         const isAnonymous = appState.anonymizeData ?? true;
-        const studentIdentity = { prenom, nom };
+        const classId = studentData.classId || appState.currentClassId || null;
+        const studentIdentity = { id: studentData.id ?? null, prenom, nom, classId };
+        const classmates = this._resolveClassmates(studentIdentity, classId);
+        const scrubOptions = {
+            anonymizePrenom: isAnonymous,
+            classId,
+            studentId: studentIdentity.id,
+            classmates,
+            scrubSensitive: true
+        };
 
         // Détection de l'absence totale de données scolaires
         // On vérifie les notes sur TOUTES les périodes (données objectives, jamais auto-générées)
@@ -311,11 +671,11 @@ export const PromptService = {
 
         const rawPeriodContext = periods?.[currentPeriod]?.context;
         const periodContext = rawPeriodContext
-            ? this.scrubStudentIdentity(rawPeriodContext, studentIdentity, { anonymizePrenom: isAnonymous })
+            ? this.scrubStudentIdentity(rawPeriodContext, studentIdentity, scrubOptions)
             : '';
         const rawJournalSynthesis = this._extractJournalSynthesis(studentData, currentPeriod);
         const journalSynthesis = rawJournalSynthesis
-            ? this.scrubStudentIdentity(rawJournalSynthesis, studentIdentity, { anonymizePrenom: isAnonymous })
+            ? this.scrubStudentIdentity(rawJournalSynthesis, studentIdentity, scrubOptions)
             : '';
         const hasContext = !!(periodContext?.trim() || journalSynthesis?.trim());
 
@@ -437,7 +797,6 @@ export const PromptService = {
         // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES
         // L'appréciation de la période courante ne doit PAS être incluse pour éviter
         // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
-        const classId = studentData.classId || appState.currentClassId || null;
         const periodRows = relevantPeriods.map(p => {
             const d = periods?.[p] || {};
             const gradeRaw = d.grade;
@@ -447,7 +806,7 @@ export const PromptService = {
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
             const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, p, gradeVal);
             const scrubbedApp = d.appreciation
-                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
+                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions)
                 : '';
             const prefixForGeneration = `${p} : Moy ${g}${evalCount}${classStatsStr}, Appréciation : `;
             const prefixForAnalysis = `${p} : Moy ${g}${evalCount}${classStatsStr}${classComparisonStr}, Appréciation : `;
@@ -468,14 +827,14 @@ export const PromptService = {
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, currentPeriod);
             const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, currentPeriod, gradeVal);
             const scrubbedApp = d.appreciation
-                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, { anonymizePrenom: isAnonymous })
+                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions)
                 : '';
             periodsInfoForAnalysis = `${currentPeriod} : Moy ${g}${evalCount}${classStatsStr}${classComparisonStr}, Appréciation : "${scrubbedApp || 'N/A'}"`;
         }
         const rawCurrentApp = periods?.[currentPeriod]?.appreciation?.trim();
         const currentPeriodAppreciation = periodRows.length > 0
             ? periodRows[periodRows.length - 1].scrubbedApp
-            : (rawCurrentApp ? this.scrubStudentIdentity(rawCurrentApp, studentIdentity, { anonymizePrenom: isAnonymous }) : '');
+            : (rawCurrentApp ? this.scrubStudentIdentity(rawCurrentApp, studentIdentity, scrubOptions) : '');
 
         // Neutralisation RGPD Art. 9 : on traduit localement les statuts en consignes pédagogiques neutres
         const statusInstructions = this.getStatusInstructions(statuses, currentPeriod);
@@ -593,16 +952,22 @@ RÈGLES STRICTES DE FIABILITÉ :
     getRefinementPrompt(type, original, options = {}) {
         const isOptionsObject = options && typeof options === 'object';
         const isAnonymous = appState.anonymizeData ?? true;
+        const explicitId = isOptionsObject ? (options.id || options.studentId || options.studentData?.id || null) : null;
+        const explicitClassId = isOptionsObject
+            ? (options.classId ?? options.studentData?.classId ?? appState.currentClassId ?? null)
+            : (appState.currentClassId ?? null);
         const explicitPrenom = isOptionsObject ? (options.prenom || options.studentData?.prenom || '') : '';
         const explicitNom = isOptionsObject ? (options.nom || options.studentData?.nom || '') : '';
+        const explicitClassmates = isOptionsObject ? options.classmates : undefined;
 
-        let sanitizedOriginal = original || '';
-
-        if (explicitPrenom || explicitNom) {
-            const identity = { prenom: explicitPrenom, nom: explicitNom };
-            sanitizedOriginal = this.scrubStudentIdentity(sanitizedOriginal, identity, { anonymizePrenom: isAnonymous })
-                .replace(/\s*\[nom\]/gi, '');
-        }
+        const identity = { id: explicitId, prenom: explicitPrenom, nom: explicitNom, classId: explicitClassId };
+        const sanitizedOriginal = this.scrubStudentIdentity(original || '', identity, {
+            anonymizePrenom: isAnonymous,
+            studentId: explicitId,
+            classId: explicitClassId,
+            ...(explicitClassmates !== undefined ? { classmates: explicitClassmates } : {}),
+            scrubSensitive: true
+        }).replace(/\s*\[nom\]/gi, '');
 
         const gender = explicitPrenom ? Utils.detectGender(explicitPrenom) : null;
         const genderClause = (gender === 'féminin' || gender === 'masculin')

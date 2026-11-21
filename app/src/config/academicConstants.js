@@ -27,7 +27,9 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isGdprSensitive: false,
         aliases: Object.freeze(['nouveau']),
         promptInstruction: "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation.",
-        formatPromptInstruction: (raw) => `Tenir compte de l'arrivée récente de l'élève en cours d'année (${raw}) et valoriser son adaptation.`,
+        formatPromptInstruction: (raw) => GDPR_SENSITIVE_STATUS_PATTERN.test(String(raw || ''))
+            ? "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation."
+            : `Tenir compte de l'arrivée récente de l'élève en cours d'année (${raw}) et valoriser son adaptation.`,
     }),
     DEPART: Object.freeze({
         id: 'Départ',
@@ -44,7 +46,9 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isGdprSensitive: false,
         aliases: Object.freeze(['départ', 'depart']),
         promptInstruction: "Tenir compte du départ de l'élève en dressant un bilan factuel et bienveillant de sa présence.",
-        formatPromptInstruction: (raw) => `Tenir compte du départ de l'élève (${raw}) en dressant un bilan factuel et bienveillant de sa présence.`,
+        formatPromptInstruction: (raw) => GDPR_SENSITIVE_STATUS_PATTERN.test(String(raw || ''))
+            ? "Tenir compte du départ de l'élève en dressant un bilan factuel et bienveillant de sa présence."
+            : `Tenir compte du départ de l'élève (${raw}) en dressant un bilan factuel et bienveillant de sa présence.`,
     }),
     PPRE: Object.freeze({
         id: 'PPRE',
@@ -144,7 +148,9 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isGdprSensitive: false,
         aliases: Object.freeze(['délégué', 'delegue']),
         promptInstruction: "Prendre en compte l'engagement citoyen de l'élève si pertinent.",
-        formatPromptInstruction: (raw) => `Prendre en compte l'engagement citoyen de l'élève (${raw}) si pertinent.`,
+        formatPromptInstruction: (raw) => GDPR_SENSITIVE_STATUS_PATTERN.test(String(raw || ''))
+            ? "Prendre en compte l'engagement citoyen de l'élève si pertinent."
+            : `Prendre en compte l'engagement citoyen de l'élève (${raw}) si pertinent.`,
     }),
 });
 
@@ -159,16 +165,61 @@ export const STATUS_DESCRIPTIONS = Object.freeze(
 );
 
 /**
+ * Source regex des termes médico-scolaires et données de santé (Art. 9 RGPD)
+ * pouvant apparaître dans les statuts composites/libres ou les textes libres (contexte, journal, synthèse).
+ */
+export const GDPR_SENSITIVE_TERMS_SOURCE =
+    '(?:pap|ppre|ulis|pai|geva[-\\s]?sco|gevasco|aesh|avs|pps|mdph|segpa|rased|sessad|cmpp|camsp|upe2a|tdah|tsa|hpi|' +
+    'dys(?:lex|orthograph|prax|calcul|phas|graph)\\p{L}*|dys|' +
+    'autis\\p{L}*|asperger|trisomi\\p{L}*|handicap\\p{L}*|' +
+    'orthophon\\p{L}*|psychomotric\\p{L}*|ergoth[eé]rap\\p{L}*|p[eé]dopsychiatr\\p{L}*|' +
+    'psychologue\\s+scolaire|psy[-\\s]?en|' +
+    'asthm\\p{L}*|diab[eèé]t\\p{L}*|[eé]pilep\\p{L}*|allergi\\p{L}*|hospitalis\\p{L}*|' +
+    'tiers[-\\s]temps|phobie\\s+scolaire|' +
+    'troubles?\\s+(?:de\\s+l[\'’]attention|du\\s+spectre(?:\\s+autist\\p{L}*)?|anxieux|du\\s+comportement|de\\s+l[\'’]apprentissage|des\\s+apprentissages|dys\\p{L}*)|' +
+    '(?:suivi|traitement|protocole|certificat)\\s+(?:m[eé]dical\\p{L}*|psychologique|orthophonique|th[eé]rapeutique|cmp|cmpp|sessad)|' +
+    '(?:raisons?\\s+m[eé]dicales?|(?:probl[eè]mes?|soucis?)\\s+de\\s+sant[eé]|arr[eê]t\\s+maladie|maladie\\s+chronique))';
+
+/**
  * Expression régulière de filet de sécurité RGPD (Art. 9) détectant tout terme médico-scolaire
  * librement saisi qui ne correspondrait pas directement à une entrée canonique.
  */
-export const GDPR_SENSITIVE_STATUS_PATTERN = /\b(pap|ppre|ulis|pai|geva[-\s]?sco|aesh|pps|mdph|segpa|dys\w*|tdah|tsa|handicap)\b/i;
+export const GDPR_SENSITIVE_STATUS_PATTERN = new RegExp(
+    `(?<![\\p{L}\\p{N}_])${GDPR_SENSITIVE_TERMS_SOURCE}(?![\\p{L}\\p{N}_])`,
+    'iu'
+);
 
 /**
  * Consigne pédagogique neutre de repli pour tout statut médico-scolaire libre détecté.
  */
 export const DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION =
     "Adapter le propos avec bienveillance aux aménagements pédagogiques de l'élève, sans jamais mentionner de dispositif médical ou administratif.";
+
+/**
+ * Identifie tous les dispositifs médico-scolaires canoniques (isGdprSensitive) présents dans une chaîne
+ * de statut libre ou composite (ex: "Nouveau ULIS", "Délégué PAP", "Suivi PAI").
+ * @param {string} rawStatus
+ * @returns {Array<Object>}
+ */
+export function resolveSensitiveStatusEntries(rawStatus) {
+    const trimmed = String(rawStatus || '').trim();
+    if (!trimmed) return [];
+
+    const matched = [];
+    const seen = new Set();
+    for (const entry of Object.values(STUDENT_STATUS_REGISTRY)) {
+        if (!entry.isGdprSensitive || !Array.isArray(entry.aliases)) continue;
+        const hasAlias = entry.aliases.some(alias => {
+            const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/-/g, '[-\\s]?');
+            return new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, 'iu').test(trimmed);
+        });
+        if (hasAlias && !seen.has(entry.id)) {
+            seen.add(entry.id);
+            matched.push(entry);
+        }
+    }
+    return matched;
+}
 
 /**
  * Résout une chaîne de statut brute (ex: "ULIS", "Nouveau T2", "depart", "Geva-Sco", "pps")

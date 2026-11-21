@@ -11,6 +11,7 @@ import {
     GDPR_SENSITIVE_STATUS_PATTERN,
     DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION,
     resolveStudentStatus,
+    resolveSensitiveStatusEntries,
     isGdprSensitiveStatus,
     getStatusDescription,
     getSelectableStatusLabels,
@@ -65,12 +66,30 @@ describe('SSOT 3 — STUDENT_STATUS_REGISTRY & Neutralisation RGPD (Art. 9)', ()
     });
 
     it('détecte les statuts sensibles RGPD canoniques, libres et composites via isGdprSensitiveStatus (y compris PPRE)', () => {
-        for (const sensitive of ['PAP', 'PPRE', 'PAI', 'AESH', 'ULIS', 'Geva-Sco', 'PPS', 'MDPH', 'DYS', 'Dyslexie', 'TDAH', 'TSA', 'SEGPA', 'Suivi PAP', 'Aménagement PAI', 'Handicap']) {
+        for (const sensitive of [
+            'PAP', 'PPRE', 'PAI', 'AESH', 'ULIS', 'Geva-Sco', 'PPS', 'MDPH', 'DYS', 'Dyslexie',
+            'TDAH', 'TSA', 'SEGPA', 'Suivi PAP', 'Aménagement PAI', 'Handicap',
+            'Nouveau ULIS', 'Départ PAI', 'Délégué PAP', 'Suivi orthophoniste', 'Asthme sévère',
+            'Diabète type 1', 'Épilepsie', 'Tiers-temps', 'Phobie scolaire', 'RASED', 'UPE2A'
+        ]) {
             expect(isGdprSensitiveStatus(sensitive)).toBe(true);
         }
-        for (const safe of ['Délégué', 'Éco-délégué', 'Nouveau T2', 'Départ T3', 'Option Latin', '', null, undefined]) {
+        for (const safe of ['Délégué', 'Éco-délégué', 'Nouveau T2', 'Départ T3', 'Option Latin', 'Dysfonctionnement matériel', '', null, undefined]) {
             expect(isGdprSensitiveStatus(safe)).toBe(false);
         }
+    });
+
+    it('neutralise les statuts composites (Nouveau ULIS, Départ PAI, Délégué PAP) sans fuite Art. 9 et identifie les dispositifs imbriqués', () => {
+        expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau T2')).toContain('(Nouveau T2)');
+        expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau ULIS')).not.toMatch(/ULIS/i);
+        expect(STUDENT_STATUS_REGISTRY.DEPART.formatPromptInstruction('Départ PAI')).not.toMatch(/PAI/i);
+        expect(STUDENT_STATUS_REGISTRY.DELEGUE.formatPromptInstruction('Délégué dyslexique')).not.toMatch(/dyslexi/i);
+
+        expect(resolveSensitiveStatusEntries('Nouveau ULIS').map(e => e.id)).toEqual(['ULIS']);
+        expect(resolveSensitiveStatusEntries('Délégué PAP AESH').map(e => e.id)).toEqual(['PAP', 'AESH']);
+        expect(resolveSensitiveStatusEntries('Nouveau dyslexique')).toEqual([]);
+        expect(resolveSensitiveStatusEntries('Nouveau T2')).toEqual([]);
+        expect(resolveSensitiveStatusEntries(null)).toEqual([]);
     });
 
     it('résout les variantes de casse, d’accents, d’alias et de périodes via resolveStudentStatus', () => {

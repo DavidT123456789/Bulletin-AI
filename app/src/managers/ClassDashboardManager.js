@@ -1460,6 +1460,38 @@ export const ClassDashboardManager = {
     },
 
     /**
+     * Agrège les identités (prénom/nom) de la classe pour le masquage des camarades ([CAMARADE] / [ÉLÈVE])
+     * lors de la construction ou de l'affinage de la synthèse de classe.
+     * @param {Object|null} [stats=null]
+     * @param {string|null} [classId=null]
+     * @returns {Array<{id?: string, prenom: string, nom: string}>}
+     * @private
+     */
+    _collectClassRosterIdentities(stats = null, classId = null) {
+        const sources = [
+            ...(this._getFullClassRoster(classId) || []),
+            ...(Array.isArray(stats?.appreciationsList) ? stats.appreciationsList : []),
+            ...(Array.isArray(stats?.topProgressions) ? stats.topProgressions : []),
+            ...(Array.isArray(stats?.topRegressions) ? stats.topRegressions : []),
+            ...(Array.isArray(stats?.atRisk) ? stats.atRisk : [])
+        ];
+
+        const identities = [];
+        const seen = new Set();
+        for (const item of sources) {
+            if (!item || typeof item !== 'object') continue;
+            const prenom = String(item.prenom ?? item.studentData?.prenom ?? '').trim();
+            const nom = String(item.nom ?? item.studentData?.nom ?? '').trim();
+            if (!prenom && !nom) continue;
+            const key = `${prenom.toLowerCase()}|${nom.toLowerCase()}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            identities.push({ id: item.id ?? null, prenom, nom });
+        }
+        return identities;
+    },
+
+    /**
      * Build the AI prompt with statistics context
      * @param {Object} stats 
      * @returns {{systemPrompt: string, userPrompt: string}}
@@ -1592,6 +1624,7 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises de code Markdow
         }
 
         if (stats.appreciationsList && stats.appreciationsList.length > 0) {
+            const classRosterIdentities = this._collectClassRosterIdentities(stats);
             userPrompt += `\n\n**APPRÉCIATIONS INDIVIDUELLES (pour contexte qualitatif) :**
 Utilise ces commentaires pour affiner l'analyse (ambiance, comportement, efforts) mais NE CITE PAS d'élèves spécifiques pour les points négatifs de comportement.
 ${stats.appreciationsList.map((a, idx) => {
@@ -1599,7 +1632,11 @@ ${stats.appreciationsList.map((a, idx) => {
     const scrubbedText = PromptService.scrubStudentIdentity(
         a.text || '',
         { prenom: a.prenom, nom: a.nom },
-        { anonymizePrenom: isAnonymous }
+        {
+            anonymizePrenom: isAnonymous,
+            classmates: classRosterIdentities,
+            scrubSensitive: true
+        }
     );
     const displayText = isAnonymous
         ? scrubbedText.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, label)
@@ -1660,8 +1697,20 @@ ${stats.appreciationsList.map((a, idx) => {
         button.disabled = true;
 
         try {
+            const isAnonymous = appState.anonymizeData ?? true;
+            const classRosterIdentities = this._collectClassRosterIdentities(this.cachedStats, targetClassId);
+            const sanitizedIntroText = PromptService.scrubStudentIdentity(
+                currentIntroText,
+                {},
+                {
+                    anonymizePrenom: isAnonymous,
+                    classmates: classRosterIdentities,
+                    classmatePlaceholder: '[ÉLÈVE]',
+                    scrubSensitive: true
+                }
+            );
             const systemPrompt = `Tu es un conseiller pédagogique expert. Ajuste uniquement le texte de synthèse générale de classe fourni selon la consigne de l'enseignant, sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »). Réponds uniquement avec le paragraphe révisé en texte brut, sans introduction, commentaire, JSON ni guillemets.`;
-            const userPrompt = `${prompts[type]}\n\nSynthèse à ajuster :\n${currentIntroText}`;
+            const userPrompt = `${prompts[type]}\n\nSynthèse à ajuster :\n${sanitizedIntroText}`;
             const resp = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
 
             let refinedIntro = (resp.text || '').trim().replace(/^```(?:\w+)?\n?/, '').replace(/\n?```$/, '').trim();

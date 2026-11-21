@@ -806,4 +806,88 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         ClassDashboardManager.restoreOrResetAISection();
         expect(document.getElementById('aiSynthesisContent').textContent).toContain('Bilan 3e1 complet');
     });
+
+    it('masque les camarades et mentions Art. 9 dans buildAIPrompt ainsi que lors du raffinement de synthèse de classe', async () => {
+        appState.anonymizeData = true;
+        appState.currentClassId = 'class-rgpd';
+        appState.currentPeriod = 'T2';
+        appState.classes = [{ id: 'class-rgpd', name: '3ème B', analyses: {} }];
+        appState.generatedResults = [
+            { id: 's1', classId: 'class-rgpd', prenom: 'Lucas', nom: 'Martin' },
+            { id: 's2', classId: 'class-rgpd', prenom: 'Chloé', nom: 'Bernard' },
+            { id: 's3', classId: 'class-rgpd', prenom: 'Théo', nom: 'Petit' }
+        ];
+
+        // 1. buildAIPrompt : camarades et termes Art. 9 masqués, mot courant "petit" préservé
+        const { userPrompt } = ClassDashboardManager.buildAIPrompt({
+            count: 3,
+            average: 13.0,
+            median: 13.0,
+            min: 10,
+            max: 16,
+            stdDev: 2.0,
+            distribution: { '0-4': 0, '4-8': 0, '8-12': 1, '12-16': 1, '16-20': 1 },
+            appreciationsList: [
+                {
+                    prenom: 'Lucas',
+                    nom: 'Martin',
+                    text: 'Lucas bavarde avec Chloé Bernard et Théo P. Un petit effort est attendu malgré son PAP dyslexique.'
+                }
+            ]
+        });
+
+        expect(userPrompt).not.toMatch(/\b(Lucas|Martin|Chloé|Bernard|Théo|PAP)\b/i);
+        expect(userPrompt).not.toMatch(/dyslexi/i);
+        expect(userPrompt).toContain('[CAMARADE]');
+        expect(userPrompt).toContain('[AMÉNAGEMENT]');
+        expect(userPrompt).toContain('Un petit effort');
+
+        // 2. handleClassAnalysisActions : synthèse éditée par l'enseignant nettoyée avant envoi IA
+        const editedJson = JSON.stringify({
+            synthesis: 'Classe portée par Lucas Martin et Chloé, malgré un petit relâchement et un élève ULIS dyslexique.',
+            strengths: ['Dynamisme'],
+            vigilances: [],
+            recommendations: []
+        });
+        const editedHtml = `<div class="ai-synthesis-text">${ClassDashboardManager._formatSynthesisText(editedJson)}</div>`;
+
+        document.body.innerHTML = `
+            <div id="classDashboardModal">
+                <div id="aiSynthesisContent">${editedHtml}</div>
+                <button id="generateSynthesisBtn"></button>
+                <div id="aiRefinementToolbar">
+                    <button id="btnSummarizeRgpd" class="btn-refinement" data-refine-type="summarize">Plus concis</button>
+                </div>
+                <button id="revertSynthesisBtn" style="display: none;"></button>
+                <button id="copyDashboardSynthesisBtn"></button>
+            </div>
+        `;
+        ClassDashboardManager._ensureModal();
+        ClassDashboardManager.cachedSynthesisHTML = editedHtml;
+        ClassDashboardManager.originalSynthesisHTML = editedHtml;
+        ClassDashboardManager.cachedSynthesisRawText = editedJson;
+        ClassDashboardManager.originalSynthesisRawText = editedJson;
+        ClassDashboardManager.cachedSynthesisClassId = 'class-rgpd';
+        ClassDashboardManager.cachedSynthesisPeriod = 'T2';
+
+        vi.spyOn(UI, 'checkAPIKeyPresence').mockReturnValue(true);
+        vi.spyOn(UI, 'showInlineSpinner').mockImplementation(() => {});
+        vi.spyOn(UI, 'hideInlineSpinner').mockImplementation(() => {});
+        vi.spyOn(UI, 'animateHtmlReveal').mockImplementation(async (el, html) => { el.innerHTML = html; });
+        vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+        vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+        const aiSpy = vi.spyOn(AIService, 'callAIWithFallback').mockResolvedValue({
+            text: 'Classe dynamique malgré un léger relâchement.'
+        });
+
+        await ClassDashboardManager.handleClassAnalysisActions(document.getElementById('btnSummarizeRgpd'));
+
+        expect(aiSpy).toHaveBeenCalledTimes(1);
+        const sentPrompt = aiSpy.mock.calls[0][0];
+        expect(sentPrompt).not.toMatch(/\b(Lucas|Martin|Chloé|ULIS)\b/i);
+        expect(sentPrompt).not.toMatch(/dyslexi/i);
+        expect(sentPrompt).toContain('[ÉLÈVE]');
+        expect(sentPrompt).toContain('[AMÉNAGEMENT]');
+        expect(sentPrompt).toContain('un petit relâchement');
+    });
 });

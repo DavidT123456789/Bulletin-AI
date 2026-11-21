@@ -660,4 +660,180 @@ describe('PromptService', () => {
             expect(prompts.appreciationUser).toContain('Niveau : Collège');
         });
     });
+
+    describe('Lot 2 — Pseudonymisation RGPD avancée, Art. 9 & Élision française', () => {
+        it('masque les camarades de classe en [CAMARADE] sans toucher aux mots courants français en minuscules ni en début de phrase', () => {
+            appState.anonymizeData = true;
+            const classmates = [
+                { prenom: 'Chloé', nom: 'Bernard' },
+                { prenom: 'Théo', nom: 'Petit' },
+                { prenom: 'Clément', nom: 'Fort' },
+                { prenom: 'Rose', nom: 'Bon' },
+                { prenom: 'Pierre', nom: 'Aimé' },
+                { prenom: 'Lucas', nom: 'Durand' },
+                { prenom: 'Camille', nom: 'Martin' }
+            ];
+
+            // 1. Camarades cités par prénom majuscule, forme composée (même en minuscules) ou initiale
+            const textWithMates = 'Lucas Martin bavarde avec Chloé, théo petit, Théo P., C. Bernard, Lucas Durand et Camille Martin.';
+            const scrubbedMates = PromptService.scrubStudentIdentity(
+                textWithMates,
+                { prenom: 'Lucas', nom: 'Martin' },
+                { anonymizePrenom: true, classmates }
+            );
+            expect(scrubbedMates).toBe('[PRÉNOM] bavarde avec [CAMARADE], [CAMARADE], [CAMARADE], [CAMARADE], [CAMARADE] et [CAMARADE].');
+
+            // 2. Mots courants en minuscules (petit, fort, bon, clément, aimé, rose, pierre) jamais remplacés
+            const commonWordsText = 'Bon trimestre. Petit relâchement mais un petit effort fort apprécié et bon travail, climat clément et aimé, couleur rose, pierre angulaire.';
+            const scrubbedCommon = PromptService.scrubStudentIdentity(
+                commonWordsText,
+                { prenom: 'Lucas', nom: 'Martin' },
+                { anonymizePrenom: true, classmates }
+            );
+            expect(scrubbedCommon).toBe(commonWordsText);
+
+            // 3. Noms de camarades en milieu de phrase avec majuscule initiale bien masqués
+            const capitalizedMates = 'Bavarde avec Petit, Fort, Bon, Clément, Aimé, Rose et Pierre.';
+            const scrubbedCap = PromptService.scrubStudentIdentity(
+                capitalizedMates,
+                { prenom: 'Lucas', nom: 'Martin' },
+                { anonymizePrenom: true, classmates }
+            );
+            expect(scrubbedCap).toBe('Bavarde avec [CAMARADE], [CAMARADE], [CAMARADE], [CAMARADE], [CAMARADE], [CAMARADE] et [CAMARADE].');
+        });
+
+        it('exclut les particules courtes (de, du, la, le, des, d) lors du découpage des noms composés (DE LA ROCHE)', () => {
+            const text = "DE LA ROCHE a fait de grands progrès de la part de l'élève ; Mme Roche et M. DE LA ROCHE sont informés.";
+            const scrubbed = PromptService.scrubStudentIdentity(
+                text,
+                { prenom: 'Arthur', nom: 'DE LA ROCHE' },
+                { anonymizePrenom: true, classmates: [] }
+            );
+            expect(scrubbed).not.toMatch(/ROCHE/i);
+            expect(scrubbed).toContain("a fait de grands progrès de la part de l'élève");
+
+            const multiParticles = PromptService.scrubStudentIdentity(
+                "DU PONT, DES CHAMPS, LE GRAND et D'ARCY font du travail, des exercices, le cours et d'autres efforts.",
+                { prenom: 'Léo', nom: "D'ARCY" },
+                { anonymizePrenom: true, classmates: [{ prenom: 'Paul', nom: 'DU PONT' }, { prenom: 'Emma', nom: 'DES CHAMPS' }, { prenom: 'Noé', nom: 'LE GRAND' }] }
+            );
+            expect(multiParticles).not.toMatch(/ARCY|PONT|CHAMPS|GRAND/i);
+            expect(multiParticles).toContain("font du travail, des exercices, le cours et d'autres efforts.");
+        });
+
+        it('masque les initiales de l\'élève cible (Prénom N., P. Nom, P.N.) sans corrompre les sigles scolaires (D.M., T.P.) ni le verbe "a"', () => {
+            const scrubbed = PromptService.scrubStudentIdentity(
+                'Lucas M. et L. Martin progressent ; L.M. et L. M. participent bien.',
+                { prenom: 'Lucas', nom: 'Martin' },
+                { anonymizePrenom: true, classmates: [] }
+            );
+            expect(scrubbed).toBe('[PRÉNOM] et [PRÉNOM] progressent ; [PRÉNOM] et [PRÉNOM] participent bien.');
+
+            // Sigles scolaires D.M. / T.P. préservés même si initiales identiques
+            const dmPreserved = PromptService.scrubStudentIdentity(
+                'David M. a rendu un très bon D.M. et participe en T.P.',
+                { prenom: 'David', nom: 'Martin' },
+                { anonymizePrenom: true, classmates: [] }
+            );
+            expect(dmPreserved).toBe('[PRÉNOM] a rendu un très bon D.M. et participe en T.P.');
+
+            // Verbe "a" minuscule jamais avalé comme initiale de "Arnaud"
+            const verbPreserved = PromptService.scrubStudentIdentity(
+                'Lucas a fourni un travail sérieux. Lucas A. progresse.',
+                { prenom: 'Lucas', nom: 'Arnaud' },
+                { anonymizePrenom: true, classmates: [] }
+            );
+            expect(verbPreserved).toBe('[PRÉNOM] a fourni un travail sérieux. [PRÉNOM] progresse.');
+        });
+
+        it('neutralise les statuts composites (Nouveau ULIS, Départ PAI, Délégué dyslexique) et les mentions Art. 9 en texte libre', () => {
+            const compositeUlis = PromptService.getStatusInstructions(['Nouveau ULIS'], 'T2');
+            expect(compositeUlis).toContain('arrivée récente');
+            expect(compositeUlis).toContain('objectifs personnalisés');
+            expect(compositeUlis).not.toMatch(/ULIS/i);
+
+            const compositeDys = PromptService.getStatusInstructions(['Délégué dyslexique', 'Départ PAI'], 'T2');
+            expect(compositeDys).toContain('engagement citoyen');
+            expect(compositeDys).toContain('départ de l\'élève');
+            expect(compositeDys).not.toMatch(/dyslexi|PAI/i);
+
+            // Statut mouvement sain conservé tel quel
+            expect(PromptService.getStatusInstructions(['Nouveau T2'], 'T2')).toContain('(Nouveau T2)');
+
+            // Art. 9 en texte libre (contexte, journal, raffinement)
+            appState.anonymizeData = true;
+            appState.currentClassId = 'c-rgpd';
+            appState.generatedResults = [
+                { id: 's1', classId: 'c-rgpd', prenom: 'Arthur', nom: 'Dupont', studentData: { periods: { T1: { grade: 13 } } } },
+                { id: 's2', classId: 'c-rgpd', prenom: 'Chloé', nom: 'Bernard', studentData: { periods: { T1: { grade: 14 } } } }
+            ];
+
+            const prompts = PromptService.getAllPrompts({
+                id: 's1',
+                classId: 'c-rgpd',
+                prenom: 'Arthur',
+                nom: 'Dupont',
+                statuses: ['Nouveau ULIS'],
+                currentPeriod: 'T1',
+                periods: {
+                    T1: {
+                        grade: 13,
+                        context: 'Élève dyslexique avec TDAH, tiers-temps et suivi orthophoniste ; bavarde avec Chloé.'
+                    }
+                },
+                journal: [
+                    { id: 'j1', period: 'T1', note: 'Absence liée à son asthme (PAI) ; aidé par son AESH.' }
+                ]
+            });
+
+            for (const text of [prompts.appreciation, prompts.analysis]) {
+                expect(text).not.toMatch(/\b(ULIS|PAP|PAI|AESH|TDAH|Chloé|Bernard|Dupont|Arthur)\b/i);
+                expect(text).not.toMatch(/dyslexi|orthophon|asthm|tiers-temps/i);
+                expect(text).toContain('[CAMARADE]');
+                expect(text).toContain('[AMÉNAGEMENT]');
+            }
+
+            // Raffinement sans identité explicite : neutralise quand même Art. 9 et camarades de la classe active
+            const refinedPrompt = PromptService.getRefinementPrompt(
+                'polish',
+                'Élève PAP avec trouble de l\'attention qui travaille bien avec Chloé Bernard.'
+            );
+            expect(refinedPrompt).not.toMatch(/\b(PAP|Chloé|Bernard)\b/i);
+            expect(refinedPrompt).not.toMatch(/trouble de l'attention/i);
+            expect(refinedPrompt).toContain('[AMÉNAGEMENT]');
+            expect(refinedPrompt).toContain('[CAMARADE]');
+        });
+
+        it('corrige proprement l\'élision française dans deanonymizeText pour voyelles et h muet sans toucher aux autres cas', () => {
+            // Voyelles & h muet -> élision
+            expect(PromptService.deanonymizeText('Le travail de [PRÉNOM] est sérieux.', 'Arthur'))
+                .toBe("Le travail d'Arthur est sérieux.");
+            expect(PromptService.deanonymizeText('Les progrès de [PRÉNOM] sont constants.', 'Émilie'))
+                .toBe("Les progrès d'Émilie sont constants.");
+            expect(PromptService.deanonymizeText('La participation de [PRÉNOM] progresse.', 'Hugo'))
+                .toBe("La participation d'Hugo progresse.");
+            expect(PromptService.deanonymizeText('Il faut que [PRÉNOM] poursuive ses efforts.', 'Arthur'))
+                .toBe("Il faut qu'Arthur poursuive ses efforts.");
+            expect(PromptService.deanonymizeText('De [PRÉNOM], on retient la rigueur. Que [PRÉNOM] continue !', 'Émilie'))
+                .toBe("D'Émilie, on retient la rigueur. Qu'Émilie continue !");
+            expect(PromptService.deanonymizeText('Lorsque [PRÉNOM] participe, la classe progresse.', 'Hugo'))
+                .toBe("Lorsqu'Hugo participe, la classe progresse.");
+            expect(PromptService.deanonymizeText('Le sérieux de [PRÉNOM] est apprécié.', 'Yves'))
+                .toBe("Le sérieux d'Yves est apprécié.");
+
+            // Cas sans élision : consonne, h aspiré, Y + voyelle, autres prépositions/verbes
+            expect(PromptService.deanonymizeText('Le travail de [PRÉNOM] et ce que [PRÉNOM] produit sont bons.', 'Lucas'))
+                .toBe('Le travail de Lucas et ce que Lucas produit sont bons.');
+            expect(PromptService.deanonymizeText('Le travail de [PRÉNOM] progresse.', 'Harry'))
+                .toBe('Le travail de Harry progresse.');
+            expect(PromptService.deanonymizeText('Le travail de [PRÉNOM] progresse.', 'Yanis'))
+                .toBe('Le travail de Yanis progresse.');
+            expect(PromptService.deanonymizeText('Pour [PRÉNOM], je remarque [PRÉNOM] en classe.', 'Arthur'))
+                .toBe('Pour Arthur, je remarque Arthur en classe.');
+
+            // Cas limites
+            expect(PromptService.deanonymizeText('', 'Arthur')).toBe('');
+            expect(PromptService.deanonymizeText(null, 'Arthur')).toBeNull();
+        });
+    });
 });

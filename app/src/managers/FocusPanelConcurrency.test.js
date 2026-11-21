@@ -267,4 +267,56 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
         expect(FocusPanelStatus.checkDirtyState(studentA)).toBe(true);
         expect(FocusPanelStatus.isBulkRefreshable(studentA, 'T1')).toBe(false);
     });
+
+    it('masque camarades et termes Art. 9 lors du raffinement FocusPanelRefinement et rétablit l\'élision française (d\'Arthur) au retour', async () => {
+        appState.anonymizeData = true;
+        appState.currentClassId = 'c1';
+        appState.currentPeriod = 'T1';
+
+        const studentArthur = {
+            id: 'student-arthur',
+            classId: 'c1',
+            nom: 'Dupont',
+            prenom: 'Arthur',
+            appreciation: 'Arthur Dupont (PAP dyslexique) bavarde avec Chloé Bernard mais fournit un petit effort régulier.',
+            generationPeriod: 'T1',
+            studentData: {
+                nom: 'Dupont',
+                prenom: 'Arthur',
+                periods: {
+                    T1: {
+                        grade: 13,
+                        appreciation: 'Arthur Dupont (PAP dyslexique) bavarde avec Chloé Bernard mais fournit un petit effort régulier.'
+                    }
+                }
+            }
+        };
+        const classmateChloe = { id: 'student-chloe', classId: 'c1', nom: 'Bernard', prenom: 'Chloé' };
+        const classmateTheo = { id: 'student-theo', classId: 'c1', nom: 'Petit', prenom: 'Théo' };
+        appState.generatedResults = [studentArthur, classmateChloe, classmateTheo];
+
+        AIService.callAIWithFallback.mockResolvedValue({
+            text: 'Les efforts de [PRÉNOM] sont notables ; il faut que [PRÉNOM] maintienne son attention.',
+            modelUsed: 'gemini-2.5-flash'
+        });
+
+        const mockPanel = {
+            currentStudentId: 'student-arthur',
+            _getCurrentStudent: () => studentArthur
+        };
+        FocusPanelHistory.init(mockPanel, {});
+        FocusPanelRefinement.init(mockPanel, {}, { showNotification: vi.fn() });
+
+        await FocusPanelRefinement.apply('concise');
+
+        expect(AIService.callAIWithFallback).toHaveBeenCalledTimes(1);
+        const sentPrompt = AIService.callAIWithFallback.mock.calls[0][0];
+        expect(sentPrompt).not.toMatch(/\b(Arthur|Dupont|Chloé|Bernard|PAP)\b/i);
+        expect(sentPrompt).not.toMatch(/dyslexi/i);
+        expect(sentPrompt).toContain('[CAMARADE]');
+        expect(sentPrompt).toContain('[AMÉNAGEMENT]');
+        expect(sentPrompt).toContain('un petit effort');
+
+        expect(studentArthur.appreciation).toBe("Les efforts d'Arthur sont notables ; il faut qu'Arthur maintienne son attention.");
+    });
 });

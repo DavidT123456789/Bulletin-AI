@@ -84,6 +84,22 @@ export const FocusPanelRefinement = {
     },
 
     /**
+     * Construit le descripteur d'identité et de classe utilisé par PromptService pour le scrubbing RGPD.
+     * @param {{ refineStudentId: string, refineClassId: string, result: Object }} ctx
+     * @returns {{ id: string|null, classId: string|null, prenom: string, nom: string }}
+     * @private
+     */
+    _buildRefinementIdentity(ctx) {
+        const result = ctx?.result;
+        return {
+            id: ctx?.refineStudentId ?? result?.id ?? null,
+            classId: result?.classId || result?.studentData?.classId || ctx?.refineClassId || null,
+            prenom: result?.studentData?.prenom || result?.prenom || '',
+            nom: result?.studentData?.nom || result?.nom || ''
+        };
+    },
+
+    /**
      * Affiche une prévisualisation du prompt de raffinement
      * @param {string} refineType - Type de raffinement
      */
@@ -91,10 +107,11 @@ export const FocusPanelRefinement = {
         const ctx = this._resolveRefinementContext();
         if (!ctx) return;
 
-        const promptText = PromptService.getRefinementPrompt(refineType, ctx.currentText, {
-            prenom: ctx.result.studentData?.prenom || ctx.result.prenom || '',
-            nom: ctx.result.studentData?.nom || ctx.result.nom || ''
-        });
+        const promptText = PromptService.getRefinementPrompt(
+            refineType,
+            ctx.currentText,
+            this._buildRefinementIdentity(ctx)
+        );
         await this.displayPromptModal(promptText, 'Prévisualisation du prompt (raffinement)');
     },
 
@@ -257,13 +274,10 @@ export const FocusPanelRefinement = {
         }
 
         try {
-            const studentPrenom = result.studentData?.prenom || result.prenom || '';
-            const studentNom = result.studentData?.nom || result.nom || '';
+            const identity = this._buildRefinementIdentity(ctx);
+            const studentPrenom = identity.prenom;
 
-            const prompt = PromptService.getRefinementPrompt(refineType, currentText, {
-                prenom: studentPrenom,
-                nom: studentNom
-            });
+            const prompt = PromptService.getRefinementPrompt(refineType, currentText, identity);
             const response = await AIService.callAIWithFallback(prompt, { context: 'refinement', signal });
 
             if (signal.aborted) return;
