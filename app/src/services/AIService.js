@@ -104,9 +104,34 @@ export function sleep(ms, signal = null) {
 
 
 const MAX_RESPONSE_TOKENS = 1024;
+const MAX_REASONING_RESPONSE_TOKENS = 2048;
+const TASK_TEMPERATURES = Object.freeze({
+    appreciation: 0.65,
+    refinement: 0.65,
+    analysis: 0.2,
+    'class-synthesis': 0.2
+});
 
 export const AIService = {
     sleep,
+
+    /**
+     * Calibre le budget de tokens et la température selon les métadonnées du modèle et la tâche.
+     * @param {string} model
+     * @param {{ isValidation?: boolean, taskType?: string }} [options]
+     * @returns {{ maxTokens: number, temperature: number|undefined, isReasoning: boolean }}
+     * @private
+     */
+    _resolveSamplingParams(model, { isValidation = false, taskType = 'appreciation' } = {}) {
+        const meta = getModelMeta(model);
+        const isReasoning = Boolean(meta?.isReasoning);
+        const maxTokens = isReasoning ? MAX_REASONING_RESPONSE_TOKENS : MAX_RESPONSE_TOKENS;
+        if (isValidation || meta?.supportsTemperature === false) {
+            return { maxTokens, temperature: undefined, isReasoning };
+        }
+        const temperature = TASK_TEMPERATURES[taskType] ?? TASK_TEMPERATURES.appreciation;
+        return { maxTokens, temperature, isReasoning };
+    },
 
     /**
      * Résout l'URL de base d'Albert API (utilise le relais sans état /api/albert/v1 sur localhost
@@ -142,15 +167,30 @@ export const AIService = {
      * @returns {{apiKey: string, apiUrl: string, headers: Object, payload: Object}}
      * @throws {Error} Si la clé API est manquante
      */
-    _getApiConfig(prompt, { isValidation = false, validationProvider = 'openai', modelOverride = null, systemPrompt = null } = {}) {
+    _getApiConfig(prompt, { isValidation = false, validationProvider = 'openai', modelOverride = null, systemPrompt = null, taskType = 'appreciation' } = {}) {
+        const buildChatMessages = (p, sys) => (
+            sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }]
+        );
+
         const configs = {
             openai: {
                 apiKey: appState.openaiApiKey, apiUrl: `${CONFIG.OPENAI_API_BASE}/chat/completions`,
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` }),
-                payload: (p, m, sys) => ({
-                    model: getApiModelName(m),
-                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }]
-                }),
+                payload: (p, m, sys, sampling) => {
+                    const body = {
+                        model: getApiModelName(m),
+                        messages: buildChatMessages(p, sys)
+                    };
+                    if (sampling.isReasoning) {
+                        body.max_completion_tokens = sampling.maxTokens;
+                    } else {
+                        body.max_tokens = sampling.maxTokens;
+                    }
+                    if (sampling.temperature !== undefined) {
+                        body.temperature = sampling.temperature;
+                    }
+                    return body;
+                },
             },
             google: {
                 apiKey: appState.googleApiKey, 
@@ -159,16 +199,24 @@ export const AIService = {
                     'Content-Type': 'application/json',
                     'x-goog-api-key': key || appState.googleApiKey
                 }),
-                payload: (p, m, sys) => {
+                payload: (p, m, sys, sampling) => {
                     const body = { contents: [{ role: "user", parts: [{ text: p }] }] };
                     if (sys) {
                         body.systemInstruction = { parts: [{ text: sys }] };
                     }
+                    const genConfig = {};
                     const thinkingLevel = getModelMeta(m)?.thinkingLevel;
                     if (thinkingLevel) {
-                        body.generationConfig = {
-                            thinkingConfig: { thinkingLevel }
-                        };
+                        genConfig.thinkingConfig = { thinkingLevel };
+                    }
+                    if (sampling.temperature !== undefined) {
+                        genConfig.temperature = sampling.temperature;
+                    }
+                    if (!isValidation) {
+                        genConfig.maxOutputTokens = sampling.maxTokens;
+                    }
+                    if (Object.keys(genConfig).length > 0) {
+                        body.generationConfig = genConfig;
                     }
                     return body;
                 },
@@ -180,22 +228,33 @@ export const AIService = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`
                 }),
-                payload: (p, m, sys) => ({
-                    model: getApiModelName(m),
-                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
-                    temperature: 0.45,
-                    top_p: 0.9,
-                    max_tokens: m === 'albert-openweight-large' ? 2048 : MAX_RESPONSE_TOKENS
-                }),
+                payload: (p, m, sys, sampling) => {
+                    const body = {
+                        model: getApiModelName(m),
+                        messages: buildChatMessages(p, sys),
+                        top_p: 0.9,
+                        max_tokens: sampling.maxTokens
+                    };
+                    if (sampling.temperature !== undefined) {
+                        body.temperature = sampling.temperature;
+                    }
+                    return body;
+                },
             },
             openrouter: {
                 apiKey: appState.openrouterApiKey, apiUrl: `${CONFIG.OPENROUTER_API_BASE}/chat/completions`,
                 headers: (key) => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`, 'HTTP-Referer': `${window.location.protocol}//${window.location.hostname}`, 'X-Title': `Bulletin Assistant` }),
-                payload: (p, m, sys) => ({
-                    model: getApiModelName(m),
-                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
-                    max_tokens: MAX_RESPONSE_TOKENS
-                }),
+                payload: (p, m, sys, sampling) => {
+                    const body = {
+                        model: getApiModelName(m),
+                        messages: buildChatMessages(p, sys),
+                        max_tokens: sampling.maxTokens
+                    };
+                    if (sampling.temperature !== undefined) {
+                        body.temperature = sampling.temperature;
+                    }
+                    return body;
+                },
             },
             ollama: {
                 apiKey: appState.ollamaEnabled ? 'local' : null,
@@ -207,23 +266,17 @@ export const AIService = {
                     return `${baseUrl}${OLLAMA_CONFIG.apiEndpoint}`;
                 },
                 headers: () => ({ 'Content-Type': 'application/json' }),
-                payload: (p, m, sys) => {
-                    const body = {
-                        model: getApiModelName(m),
-                        prompt: p,
-                        stream: false,
-                        options: {
-                            temperature: 0.7,
-                            num_predict: MAX_RESPONSE_TOKENS,
-                            top_p: 0.9,
-                            repeat_penalty: 1.1,
-                        }
-                    };
-                    if (sys) {
-                        body.system = sys;
+                payload: (p, m, sys, sampling) => ({
+                    model: getApiModelName(m),
+                    messages: buildChatMessages(p, sys),
+                    stream: false,
+                    options: {
+                        ...(sampling.temperature !== undefined ? { temperature: sampling.temperature } : {}),
+                        num_predict: sampling.maxTokens,
+                        top_p: 0.9,
+                        repeat_penalty: 1.1,
                     }
-                    return body;
-                },
+                }),
             },
             anthropic: {
                 apiKey: appState.anthropicApiKey,
@@ -234,14 +287,17 @@ export const AIService = {
                     'anthropic-version': '2023-06-01',
                     'anthropic-dangerous-direct-browser-access': 'true'
                 }),
-                payload: (p, m, sys) => {
+                payload: (p, m, sys, sampling) => {
                     const body = {
                         model: getApiModelName(m),
                         messages: [{ role: 'user', content: p }],
-                        max_tokens: MAX_RESPONSE_TOKENS
+                        max_tokens: sampling.maxTokens
                     };
                     if (sys) {
                         body.system = sys;
+                    }
+                    if (sampling.temperature !== undefined) {
+                        body.temperature = sampling.temperature;
                     }
                     return body;
                 },
@@ -253,11 +309,17 @@ export const AIService = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`
                 }),
-                payload: (p, m, sys) => ({
-                    model: getApiModelName(m),
-                    messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
-                    max_tokens: MAX_RESPONSE_TOKENS
-                }),
+                payload: (p, m, sys, sampling) => {
+                    const body = {
+                        model: getApiModelName(m),
+                        messages: buildChatMessages(p, sys),
+                        max_tokens: sampling.maxTokens
+                    };
+                    if (sampling.temperature !== undefined) {
+                        body.temperature = sampling.temperature;
+                    }
+                    return body;
+                },
             },
             groq: {
                 apiKey: appState.groqApiKey,
@@ -266,13 +328,16 @@ export const AIService = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${key}`
                 }),
-                payload: (p, m, sys) => {
+                payload: (p, m, sys, sampling) => {
                     const apiModel = getApiModelName(m);
                     const body = {
                         model: apiModel,
-                        messages: sys ? [{ role: "system", content: sys }, { role: "user", content: p }] : [{ role: "user", content: p }],
-                        max_tokens: MAX_RESPONSE_TOKENS
+                        messages: buildChatMessages(p, sys),
+                        max_tokens: sampling.maxTokens
                     };
+                    if (sampling.temperature !== undefined) {
+                        body.temperature = sampling.temperature;
+                    }
                     if (apiModel.includes('gpt-oss')) {
                         body.reasoning_format = 'parsed';
                     }
@@ -287,8 +352,9 @@ export const AIService = {
             const apiKey = providerConfig.apiKey;
             if (!apiKey) throw new Error("Clé API manquante.");
             const validationModel = modelOverride || PROVIDER_DEFAULT_MODELS[validationProvider] || PROVIDER_DEFAULT_MODELS.google;
+            const validationSampling = this._resolveSamplingParams(validationModel, { isValidation: true });
             let apiUrl = typeof providerConfig.apiUrl === 'function' ? providerConfig.apiUrl(validationModel) : providerConfig.apiUrl;
-            let payload = providerConfig.payload("test", validationModel);
+            let payload = providerConfig.payload("test", validationModel, null, validationSampling);
             if (payload && typeof payload === 'object') {
                 if (validationProvider === 'google') {
                     const genConfig = { ...(payload.generationConfig || {}), maxOutputTokens: 5 };
@@ -296,6 +362,10 @@ export const AIService = {
                         genConfig.thinkingConfig = { ...genConfig.thinkingConfig, thinkingLevel: 'LOW' };
                     }
                     payload.generationConfig = genConfig;
+                } else if (validationProvider === 'ollama' && payload.options) {
+                    payload.options.num_predict = 5;
+                } else if ('max_completion_tokens' in payload) {
+                    payload.max_completion_tokens = 5;
                 } else if ('max_tokens' in payload) {
                     payload.max_tokens = 5;
                 }
@@ -314,11 +384,13 @@ export const AIService = {
             throw new Error(`Clé API ${provider.charAt(0).toUpperCase() + provider.slice(1)} manquante.`);
         }
 
+        const sampling = this._resolveSamplingParams(selectedModel, { isValidation: false, taskType });
+
         return {
             apiKey,
             apiUrl: typeof config.apiUrl === 'function' ? config.apiUrl(selectedModel) : config.apiUrl,
             headers: config.headers(apiKey),
-            payload: config.payload(prompt, selectedModel, systemPrompt)
+            payload: config.payload(prompt, selectedModel, systemPrompt, sampling)
         };
     },
 
@@ -427,10 +499,12 @@ export const AIService = {
                         .filter(p => p.type === 'text' && p.text)
                         .map(p => p.text)
                         .join('').trim();
+                } else if (res.message?.content) {
+                    text = res.message.content; // Ollama /api/chat
                 } else if (res.response) {
-                    text = res.response; // Ollama
+                    text = res.response; // Ollama /api/generate (rétrocompatibilité)
                 } else if (res.choices?.[0]?.message?.content) {
-                    text = res.choices[0].message.content; // OpenAI / OpenRouter / Mistral
+                    text = res.choices[0].message.content; // OpenAI / OpenRouter / Mistral / Groq / Albert
                 }
 
                 // Nettoyage des balises de raisonnement (DeepSeek R1, Qwen, Ollama thinking), y compris non fermées en fin de flux

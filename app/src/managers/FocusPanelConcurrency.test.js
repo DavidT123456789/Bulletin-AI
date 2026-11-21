@@ -310,12 +310,14 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
         await FocusPanelRefinement.apply('concise');
 
         expect(AIService.callAIWithFallback).toHaveBeenCalledTimes(1);
-        const sentPrompt = AIService.callAIWithFallback.mock.calls[0][0];
+        const [sentPrompt, sentOptions] = AIService.callAIWithFallback.mock.calls[0];
         expect(sentPrompt).not.toMatch(/\b(Arthur|Dupont|Chloé|Bernard|PAP)\b/i);
         expect(sentPrompt).not.toMatch(/dyslexi/i);
         expect(sentPrompt).toContain('[CAMARADE]');
         expect(sentPrompt).toContain('[AMÉNAGEMENT]');
         expect(sentPrompt).toContain('un petit effort');
+        expect(sentOptions.context).toBe('refinement');
+        expect(sentOptions.systemPrompt).toContain('sans sigles de période');
 
         expect(studentArthur.appreciation).toBe("Les efforts d'Arthur sont notables ; il faut qu'Arthur maintienne son attention.");
     });

@@ -1357,7 +1357,10 @@ export const ClassDashboardManager = {
             const stats = this.cachedStats;
             const { systemPrompt, userPrompt } = this.buildAIPrompt(stats);
 
-            const response = await AIService.callAIWithFallback(userPrompt, { systemPrompt });
+            const response = await AIService.callAIWithFallback(userPrompt, {
+                systemPrompt,
+                taskType: 'class-synthesis'
+            });
             const usedModel = response.modelUsed || targetModel;
 
             // Parse the response into structured sections

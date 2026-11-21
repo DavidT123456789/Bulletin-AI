@@ -277,13 +277,16 @@ export const FocusPanelRefinement = {
             const identity = this._buildRefinementIdentity(ctx);
             const studentPrenom = identity.prenom;
 
-            const prompt = PromptService.getRefinementPrompt(refineType, currentText, identity);
-            const response = await AIService.callAIWithFallback(prompt, { context: 'refinement', signal });
+            const { systemPrompt, userPrompt } = PromptService.getRefinementPrompts(refineType, currentText, identity);
+            const response = await AIService.callAIWithFallback(userPrompt, { context: 'refinement', systemPrompt, signal });
 
             if (signal.aborted) return;
 
             if (response?.text) {
-                const refined = PromptService.deanonymizeText(response.text.trim(), studentPrenom);
+                const refined = PromptService.deanonymizeText(
+                    PromptService.sanitizeAppreciationOutput(response.text),
+                    studentPrenom
+                );
                 const finalHtml = Utils.cleanMarkdown(refined);
 
                 if (isStillOnSameContext() && appreciationText) {

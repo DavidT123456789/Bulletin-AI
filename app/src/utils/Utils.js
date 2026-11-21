@@ -1280,6 +1280,22 @@ export const Utils = {
     },
 
     /**
+     * Indique si un prénom est connu comme épicène (mixte en France).
+     * Utilisé par PromptService pour ne fournir la consigne de tournure impersonnelle
+     * en mode non-anonymisé que lorsque le prénom est véritablement ambigu pour le LLM.
+     * @param {string} prenom
+     * @returns {boolean}
+     */
+    isEpiceneFirstName(prenom) {
+        if (!prenom || typeof prenom !== 'string') return false;
+        const normalized = this.stripAccents(prenom);
+        if (!normalized) return false;
+        if (EPICENE_FIRST_NAMES.has(normalized)) return true;
+        const parts = normalized.split(/[\s-]+/).filter(Boolean);
+        return parts.length > 1 && parts.every(part => EPICENE_FIRST_NAMES.has(part));
+    },
+
+    /**
      * Génère le HTML pour le skeleton de l'appréciation (Source unique de vérité)
      * @param {boolean} [compact=false] - Version liste (true) ou version carte/focus (false)
      * @returns {string} HTML string

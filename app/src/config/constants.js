@@ -28,7 +28,6 @@ export const CONFIG = {
     ANTHROPIC_API_BASE: AI_PROVIDERS.anthropic.apiBaseUrl,
     MISTRAL_API_BASE: AI_PROVIDERS.mistral.apiBaseUrl,
     GROQ_API_BASE: AI_PROVIDERS.groq.apiBaseUrl,
-    API_CALL_TIMEOUT_MS: 45000,
     API_CALL_TIMEOUT_OLLAMA_MS: OLLAMA_CONFIG.timeoutMs, // 2 minutes pour Ollama (modèles locaux lents au premier chargement)
     WORD_COUNT_TOLERANCE: 0.25,
 };

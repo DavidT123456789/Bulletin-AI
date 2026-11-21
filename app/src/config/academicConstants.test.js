@@ -80,7 +80,13 @@ describe('SSOT 3 — STUDENT_STATUS_REGISTRY & Neutralisation RGPD (Art. 9)', ()
     });
 
     it('neutralise les statuts composites (Nouveau ULIS, Départ PAI, Délégué PAP) sans fuite Art. 9 et identifie les dispositifs imbriqués', () => {
-        expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau T2')).toContain('(Nouveau T2)');
+        const nouveauT2 = STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau T2');
+        expect(nouveauT2).toContain('au 2e trimestre');
+        expect(nouveauT2).not.toMatch(/\bT2\b/);
+        const departS1 = STUDENT_STATUS_REGISTRY.DEPART.formatPromptInstruction('Départ S1');
+        expect(departS1).toContain('au 1er semestre');
+        expect(departS1).not.toMatch(/\bS1\b/);
+        expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau octobre')).toContain('(Nouveau octobre)');
         expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau ULIS')).not.toMatch(/ULIS/i);
         expect(STUDENT_STATUS_REGISTRY.DEPART.formatPromptInstruction('Départ PAI')).not.toMatch(/PAI/i);
         expect(STUDENT_STATUS_REGISTRY.DELEGUE.formatPromptInstruction('Délégué dyslexique')).not.toMatch(/dyslexi/i);

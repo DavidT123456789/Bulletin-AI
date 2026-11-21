@@ -441,5 +441,29 @@ describe('AppreciationsManager', () => {
             expect(StorageManager.saveAppState).toHaveBeenCalled();
         });
     });
+
+    describe('generateAppreciation() — nettoyage léger de sortie', () => {
+        it('retire les préfixes parasites et guillemets englobants avant désanonymisation sans altérer la ponctuation interne', async () => {
+            UI.checkAPIKeyPresence = vi.fn(() => true);
+            AppreciationsManager.init({}, UI);
+
+            AIService.callAIWithFallback.mockResolvedValueOnce({
+                text: 'Appréciation : « Le travail de [PRÉNOM] est sérieux : à poursuivre ; très bien. »',
+                usage: { total_tokens: 90 },
+                generationTimeMs: 420,
+                modelUsed: 'albert-openweight-medium'
+            });
+
+            const res = await AppreciationsManager.generateAppreciation({
+                nom: 'MARTIN',
+                prenom: 'Arthur',
+                statuses: [],
+                currentPeriod: 'T1',
+                periods: { T1: { grade: 15 } }
+            });
+
+            expect(res.appreciation).toBe("Le travail d'Arthur est sérieux : à poursuivre ; très bien.");
+        });
+    });
 });
 

@@ -90,10 +90,21 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(getModelTimeout('openai-gpt-6.1-sol')).toBe(40000);
         expect(getModelTimeout('openai-gpt-6-luna')).toBe(30000);
         expect(getModelTimeout('groq-gpt-oss-120b')).toBe(40000);
-        expect(getModelTimeout('anthropic-claude-opus-5-5')).toBe(30000);
+        expect(getModelTimeout('groq-llama-3.3-70b')).toBe(40000);
+        expect(getModelTimeout('groq-gemma-2-9b')).toBe(40000);
+        expect(getModelTimeout('groq-llama-3.1-8b')).toBe(40000);
+        expect(getModelTimeout('mistral-direct-large-latest')).toBe(30000);
+        expect(getModelTimeout('mistral-large')).toBe(30000);
+        expect(getModelTimeout('anthropic-claude-opus-5-5')).toBe(40000);
         expect(getModelTimeout('anthropic-claude-sonnet-5-5')).toBe(22000);
         expect(getModelTimeout('deepseek-v4-flash')).toBe(22000);
         expect(getModelTimeout(null, 120000, 22000)).toBe(22000);
+
+        expect(OLLAMA_CONFIG.apiEndpoint).toBe('/api/chat');
+        expect(getModelMeta('groq-llama-3.3-70b').isReasoning).toBe(true);
+        expect(getModelMeta('openai-gpt-6-luna').supportsTemperature).toBe(false);
+        expect(getModelMeta('deepseek-r1').supportsTemperature).toBe(false);
+        expect(getModelMeta('anthropic-claude-opus-5-5').supportsTemperature).toBe(false);
     });
 
     it('maintient la cohérence de API_MODEL_MAPPINGS, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS et PROVIDER_SHOWCASE_MODELS', () => {
@@ -127,6 +138,9 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(migrateLegacyModelId('openai-gpt-4o-mini')).toBe('openai-gpt-6-luna');
         expect(migrateLegacyModelId('groq-llama-3.3-70b')).toBe('groq-gpt-oss-120b');
         expect(migrateLegacyModelId('albert-openweight-small')).toBe('albert-openweight-medium');
+        expect(migrateLegacyModelId('ollama-qwen3:8b')).toBe('ollama-qwen3:8b');
+        expect(migrateLegacyModelId('ollama-qwen3:4b')).toBe('ollama-qwen3:4b');
+        expect(migrateLegacyModelId('ollama-gemma3:4b')).toBe('ollama-gemma3:4b');
         expect(migrateLegacyModelId('gemini-4-hydrogen')).toBe('gemini-4-hydrogen');
         expect(migrateLegacyModelId(null)).toBeNull();
         expect(migrateLegacyModelId(undefined)).toBeUndefined();

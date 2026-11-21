@@ -29,8 +29,7 @@ vi.mock('../config/Config.js', () => ({
         ALBERT_API_BASE: 'https://albert.api.etalab.gouv.fr/v1',
         GROQ_API_BASE: 'https://api.groq.com/openai/v1',
         OPENROUTER_API_BASE: 'https://openrouter.ai/api/v1',
-        MISTRAL_API_BASE: 'https://api.mistral.ai/v1',
-        API_CALL_TIMEOUT_MS: 25000
+        MISTRAL_API_BASE: 'https://api.mistral.ai/v1'
     },
     COSTS_PER_MILLION_TOKENS: {
         'gemini-2.0-flash': { input: 0.10, output: 0.40 },
@@ -133,22 +132,29 @@ describe('AIService', () => {
             expect(config.payload.max_tokens).toBe(5);
         });
 
-        it('should inject thinkingConfig.thinkingLevel from aiRegistry for Google models when configured', async () => {
+        it('should inject thinkingConfig.thinkingLevel and calibrated sampling from aiRegistry for Google models', async () => {
             const { appState } = await import('../state/State.js');
             appState.googleApiKey = 'test-google-key';
 
             appState.currentAIModel = 'gemini-3.8-flash';
             expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
-                thinkingConfig: { thinkingLevel: 'LOW' }
+                thinkingConfig: { thinkingLevel: 'LOW' },
+                temperature: 0.65,
+                maxOutputTokens: 2048
             });
 
             appState.currentAIModel = 'gemini-4-hydrogen';
-            expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
-                thinkingConfig: { thinkingLevel: 'LOW' }
+            expect(AIService._getApiConfig('Test', { taskType: 'analysis' }).payload.generationConfig).toEqual({
+                thinkingConfig: { thinkingLevel: 'LOW' },
+                temperature: 0.2,
+                maxOutputTokens: 2048
             });
 
             appState.currentAIModel = 'gemini-3.6-flash';
-            expect(AIService._getApiConfig('Test').payload.generationConfig).toBeUndefined();
+            expect(AIService._getApiConfig('Test').payload.generationConfig).toEqual({
+                temperature: 0.65,
+                maxOutputTokens: 1024
+            });
         });
 
         it('should return correct config for OpenAI provider', async () => {
@@ -191,12 +197,83 @@ describe('AIService', () => {
             expect(config.apiUrl).toBe('https://albert.api.etalab.gouv.fr/v1/chat/completions');
             expect(config.headers['Authorization']).toBe('Bearer sk-albert-test-key');
             expect(config.payload.model).toBe('openweight-medium');
-            expect(config.payload.temperature).toBe(0.45);
+            expect(config.payload.temperature).toBe(0.65);
             expect(config.payload.top_p).toBe(0.9);
+            expect(config.payload.max_tokens).toBe(1024);
             expect(config.payload.messages).toEqual([
                 { role: 'system', content: 'Tu es enseignant.' },
                 { role: 'user', content: 'Test prompt' }
             ]);
+
+            const analysisConfig = AIService._getApiConfig('Test prompt', {
+                modelOverride: 'albert-openweight-large',
+                taskType: 'analysis'
+            });
+            expect(analysisConfig.payload.temperature).toBe(0.2);
+            expect(analysisConfig.payload.max_tokens).toBe(2048);
+        });
+
+        it('should calibrate temperature by taskType, respect supportsTemperature: false and derive max_tokens from isReasoning', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.openaiApiKey = 'test-openai-key';
+            appState.groqApiKey = 'gsk-test-groq-key';
+            appState.openrouterApiKey = 'or-test-key';
+            appState.anthropicApiKey = 'ant-test-key';
+            appState.ollamaEnabled = true;
+
+            // OpenAI reasoning : pas de temperature, utilise max_completion_tokens: 2048
+            const openaiReasoning = AIService._getApiConfig('Test', { modelOverride: 'openai-gpt-6-luna' });
+            expect(openaiReasoning.payload.temperature).toBeUndefined();
+            expect(openaiReasoning.payload.max_tokens).toBeUndefined();
+            expect(openaiReasoning.payload.max_completion_tokens).toBe(2048);
+
+            // Validation OpenAI reasoning : plafonne max_completion_tokens à 5
+            const openaiValidation = AIService._getApiConfig('test', {
+                isValidation: true,
+                validationProvider: 'openai',
+                modelOverride: 'openai-gpt-6-luna'
+            });
+            expect(openaiValidation.payload.max_completion_tokens).toBe(5);
+            expect(openaiValidation.payload.temperature).toBeUndefined();
+
+            // Groq reasoning : budget 2048 tokens + temperature par tâche
+            const groqAppreciation = AIService._getApiConfig('Test', { modelOverride: 'groq-gpt-oss-120b' });
+            expect(groqAppreciation.payload.max_tokens).toBe(2048);
+            expect(groqAppreciation.payload.temperature).toBe(0.65);
+
+            const groqAnalysis = AIService._getApiConfig('Test', { modelOverride: 'groq-gpt-oss-20b', taskType: 'class-synthesis' });
+            expect(groqAnalysis.payload.max_tokens).toBe(2048);
+            expect(groqAnalysis.payload.temperature).toBe(0.2);
+
+            // DeepSeek R1 & Anthropic Opus : supportsTemperature: false + 2048 tokens
+            const deepseekR1 = AIService._getApiConfig('Test', { modelOverride: 'deepseek-r1' });
+            expect(deepseekR1.payload.temperature).toBeUndefined();
+            expect(deepseekR1.payload.max_tokens).toBe(2048);
+
+            const claudeOpus = AIService._getApiConfig('Test', { modelOverride: 'anthropic-claude-opus-5-5' });
+            expect(claudeOpus.payload.temperature).toBeUndefined();
+            expect(claudeOpus.payload.max_tokens).toBe(2048);
+
+            // Ollama /api/chat avec messages system/user, temperature calibrée et num_predict selon isReasoning
+            const ollamaChat = AIService._getApiConfig('Données élève', {
+                modelOverride: 'ollama-qwen2.5:7b',
+                systemPrompt: 'Tu es enseignant.',
+                taskType: 'analysis'
+            });
+            expect(ollamaChat.apiUrl).toBe('http://localhost:11434/api/chat');
+            expect(ollamaChat.payload.messages).toEqual([
+                { role: 'system', content: 'Tu es enseignant.' },
+                { role: 'user', content: 'Données élève' }
+            ]);
+            expect(ollamaChat.payload.prompt).toBeUndefined();
+            expect(ollamaChat.payload.options.temperature).toBe(0.2);
+            expect(ollamaChat.payload.options.num_predict).toBe(1024);
+
+            const ollamaReasoning = AIService._getApiConfig('Test', { modelOverride: 'ollama-deepseek-r1:8b' });
+            expect(ollamaReasoning.payload.options.num_predict).toBe(2048);
+            expect(ollamaReasoning.payload.options.temperature).toBe(0.65);
+
+            appState.ollamaEnabled = false;
         });
 
         it('should return correct config for validation mode', async () => {
@@ -424,6 +501,29 @@ describe('AIService', () => {
             expect(result.usage.prompt_tokens).toBe(15);
             expect(result.usage.completion_tokens).toBe(25);
             expect(result.usage.total_tokens).toBe(40);
+        });
+
+        it('should parse Ollama /api/chat response correctly', async () => {
+            const { appState } = await import('../state/State.js');
+            appState.ollamaEnabled = true;
+            appState.currentAIModel = 'ollama-qwen2.5:7b';
+
+            globalThis.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({
+                    message: { role: 'assistant', content: 'Travail sérieux et régulier.' },
+                    prompt_eval_count: 120,
+                    eval_count: 35
+                })
+            });
+
+            try {
+                const result = await AIService.callAI('Données', { systemPrompt: 'Tu es enseignant.' });
+                expect(result.text).toBe('Travail sérieux et régulier.');
+                expect(result.usage).toEqual({ prompt_tokens: 120, completion_tokens: 35, total_tokens: 155 });
+            } finally {
+                appState.ollamaEnabled = false;
+            }
         });
     });
 

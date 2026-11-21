@@ -562,6 +562,64 @@ export const PromptService = {
     },
 
     /**
+     * Nettoie légèrement la sortie texte d'un LLM : retire uniquement un éventuel préfixe parasite
+     * (type « Appréciation : », « Voici l'appréciation : ») et les guillemets englobants équilibrés,
+     * sans jamais altérer la ponctuation interne.
+     * @param {string} text
+     * @returns {string}
+     */
+    sanitizeAppreciationOutput(text) {
+        if (!text || typeof text !== 'string') return text || '';
+        let cleaned = text.trim();
+
+        cleaned = cleaned.replace(
+            /^(?:\*\*)?(?:voici\s+(?:l['’]appr[eé]ciation(?:\s+(?:scolaire|propos[eé]e|r[eé]vis[eé]e|sugg[eé]r[eé]e|finale))?|une\s+proposition(?:\s+d['’]appr[eé]ciation)?)|appr[eé]ciation(?:\s+(?:scolaire|propos[eé]e|r[eé]vis[eé]e|finale))?|proposition(?:\s+d['’]appr[eé]ciation)?)(?:\*\*)?\s*:\s*/i,
+            ''
+        ).trim();
+
+        const quotePairs = [
+            ['"', '"'],
+            ['«', '»'],
+            ['“', '”']
+        ];
+        for (let pass = 0; pass < 2; pass++) {
+            let stripped = false;
+            for (const [open, close] of quotePairs) {
+                if (cleaned.length >= 2 && cleaned.startsWith(open) && cleaned.endsWith(close)) {
+                    const inner = cleaned.slice(1, -1);
+                    if (!inner.includes(close)) {
+                        cleaned = inner.trim();
+                        stripped = true;
+                        break;
+                    }
+                }
+            }
+            if (!stripped) break;
+        }
+
+        return cleaned;
+    },
+
+    /**
+     * Traduit une cible en mots en gabarit combiné (mots + nombre de phrases + paragraphe unique)
+     * plus fiable sur les petits et moyens modèles (7B-24B).
+     * @param {number} wordCount
+     * @returns {string}
+     * @private
+     */
+    _formatLengthInstruction(wordCount) {
+        let sentenceRange = '2 à 3 phrases';
+        if (wordCount <= 25) {
+            sentenceRange = '1 à 2 phrases courtes';
+        } else if (wordCount <= 45) {
+            sentenceRange = '2 phrases';
+        } else if (wordCount > 70) {
+            sentenceRange = '3 à 4 phrases';
+        }
+        return `environ ${wordCount} mots (${sentenceRange}, en un seul paragraphe)`;
+    },
+
+    /**
      * Extrait la synthèse du journal de bord pour le prompt (via JournalManager ou depuis studentData.journal).
      * @param {Object} studentData
      * @param {string} currentPeriod
@@ -688,11 +746,51 @@ export const PromptService = {
         const hasContext = !!(periodContext?.trim() || journalSynthesis?.trim());
 
         const hasNoData = !hasGrades && !hasContext;
-        const currentGradeRaw = periods?.[currentPeriod]?.grade;
+        const currentPeriodData = periods?.[currentPeriod] || {};
+        const currentGradeRaw = currentPeriodData.grade;
         const currentGradeVal = this._parseGrade(currentGradeRaw);
         const hasCurrentGrade = !isNaN(currentGradeVal);
+        const currentEvalCount = typeof currentPeriodData.evaluationCount === 'number'
+            ? currentPeriodData.evaluationCount
+            : null;
 
         const iaConfig = this._resolveIaConfig(overrideConfig);
+
+        // Pré-calcul des lignes de périodes pour connaître précisément la présence de statistiques de classe
+        // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES en génération
+        // afin d'éviter que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
+        const periodRows = relevantPeriods.map(p => {
+            const d = periods?.[p] || {};
+            const gradeRaw = d.grade;
+            const gradeVal = this._parseGrade(gradeRaw);
+            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'Non renseignée';
+            const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
+            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
+            const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, p, gradeVal);
+            const scrubbedApp = d.appreciation
+                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions)
+                : '';
+            const prefixForGeneration = `${p} : Moy ${g}${evalCount}${classStatsStr}, Appréciation : `;
+            const prefixForAnalysis = `${p} : Moy ${g}${evalCount}${classStatsStr}${classComparisonStr}, Appréciation : `;
+            const storedAppText = `"${scrubbedApp || 'N/A'}"`;
+            return {
+                forGeneration: `${prefixForGeneration}${p === currentPeriod ? '[à générer]' : storedAppText}`,
+                forAnalysis: `${prefixForAnalysis}${storedAppText}`,
+                hasClassStats: Boolean(classStatsStr),
+                scrubbedApp
+            };
+        });
+        const hasAnyClassStats = periodRows.some(r => r.hasClassStats);
+
+        const activeStatuses = Array.isArray(statuses) && statuses.length > 0
+            ? (typeof Utils.getActiveStatuses === 'function' ? Utils.getActiveStatuses(statuses, currentPeriod) : statuses)
+            : [];
+        const hasAccompanimentStatus = activeStatuses.some(raw => {
+            const trimmed = String(raw || '').trim();
+            if (!trimmed) return false;
+            const meta = resolveStudentStatus(trimmed);
+            return Boolean(meta?.isGdprSensitive || GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed));
+        });
 
         // Anonymisation RGPD : on utilise [PRÉNOM] au lieu du vrai prénom
         // Le genre est détecté pour permettre l'accord grammatical correct
@@ -738,13 +836,31 @@ export const PromptService = {
         });
         const evolutionText = this._formatEvolutions(filteredEvolutions);
 
-        // Instruction critique sur la cohérence note/appréciation (placée au début pour plus d'impact)
+        // Instruction critique sur la cohérence note/appréciation et les cas limites (placée en tête)
         if (!hasNoData) {
-            const evolutionClause = filteredEvolutions.length > 0 ? ' et son évolution' : '';
-            const missingCurrentGradeNote = hasCurrentGrade
-                ? ''
-                : " Si la période courante n'a pas de moyenne, le signaler factuellement sans inventer de résultats.";
-            systemParts.push(`L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne${evolutionClause}, tout en tenant compte du contexte fourni sur l'élève.${missingCurrentGradeNote}`);
+            const coherenceNotes = [];
+            if (hasGrades) {
+                const evolutionClause = filteredEvolutions.length > 0 ? ' et son évolution' : '';
+                const missingCurrentGradeNote = hasCurrentGrade
+                    ? ''
+                    : " Si la période courante n'a pas de moyenne, le signaler factuellement sans inventer de résultats.";
+                coherenceNotes.push(
+                    `L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne${evolutionClause}, tout en tenant compte du contexte fourni sur l'élève.${missingCurrentGradeNote}`
+                );
+                if (hasCurrentGrade) {
+                    if (currentEvalCount === 1) {
+                        coherenceNotes.push("La moyenne de la période repose sur une seule évaluation : nuance le constat sans généraliser.");
+                    }
+                    if (currentGradeVal >= 18) {
+                        coherenceNotes.push("Les résultats sont excellents : valorise cette maîtrise avec sobriété sans inventer d'axe d'amélioration artificiel si aucune fragilité n'est signalée.");
+                    } else if (currentGradeVal < 6) {
+                        coherenceNotes.push("Les résultats sont très fragiles : reste factuel, professionnel et constructif avec une piste de remédiation simple, sans formulation décourageante.");
+                    }
+                }
+            } else {
+                coherenceNotes.push("Aucune moyenne chiffrée n'est disponible : appuie-toi uniquement sur le contexte et les observations fournis, sans inventer ni suggérer de niveau chiffré.");
+            }
+            systemParts.push(coherenceNotes.join(' '));
         }
 
         const hasPastAppreciations = relevantPeriods.some(p => { const app = periods?.[p]?.appreciation?.trim(); return p !== currentPeriod && !!app && app !== 'N/A'; });
@@ -764,29 +880,35 @@ export const PromptService = {
         const effectiveStyle = this._getEffectiveStyle(iaConfig);
         if (toneMap[effectiveStyle.tone]) {
             styleParts.push(`Adopte un ton ${toneMap[effectiveStyle.tone]}.`);
+            if (effectiveStyle.tone >= 4 && hasAccompanimentStatus) {
+                styleParts.push(`En présence de consignes d'accompagnement pour cet élève, maintiens l'exigence sur le travail tout en préservant une formulation respectueuse et constructive.`);
+            }
         }
 
         const voiceInstruction = {
             'je': 'Rédige à la première personne du singulier, sans commencer chaque phrase par « je ».',
             'nous': 'Rédige à la première personne du pluriel (« nous »), au nom de l\'équipe pédagogique.',
             'neutre': 'Rédige dans un style impersonnel et factuel, sans prénom ni pronom désignant l\'élève ou l\'enseignant (les tournures impersonnelles comme « il convient de » restent possibles).'
-        }[iaConfig.voice];
+        }[iaConfig.voice] || 'Rédige à la troisième personne dans un style de bulletin scolaire naturel, sans utiliser « je » ni « nous ».';
 
-        if (voiceInstruction) {
-            styleParts.push(voiceInstruction);
-        }
+        styleParts.push(voiceInstruction);
+
         if (!isNeutralVoice && !hasNoData) {
             styleParts.push(`Ne t'adresse pas directement à l'élève (ni « tu » ni « vous ») et cite son prénom une fois au maximum.`);
         }
 
         if (effectiveStyle.length && !hasNoData) {
-            styleParts.push(`Longueur visée : environ ${effectiveStyle.length} mots. Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`);
+            styleParts.push(`Longueur visée : ${this._formatLengthInstruction(effectiveStyle.length)}. Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`);
         }
-        if (!hasNoData) {
-            styleParts.push(`Ne cite ni les moyennes ni les statistiques de classe, et ne compare pas explicitement l'élève à la classe : sers-t'en uniquement pour ajuster ton degré d'exigence ou d'encouragement.`);
+        if (!hasNoData && hasGrades) {
+            if (hasAnyClassStats) {
+                styleParts.push(`Ne cite ni les moyennes ni les statistiques de classe, et ne compare pas explicitement l'élève à la classe : sers-t'en uniquement pour ajuster ton degré d'exigence ou d'encouragement.`);
+            } else {
+                styleParts.push(`Ne cite pas les moyennes chiffrées dans l'appréciation : traduis le niveau de réussite en termes qualitatifs.`);
+            }
         }
         styleParts.push(`Rédige en français courant sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`);
-        styleParts.push(`Réponds uniquement avec le texte de l'appréciation, sans titre, préambule ni guillemets.`);
+        styleParts.push(`Réponds uniquement avec le texte de l'appréciation en un seul paragraphe, sans titre, préambule, liste à puces ni guillemets.`);
 
         if (effectiveStyle.styleInstructions) {
             styleParts.push(`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`);
@@ -800,37 +922,12 @@ export const PromptService = {
 
         systemParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.map(s => '- ' + s).join('\n'));
 
-        // Anonymisation : on n'envoie PAS le nom de famille, seulement les notes
-        // On n'envoie que les périodes jusqu'à la période à évaluer (incluse)
-        // [FIX] N'inclure l'appréciation que pour les périodes PRÉCÉDENTES
-        // L'appréciation de la période courante ne doit PAS être incluse pour éviter
-        // que l'IA ne s'inspire de l'ancienne appréciation lors d'une régénération
-        const periodRows = relevantPeriods.map(p => {
-            const d = periods?.[p] || {};
-            const gradeRaw = d.grade;
-            const gradeVal = this._parseGrade(gradeRaw);
-            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
-            const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
-            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
-            const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, p, gradeVal);
-            const scrubbedApp = d.appreciation
-                ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions)
-                : '';
-            const prefixForGeneration = `${p} : Moy ${g}${evalCount}${classStatsStr}, Appréciation : `;
-            const prefixForAnalysis = `${p} : Moy ${g}${evalCount}${classStatsStr}${classComparisonStr}, Appréciation : `;
-            const storedAppText = `"${scrubbedApp || 'N/A'}"`;
-            return {
-                forGeneration: `${prefixForGeneration}${p === currentPeriod ? '[à générer]' : storedAppText}`,
-                forAnalysis: `${prefixForAnalysis}${storedAppText}`,
-                scrubbedApp
-            };
-        });
         const periodsInfo = periodRows.map(r => r.forGeneration).join('\n');
         let periodsInfoForAnalysis = periodRows.map(r => r.forAnalysis).join('\n');
         if (!periodsInfoForAnalysis && periods?.[currentPeriod]) {
             const d = periods?.[currentPeriod] || {};
             const gradeVal = this._parseGrade(d.grade);
-            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'N/A';
+            const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'Non renseignée';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
             const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, currentPeriod);
             const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, currentPeriod, gradeVal);
@@ -851,17 +948,21 @@ export const PromptService = {
         const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
 
         // === JOURNAL DE BORD: Synthesis for prompt ===
-        // Injects tag counts and recent notes to enrich AI context
-        const journalLine = journalSynthesis ? `\n\nObservations du professeur : ${journalSynthesis}` : '';
+        // Injects tag counts and recent notes to enrich AI context (strip redundant leading "Observations:" prefix)
+        const formattedJournalSynthesis = journalSynthesis
+            ? journalSynthesis.replace(/^Observations\s*:\s*/i, '').trim()
+            : '';
+        const journalLine = formattedJournalSynthesis ? `\n\nObservations du professeur : ${formattedJournalSynthesis}` : '';
 
         // Note: Le nom de famille n'est JAMAIS envoyé, même si l'anonymisation est désactivée.
         // Seul le prénom est partagé si l'utilisateur le permet.
         // En mode neutre, on ne mentionne aucun identifiant personnel.
 
-        // Si on envoie le vrai prénom, on laisse l'IA déduire le genre (sauf si neutre/indéterminé)
-        // Si anonyme ([PRÉNOM]) ou neutre, on DOIT fournir le genre pour l'accord grammatical.
-        const isGenderUnknown = gender !== 'masculin' && gender !== 'féminin';
-        const showGender = isAnonymous || isNeutralVoice || isGenderUnknown;
+        // Si on envoie le vrai prénom (anonymizeData === false && voice !== 'neutre'),
+        // on laisse le LLM déduire le genre sauf pour les prénoms véritablement épicènes.
+        // Si anonyme ([PRÉNOM]) ou voix neutre, on fournit toujours le genre pour l'accord grammatical.
+        const isEpicene = typeof Utils.isEpiceneFirstName === 'function' && Utils.isEpiceneFirstName(prenom);
+        const showGender = isAnonymous || isNeutralVoice || isEpicene;
         const genderSuffix = showGender ? ` (${genderLabel})` : '';
 
         // En mode neutre: "Genre : féminin" au lieu de "Élève : Élève (féminin)"
@@ -887,7 +988,8 @@ export const PromptService = {
             }
         }
         const classPrefix = classLines.length > 0 ? classLines.join('\n') + '\n' : '';
-        const appreciationUser = `--- DONNÉES DE L'ÉLÈVE ---\n${classPrefix}${studentLine}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}\n\n${evolutionText}`;
+        const evolutionBlock = evolutionText ? `\n\n${evolutionText}` : '';
+        const appreciationUser = `--- DONNÉES DE L'ÉLÈVE ---\n${classPrefix}${studentLine}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}${evolutionBlock}`;
 
         // Le prompt complet (aperçu, copie) est strictement la concaténation de ce qui est envoyé à l'API
         const appreciationSystem = systemParts.join('\n\n');
@@ -906,8 +1008,8 @@ export const PromptService = {
         if (periodContext) {
             analysisHeaderParts.push(`Contexte : "${periodContext}"`);
         }
-        if (journalSynthesis) {
-            analysisHeaderParts.push(`Observations : ${journalSynthesis}`);
+        if (formattedJournalSynthesis) {
+            analysisHeaderParts.push(`Observations : ${formattedJournalSynthesis}`);
         }
 
         const isSparseDossier = !currentPeriodAppreciation && !periodContext && !journalSynthesis;
@@ -953,13 +1055,14 @@ RÈGLES STRICTES DE FIABILITÉ :
     },
 
     /**
-     * Generates a refinement prompt for appreciation modifications
-     * @param {string} type - Type of refinement (concise, encouraging, polish)
-     * @param {string} original - The original text to refine
-     * @param {Object} [options={}] - Optional local identity for GDPR scrubbing & gender agreement ({ prenom, nom, studentData })
-     * @returns {string} The formatted prompt for AI
+     * Génère les prompts structurés (`systemPrompt`, `userPrompt` et concaténation `prompt`)
+     * pour le raffinement d'une appréciation existante.
+     * @param {string} type - Type de raffinement (`concise`, `encouraging`, `polish`, `default`)
+     * @param {string} original - Texte d'origine à retravailler
+     * @param {Object} [options={}] - Identité locale pour le scrubbing RGPD et l'accord de genre
+     * @returns {{ systemPrompt: string, userPrompt: string, prompt: string }}
      */
-    getRefinementPrompt(type, original, options = {}) {
+    getRefinementPrompts(type, original, options = {}) {
         const isOptionsObject = options && typeof options === 'object';
         const isAnonymous = appState.anonymizeData ?? true;
         const explicitId = isOptionsObject ? (options.id || options.studentId || options.studentData?.id || null) : null;
@@ -980,34 +1083,62 @@ RÈGLES STRICTES DE FIABILITÉ :
         }).replace(/\s*\[nom\]/gi, '');
 
         const gender = explicitPrenom ? Utils.detectGender(explicitPrenom) : null;
-        const genderClause = (gender === 'féminin' || gender === 'masculin')
-            ? `Genre de l'élève : ${gender} (pour les accords grammaticaux). `
-            : '';
-
         const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
-        const customStyleClause = effectiveStyle.styleInstructions
-            ? `Consigne de l'enseignant : ${effectiveStyle.styleInstructions}\n`
-            : '';
 
-        // Raw text only, keeping the grammatical person and preventing hallucinations or direct tu/vous address
-        const base = `${genderClause}N'invente aucun fait, résultat ou compétence absents du texte. Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »). Conserve la personne grammaticale du texte d'origine (je, nous ou tournure impersonnelle). ${customStyleClause}Réponds uniquement avec le texte brut, sans introduction, commentaire, formatage ni guillemets.`;
-        let instruction = '';
+        const rules = [
+            ...(gender === 'féminin' || gender === 'masculin'
+                ? [`Genre de l'élève : ${gender} (pour les accords grammaticaux).`]
+                : []),
+            `Conserve la personne grammaticale du texte d'origine (je, nous, troisième personne ou tournure impersonnelle).`,
+            `N'invente aucun fait, résultat ou compétence absents du texte.`,
+            `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »).`,
+            `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
+            ...(effectiveStyle.styleInstructions
+                ? [`Consigne de l'enseignant : ${effectiveStyle.styleInstructions}`]
+                : []),
+            `Réponds uniquement avec le texte brut révisé, sans titre, préambule, commentaire, formatage ni guillemets.`
+        ];
 
+        const systemPrompt = `Tu es un enseignant qui retravaille une appréciation de bulletin scolaire français.\n\n--- RÈGLES ---\n${rules.map(r => `- ${r}`).join('\n')}`;
+
+        let taskInstruction = '';
         switch (type) {
-            case 'concise':
-                instruction = `Rends cette appréciation scolaire plus concise (environ 25 % plus courte) : supprime les redondances et allège les tournures tout en conservant l'ensemble des idées (bilan, attitude, conseil).\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+            case 'concise': {
+                const wordCount = Utils.countWords(sanitizedOriginal);
+                const targetClause = wordCount >= 16
+                    ? `vise environ ${Math.max(12, Math.round(wordCount * 0.75))} mots, soit environ 25 % plus courte`
+                    : 'environ 25 % plus courte';
+                taskInstruction = `Rends cette appréciation scolaire plus concise (${targetClause}) : supprime les redondances et allège les tournures tout en conservant l'ensemble des idées (bilan, attitude, conseil).`;
                 break;
+            }
             case 'encouraging':
-                instruction = `Reformule cette appréciation scolaire avec un ton plus bienveillant, valorisant et constructif : mets en valeur les acquis ou les efforts et formule les points à travailler comme des leviers de progression, sans masquer les difficultés réelles ni tomber dans l'éloge excessif. Garde une longueur similaire.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                taskInstruction = `Reformule cette appréciation scolaire avec un ton plus bienveillant, valorisant et constructif : mets en valeur les acquis ou les efforts et formule les points à travailler comme des leviers de progression, sans masquer les difficultés réelles ni tomber dans l'éloge excessif. Garde une longueur similaire.`;
                 break;
             case 'polish':
-                instruction = `Peaufine cette appréciation scolaire : corrige les éventuelles fautes, maladresses ou répétitions et fluidifie la syntaxe dans un style de bulletin naturel et professionnel, en restant fidèle au sens et à la longueur du texte d'origine (si le texte est sous forme de notes brèves, rédige-le en phrases complètes).\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                taskInstruction = `Peaufine cette appréciation scolaire : corrige les éventuelles fautes, maladresses ou répétitions et fluidifie la syntaxe dans un style de bulletin naturel et professionnel, en restant fidèle au sens et à la longueur du texte d'origine (si le texte est sous forme de notes brèves, rédige-le en phrases complètes).`;
                 break;
             case 'default':
             default:
-                instruction = `Reformule cette appréciation scolaire de manière fluide et naturelle.\n\n---\n${sanitizedOriginal}\n---\n\n${base}`;
+                taskInstruction = `Reformule cette appréciation scolaire de manière fluide et naturelle.`;
         }
-        return instruction;
+
+        const userPrompt = `${taskInstruction}\n\n---\n${sanitizedOriginal}\n---`;
+        return {
+            systemPrompt,
+            userPrompt,
+            prompt: `${systemPrompt}\n\n${userPrompt}`
+        };
+    },
+
+    /**
+     * Generates a refinement prompt for appreciation modifications (concaténation aperçu/copie).
+     * @param {string} type - Type of refinement (concise, encouraging, polish)
+     * @param {string} original - The original text to refine
+     * @param {Object} [options={}] - Optional local identity for GDPR scrubbing & gender agreement ({ prenom, nom, studentData })
+     * @returns {string} The formatted prompt for AI
+     */
+    getRefinementPrompt(type, original, options = {}) {
+        return this.getRefinementPrompts(type, original, options).prompt;
     },
 
     /**

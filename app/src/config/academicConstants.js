@@ -6,6 +6,51 @@
  * @module config/academicConstants
  */
 
+const MOVEMENT_PERIOD_LABELS = Object.freeze({
+    T1: 'au 1er trimestre',
+    T2: 'au 2e trimestre',
+    T3: 'au 3e trimestre',
+    S1: 'au 1er semestre',
+    S2: 'au 2e semestre',
+});
+
+/**
+ * Formate un statut de mouvement (« Nouveau T2 », « Départ S1 », « Nouveau octobre »)
+ * sans jamais réinjecter de sigle de période brut (« T1 », « T2 », « S1 », « S2 ») dans le prompt.
+ * @param {string} raw
+ * @param {'new'|'depart'} kind
+ * @returns {string}
+ */
+function formatMovementStatusPrompt(raw, kind) {
+    const trimmed = String(raw || '').trim();
+    const baseText = kind === 'new'
+        ? "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation."
+        : "Tenir compte du départ de l'élève en dressant un bilan factuel et bienveillant de sa présence.";
+
+    if (!trimmed || GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
+        return baseText;
+    }
+
+    const periodMatch = trimmed.match(/\b(T[1-3]|S[1-2])\b/i);
+    if (periodMatch) {
+        const periodPhrase = MOVEMENT_PERIOD_LABELS[periodMatch[1].toUpperCase()];
+        if (periodPhrase) {
+            return kind === 'new'
+                ? `Tenir compte de l'arrivée récente de l'élève ${periodPhrase} et valoriser son adaptation.`
+                : `Tenir compte du départ de l'élève ${periodPhrase} en dressant un bilan factuel et bienveillant de sa présence.`;
+        }
+    }
+
+    const bareKeyword = kind === 'new' ? /^nouveau$/i : /^d[eé]part$/i;
+    if (bareKeyword.test(trimmed)) {
+        return baseText;
+    }
+
+    return kind === 'new'
+        ? `Tenir compte de l'arrivée récente de l'élève en cours d'année (${trimmed}) et valoriser son adaptation.`
+        : `Tenir compte du départ de l'élève (${trimmed}) en dressant un bilan factuel et bienveillant de sa présence.`;
+}
+
 /**
  * Registre canonique des statuts d'élèves.
  * Réconcilie les définitions d'interface (Focus Panel, Formulaire, Plan de classe, Liste)
@@ -27,9 +72,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isGdprSensitive: false,
         aliases: Object.freeze(['nouveau']),
         promptInstruction: "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation.",
-        formatPromptInstruction: (raw) => GDPR_SENSITIVE_STATUS_PATTERN.test(String(raw || ''))
-            ? "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation."
-            : `Tenir compte de l'arrivée récente de l'élève en cours d'année (${raw}) et valoriser son adaptation.`,
+        formatPromptInstruction: (raw) => formatMovementStatusPrompt(raw, 'new'),
     }),
     DEPART: Object.freeze({
         id: 'Départ',
@@ -46,9 +89,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isGdprSensitive: false,
         aliases: Object.freeze(['départ', 'depart']),
         promptInstruction: "Tenir compte du départ de l'élève en dressant un bilan factuel et bienveillant de sa présence.",
-        formatPromptInstruction: (raw) => GDPR_SENSITIVE_STATUS_PATTERN.test(String(raw || ''))
-            ? "Tenir compte du départ de l'élève en dressant un bilan factuel et bienveillant de sa présence."
-            : `Tenir compte du départ de l'élève (${raw}) en dressant un bilan factuel et bienveillant de sa présence.`,
+        formatPromptInstruction: (raw) => formatMovementStatusPrompt(raw, 'depart'),
     }),
     PPRE: Object.freeze({
         id: 'PPRE',

@@ -208,8 +208,11 @@ export const AppreciationsManager = {
         const systemPrompt = prompts.appreciationSystem || null;
         const aiResp = await AIService.callAIWithFallback(userPrompt, { signal, context, studentName: studentData.prenom, systemPrompt });
 
-        // Désanonymisation : remplacer [PRÉNOM] par le vrai prénom et purger tout [NOM] résiduel
-        appreciation = PromptService.deanonymizeText(aiResp.text, studentData.prenom);
+        // Nettoyage léger (préfixe parasite, guillemets englobants) puis désanonymisation locale
+        appreciation = PromptService.deanonymizeText(
+            PromptService.sanitizeAppreciationOutput(aiResp.text),
+            studentData.prenom
+        );
 
         tokenUsage.appreciation = aiResp.usage;
         tokenUsage.generationTimeMs = aiResp.generationTimeMs; // Temps de génération
@@ -356,6 +359,7 @@ export const AppreciationsManager = {
             const resp = await AIService.callAIWithFallback(prompts.analysisUser, {
                 systemPrompt: prompts.analysisSystem,
                 context: 'single-student',
+                taskType: 'analysis',
                 studentName: result.prenom,
                 signal
             });

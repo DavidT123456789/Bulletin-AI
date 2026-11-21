@@ -89,7 +89,8 @@ describe('PromptService', () => {
             // tone 3 = free mode, no explicit 'Adopte un ton'
             expect(prompts.appreciation).toContain("première personne du singulier"); // voice je
             expect(prompts.appreciation).toContain("Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »)");
-            expect(prompts.appreciation).toContain("ne compare pas explicitement l'élève à la classe");
+            expect(prompts.appreciation).toContain("Ne cite pas les moyennes chiffrées");
+            expect(prompts.appreciation).not.toContain("ne compare pas explicitement l'élève à la classe");
             expect(prompts.appreciation).toContain("sans écriture inclusive (ni point médian)");
             expect(prompts.appreciation).toContain("sans sigles de période");
             expect(prompts.appreciation).not.toContain("Si la période courante n'a pas de moyenne");
@@ -256,6 +257,7 @@ describe('PromptService', () => {
             const prompts = PromptService.getAllPrompts(studentWithClass);
             
             expect(prompts.appreciation).toContain('[Classe : Moy 12,0, Min 10,0, Max 14,0]');
+            expect(prompts.appreciation).toContain("ne compare pas explicitement l'élève à la classe");
         });
 
         it('should NOT include class statistics when less than 3 students have grades', () => {
@@ -757,8 +759,10 @@ describe('PromptService', () => {
             expect(compositeDys).toContain('départ de l\'élève');
             expect(compositeDys).not.toMatch(/dyslexi|PAI/i);
 
-            // Statut mouvement sain conservé tel quel
-            expect(PromptService.getStatusInstructions(['Nouveau T2'], 'T2')).toContain('(Nouveau T2)');
+            // Statut mouvement sain traduit sans sigle de période brut
+            const nouveauT2 = PromptService.getStatusInstructions(['Nouveau T2'], 'T2');
+            expect(nouveauT2).toContain('au 2e trimestre');
+            expect(nouveauT2).not.toMatch(/\bT2\b/);
 
             // Art. 9 en texte libre (contexte, journal, raffinement)
             appState.anonymizeData = true;
@@ -864,6 +868,126 @@ describe('PromptService', () => {
             expect(prompts.appreciationUser).not.toMatch(/ULIS|SEGPA/i);
             expect(prompts.appreciationUser).toContain('Niveau :');
             expect(prompts.analysisUser).not.toMatch(/ULIS|SEGPA/i);
+        });
+    });
+
+    describe('Lot 2 — Qualité rédactionnelle, cas limites, showGender, raffinement et sanitization', () => {
+        it('n\'injecte PAS (non déterminé...) pour un prénom inconnu quand anonymizeData === false et voice !== neutre, mais le conserve pour les prénoms épicènes', () => {
+            const prevAnon = appState.anonymizeData;
+            try {
+                appState.anonymizeData = false;
+                Utils.detectGender.mockReturnValue('neutre');
+
+                // Prénom inconnu de detectGender, mais visible en clair par le LLM
+                const unknownReal = PromptService.getAllPrompts(
+                    { nom: 'DIALLO', prenom: 'Bintou', statuses: [], currentPeriod: 'T1', periods: { T1: { grade: 14 } } },
+                    { voice: 'default', length: 40 }
+                );
+                expect(unknownReal.appreciationUser).toContain('Élève : Bintou\n');
+                expect(unknownReal.appreciationUser).not.toContain('non déterminé');
+
+                // Prénom véritablement épicène : consigne impersonnelle conservée même en clair
+                const epiceneReal = PromptService.getAllPrompts(
+                    { nom: 'MARTIN', prenom: 'Sacha', statuses: [], currentPeriod: 'T1', periods: { T1: { grade: 14 } } },
+                    { voice: 'default', length: 40 }
+                );
+                expect(epiceneReal.appreciationUser).toContain('Élève : Sacha (non déterminé');
+
+                // En voix neutre, le genre reste toujours injecté
+                const neutralVoice = PromptService.getAllPrompts(
+                    { nom: 'DIALLO', prenom: 'Bintou', statuses: [], currentPeriod: 'T1', periods: { T1: { grade: 14 } } },
+                    { voice: 'neutre', length: 40 }
+                );
+                expect(neutralVoice.appreciationUser).toContain('Genre : non déterminé');
+            } finally {
+                appState.anonymizeData = prevAnon;
+            }
+        });
+
+        it('gère les cas limites de notes : contexte sans aucune note, évaluation unique, excellence (>= 18) et grande fragilité (< 6)', () => {
+            // 1. Aucune note sur aucune période, uniquement du contexte
+            const contextOnly = PromptService.getAllPrompts({
+                nom: 'MARTIN', prenom: 'Lucas', statuses: [], currentPeriod: 'T1',
+                periods: { T1: { grade: null, context: 'Absences répétées, quelques exercices rendus.' } }
+            });
+            expect(contextOnly.appreciationSystem).toContain("Aucune moyenne chiffrée n'est disponible");
+            expect(contextOnly.appreciationSystem).not.toContain('suggéré par la moyenne');
+            expect(contextOnly.appreciationSystem).not.toContain('Ne cite pas les moyennes chiffrées');
+            expect(contextOnly.appreciationUser).toContain('Moy Non renseignée');
+
+            // 2. Une seule évaluation
+            const singleEval = PromptService.getAllPrompts({
+                nom: 'MARTIN', prenom: 'Lucas', statuses: [], currentPeriod: 'T1',
+                periods: { T1: { grade: 13.5, evaluationCount: 1 } }
+            });
+            expect(singleEval.appreciationSystem).toContain('repose sur une seule évaluation');
+
+            // 3. Note extrême haute (>= 18)
+            const highGrade = PromptService.getAllPrompts({
+                nom: 'MARTIN', prenom: 'Lucas', statuses: [], currentPeriod: 'T1',
+                periods: { T1: { grade: 19.2 } }
+            });
+            expect(highGrade.appreciationSystem).toContain("sans inventer d'axe d'amélioration artificiel");
+
+            // 4. Note extrême basse (< 6)
+            const lowGrade = PromptService.getAllPrompts({
+                nom: 'MARTIN', prenom: 'Lucas', statuses: [], currentPeriod: 'T1',
+                periods: { T1: { grade: 4.5 } }
+            });
+            expect(lowGrade.appreciationSystem).toContain('sans formulation décourageante');
+        });
+
+        it('cadre la voix par défaut, le gabarit de longueur en phrases, l\'arbitrage ton strict/accompagnement et évite le double préfixe Observations', () => {
+            const prompts = PromptService.getAllPrompts(
+                {
+                    nom: 'DUPONT', prenom: 'Emma', statuses: ['PAP'], currentPeriod: 'T1',
+                    periods: { T1: { grade: 11 } },
+                    journal: [
+                        { id: 'j1', period: 'T1', tags: ['participation'], note: 'Bonne intervention orale' },
+                        { id: 'j2', period: 'T1', tags: ['participation'], note: 'Répond volontiers' }
+                    ]
+                },
+                { tone: 5, enableTone: true, voice: 'default', length: 40 }
+            );
+
+            expect(prompts.appreciationSystem).toContain('Rédige à la troisième personne');
+            expect(prompts.appreciationSystem).toContain('environ 40 mots (2 phrases, en un seul paragraphe)');
+            expect(prompts.appreciationSystem).toContain("En présence de consignes d'accompagnement pour cet élève");
+            expect(prompts.appreciationUser).not.toContain('Observations du professeur : Observations:');
+            expect(prompts.appreciationUser).not.toMatch(/\n\n$/);
+        });
+
+        it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {
+            const longText = 'Cet élève fournit un travail très sérieux et régulier depuis le début du trimestre et participe activement aux échanges en classe, ce qui lui permet de consolider durablement ses acquis.';
+            const { systemPrompt, userPrompt, prompt } = PromptService.getRefinementPrompts('concise', longText);
+
+            expect(prompt).toBe(`${systemPrompt}\n\n${userPrompt}`);
+            expect(systemPrompt).toContain('sans écriture inclusive');
+            expect(systemPrompt).toContain('sans sigles de période');
+            expect(userPrompt).toMatch(/vise environ \d+ mots/);
+
+            // Texte court (< 16 mots) : pas de calcul arithmétique artificiel
+            const shortRes = PromptService.getRefinementPrompts('concise', 'Bon travail ce trimestre.');
+            expect(shortRes.userPrompt).not.toMatch(/\d+ mots/);
+        });
+
+        it('nettoie uniquement les préfixes parasites et guillemets englobants équilibrés sans altérer la ponctuation interne', () => {
+            expect(PromptService.sanitizeAppreciationOutput('"Bon trimestre, travail sérieux."'))
+                .toBe('Bon trimestre, travail sérieux.');
+            expect(PromptService.sanitizeAppreciationOutput('« Très bons résultats ce trimestre. »'))
+                .toBe('Très bons résultats ce trimestre.');
+            expect(PromptService.sanitizeAppreciationOutput('Appréciation : "Travail sérieux : à poursuivre ; très bien."'))
+                .toBe('Travail sérieux : à poursuivre ; très bien.');
+            expect(PromptService.sanitizeAppreciationOutput('**Voici l\'appréciation proposée** : « Des progrès constants. »'))
+                .toBe('Des progrès constants.');
+
+            // Guillemets internes et ponctuation interne strictement préservés
+            expect(PromptService.sanitizeAppreciationOutput('L\'élève « décroche » parfois ; il doit rester attentif.'))
+                .toBe('L\'élève « décroche » parfois ; il doit rester attentif.');
+            expect(PromptService.sanitizeAppreciationOutput('"Très bien" au début, puis "fragile" en fin de période.'))
+                .toBe('"Très bien" au début, puis "fragile" en fin de période.');
+            expect(PromptService.sanitizeAppreciationOutput('')).toBe('');
+            expect(PromptService.sanitizeAppreciationOutput(null)).toBe('');
         });
     });
 });
