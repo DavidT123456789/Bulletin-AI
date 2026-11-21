@@ -10,9 +10,9 @@
     --palette-zinc-950: #0a0a0a;
 
     /* --- Palette Nebula (Default: Anthracite Graphite Doux - Light Mode) --- */
-    --primary-color: #26272a;
-    --primary-color-rgb: 38, 39, 42;
-    --primary-hover: #18191b;
+    --primary-color: #33353a;
+    --primary-color-rgb: 51, 53, 58;
+    --primary-hover: #24262a;
     --primary-btn-hover: color-mix(in srgb, var(--primary-color), white 9%);
     --primary-bright: var(--primary-color);
     --primary-bright-rgb: var(--primary-color-rgb);
@@ -144,59 +144,50 @@
     --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.15);
     --shadow-elevation: 0 2px 5px rgba(0, 0, 0, 0.1), 0 1px 1px rgba(0, 0, 0, 0.05);
 
-    /* --- Couleurs Sémantiques (Vives mais dosées) --- */
+    /* --- Couleurs Sémantiques (Calibration perceptuelle OKLCH — Fill vs Ink) --- */
     --success-color: #10b981;
     --success-text: var(--color-emerald-deep);
-    --success-dark: #16a34a;
-    --success-bright: #22c55e;
     --success-rgb: 16, 185, 129;
-    --success-color-rgb: 16, 185, 129;
-    --success-light: rgba(16, 185, 129, 0.15);
+    --success-light: rgba(16, 185, 129, 0.12);
 
     --warning-color: #f59e0b;
     --warning-text: var(--color-amber-deep);
-    --warning-dark: #ca8a04;
     --warning-bright: #facc15;
     --warning-rgb: 245, 158, 11;
-    --warning-color-rgb: 245, 158, 11;
     --warning-light: rgba(245, 158, 11, 0.12);
 
     --error-color: #ef4444;
-    --error-dark: #dc2626;
-    --error-bright: #f87171;
+    --error-text: #d42a2a;
     --error-rgb: 239, 68, 68;
-    --error-color-rgb: 239, 68, 68;
-    --danger-color-rgb: 239, 68, 68;
-    --error-light: rgba(239, 68, 68, 0.15);
+    --error-light: rgba(239, 68, 68, 0.12);
 
-    /* --- Accent Colors (Palette unifiée) --- */
+    /* --- Accent Colors (Palette unifiée — Light: -deep calibré OKLCH L≈50–57) --- */
     --color-violet: #8b5cf6;
     --color-violet-rgb: 139, 92, 246;
     --color-violet-bright: #a78bfa;
-    --color-violet-deep: #6d28d9;
-    --color-indigo: #6366f1;
+    --color-violet-deep: #6d3fc8;
     --color-cyan: #06b6d4;
-    --color-cyan-bright: #22d3ee;
-    --color-cyan-deep: #0891b2;
+    --color-cyan-rgb: 6, 182, 212;
+    --color-cyan-deep: #0e7490;
     --color-sky: #0ea5e9;
+    --color-sky-rgb: 14, 165, 233;
     --color-sky-bright: #38bdf8;
-    --color-sky-deep: #0369a1;
+    --color-sky-deep: #0374b3;
     --color-rose: #f43f5e;
+    --color-rose-rgb: 244, 63, 94;
     --color-rose-bright: #fb7185;
-    --color-rose-deep: #be123c;
+    --color-rose-deep: #c91c48;
     --color-amber: #f59e0b;
     --color-amber-rgb: 245, 158, 11;
     --color-amber-bright: #fbbf24;
-    --color-amber-pastel: #fde68a;
-    --color-amber-deep: #b45309;
+    --color-amber-deep: #b45d09;
     --color-orange: #f97316;
-    --color-orange-deep: #ea580c;
+    --color-orange-rgb: 249, 115, 22;
+    --color-orange-deep: #c24b0a;
     --color-emerald: #10b981;
     --color-emerald-rgb: 16, 185, 129;
     --color-emerald-bright: #34d399;
-    --color-emerald-pastel: #a7f3d0;
-    --color-emerald-deep: #047857;
-    --color-teal: #14b8a6;
+    --color-emerald-deep: #05865a;
     --color-blue: #3b82f6;
     --color-blue-rgb: 59, 130, 246;
     --color-blue-bright: #60a5fa;
@@ -227,15 +218,13 @@
     --tonal-active-bg: rgba(0, 0, 0, 0.115);
 
     --purple-color: #9333ea;
+    --purple-text: var(--color-violet-deep);
     --purple-rgb: 147, 51, 234;
-    --purple-light: rgba(147, 51, 234, 0.15);
-
-    --neutral-light: rgba(163, 163, 163, 0.15);
+    --purple-light: rgba(147, 51, 234, 0.12);
 
     --info-color: #3b82f6;
+    --info-text: var(--color-blue-deep);
     --info-rgb: 59, 130, 246;
-    --info-color-rgb: 59, 130, 246;
-    --info-light: rgba(59, 130, 246, 0.15);
 
     /* Aliases — resolve orphan token references */
     --text-on-primary: #ffffff;
@@ -248,26 +237,24 @@
     --text-tertiary-rgb: 110, 110, 114;
     --text-quaternary-rgb: 163, 163, 163;
     --radius-full: 9999px;
-    --warning-light-text: var(--warning-dark);
-    --danger-color: var(--error-color);
     --secondary-color: var(--accent-color);
 
-    /* Grade Range Colors (Balanced Modern 2026 Palette — Luminous & Crisp) */
-    --grade-range-0-4: #df3f38;
-    --grade-range-0-4-ink: #c82822;
-    --grade-range-0-4-rgb: 223, 63, 56;
+    /* Grade Range Colors (Unified with Semantic Ink — OKLCH L≈55–57) */
+    --grade-range-0-4: var(--error-color);
+    --grade-range-0-4-ink: var(--error-text);
+    --grade-range-0-4-rgb: var(--error-rgb);
     --grade-range-4-8: #ec6f1c;
-    --grade-range-4-8-ink: #b54806;
+    --grade-range-4-8-ink: var(--color-orange-deep);
     --grade-range-4-8-rgb: 236, 111, 28;
     --grade-range-8-12: #e2a312;
-    --grade-range-8-12-ink: #9a5b00;
+    --grade-range-8-12-ink: var(--warning-text);
     --grade-range-8-12-rgb: 226, 163, 18;
     --grade-range-12-16: #0f9aa8;
-    --grade-range-12-16-ink: #0a737e;
+    --grade-range-12-16-ink: #0d7f8d;
     --grade-range-12-16-rgb: 15, 154, 168;
-    --grade-range-16-20: #129b63;
-    --grade-range-16-20-ink: #0b7449;
-    --grade-range-16-20-rgb: 18, 155, 99;
+    --grade-range-16-20: var(--success-color);
+    --grade-range-16-20-ink: var(--success-text);
+    --grade-range-16-20-rgb: var(--success-rgb);
 
     /* Transitions & Animations (Unified Motion System) */
     --ease-material: cubic-bezier(0.4, 0, 0.2, 1);
@@ -335,9 +322,6 @@
     --gradient-primary: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
     --gradient-ai: var(--gradient-primary);
     --gradient-brand: var(--gradient-primary);
-
-    --gradient-warning: linear-gradient(135deg, var(--warning-deep) 0%, var(--color-amber-deep) 100%);
-    --warning-deep: #ea580c;
 
     /* --- Z-Index Scale --- */
     --z-negative: -1;
@@ -461,14 +445,11 @@
 [data-theme="dark"] {
     /* Obsidian Doux Dark Mode (Point médian exact +1/+2 bleu entre Carbone #171717 et l'ancien #18181a) */
 
-    --purple-color: #a78bfa;
-    /* Violet 400 */
-    --purple-rgb: 167, 139, 250;
-    --purple-light: rgba(167, 139, 250, 0.15);
-
-    /* Dark Mode Neutral Tint */
-    --neutral-light: rgba(162, 162, 164, 0.15);
-    /* Obsidian 400 tint */
+    --purple-color: #b094fa;
+    --purple-text: #b094fa;
+    /* Violet 400 harmonized */
+    --purple-rgb: 176, 148, 250;
+    --purple-light: rgba(176, 148, 250, 0.14);
 
     --bg-color: #0c0c0d;
     --bg-color-rgb: 12, 12, 13;
@@ -511,7 +492,6 @@
     --text-quaternary: #a2a2a4;
     --text-quaternary-rgb: 162, 162, 164;
     --surface-alert-bg: rgba(var(--error-rgb), 0.08);
-    --warning-light-text: var(--warning-dark);
 
     /* Glass Dark */
     --glass-base-bg: rgba(12, 12, 13, 0.7);
@@ -551,62 +531,61 @@
     --row-spotlight-bg-peak: color-mix(in srgb, var(--surface-color), var(--text-primary) 11%);
     --row-spotlight-bg-mid: color-mix(in srgb, var(--surface-color), var(--text-primary) 5.5%);
 
-    /* --- Semantic Colors (Dark Mode) --- */
+    /* --- Semantic Colors (Dark Mode — Unified OKLCH L≈71–78) --- */
     --success-text: var(--color-emerald);
-    --success-dark: #4ade80;
-    --success-bright: #34d399;
     --warning-text: var(--color-amber);
-    --warning-dark: #facc15;
     --warning-bright: #fbbf24;
-    --error-bright: #ff6b6b;
+    --error-text: #f87171;
+    --info-text: var(--color-blue);
 
-    /* --- Accent Colors (Dark Mode — brighter variants for readability) --- */
-    --color-violet: #a78bfa;
-    --color-violet-rgb: 167, 139, 250;
+    /* --- Accent Colors (Dark Mode — harmonized OKLCH L≈72–78) --- */
+    --color-violet: #b094fa;
+    --color-violet-rgb: 176, 148, 250;
     --color-violet-bright: #c4b5fd;
     --color-violet-deep: #8b5cf6;
-    --color-indigo: #818cf8;
     --color-cyan: #22d3ee;
-    --color-cyan-bright: #67e8f9;
+    --color-cyan-rgb: 34, 211, 238;
     --color-cyan-deep: #06b6d4;
-    --color-sky: #38bdf8;
+    --color-sky: #5cc2f6;
+    --color-sky-rgb: 92, 194, 246;
     --color-sky-bright: #7dd3fc;
     --color-sky-deep: #0ea5e9;
-    --color-rose: #fb7185;
+    --color-rose: #fb7c92;
+    --color-rose-rgb: 251, 124, 146;
     --color-rose-bright: #fda4af;
     --color-rose-deep: #f43f5e;
-    --color-amber: #fbbf24;
-    --color-amber-rgb: 251, 191, 36;
+    --color-amber: #f5be3b;
+    --color-amber-rgb: 245, 190, 59;
     --color-amber-bright: #fcd34d;
     --color-amber-deep: #f59e0b;
     --color-orange: #fb923c;
+    --color-orange-rgb: 251, 146, 60;
     --color-orange-deep: #f97316;
     --color-emerald: #34d399;
     --color-emerald-rgb: 52, 211, 153;
     --color-emerald-bright: #6ee7b7;
     --color-emerald-deep: #10b981;
-    --color-teal: #2dd4bf;
-    --color-blue: #60a5fa;
-    --color-blue-rgb: 96, 165, 250;
+    --color-blue: #6aa8fa;
+    --color-blue-rgb: 106, 168, 250;
     --color-blue-bright: #93c5fd;
     --color-blue-bright-rgb: 147, 197, 253;
     --color-blue-deep: #3b82f6;
 
-    /* Grade Range Colors (Dark Mode — Luminous & Crisp) */
+    /* Grade Range Colors (Dark Mode — Unified Luminous Ink) */
     --grade-range-0-4: #ef5b54;
-    --grade-range-0-4-ink: #f4726c;
+    --grade-range-0-4-ink: var(--error-text);
     --grade-range-0-4-rgb: 239, 91, 84;
     --grade-range-4-8: #f58436;
-    --grade-range-4-8-ink: var(--grade-range-4-8);
+    --grade-range-4-8-ink: var(--color-orange);
     --grade-range-4-8-rgb: 245, 132, 54;
     --grade-range-8-12: #f0b429;
-    --grade-range-8-12-ink: var(--grade-range-8-12);
+    --grade-range-8-12-ink: var(--warning-text);
     --grade-range-8-12-rgb: 240, 180, 41;
     --grade-range-12-16: #22b5c4;
-    --grade-range-12-16-ink: var(--grade-range-12-16);
+    --grade-range-12-16-ink: #38c6d4;
     --grade-range-12-16-rgb: 34, 181, 196;
     --grade-range-16-20: #24b87a;
-    --grade-range-16-20-ink: var(--grade-range-16-20);
+    --grade-range-16-20-ink: var(--success-text);
     --grade-range-16-20-rgb: 36, 184, 122;
 
     /* --- Universal Card Style --- */

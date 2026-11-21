@@ -183,11 +183,7 @@
 
 .btn-selection-action.danger:focus-visible {
     background: var(--error-light);
-    color: var(--error-color);
-}
-
-[data-theme="dark"] .btn-selection-action.danger:focus-visible {
-    color: var(--error-bright);
+    color: var(--error-text);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -198,11 +194,7 @@
 
     .btn-selection-action.danger:hover {
         background: var(--error-light);
-        color: var(--error-color);
-    }
-
-    [data-theme="dark"] .btn-selection-action.danger:hover {
-        color: var(--error-bright);
+        color: var(--error-text);
     }
 }
 

@@ -924,7 +924,7 @@ export const SettingsUIManager = {
                 const isInstalled = this._isOllamaModelInstalled(modelKey);
                 const shortName = MODEL_SHORT_NAMES[modelKey]?.replace('🏠 ', '') || modelName;
 
-                const color = isInstalled ? 'var(--success-color)' : 'var(--text-tertiary)';
+                const color = isInstalled ? 'var(--success-text)' : 'var(--text-tertiary)';
                 const iconName = isInstalled ? 'ph:check' : 'solar:close-circle-linear';
                 const opacity = isInstalled ? '1' : '0.6';
                 const decoration = isInstalled ? 'none' : 'line-through';
@@ -933,7 +933,7 @@ export const SettingsUIManager = {
                     <span class="model-badge" style="
                         display:inline-flex; align-items:center; gap:4px; 
                         padding:2px 8px; border-radius:12px; 
-                        background:rgba(var(--background-rgb), 0.5); 
+                        background:var(--tonal-bg); 
                         border:1px solid ${color}; color:${isInstalled ? 'var(--text-primary)' : 'var(--text-secondary)'};
                         font-size:0.85em; opacity:${opacity};">
                         <iconify-icon icon="${iconName}" style="color:${color}; font-size:0.9em;"></iconify-icon>

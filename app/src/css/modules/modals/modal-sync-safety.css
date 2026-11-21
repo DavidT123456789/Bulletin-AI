@@ -178,7 +178,6 @@
 [data-theme="dark"] .modal-alert-header-icon.warning {
     background: rgba(var(--warning-rgb), 0.15);
     border-color: rgba(var(--warning-rgb), 0.28);
-    color: var(--warning-bright);
 }
 
 .modal-alert-header-icon.cloud {

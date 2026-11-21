@@ -162,7 +162,7 @@ export const ApiValidationManager = {
 
                         errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé authentifiée — limite temporaire atteinte, patientez 1 à 2 min.</span>`;
                         errorEl.style.display = 'block';
-                        errorEl.style.color = 'var(--warning-color)';
+                        errorEl.style.color = 'var(--warning-text)';
 
                         await StorageManager.saveAppState();
                         this._syncSettingsSnapshotAfterValidation(provider);
@@ -295,7 +295,7 @@ export const ApiValidationManager = {
 
                 errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Clé authentifiée — limite temporaire atteinte, patientez 1 à 2 min.</span>`;
                 errorEl.style.display = 'block';
-                errorEl.style.color = 'var(--warning-color)';
+                errorEl.style.color = 'var(--warning-text)';
 
                 await StorageManager.saveAppState();
                 this._syncSettingsSnapshotAfterValidation(provider);
@@ -313,7 +313,7 @@ export const ApiValidationManager = {
 
                 errorEl.innerHTML = `<iconify-icon icon="solar:info-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Modèle indisponible — sélectionnez un autre modèle Gemini.</span>`;
                 errorEl.style.display = 'block';
-                errorEl.style.color = 'var(--warning-color)';
+                errorEl.style.color = 'var(--warning-text)';
 
                 await StorageManager.saveAppState();
                 this._syncSettingsSnapshotAfterValidation(provider);
@@ -330,7 +330,7 @@ export const ApiValidationManager = {
 
                 errorEl.innerHTML = `<iconify-icon icon="solar:clock-circle-linear" style="vertical-align: -2px;"></iconify-icon> <span>Serveur momentanément indisponible ou délai dépassé — réessayez dans un instant.</span>`;
                 errorEl.style.display = 'block';
-                errorEl.style.color = 'var(--warning-color)';
+                errorEl.style.color = 'var(--warning-text)';
 
                 SettingsUIManager.updateApiStatusDisplay();
             } else {

@@ -162,10 +162,10 @@
 .trombi-zone.focused,
 .trombi-zone.is-selected,
 .trombi-zone.dragging {
-    border-color: #f39c12;
+    border-color: var(--warning-color);
     border-width: 3px;
-    background: rgba(243, 156, 18, 0.2);
-    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.35);
+    background: rgba(var(--warning-rgb), 0.18);
+    box-shadow: 0 4px 20px rgba(var(--warning-rgb), 0.32);
     z-index: 95;
 }
 
@@ -177,7 +177,7 @@
 .trombi-zone.resizing {
     border-color: var(--warning-color);
     border-width: 3px;
-    box-shadow: 0 4px 20px rgba(var(--warning-rgb, 243, 156, 18), 0.35);
+    box-shadow: 0 4px 20px rgba(var(--warning-rgb), 0.32);
 }
 
 .trombi-zone.is-unassigned:not(.focused):not(.is-selected):not(.dragging) {
@@ -193,8 +193,8 @@
 
 .trombi-selection-box {
     position: absolute;
-    border: 1.5px dashed var(--warning-color, #f39c12);
-    background-color: rgba(243, 156, 18, 0.08);
+    border: 1.5px dashed var(--warning-color);
+    background-color: rgba(var(--warning-rgb), 0.08);
     pointer-events: none;
     z-index: 1000;
     display: none;
@@ -225,9 +225,16 @@
 .trombi-zone.focused .zone-label,
 .trombi-zone.is-selected .zone-label,
 .trombi-zone.dragging .zone-label {
-    background: #d97706;
+    background: var(--color-amber-deep);
     color: #ffffff;
-    box-shadow: 0 2px 10px rgba(243, 156, 18, 0.45);
+    box-shadow: 0 2px 10px rgba(var(--warning-rgb), 0.4);
+}
+
+[data-theme="dark"] .trombi-zone:hover .zone-label,
+[data-theme="dark"] .trombi-zone.focused .zone-label,
+[data-theme="dark"] .trombi-zone.is-selected .zone-label,
+[data-theme="dark"] .trombi-zone.dragging .zone-label {
+    color: var(--palette-zinc-900);
 }
 
 .trombi-zone .zone-delete {
@@ -585,29 +592,28 @@
 .grid-tools-toggle-btn {
     height: 26px;
     justify-content: center;
-    padding: 0 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm, 6px);
-    background: var(--bg-secondary);
+    padding: 0 11px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 500;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 5px;
     white-space: nowrap;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .grid-tools-toggle-btn:hover {
-    background: var(--surface-hover, rgba(0, 0, 0, 0.05));
+    background: var(--tonal-hover-bg);
     color: var(--text-primary);
 }
 
 .grid-tools-toggle-btn.active {
-    background: var(--bg-tertiary);
-    border-color: var(--text-quaternary);
+    background: var(--tonal-active-bg);
     color: var(--text-primary);
 }
 
@@ -790,7 +796,7 @@
 }
 
 .assignment-row.is-new-student .assignment-id {
-    color: var(--success-dark);
+    color: var(--success-text);
 }
 
 .assignment-row.is-new-student:hover {
@@ -800,10 +806,6 @@
 [data-theme="dark"] .assignment-row.is-new-student {
     background: rgba(var(--success-rgb), 0.12);
     border-color: rgba(var(--success-rgb), 0.35);
-}
-
-[data-theme="dark"] .assignment-row.is-new-student .assignment-id {
-    color: var(--success-bright);
 }
 
 .assignment-row.is-unassigned .live-preview-canvas {
@@ -832,12 +834,11 @@
 }
 
 .assignment-action-btn.danger:hover:not(.disabled) {
-    color: var(--error-color);
+    color: var(--error-text);
     background: rgba(var(--error-rgb), 0.12);
 }
 
 [data-theme="dark"] .assignment-action-btn.danger:hover:not(.disabled) {
-    color: var(--error-bright);
     background: rgba(var(--error-rgb), 0.18);
 }
 
@@ -852,32 +853,32 @@
 
 .assignment-row.focused,
 .assignment-row.is-dropdown-open {
-    background: rgba(243, 156, 18, 0.1) !important;
-    border-color: rgba(243, 156, 18, 0.7);
-    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.25);
+    background: rgba(var(--warning-rgb), 0.1) !important;
+    border-color: rgba(var(--warning-rgb), 0.65);
+    box-shadow: 0 0 0 1px rgba(var(--warning-rgb), 0.25);
     z-index: 5;
 }
 
 [data-theme="dark"] .assignment-row.focused,
 [data-theme="dark"] .assignment-row.is-dropdown-open {
-    background: rgba(243, 156, 18, 0.14) !important;
-    border-color: #f39c12;
+    background: rgba(var(--warning-rgb), 0.14) !important;
+    border-color: var(--warning-color);
 }
 
 .assignment-row.focused .live-preview-canvas,
 .assignment-row.is-dropdown-open .live-preview-canvas {
-    border-color: #f39c12;
+    border-color: var(--warning-color);
 }
 
 .assignment-row.focused .assignment-id,
 .assignment-row.is-dropdown-open .assignment-id {
-    color: #f39c12;
+    color: var(--warning-text);
 }
 
 .assignment-row.focused .assignment-combobox-btn,
 .assignment-row.is-dropdown-open .assignment-combobox-btn {
-    background-color: rgba(243, 156, 18, 0.08);
-    border-color: rgba(243, 156, 18, 0.35);
+    background-color: rgba(var(--warning-rgb), 0.08);
+    border-color: rgba(var(--warning-rgb), 0.35);
 }
 
 .assignment-preview {
@@ -898,8 +899,8 @@
 .assignment-combobox-btn[aria-expanded="true"],
 .assignment-combobox-btn:focus-visible {
     outline: none;
-    border-color: #f39c12;
-    box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.2);
+    border-color: var(--warning-color);
+    box-shadow: 0 0 0 2px rgba(var(--warning-rgb), 0.2);
 }
 
 /* Zone ID Number - Clean borderless index */
@@ -1016,7 +1017,7 @@
 
 .assignment-combobox-btn[aria-expanded="true"] .assignment-select-chevron {
     transform: rotate(180deg);
-    color: #f39c12;
+    color: var(--warning-text);
 }
 
 .assignment-select-wrapper {
@@ -1127,14 +1128,13 @@ input.trombi-popover-search-input::placeholder {
 }
 
 .trombi-popover-option.is-selected {
-    background: rgba(243, 156, 18, 0.12);
-    color: #d97706;
+    background: rgba(var(--warning-rgb), 0.11);
+    color: var(--warning-text);
     font-weight: 600;
 }
 
 [data-theme="dark"] .trombi-popover-option.is-selected {
-    background: rgba(243, 156, 18, 0.16);
-    color: #fbbf24;
+    background: rgba(var(--warning-rgb), 0.16);
 }
 
 .trombi-popover-option.is-clear-option {
@@ -1154,12 +1154,11 @@ input.trombi-popover-search-input::placeholder {
 }
 
 .trombi-popover-option.is-clear-option:hover {
-    color: var(--error-color);
+    color: var(--error-text);
     background: rgba(var(--error-rgb), 0.08);
 }
 
 [data-theme="dark"] .trombi-popover-option.is-clear-option:hover {
-    color: var(--error-bright);
     background: rgba(var(--error-rgb), 0.14);
 }
 
@@ -1213,28 +1212,22 @@ input.trombi-popover-search-input::placeholder {
 }
 
 .trombi-option-badge.is-current {
-    background: rgba(243, 156, 18, 0.18);
-    color: #d97706;
-    border: 1px solid rgba(243, 156, 18, 0.4);
+    background: rgba(var(--warning-rgb), 0.14);
+    color: var(--warning-text);
+    border: 1px solid rgba(var(--warning-rgb), 0.35);
     font-variant-numeric: tabular-nums;
 }
 
 [data-theme="dark"] .trombi-option-badge.is-current {
-    background: rgba(243, 156, 18, 0.22);
-    color: #fbbf24;
-    border-color: rgba(243, 156, 18, 0.45);
+    background: rgba(var(--warning-rgb), 0.18);
+    border-color: rgba(var(--warning-rgb), 0.4);
 }
 
 .trombi-option-badge.is-swap {
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
     font-variant-numeric: tabular-nums;
-}
-
-[data-theme="dark"] .trombi-option-badge.is-swap {
-    background: var(--surface-color);
-    color: var(--text-secondary);
 }
 
 .trombi-option-badge.is-has-photo {
@@ -1244,12 +1237,11 @@ input.trombi-popover-search-input::placeholder {
 
 .trombi-option-badge.is-new {
     background: var(--success-light);
-    color: var(--success-dark);
+    color: var(--success-text);
 }
 
 [data-theme="dark"] .trombi-option-badge.is-new {
     background: rgba(var(--success-rgb), 0.2);
-    color: var(--success-bright);
 }
 
 .trombi-popover-empty {
@@ -1265,21 +1257,31 @@ input.trombi-popover-search-input::placeholder {
 
 .trombi-popover-empty-btn {
     margin-top: 4px;
-    padding: 5px 10px;
-    border-radius: var(--radius-sm, 6px);
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 11.5px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
+    font-size: 12px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: background var(--transition-fast), border-color var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: background var(--transition-fast), color var(--transition-fast), transform 0.16s var(--ease-spring);
 }
 
 .trombi-popover-empty-btn:hover {
-    background: var(--item-hover-bg);
-    border-color: var(--text-quaternary);
+    background: var(--tonal-hover-bg);
+    color: var(--text-primary);
+}
+
+.trombi-popover-empty-btn:active {
+    background: var(--tonal-active-bg);
+    transform: scale(0.97);
 }
 
 /* Step 2 Badges */
@@ -1303,13 +1305,12 @@ input.trombi-popover-search-input::placeholder {
 
 .trombi-student-badge.is-new {
     background: var(--success-light);
-    color: var(--success-dark);
+    color: var(--success-text);
     border: 1px solid rgba(var(--success-rgb), 0.3);
 }
 
 [data-theme="dark"] .trombi-student-badge.is-new {
     background: rgba(var(--success-rgb), 0.2);
-    color: var(--success-bright);
     border-color: rgba(var(--success-rgb), 0.4);
 }
 
@@ -1333,13 +1334,12 @@ input.trombi-popover-search-input::placeholder {
 
 .trombi-header-count-pill.is-new {
     background: var(--success-light);
-    color: var(--success-dark);
+    color: var(--success-text);
     border: 1px solid rgba(var(--success-rgb), 0.3);
 }
 
 [data-theme="dark"] .trombi-header-count-pill.is-new {
     background: rgba(var(--success-rgb), 0.2);
-    color: var(--color-emerald-bright);
 }
 
 /* Stat badges in footers */
@@ -1445,7 +1445,7 @@ input.trombi-popover-search-input::placeholder {
 
 .trombi-reassurance-badge.is-new {
     background: var(--success-light);
-    color: var(--success-dark);
+    color: var(--success-text);
     border: 1px solid rgba(var(--success-rgb), 0.3);
 }
 
@@ -1749,13 +1749,12 @@ input.trombi-popover-search-input::placeholder {
     .drop-zone-remove-btn:hover {
         background: rgba(var(--error-rgb), 0.14);
         border-color: rgba(var(--error-rgb), 0.22);
-        color: var(--error-color);
+        color: var(--error-text);
     }
 
     [data-theme="dark"] .drop-zone-remove-btn:hover {
         background: rgba(var(--error-rgb), 0.24);
         border-color: rgba(var(--error-rgb), 0.32);
-        color: var(--error-bright);
     }
 }
 

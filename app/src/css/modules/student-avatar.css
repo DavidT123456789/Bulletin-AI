@@ -239,8 +239,9 @@
                 color var(--transition-fast);
 }
 
-/* Tag classe d'origine pour élèves en groupe */
-.student-origin-class-tag {
+/* Tag classe d'origine pour élèves en groupe (mutualisé Liste, Plan de classe, Modale transfert & Volet Focus) */
+.student-origin-class-tag,
+.focus-origin-class-badge {
     display: inline-flex;
     align-items: center;
     padding: 1.5px 6px;
@@ -263,9 +264,10 @@
 .student-list-table tbody tr:hover .student-origin-class-tag,
 .sc-student-chip:hover .student-origin-class-tag,
 .sc-cross-action:hover .student-origin-class-tag,
-.pick-student-row:hover:not(.already-present) .student-origin-class-tag {
+.pick-student-row:hover:not(.already-present) .student-origin-class-tag,
+.focus-header:has(.focus-header-left:hover) .focus-origin-class-badge,
+.focus-header:has(.focus-student-name:hover) .focus-origin-class-badge {
     color: var(--text-secondary);
-    background: var(--bg-tertiary);
 }
 
 /* === EXPANDED VIEW: Photo plus grande & Typographie proportionnelle (Desktop, Tablette & Mobile) === */

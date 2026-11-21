@@ -84,7 +84,7 @@ export const ColorUtils = {
 };
 
 export const PRESET_HEX_MAP = {
-    anthracite: '#26272a',
+    anthracite: '#33353a',
     blue: '#3b82f6',
     purple: '#8b5cf6',
     pink: '#ec4899',

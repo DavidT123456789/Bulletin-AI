@@ -418,7 +418,7 @@
 
 .student-list-table tbody tr.error-row td {
     text-align: center;
-    color: var(--danger-color, #ef4444);
+    color: var(--error-text);
     padding: 16px;
     font-size: 13px;
 }
@@ -687,11 +687,11 @@
 }
 
 .evolution-cell .grade-evolution.positive {
-    color: var(--grade-range-16-20);
+    color: var(--grade-range-16-20-ink);
 }
 
 .evolution-cell .grade-evolution.negative {
-    color: var(--grade-range-0-4);
+    color: var(--grade-range-0-4-ink);
 }
 
 .evolution-cell .grade-evolution.stable {
@@ -1117,8 +1117,8 @@
 }
 
 .status-badge.error {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
-    color: var(--error-color);
+    background: rgba(var(--error-rgb), 0.11);
+    color: var(--error-text);
 }
 
 
@@ -1168,7 +1168,7 @@
     height: 19px;
     padding: 0 4px;
     border-radius: var(--radius-pill);
-    background: var(--bg-tertiary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid transparent;
     cursor: pointer;
@@ -1184,15 +1184,8 @@
 
 @media (hover: hover) and (pointer: fine) {
     .status-badges-container .tag-more-count:hover {
-        background: var(--item-hover-bg);
+        background: var(--tonal-hover-bg);
         color: var(--text-primary);
-        border-color: transparent;
-        transform: scale(1.06);
-    }
-
-    [data-theme="dark"] .status-badges-container .tag-more-count:hover {
-        background: rgba(255, 255, 255, 0.14);
-        color: #ffffff;
         border-color: transparent;
         transform: scale(1.06);
     }
@@ -1200,13 +1193,7 @@
 
 .status-badges-container .tag-more-count:active {
     transform: scale(0.95);
-    background: var(--item-active-bg);
-}
-
-[data-theme="dark"] .status-badges-container .tag-more-count {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary);
-    border-color: transparent;
+    background: var(--tonal-active-bg);
 }
 
 .status-badges-container .tag-badge:nth-of-type(n+2) {
@@ -1431,16 +1418,7 @@
 .action-dropdown-item.danger:focus-visible i,
 .action-dropdown-item.danger:hover iconify-icon,
 .action-dropdown-item.danger:focus-visible iconify-icon {
-    color: var(--error-color);
-}
-
-[data-theme="dark"] .action-dropdown-item.danger:hover,
-[data-theme="dark"] .action-dropdown-item.danger:focus-visible,
-[data-theme="dark"] .action-dropdown-item.danger:hover i,
-[data-theme="dark"] .action-dropdown-item.danger:focus-visible i,
-[data-theme="dark"] .action-dropdown-item.danger:hover iconify-icon,
-[data-theme="dark"] .action-dropdown-item.danger:focus-visible iconify-icon {
-    color: var(--error-bright);
+    color: var(--error-text);
 }
 
 .action-dropdown-item.danger:hover,

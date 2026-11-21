@@ -133,6 +133,12 @@ export const FocusPanelHeader = {
 
         if (studentName) {
             studentName.addEventListener('click', initiateEdit);
+            studentName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    initiateEdit();
+                }
+            });
         }
 
         // Also allow clicking the avatar to trigger edit mode (unifies the new hover zone)
@@ -283,8 +289,7 @@ export const FocusPanelHeader = {
             }
 
             // Enter Edit Mode
-            header.style.removeProperty('--scroll-p');
-            header.classList.remove('scrolled');
+            this.resetScrollState({ syncOffset: false });
             header.classList.add('editing');
             readMode.classList.add('hidden');
             editMode.classList.add('visible');
@@ -464,6 +469,7 @@ export const FocusPanelHeader = {
         header?.classList.remove('editing');
         readMode?.classList.remove('hidden');
         editMode?.classList.remove('visible');
+        this.syncHeaderOffset();
 
         // Restore original tooltips and accessibility
         const saveBtn = document.getElementById('focusEditSaveBtn');
@@ -711,20 +717,60 @@ export const FocusPanelHeader = {
         const originParts = [];
         if (displayClass) originParts.push(`${badgePrefix} ${Utils.escapeHtml(displayClass)}`);
         if (displayGroup) originParts.push(`Groupe ${Utils.escapeHtml(displayGroup)}`);
-        const originBadge = originParts.length > 0 ? `
-            <span class="focus-origin-class-badge">${originParts.join(' · ')}</span>
-        ` : '';
+        const originBadgeHtml = originParts.length > 0
+            ? `<span class="focus-origin-class-badge">${originParts.join(' · ')}</span>`
+            : '';
 
         nameEl.innerHTML = `
             <span class="focus-name-details">
-                <span class="focus-name-nom">${Utils.escapeHtml(nom).toUpperCase()}</span>
+                <span class="focus-name-nom-row">
+                    <span class="focus-name-nom">${Utils.escapeHtml(nom).toUpperCase()}</span>
+                    <iconify-icon icon="solar:pen-linear" class="focus-name-edit-icon" aria-hidden="true"></iconify-icon>
+                </span>
                 <span class="focus-name-prenom">
                     <span class="focus-prenom-text">${Utils.escapeHtml(prenom)}</span>
-                    ${originBadge}
+                    ${originBadgeHtml}
                 </span>
             </span>
-            <iconify-icon icon="solar:pen-linear" class="focus-name-edit-icon"></iconify-icon>
         `;
+
+        this.syncHeaderOffset();
+    },
+
+    /**
+     * Réinitialise l'état de scroll de l'entête (--scroll-p et classe .scrolled).
+     * @param {Object} [options={}]
+     * @param {boolean} [options.syncOffset=false] - Resynchronise --focus-header-offset après réinitialisation
+     */
+    resetScrollState({ syncOffset = false } = {}) {
+        const header = document.querySelector('.focus-header');
+        if (!header) return;
+        header.style.removeProperty('--scroll-p');
+        header.classList.remove('scrolled');
+        if (syncOffset) {
+            this.syncHeaderOffset();
+        }
+    },
+
+    /**
+     * Synchronise --focus-header-offset sur #focusPanel avec la hauteur réelle de l'entête
+     * au repos afin que les noms longs ou badges multiples ne recouvrent jamais le contenu.
+     */
+    syncHeaderOffset() {
+        const panel = document.getElementById('focusPanel');
+        const header = panel?.querySelector('.focus-header');
+        if (!panel || !header) return;
+        if (header.classList.contains('editing') || header.classList.contains('scrolled')) return;
+
+        const height = header.offsetHeight;
+        if (height <= 0) return;
+
+        const marginTop = parseFloat(window.getComputedStyle(header).marginTop) || 0;
+        const gap = window.innerWidth <= 600 ? 12 : 14;
+        const nextOffset = `${Math.ceil(height + marginTop + gap)}px`;
+        if (panel.style.getPropertyValue('--focus-header-offset') !== nextOffset) {
+            panel.style.setProperty('--focus-header-offset', nextOffset);
+        }
     },
 
     /**
@@ -772,6 +818,8 @@ export const FocusPanelHeader = {
                 });
             }
         });
+
+        this.syncHeaderOffset();
     },
 
     /**

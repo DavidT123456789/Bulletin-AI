@@ -1848,7 +1848,7 @@
 }
 
 .accent-color-swatch[data-color="anthracite"] {
-    --swatch-color: #262626;
+    --swatch-color: #33353a;
 }
 
 [data-theme="dark"] .accent-color-swatch[data-color="anthracite"] {

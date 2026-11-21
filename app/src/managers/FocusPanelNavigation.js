@@ -364,11 +364,7 @@ export const FocusPanelNavigation = {
                     content.style.willChange = '';
                     content.scrollTop = 0;
                 }
-                const navHeader = document.querySelector('.focus-header');
-                if (navHeader) {
-                    navHeader.style.removeProperty('--scroll-p');
-                    navHeader.classList.remove('scrolled');
-                }
+                FocusPanelHeader.resetScrollState({ syncOffset: true });
                 this.callbacks?.updateScrollAffordances?.();
             }
             return;
@@ -452,11 +448,7 @@ export const FocusPanelNavigation = {
         }
 
         content.scrollTop = 0;
-        const navHeader = document.querySelector('.focus-header');
-        if (navHeader) {
-            navHeader.style.removeProperty('--scroll-p');
-            navHeader.classList.remove('scrolled');
-        }
+        FocusPanelHeader.resetScrollState({ syncOffset: true });
         this.callbacks?.updateScrollAffordances?.();
 
         // 4. Trigger Inline Animations (iOS Gallery Physics)

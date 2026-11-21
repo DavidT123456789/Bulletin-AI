@@ -252,22 +252,22 @@
 }
 
 .analysis-status-badge.loading {
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);
 }
 
 .analysis-status-badge.done {
-    background: rgba(var(--success-rgb), 0.15);
+    background: rgba(var(--success-rgb), 0.13);
     color: var(--success-text);
 }
 
 .analysis-status-badge.error {
-    background: rgba(var(--error-rgb), 0.15);
-    color: var(--error-color);
+    background: rgba(var(--error-rgb), 0.13);
+    color: var(--error-text);
 }
 
 .analysis-status-badge.modified {
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);
     animation: analysis-modified-pulse 2s ease-in-out infinite;
     cursor: pointer;
@@ -346,7 +346,7 @@
 }
 
 .analysis-card.has-error .analysis-card-body {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* Staggered Card Entrance Animation */
@@ -399,10 +399,13 @@
 /* Read Mode (Default) */
 .focus-header-read {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    width: 100%;
     transform-origin: left center;
-    animation: focusHeaderReadIn 0.38s var(--ease-spring);
+    animation: focusHeaderReadIn 0.34s var(--ease-spring);
 }
 
 @keyframes focusHeaderReadIn {
@@ -521,24 +524,24 @@
 
 /* Selected State — Semantic Movement: Nouveau (Sky) & Départ (Amber/Copper) */
 .status-pill-check:has(input[value^="Nouveau"]:checked) {
-    background: rgba(14, 165, 233, 0.14);
-    border-color: rgba(14, 165, 233, 0.3);
-    color: var(--color-sky-deep, #0369a1);
+    background: rgba(var(--color-sky-rgb), 0.12);
+    border-color: rgba(var(--color-sky-rgb), 0.28);
+    color: var(--color-sky-deep);
     box-shadow: none;
 }
 
 .status-pill-check:has(input[value^="Départ"]:checked) {
-    background: rgba(245, 158, 11, 0.14);
-    border-color: rgba(245, 158, 11, 0.3);
-    color: var(--color-amber-deep, #b45309);
+    background: rgba(var(--color-amber-rgb), 0.12);
+    border-color: rgba(var(--color-amber-rgb), 0.28);
+    color: var(--color-amber-deep);
     box-shadow: none;
 }
 
 /* Selected State — Semantic Inclusion: ULIS, AESH (Violet) */
 .status-pill-check:has(input[value="ULIS"]:checked),
 .status-pill-check:has(input[value="AESH"]:checked) {
-    background: rgba(147, 51, 234, 0.14);
-    border-color: rgba(147, 51, 234, 0.3);
+    background: rgba(var(--color-violet-rgb), 0.12);
+    border-color: rgba(var(--color-violet-rgb), 0.28);
     color: var(--color-violet-deep);
     box-shadow: none;
 }
@@ -547,55 +550,55 @@
 .status-pill-check:has(input[value="PPRE"]:checked),
 .status-pill-check:has(input[value="PAP"]:checked),
 .status-pill-check:has(input[value="PAI"]:checked) {
-    background: rgba(244, 63, 94, 0.13);
-    border-color: rgba(244, 63, 94, 0.28);
-    color: var(--color-rose-deep, #be123c);
+    background: rgba(var(--color-rose-rgb), 0.12);
+    border-color: rgba(var(--color-rose-rgb), 0.28);
+    color: var(--color-rose-deep);
     box-shadow: none;
 }
 
 /* Selected State — Semantic Delegate: Délégué (Emerald) */
 .status-pill-check:has(input[value="Délégué"]:checked) {
-    background: rgba(16, 185, 129, 0.13);
-    border-color: rgba(16, 185, 129, 0.28);
-    color: var(--color-emerald-deep, #047857);
+    background: rgba(var(--color-emerald-rgb), 0.12);
+    border-color: rgba(var(--color-emerald-rgb), 0.28);
+    color: var(--color-emerald-deep);
     box-shadow: none;
 }
 
 /* Dark Mode Adjustments */
 [data-theme="dark"] .status-pill-check:has(input[value^="Nouveau"]:checked) {
-    background: rgba(56, 189, 248, 0.2);
-    border-color: rgba(56, 189, 248, 0.4);
-    color: var(--color-sky-bright, #7dd3fc);
+    background: rgba(var(--color-sky-rgb), 0.18);
+    border-color: rgba(var(--color-sky-rgb), 0.36);
+    color: var(--color-sky);
     box-shadow: none;
 }
 
 [data-theme="dark"] .status-pill-check:has(input[value^="Départ"]:checked) {
-    background: rgba(251, 191, 36, 0.2);
-    border-color: rgba(251, 191, 36, 0.4);
-    color: var(--color-amber-bright, #fcd34d);
+    background: rgba(var(--color-amber-rgb), 0.18);
+    border-color: rgba(var(--color-amber-rgb), 0.36);
+    color: var(--color-amber);
     box-shadow: none;
 }
 
 [data-theme="dark"] .status-pill-check:has(input[value="ULIS"]:checked),
 [data-theme="dark"] .status-pill-check:has(input[value="AESH"]:checked) {
-    background: rgba(167, 139, 250, 0.22);
-    border-color: rgba(167, 139, 250, 0.42);
-    color: var(--color-violet-bright, #c4b5fd);
+    background: rgba(var(--color-violet-rgb), 0.18);
+    border-color: rgba(var(--color-violet-rgb), 0.36);
+    color: var(--color-violet);
     box-shadow: none;
 }
 
 [data-theme="dark"] .status-pill-check:has(input[value="PPRE"]:checked),
 [data-theme="dark"] .status-pill-check:has(input[value="PAP"]:checked),
 [data-theme="dark"] .status-pill-check:has(input[value="PAI"]:checked) {
-    background: rgba(251, 113, 133, 0.2);
-    border-color: rgba(251, 113, 133, 0.38);
-    color: var(--color-rose-bright, #fda4af);
+    background: rgba(var(--color-rose-rgb), 0.18);
+    border-color: rgba(var(--color-rose-rgb), 0.36);
+    color: var(--color-rose);
     box-shadow: none;
 }
 
 [data-theme="dark"] .status-pill-check:has(input[value="Délégué"]:checked) {
-    background: rgba(52, 211, 153, 0.2);
-    border-color: rgba(52, 211, 153, 0.38);
-    color: var(--color-emerald-bright, #6ee7b7);
+    background: rgba(var(--color-emerald-rgb), 0.18);
+    border-color: rgba(var(--color-emerald-rgb), 0.36);
+    color: var(--color-emerald);
     box-shadow: none;
 }

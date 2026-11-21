@@ -537,7 +537,7 @@ export const FocusPanelJournal = {
                     const belowClass = isBelow ? 'below-threshold' : '';
                     const escapedLabel = Utils.escapeHtml(item.label);
                     return `
-                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}" data-tooltip="${escapedLabel} : ${item.count}">
+                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${escapedLabel} : ${item.count}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
@@ -607,6 +607,7 @@ export const FocusPanelJournal = {
             const chip = document.createElement('span');
             chip.className = 'journal-selected-chip';
             chip.style.setProperty('--tag-color', tag.color);
+            chip.style.setProperty('--tag-ink', tag.ink || tag.color);
             chip.dataset.tagId = tagId;
             chip.innerHTML = `
                 <iconify-icon icon="${tag.icon}"></iconify-icon>
@@ -756,7 +757,7 @@ export const FocusPanelJournal = {
                         const tagsHTML = entry.tags.map(tagId => {
                             const tag = JournalManager.getTag(tagId);
                             if (!tag) return '';
-                            return `<span class="journal-tag" style="--tag-color: ${tag.color}">
+                            return `<span class="journal-tag" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink || tag.color}">
                             <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
                             </span>`;
                         }).join('');

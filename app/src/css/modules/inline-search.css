@@ -226,7 +226,7 @@
     height: 18px;
     padding: 0 5px;
     border-radius: var(--radius-pill);
-    background: var(--bg-tertiary);
+    background: var(--tonal-bg);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     font-size: 0.72rem;
@@ -239,12 +239,11 @@
 .sc-floating-search-count.sc-count-zero {
     background: var(--error-light);
     border-color: rgba(var(--error-rgb), 0.25);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 [data-theme="dark"] .sc-floating-search-count.sc-count-zero {
     border-color: rgba(var(--error-rgb), 0.35);
-    color: var(--error-bright);
 }
 
 @keyframes scFadeIn {

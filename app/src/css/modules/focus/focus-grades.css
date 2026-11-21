@@ -147,28 +147,28 @@
 }
 
 .focus-mic-btn.recording {
-    background: #ef4444 !important;
+    background: var(--error-color) !important;
     color: #ffffff !important;
-    border-color: #ef4444 !important;
+    border-color: var(--error-color) !important;
     animation: mic-ripple 1.4s cubic-bezier(0.25, 1, 0.5, 1) infinite !important;
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 0 0 rgba(var(--error-rgb), 0.5);
 }
 
 .focus-mic-btn.recording:hover {
-    background: #dc2626 !important;
+    background: color-mix(in srgb, var(--error-color), black 12%) !important;
 }
 
 @keyframes mic-ripple {
     0% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+        box-shadow: 0 0 0 0 rgba(var(--error-rgb), 0.6);
         transform: scale(1);
     }
     50% {
-        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.2);
+        box-shadow: 0 0 0 6px rgba(var(--error-rgb), 0.2);
         transform: scale(1.05);
     }
     100% {
-        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        box-shadow: 0 0 0 10px rgba(var(--error-rgb), 0);
         transform: scale(1);
     }
 }
@@ -303,7 +303,7 @@
     height: 24px;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 0 6px;
     box-sizing: border-box;
     white-space: nowrap;
@@ -326,7 +326,7 @@
 .context-grade-group:focus-within {
     background: var(--surface-color);
     border-color: var(--border-color-hover);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-sm);
 }
 
 [data-theme="dark"] .context-grade-group:focus-within {
@@ -469,11 +469,11 @@ input.context-grade-input,
 }
 
 .previous-grades-inline .grade-evolution.positive {
-    color: var(--grade-range-16-20);
+    color: var(--grade-range-16-20-ink);
 }
 
 .previous-grades-inline .grade-evolution.negative {
-    color: var(--grade-range-0-4);
+    color: var(--grade-range-0-4-ink);
 }
 
 .previous-grades-inline .grade-evolution.stable {

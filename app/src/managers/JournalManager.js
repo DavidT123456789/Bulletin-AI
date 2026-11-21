@@ -11,22 +11,22 @@ import { Utils } from '../utils/Utils.js';
 
 /**
  * Predefined tags for quick observation categorization
- * @constant {Array<{id: string, label: string, icon: string, color: string}>}
+ * @constant {Array<{id: string, label: string, icon: string, color: string, ink: string, category: string}>}
  */
 const PREDEFINED_TAGS = [
     // POSITIF (vert) - 4 items
-    { id: 'participation+', label: 'Participe', icon: 'solar:hand-shake-linear', color: 'var(--success-color)', category: 'positive' },
-    { id: 'travail+', label: 'Travail sérieux', icon: 'solar:book-2-linear', color: 'var(--success-color)', category: 'positive' },
-    { id: 'progres', label: 'Progrès', icon: 'solar:graph-up-linear', color: 'var(--success-color)', category: 'positive' },
-    { id: 'attitude+', label: 'Attitude +', icon: 'solar:smile-circle-linear', color: 'var(--success-color)', category: 'positive' },
+    { id: 'participation+', label: 'Participe', icon: 'solar:hand-shake-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
+    { id: 'travail+', label: 'Travail sérieux', icon: 'solar:book-2-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
+    { id: 'progres', label: 'Progrès', icon: 'solar:graph-up-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
+    { id: 'attitude+', label: 'Attitude +', icon: 'solar:smile-circle-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
     // NÉGATIF (rouge) - 4 items
-    { id: 'bavardage', label: 'Bavardage', icon: 'solar:chat-round-dots-linear', color: 'var(--error-color)', category: 'negative' },
-    { id: 'travail-', label: 'Travail insuffisant', icon: 'solar:notebook-linear', color: 'var(--error-color)', category: 'negative' },
-    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'solar:bag-linear', color: 'var(--error-color)', category: 'negative' },
-    { id: 'attitude-', label: 'Attitude -', icon: 'solar:sad-circle-linear', color: 'var(--error-color)', category: 'negative' },
+    { id: 'bavardage', label: 'Bavardage', icon: 'solar:chat-round-dots-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
+    { id: 'travail-', label: 'Travail insuffisant', icon: 'solar:notebook-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
+    { id: 'oubli', label: 'Oubli d\'affaires', icon: 'solar:bag-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
+    { id: 'attitude-', label: 'Attitude -', icon: 'solar:sad-circle-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
     // NEUTRE (orange/gris) - 2 direct buttons
-    { id: 'difficulte', label: 'Difficulté', icon: 'solar:danger-triangle-linear', color: 'var(--warning-color)', category: 'neutral' },
-    { id: 'remarque', label: 'Remarque', icon: 'solar:chat-square-linear', color: 'var(--text-secondary)', category: 'neutral' }
+    { id: 'difficulte', label: 'Difficulté', icon: 'solar:danger-triangle-linear', color: 'var(--warning-color)', ink: 'var(--warning-text)', category: 'neutral' },
+    { id: 'remarque', label: 'Remarque', icon: 'solar:chat-square-linear', color: 'var(--text-secondary)', ink: 'var(--text-secondary)', category: 'neutral' }
 ];
 
 /**
@@ -258,6 +258,7 @@ export const JournalManager = {
                     aggregated.push({
                         icon: tag.icon,
                         color: tag.color,
+                        ink: tag.ink,
                         count: count,
                         label: tag.label
                     });
@@ -453,7 +454,7 @@ export const JournalManager = {
             const tagsHTML = entry.tags.map(tagId => {
                 const tag = this.getTag(tagId);
                 if (!tag) return '';
-                return `<span class="journal-tag" style="--tag-color: ${tag.color}">
+                return `<span class="journal-tag" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
                     <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
                 </span>`;
             }).join('');
@@ -514,7 +515,7 @@ export const JournalManager = {
                 const tag = this.getTag(tagId);
                 if (!tag) return '';
                 return `
-                    <span class="journal-selected-chip" style="--tag-color: ${tag.color}" data-tag-id="${tagId}">
+                    <span class="journal-selected-chip" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}" data-tag-id="${tagId}">
                         <iconify-icon icon="${tag.icon}"></iconify-icon>
                         <span>${tag.label}</span>
                         <button type="button" class="journal-chip-remove" aria-label="Retirer ${tag.label}">
@@ -591,9 +592,9 @@ export const JournalManager = {
         const negativeTags = this.tags.filter(t => t.category === 'negative');
         const neutralTags = this.tags.filter(t => t.category === 'neutral');
 
-        const renderPillDropdown = (category, label, icon, tags, color) => {
+        const renderPillDropdown = (category, label, icon, tags, color, ink) => {
             const optionsHTML = tags.map(tag => `
-                <button type="button" class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}">
+                <button type="button" class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
                     <iconify-icon icon="${tag.icon}"></iconify-icon>
                     <span>${tag.label}</span>
                 </button>
@@ -601,7 +602,7 @@ export const JournalManager = {
 
             return `
                 <div class="journal-pill-dropdown" data-category="${category}">
-                    <button type="button" class="journal-pill-btn" style="--pill-color: ${color}">
+                    <button type="button" class="journal-pill-btn" style="--pill-color: ${color}; --pill-ink: ${ink}">
                         <iconify-icon icon="${icon}"></iconify-icon>
                         <span>${label}</span>
                         <iconify-icon icon="solar:alt-arrow-down-linear" class="journal-pill-arrow"></iconify-icon>
@@ -615,15 +616,15 @@ export const JournalManager = {
 
         // Neutral tags are rendered as direct buttons (no dropdown)
         const neutralBtnsHTML = neutralTags.map(tag => `
-            <button type="button" class="journal-pill-btn journal-pill-direct" data-tag-id="${tag.id}" style="--pill-color: ${tag.color}">
+            <button type="button" class="journal-pill-btn journal-pill-direct" data-tag-id="${tag.id}" style="--pill-color: ${tag.color}; --pill-ink: ${tag.ink}">
                 <iconify-icon icon="${tag.icon}"></iconify-icon>
                 <span>${tag.label}</span>
             </button>
         `).join('');
 
         return `
-            ${renderPillDropdown('positive', 'Positif', 'ph:plus', positiveTags, 'var(--success-color)')}
-            ${renderPillDropdown('negative', 'Négatif', 'ph:minus', negativeTags, 'var(--error-color)')}
+            ${renderPillDropdown('positive', 'Positif', 'ph:plus', positiveTags, 'var(--success-color)', 'var(--success-text)')}
+            ${renderPillDropdown('negative', 'Négatif', 'ph:minus', negativeTags, 'var(--error-color)', 'var(--error-text)')}
             ${neutralBtnsHTML}
         `;
     },

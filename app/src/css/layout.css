@@ -714,27 +714,18 @@ body.is-cloud-syncing label {
     font-weight: 500;
 }
 
-[data-theme="dark"] .cloud-btn-hint.hint-in-sync {
-    color: var(--success-bright);
-    opacity: 0.9;
-}
-
 .cloud-btn-hint.hint-syncing {
     color: var(--color-sky-deep);
     animation: hint-pulse 1.2s ease-in-out infinite;
 }
 
 [data-theme="dark"] .cloud-btn-hint.hint-syncing {
-    color: var(--color-sky-bright);
+    color: var(--color-sky);
 }
 
 .cloud-btn-hint.hint-warning {
     color: var(--warning-text);
     font-weight: 500;
-}
-
-[data-theme="dark"] .cloud-btn-hint.hint-warning {
-    color: var(--warning-bright);
 }
 
 @keyframes hint-pulse {
@@ -796,11 +787,7 @@ body.is-cloud-syncing label {
 
 /* Preservation et affinement des couleurs d'état sémantiques au survol */
 .cloud-save-menu-item:hover .cloud-btn-hint.hint-in-sync {
-    color: var(--success-dark);
-}
-
-[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-in-sync {
-    color: var(--success-bright);
+    color: var(--success-text);
 }
 
 .cloud-save-menu-item:hover .cloud-btn-hint.hint-syncing {
@@ -808,29 +795,22 @@ body.is-cloud-syncing label {
 }
 
 [data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-syncing {
-    color: var(--color-sky-bright);
+    color: var(--color-sky);
 }
 
 .cloud-save-menu-item:hover .cloud-btn-hint.hint-warning {
-    color: var(--warning-dark);
+    color: var(--warning-text);
 }
 
-[data-theme="dark"] .cloud-save-menu-item:hover .cloud-btn-hint.hint-warning {
-    color: var(--warning-bright);
-}
-
-.cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint {
+.cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint,
+.cloud-save-menu-item.cloud-action-recommended:hover .cloud-btn-hint {
     color: var(--color-sky-deep);
     font-weight: 500;
 }
 
-.cloud-save-menu-item.cloud-action-recommended:hover .cloud-btn-hint {
-    color: var(--color-sky-deep);
-}
-
 [data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended .cloud-btn-hint,
 [data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended:hover .cloud-btn-hint {
-    color: var(--color-sky-bright);
+    color: var(--color-sky);
 }
 
 .cloud-save-menu-item.saving {
@@ -866,15 +846,11 @@ body.is-cloud-syncing label {
 }
 
 [data-theme="dark"] .cloud-save-menu-item.cloud-action-recommended > iconify-icon {
-    color: var(--color-sky-bright);
+    color: var(--color-sky);
 }
 
 .cloud-save-menu-item:not(.saving):has(.hint-warning) > iconify-icon {
     color: var(--warning-text);
-}
-
-[data-theme="dark"] .cloud-save-menu-item:not(.saving):has(.hint-warning) > iconify-icon {
-    color: var(--warning-bright);
 }
 
 /* Bouton Connecter - Découverte pour nouveaux utilisateurs */

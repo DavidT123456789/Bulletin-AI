@@ -122,7 +122,7 @@
     background: rgba(var(--error-rgb), 0.08);
     border-radius: var(--radius-sm);
     padding: 12px;
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* Bordure latérale erreur (indicateur subtil) */
@@ -247,7 +247,7 @@
     border-radius: var(--radius-sm);
     font-size: var(--font-sm);
     font-weight: 600;
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     border: none;
     color: var(--text-secondary);
     display: flex;
@@ -284,7 +284,7 @@
 }
 
 .grade-bubble[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 13%, var(--surface-color));
+    background: color-mix(in srgb, var(--grade-accent) 12%, transparent);
 }
 
 .grade-value[class*="grade-range-"] {
@@ -303,13 +303,13 @@
 }
 
 .grade-value.current-period-grade[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 14%, var(--surface-color));
+    background: color-mix(in srgb, var(--grade-accent) 12%, transparent);
     color: var(--grade-ink);
     font-weight: 600;
 }
 
 [data-theme="dark"] .grade-value.current-period-grade[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 16%, var(--surface-color));
+    background: color-mix(in srgb, var(--grade-accent) 16%, transparent);
 }
 
 /* Note actuelle avec couleur sémantique pleine (Cartes seulement) */
@@ -345,12 +345,12 @@
 }
 
 .icon-action-btn:hover:not(:disabled) {
-    background: var(--bg-secondary);
+    background: var(--item-hover-bg);
     color: var(--text-primary);
 }
 
 .icon-action-btn[data-action="delete"]:hover:not(:disabled) {
-    color: var(--error-color);
+    color: var(--error-text);
     background: rgba(var(--error-rgb), 0.1);
 }
 
@@ -392,12 +392,16 @@
 
 /* État actif : affiche la version originale */
 .toggle-version-btn.showing-original {
-    background: rgba(249, 115, 22, 0.15);
+    background: rgba(var(--color-orange-rgb), 0.12);
+    color: var(--color-orange-deep);
+}
+
+[data-theme="dark"] .toggle-version-btn.showing-original {
     color: var(--color-orange);
 }
 
 .toggle-version-btn.showing-original:hover:not(:disabled) {
-    background: rgba(249, 115, 22, 0.25);
+    background: rgba(var(--color-orange-rgb), 0.2);
 }
 
 /* ====================================================================
@@ -437,7 +441,7 @@
     line-height: 1.15;
     padding: 3px 8px;
     border-radius: var(--radius-pill);
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid transparent;
     font-weight: 600;
@@ -446,74 +450,68 @@
     box-sizing: border-box;
 }
 
-[data-theme="dark"] .tag-badge {
-    background: rgba(255, 255, 255, 0.07);
-    color: var(--text-secondary);
-    border-color: transparent;
-}
-
 /* Semantic movement badges: Nouveau (Sky) & Départ (Amber/Copper) — mutualized with seating sidebar chips */
 .tag-badge.tag-badge--new,
 .sc-chip-badge-new {
-    background: rgba(14, 165, 233, 0.11);
-    color: var(--color-sky-deep, #0369a1);
+    background: rgba(var(--color-sky-rgb), 0.11);
+    color: var(--color-sky-deep);
 }
 
 [data-theme="dark"] .tag-badge.tag-badge--new,
 [data-theme="dark"] .sc-chip-badge-new {
-    background: rgba(56, 189, 248, 0.13);
-    color: var(--color-sky-bright, #7dd3fc);
+    background: rgba(var(--color-sky-rgb), 0.14);
+    color: var(--color-sky);
 }
 
 .tag-badge.tag-badge--depart,
 .sc-chip-badge-depart {
-    background: rgba(245, 158, 11, 0.11);
-    color: var(--color-amber-deep, #b45309);
+    background: rgba(var(--color-amber-rgb), 0.11);
+    color: var(--color-amber-deep);
 }
 
 [data-theme="dark"] .tag-badge.tag-badge--depart,
 [data-theme="dark"] .sc-chip-badge-depart {
-    background: rgba(251, 191, 36, 0.13);
-    color: var(--color-amber-bright, #fcd34d);
+    background: rgba(var(--color-amber-rgb), 0.14);
+    color: var(--color-amber);
 }
 
 /* Semantic inclusion badges: ULIS, AESH (Violet) */
 .tag-badge.tag-badge--ulis,
 .sc-chip-badge-ulis {
-    background: rgba(147, 51, 234, 0.11);
+    background: rgba(var(--color-violet-rgb), 0.11);
     color: var(--color-violet-deep);
 }
 
 [data-theme="dark"] .tag-badge.tag-badge--ulis,
 [data-theme="dark"] .sc-chip-badge-ulis {
-    background: rgba(167, 139, 250, 0.14);
-    color: var(--color-violet-bright, #c4b5fd);
+    background: rgba(var(--color-violet-rgb), 0.14);
+    color: var(--color-violet);
 }
 
 /* Semantic accompaniment badges: PAP, PPRE, PAI (Rose) */
 .tag-badge.tag-badge--device,
 .sc-chip-badge-device {
-    background: rgba(244, 63, 94, 0.10);
-    color: var(--color-rose-deep, #be123c);
+    background: rgba(var(--color-rose-rgb), 0.11);
+    color: var(--color-rose-deep);
 }
 
 [data-theme="dark"] .tag-badge.tag-badge--device,
 [data-theme="dark"] .sc-chip-badge-device {
-    background: rgba(251, 113, 133, 0.13);
-    color: var(--color-rose-bright, #fda4af);
+    background: rgba(var(--color-rose-rgb), 0.14);
+    color: var(--color-rose);
 }
 
 /* Semantic delegate badge: Délégué (Emerald) */
 .tag-badge.tag-badge--delegate,
 .sc-chip-badge-delegate {
-    background: rgba(16, 185, 129, 0.10);
-    color: var(--color-emerald-deep, #047857);
+    background: rgba(var(--color-emerald-rgb), 0.11);
+    color: var(--color-emerald-deep);
 }
 
 [data-theme="dark"] .tag-badge.tag-badge--delegate,
 [data-theme="dark"] .sc-chip-badge-delegate {
-    background: rgba(52, 211, 153, 0.13);
-    color: var(--color-emerald-bright, #6ee7b7);
+    background: rgba(var(--color-emerald-rgb), 0.14);
+    color: var(--color-emerald);
 }
 
 /* Compact variant for dense table contexts (import wizard) */

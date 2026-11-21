@@ -213,8 +213,13 @@
 
 .preview-history-table .grade-bubble[class*="grade-range-"],
 .preview-history-table .grade-pill[class*="grade-range-"] {
-    background: color-mix(in srgb, var(--grade-accent) 15%, var(--surface-color));
+    background: color-mix(in srgb, var(--grade-accent) 12%, transparent);
     color: var(--grade-ink, var(--grade-accent));
+}
+
+[data-theme="dark"] .preview-history-table .grade-bubble[class*="grade-range-"],
+[data-theme="dark"] .preview-history-table .grade-pill[class*="grade-range-"] {
+    background: color-mix(in srgb, var(--grade-accent) 16%, transparent);
 }
 
 /* --- Unified Data Card & Navigation Capsule --- */

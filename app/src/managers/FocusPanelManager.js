@@ -372,11 +372,7 @@ export const FocusPanelManager = {
 
         const focusContent = panel?.querySelector('.focus-main-page .focus-content');
         if (focusContent) focusContent.scrollTop = 0;
-        const focusHeader = panel?.querySelector('.focus-header');
-        if (focusHeader) {
-            focusHeader.style.removeProperty('--scroll-p');
-            focusHeader.classList.remove('scrolled');
-        }
+        FocusPanelHeader.resetScrollState({ syncOffset: true });
         this.updateScrollAffordances();
         this._updateActiveRow(studentId);
 
@@ -519,11 +515,7 @@ export const FocusPanelManager = {
             ModalUI.deactivateFocusTrap?.(panel);
         }
         if (backdrop) backdrop.classList.remove('visible');
-        const focusHeader = panel?.querySelector('.focus-header');
-        if (focusHeader) {
-            focusHeader.style.removeProperty('--scroll-p');
-            focusHeader.classList.remove('scrolled');
-        }
+        FocusPanelHeader.resetScrollState();
 
         if (!discardChanges && this.currentStudentId) {
             const lastActiveRow = document.querySelector(`.student-row[data-student-id="${this.currentStudentId}"]`);

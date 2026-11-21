@@ -794,7 +794,7 @@ export const FocusPanelAnalysis = {
      * @private
      */
     _showError(message) {
-        const errorHtml = `<span style="color:var(--error-color); font-size: 12px; display: flex; align-items: center; gap: 4px;">
+        const errorHtml = `<span style="color:var(--error-text); font-size: 12px; display: flex; align-items: center; gap: 4px;">
             <iconify-icon icon="solar:danger-circle-bold"></iconify-icon> ${Utils.escapeHtml(message.substring(0, 60))}...
         </span>`;
 

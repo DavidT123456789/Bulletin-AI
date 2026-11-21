@@ -645,102 +645,107 @@
     <div id="focusPanelBackdrop" class="focus-panel-backdrop"></div>
     <div id="focusPanel" class="focus-panel" role="dialog" aria-modal="true" aria-labelledby="focusStudentName" tabindex="-1">
         <div class="focus-header">
-            <!-- LEFT ZONE: Avatar flush into pill rounded edge -->
-            <div class="focus-header-left">
-                <div id="focusAvatarContainer" class="focus-panel-avatar-container">
-                    <!-- Populated by FocusPanelManager -->
-                </div>
-            </div>
-
-            <!-- CENTER ZONE: Name/Badges (read) or Inputs (edit) -->
-            <div id="focusHeaderContent" class="focus-header-content">
-                <!-- READ MODE: Name & Badges -->
-                <div class="focus-header-read">
-                    <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
-                        data-tooltip="Cliquez pour éditer l'identité et les statuts">
-                        Sophie DURAND
+            <!-- TOOLBAR: Compact right-aligned controls on desktop; top utility row on mobile -->
+            <div class="focus-header-toolbar">
+                <!-- Utility Actions: Analyze & Print -->
+                <div class="focus-header-tools">
+                    <!-- Analyze button (navigates to analysis page) -->
+                    <button type="button" id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
+                        aria-label="Analyser l'élève">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"
-                            class="focus-name-edit-icon" width="1em" height="1em">
-                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                            <path d="M18 20V10M12 20V4M6 20V14"></path>
                         </svg>
-                    </h2>
-                    <div id="focusStatusBadges" class="focus-status-badges">
-                        <!-- Badges générés dynamiquement -->
-                    </div>
+                    </button>
+
+                    <!-- Print Student Report button (PDF parents / PP) -->
+                    <button type="button" id="focusPrintStudentBtn" class="focus-nav-btn focus-print-btn tooltip" data-tooltip="Fiche bilan élève (PDF)"
+                        aria-label="Exporter la fiche bilan élève en PDF">
+                        <svg width="1em" height="1em" aria-hidden="true"><use href="#icon-printer"></use></svg>
+                    </button>
                 </div>
 
-                <!-- EDIT MODE: Inputs & Checkboxes (Hidden by default via CSS) -->
-                <div class="focus-header-edit">
-                    <div class="focus-edit-row">
-                        <input type="text" id="headerPrenomInput" class="focus-input-header" placeholder="Prénom"
-                            autocomplete="off" autocapitalize="words" enterkeyhint="next">
-                        <input type="text" id="headerNomInput" class="focus-input-header" placeholder="NOM"
-                            autocomplete="off" autocapitalize="characters" enterkeyhint="done">
-                    </div>
-                    <div class="focus-status-selection status-checkboxes">
-                        <label class="status-pill-check"><input type="checkbox" value="Nouveau">
-                            Nouveau</label>
-                        <label class="status-pill-check"><input type="checkbox" value="Départ">
-                            Départ</label>
-                        <label class="status-pill-check"><input type="checkbox" value="PPRE"> PPRE</label>
-                        <label class="status-pill-check"><input type="checkbox" value="PAP"> PAP</label>
-                        <label class="status-pill-check"><input type="checkbox" value="PAI"> PAI</label>
-                        <label class="status-pill-check"><input type="checkbox" value="AESH"> AESH</label>
-                        <label class="status-pill-check"><input type="checkbox" value="ULIS"> ULIS</label>
-                        <label class="status-pill-check"><input type="checkbox" value="Délégué"> Délégué</label>
-                    </div>
+                <!-- NAVIGATION: Compact nav group (‹ 1/8 ›) -->
+                <div class="focus-nav-buttons">
+                    <button type="button" id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                            <path d="m15 18-6-6 6-6"></path>
+                        </svg>
+                    </button>
+                    <span id="focusPosition" class="focus-position">1/8</span>
+                    <button type="button" id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                            <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <span class="focus-header-divider" aria-hidden="true"></span>
+
+                <!-- Save (edit mode) & Close -->
+                <div class="focus-header-close-group">
+                    <!-- EDIT MODE: Save button (hidden in read mode) -->
+                    <button type="button" id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+
+                    <!-- Close / Cancel button -->
+                    <button type="button" id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <!-- Analyze button (icon in pill, navigates to analysis page) -->
-            <button type="button" id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
-                aria-label="Analyser l'élève">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
-                    <path d="M18 20V10M12 20V4M6 20V14"></path>
-                </svg>
-            </button>
+            <!-- IDENTITY HERO: Full-width Avatar + Name/Badges (read) or Inputs (edit) -->
+            <div class="focus-header-identity">
+                <div class="focus-header-left">
+                    <div id="focusAvatarContainer" class="focus-panel-avatar-container">
+                        <!-- Populated by FocusPanelManager -->
+                    </div>
+                </div>
 
-            <!-- Print Student Report button (PDF parents / PP) -->
-            <button type="button" id="focusPrintStudentBtn" class="focus-nav-btn focus-print-btn tooltip" data-tooltip="Fiche bilan élève (PDF)"
-                aria-label="Exporter la fiche bilan élève en PDF">
-                <svg width="1em" height="1em" aria-hidden="true"><use href="#icon-printer"></use></svg>
-            </button>
+                <div id="focusHeaderContent" class="focus-header-content">
+                    <!-- READ MODE: Full-width Name & Movement Badges -->
+                    <div class="focus-header-read">
+                        <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
+                            data-tooltip="Cliquez pour éditer l'identité et les statuts">
+                            Sophie DURAND
+                        </h2>
+                        <div id="focusStatusBadges" class="focus-status-badges"></div>
+                    </div>
 
-            <!-- NAVIGATION: Compact nav group (← 1/8 →) -->
-            <div class="focus-nav-buttons">
-                <button type="button" id="focusPrevBtn" class="focus-nav-btn" aria-label="Élève précédent">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
-                        <path d="m15 18-6-6 6-6"></path>
-                    </svg>
-                </button>
-                <span id="focusPosition" class="focus-position">1/8</span>
-                <button type="button" id="focusNextBtn" class="focus-nav-btn" aria-label="Élève suivant">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
-                        <path d="m9 18 6-6-6-6"></path>
-                    </svg>
-                </button>
+                    <!-- EDIT MODE: Inputs & Checkboxes (Hidden by default via CSS) -->
+                    <div class="focus-header-edit">
+                        <div class="focus-edit-row">
+                            <input type="text" id="headerPrenomInput" class="focus-input-header" placeholder="Prénom"
+                                autocomplete="off" autocapitalize="words" enterkeyhint="next">
+                            <input type="text" id="headerNomInput" class="focus-input-header" placeholder="NOM"
+                                autocomplete="off" autocapitalize="characters" enterkeyhint="done">
+                        </div>
+                        <div class="focus-status-selection status-checkboxes">
+                            <label class="status-pill-check"><input type="checkbox" value="Nouveau">
+                                Nouveau</label>
+                            <label class="status-pill-check"><input type="checkbox" value="Départ">
+                                Départ</label>
+                            <label class="status-pill-check"><input type="checkbox" value="PPRE"> PPRE</label>
+                            <label class="status-pill-check"><input type="checkbox" value="PAP"> PAP</label>
+                            <label class="status-pill-check"><input type="checkbox" value="PAI"> PAI</label>
+                            <label class="status-pill-check"><input type="checkbox" value="AESH"> AESH</label>
+                            <label class="status-pill-check"><input type="checkbox" value="ULIS"> ULIS</label>
+                            <label class="status-pill-check"><input type="checkbox" value="Délégué"> Délégué</label>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <!-- EDIT MODE: Save button (hidden in read mode) -->
-            <button type="button" id="focusEditSaveBtn" class="focus-nav-btn focus-save-btn" aria-label="Valider">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </button>
-
-            <!-- RIGHT ZONE: Close button flush into pill rounded edge -->
-            <button type="button" id="focusBackBtn" class="focus-nav-btn focus-close-btn" aria-label="Fermer le panneau">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                </svg>
-            </button>
         </div>
 
         <div class="focus-pages-container" id="focusPagesContainer">

@@ -349,7 +349,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-touch-ghost .sc-cell-name,
 .sc-touch-ghost .sc-student-chip-name {
     font-size: 0.74rem;
-    font-weight: 560;
+    font-weight: 500;
     color: color-mix(in srgb, var(--text-primary) 50%, var(--text-secondary));
     max-width: 78px;
     white-space: nowrap;
@@ -974,7 +974,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     border: none;
     color: var(--text-primary);
     font-size: 0.85rem;
-    font-weight: 550;
+    font-weight: 500;
     user-select: none;
     cursor: pointer;
     box-shadow: var(--shadow-sm);
@@ -998,7 +998,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-desk:focus-visible {
     outline: none;
     border-color: var(--border-color);
-    box-shadow: 0 0 0 2px var(--focus-ring, rgba(255, 255, 255, 0.2));
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
 }
 
 .sc-desk .sc-desk-cap {
@@ -2618,8 +2618,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
     /* Reset action: subtle warning background & red text */
     .sc-action-btn.sc-reset-btn:hover {
-        background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
-        color: var(--error-color);
+        background: rgba(var(--error-rgb), 0.12);
+        color: var(--error-text);
     }
 }
 

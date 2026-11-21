@@ -97,7 +97,7 @@
     opacity: 0;
     transform: translateY(5px) scale(0.95);
     pointer-events: none;
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid transparent;
     /* Prepare for border changes */
@@ -123,8 +123,8 @@
 }
 
 .appreciation-status-badge.error {
-    background: rgba(var(--error-rgb), 0.15);
-    color: var(--error-color);
+    background: rgba(var(--error-rgb), 0.12);
+    color: var(--error-text);
 }
 
 /* Empty state - "En attente" - icon only, no background (harmonized with source-manual) */
@@ -138,7 +138,7 @@
 }
 
 .appreciation-status-badge.modified {
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);
     width: auto;
     border-radius: var(--radius-pill);
@@ -152,7 +152,7 @@
 }
 
 .appreciation-status-badge.modified:hover {
-    background: rgba(245, 158, 11, 0.28);
+    background: rgba(var(--warning-rgb), 0.24);
     transform: scale(1.05);
 }
 
@@ -277,7 +277,7 @@
     }
 
     100% {
-        background: rgba(245, 158, 11, 0.15);
+        background: rgba(var(--warning-rgb), 0.13);
         color: var(--warning-text);
     }
 }
@@ -287,32 +287,29 @@
 }
 
 /* State classes for SpeechRecognitionManager */
-.appreciation-status-badge.is-saved {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-text);
+.appreciation-status-badge.is-saved,
+.appreciation-status-badge.is-dictating {
     width: auto;
     border-radius: var(--radius-pill);
-    padding: 4px 10px;
+    padding: 0 10px;
     gap: 6px;
     font-size: 12px;
     font-weight: 600;
+}
+
+.appreciation-status-badge.is-saved {
+    background: rgba(var(--success-rgb), 0.15);
+    color: var(--success-text);
     animation: saved-fade-in 0.3s ease;
 }
 
 .appreciation-status-badge.is-dictating {
-    background: var(--item-active-bg);
-    border: 1px solid var(--border-color);
+    background: var(--tonal-active-bg);
     color: var(--text-primary);
-    width: auto;
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
 }
 
 .appreciation-status-badge.is-dictating iconify-icon {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* History Popover (surface dépolie mutualisée dans dropdown.css) */
@@ -480,13 +477,17 @@
 }
 
 .history-source-icon.source-imported {
-    color: var(--color-cyan, #06b6d4);
-    background: rgba(6, 182, 212, 0.12);
+    color: var(--color-cyan-deep);
+    background: rgba(var(--color-cyan-rgb), 0.12);
+}
+
+[data-theme="dark"] .history-source-icon.source-imported {
+    color: var(--color-cyan);
 }
 
 .history-source-icon.source-dictation {
-    color: var(--color-purple, #a855f7);
-    background: rgba(168, 85, 247, 0.12);
+    color: var(--purple-text);
+    background: rgba(var(--color-violet-rgb), 0.12);
 }
 
 .history-source-icon:is(.source-concise, .source-encouraging, .source-polish) {
@@ -855,13 +856,13 @@
 /* Prompt copy success feedback (turns purple) */
 .focus-appreciation-actions #focusCopyBtn.copied-prompt,
 .focus-appreciation-actions #focusCopyBtn.copied-prompt:hover {
-    background: rgba(var(--purple-rgb), 0.18) !important;
-    color: var(--purple-color, #9333ea) !important;
+    background: rgba(var(--purple-rgb), 0.14) !important;
+    color: var(--purple-text) !important;
 }
 
 .focus-appreciation-actions #focusCopyBtn.copied-prompt iconify-icon,
 .focus-appreciation-actions #focusCopyBtn.copied-prompt:hover iconify-icon {
-    color: var(--purple-color, #9333ea) !important;
+    color: var(--purple-text) !important;
     opacity: 1;
     animation: icon-pop 0.35s var(--ease-bounce) forwards;
 }
@@ -882,24 +883,22 @@
 
 /* Dirty state ("Actualiser") inside flush footer */
 .focus-appreciation-actions #focusGenerateBtn.btn-warning {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.12);
+    background: rgba(var(--warning-rgb), 0.12);
     color: var(--warning-text);
 }
 
 [data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.15);
-    color: var(--color-amber-bright);
+    background: rgba(var(--warning-rgb), 0.15);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled):not(.disabled):not(.is-loading) {
-        background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.20);
+        background: rgba(var(--warning-rgb), 0.20);
         color: var(--warning-text);
     }
 
     [data-theme="dark"] .focus-appreciation-actions #focusGenerateBtn.btn-warning:hover:not(:disabled):not(.disabled):not(.is-loading) {
-        background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.24);
-        color: var(--color-amber-bright);
+        background: rgba(var(--warning-rgb), 0.24);
     }
 }
 
@@ -949,46 +948,43 @@
     transform: scale(0.96);
 }
 
-/* === Per-chip & history refinement accent colors (inspired by premium mockups) === */
+/* === Per-chip & history refinement accent colors (harmonized ink tokens) === */
 /* .btn prefix needed to beat .btn:hover:not(:disabled) from components.css */
 .btn[data-refine-type="concise"],
 .history-source-icon.source-concise {
-    --chip-color: var(--color-amber);
+    --chip-color: var(--color-amber-deep);
     --chip-hover-color: var(--color-amber-deep);
-    --chip-rgb: 245, 158, 11;
+    --chip-rgb: var(--color-amber-rgb);
 }
 
 .btn[data-refine-type="encouraging"],
 .history-source-icon.source-encouraging {
-    --chip-color: var(--color-rose);
+    --chip-color: var(--color-rose-deep);
     --chip-hover-color: var(--color-rose-deep);
-    --chip-rgb: 244, 63, 94;
+    --chip-rgb: var(--color-rose-rgb);
 }
 
 .btn[data-refine-type="polish"],
 .history-source-icon.source-polish {
-    --chip-color: var(--color-violet);
+    --chip-color: var(--color-violet-deep);
     --chip-hover-color: var(--color-violet-deep);
-    --chip-rgb: 139, 92, 246;
+    --chip-rgb: var(--color-violet-rgb);
 }
 
-/* Dark mode: brighter tints — auto-adapted via token overrides */
+/* Dark mode: calibrated luminous tokens */
 [data-theme="dark"] :is(.btn[data-refine-type="concise"], .history-source-icon.source-concise) {
-    --chip-color: var(--color-amber-bright);
-    --chip-hover-color: var(--color-amber-bright);
-    --chip-rgb: 251, 191, 36;
+    --chip-color: var(--color-amber);
+    --chip-hover-color: var(--color-amber);
 }
 
 [data-theme="dark"] :is(.btn[data-refine-type="encouraging"], .history-source-icon.source-encouraging) {
-    --chip-color: var(--color-rose-bright);
-    --chip-hover-color: var(--color-rose-bright);
-    --chip-rgb: 251, 113, 133;
+    --chip-color: var(--color-rose);
+    --chip-hover-color: var(--color-rose);
 }
 
 [data-theme="dark"] :is(.btn[data-refine-type="polish"], .history-source-icon.source-polish) {
-    --chip-color: var(--color-violet-bright);
-    --chip-hover-color: var(--color-violet-bright);
-    --chip-rgb: 167, 139, 250;
+    --chip-color: var(--color-violet);
+    --chip-hover-color: var(--color-violet);
 }
 
 [data-theme="dark"] .btn[data-refine-type] {
@@ -1252,16 +1248,12 @@
 :is(#focusGenerateBtn, #focusGenerateAnalysisBtn) .stop-square-svg {
     width: 13px;
     height: 13px;
-    color: var(--error-color, #ef4444) !important;
+    color: var(--error-text) !important;
     margin: 0 !important;
     flex-shrink: 0;
     animation:
         word-fade-in 0.18s cubic-bezier(0.32, 0.72, 0, 1) both,
         stop-square-pulse 1.8s ease-in-out 0.18s infinite;
-}
-
-[data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn) .stop-square-svg {
-    color: #f87171 !important;
 }
 
 @keyframes stop-square-pulse {
@@ -1280,34 +1272,30 @@
     :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
     :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
     .btn-smart-action-inline.loading:hover {
-        background: rgba(239, 68, 68, 0.1) !important;
-        color: var(--error-color, #ef4444) !important;
+        background: rgba(var(--error-rgb), 0.1) !important;
+        color: var(--error-text) !important;
         border-color: transparent !important;
     }
 
     [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:hover,
     [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):hover,
     [data-theme="dark"] .btn-smart-action-inline.loading:hover {
-        background: rgba(239, 68, 68, 0.18) !important;
-        color: #fca5a5 !important;
-        border-color: transparent !important;
+        background: rgba(var(--error-rgb), 0.18) !important;
     }
 }
 
 :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:active,
 :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):active,
 .btn-smart-action-inline.loading:active {
-    background: rgba(239, 68, 68, 0.14) !important;
-    color: var(--error-color, #ef4444) !important;
+    background: rgba(var(--error-rgb), 0.14) !important;
+    color: var(--error-text) !important;
     border-color: transparent !important;
 }
 
 [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn).is-loading:active,
 [data-theme="dark"] :is(#focusGenerateBtn, #focusGenerateAnalysisBtn):has(.loading-spinner-svg):active,
 [data-theme="dark"] .btn-smart-action-inline.loading:active {
-    background: rgba(239, 68, 68, 0.22) !important;
-    color: #fca5a5 !important;
-    border-color: transparent !important;
+    background: rgba(var(--error-rgb), 0.22) !important;
 }
 
 .appreciation-cell {
@@ -1336,7 +1324,7 @@
 }
 
 .dirty-indicator.error-indicator {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* === Premium Enter/Leave Animations for Dirty Indicator === */

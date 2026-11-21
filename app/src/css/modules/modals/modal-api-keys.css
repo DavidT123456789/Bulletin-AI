@@ -228,7 +228,7 @@
 [data-theme="dark"] .btn-validate-key:is(.btn-validated, .validated),
 [data-theme="dark"] .btn-validate-key:is(.btn-validated, .validated):disabled {
     background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-bright);
+    color: var(--success-text);
     border-color: transparent;
 }
 
@@ -322,17 +322,16 @@
 .missing-key-warning.banner-warning .btn-link {
     background: rgba(var(--warning-rgb), 0.08);
     border-color: rgba(var(--warning-rgb), 0.2);
-    color: var(--color-amber-deep);
+    color: var(--warning-text);
 }
 
 .missing-key-warning.banner-warning .btn-link:hover {
     background: rgba(var(--warning-rgb), 0.16);
     border-color: rgba(var(--warning-rgb), 0.35);
-    color: color-mix(in srgb, var(--color-amber-deep), black 18%);
+    color: color-mix(in srgb, var(--warning-text), black 14%);
 }
 
 [data-theme="dark"] .missing-key-warning.banner-warning .btn-link {
-    color: var(--color-amber-bright);
     background: rgba(var(--warning-rgb), 0.12);
     border-color: rgba(var(--warning-rgb), 0.25);
 }
@@ -346,28 +345,27 @@
 .missing-key-warning.banner-error {
     background: rgba(var(--error-rgb), 0.08);
     border-color: rgba(var(--error-rgb), 0.25);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 .missing-key-warning.banner-error i,
 .missing-key-warning.banner-error iconify-icon {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 .missing-key-warning.banner-error .btn-link {
     background: rgba(var(--error-rgb), 0.08);
     border-color: rgba(var(--error-rgb), 0.2);
-    color: var(--error-dark);
+    color: var(--error-text);
 }
 
 .missing-key-warning.banner-error .btn-link:hover {
     background: rgba(var(--error-rgb), 0.16);
     border-color: rgba(var(--error-rgb), 0.35);
-    color: color-mix(in srgb, var(--error-dark), black 16%);
+    color: color-mix(in srgb, var(--error-text), black 14%);
 }
 
 [data-theme="dark"] .missing-key-warning.banner-error .btn-link {
-    color: color-mix(in srgb, var(--error-bright), white 30%);
     background: rgba(var(--error-rgb), 0.12);
     border-color: rgba(var(--error-rgb), 0.25);
 }

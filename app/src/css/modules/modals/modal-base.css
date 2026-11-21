@@ -386,7 +386,7 @@
 
 [data-theme="dark"] .modal-title-icon.color-success,
 [data-theme="dark"] .modal-title .color-success {
-    color: var(--success-bright, var(--success-dark));
+    color: var(--success-text);
 }
 
 .modal-title-text-col {
@@ -774,7 +774,7 @@
 }
 
 .hard-confirm-word {
-    color: var(--error-color);
+    color: var(--error-text);
     font-family: var(--font-sans);
     letter-spacing: 0.05em;
     user-select: all;

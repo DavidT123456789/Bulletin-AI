@@ -118,13 +118,9 @@
 
 .journal-header-btn:hover {
     background: var(--item-hover-bg);
-    border-color: rgba(0, 0, 0, 0.16);
+    border-color: var(--border-color-hover);
     color: var(--text-primary);
     box-shadow: none;
-}
-
-[data-theme="dark"] .journal-header-btn:hover {
-    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .journal-header-btn:hover i,
@@ -486,8 +482,8 @@
     padding: 0 10px;
     border-radius: var(--radius-pill);
     border: 1px solid transparent;
-    background: color-mix(in srgb, var(--pill-color) 10%, transparent);
-    color: var(--pill-color);
+    background: color-mix(in srgb, var(--pill-color) 11%, transparent);
+    color: var(--pill-ink, var(--pill-color));
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -501,7 +497,16 @@
 
 .journal-pill-btn:hover {
     border-color: transparent;
-    background: color-mix(in srgb, var(--pill-color) 16%, transparent);
+    background: color-mix(in srgb, var(--pill-color) 17%, transparent);
+}
+
+.journal-pill-btn[data-tag-id="remarque"] {
+    background: var(--tonal-bg);
+}
+
+.journal-pill-btn[data-tag-id="remarque"]:hover {
+    background: var(--tonal-hover-bg);
+    color: var(--text-primary);
 }
 
 .journal-pill-btn:active {
@@ -509,14 +514,14 @@
 }
 
 .journal-pill-btn iconify-icon:first-child {
-    color: var(--pill-color);
+    color: currentColor;
     font-size: 13px;
     flex-shrink: 0;
 }
 
 .journal-pill-arrow {
     font-size: 9px;
-    opacity: 0.6;
+    opacity: 0.65;
     transition: transform 0.2s ease;
     margin-left: 2px;
     flex-shrink: 0;
@@ -528,8 +533,8 @@
 
 /* Active highlight on dropdown trigger when category has active tag */
 .journal-pill-dropdown.has-selected .journal-pill-btn {
-    border-color: color-mix(in srgb, var(--pill-color) 55%, transparent);
-    background: color-mix(in srgb, var(--pill-color) 16%, transparent);
+    border-color: color-mix(in srgb, var(--pill-ink, var(--pill-color)) 45%, transparent);
+    background: color-mix(in srgb, var(--pill-color) 17%, transparent);
     font-weight: 600;
     box-shadow: none;
 }
@@ -581,13 +586,13 @@
 
 .journal-pill-menu .journal-dropdown-option:hover {
     background: color-mix(in srgb, var(--tag-color) 12%, transparent);
-    color: var(--tag-color);
+    color: var(--tag-ink, var(--tag-color));
 }
 
 .journal-pill-menu .journal-dropdown-option iconify-icon {
     width: 16px;
     text-align: center;
-    color: var(--tag-color);
+    color: var(--tag-ink, var(--tag-color));
     font-size: 13px;
     flex-shrink: 0;
 }
@@ -595,10 +600,16 @@
 /* Direct Pill (Difficulté & Remarque) — Solid tonal border (dashed is reserved for below-threshold tags) */
 .journal-pill-direct.selected {
     background: color-mix(in srgb, var(--pill-color) 18%, transparent);
-    border-color: color-mix(in srgb, var(--pill-color) 55%, transparent);
-    color: var(--pill-color);
+    border-color: color-mix(in srgb, var(--pill-ink, var(--pill-color)) 45%, transparent);
+    color: var(--pill-ink, var(--pill-color));
     font-weight: 600;
     box-shadow: none;
+}
+
+.journal-pill-direct[data-tag-id="remarque"].selected {
+    background: var(--tonal-active-bg);
+    border-color: var(--border-color-strong);
+    color: var(--text-primary);
 }
 
 /* === Selected Chips Row === */
@@ -628,10 +639,14 @@
     padding: 4px 8px;
     border-radius: var(--radius-pill);
     font-size: 12px;
-    font-weight: 400;
-    background: color-mix(in srgb, var(--tag-color) 15%, transparent);
-    color: var(--tag-color);
+    font-weight: 500;
+    background: color-mix(in srgb, var(--tag-color) 12%, transparent);
+    color: var(--tag-ink, var(--tag-color));
     animation: chip-appear 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.journal-selected-chip[data-tag-id="remarque"] {
+    background: var(--tonal-bg);
 }
 
 @keyframes chip-appear {
@@ -727,9 +742,9 @@
     padding: 0 16px;
     border-radius: var(--radius-pill);
     font-size: 12.5px;
-    font-weight: 550;
+    font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform 0.16s var(--ease-spring);
     box-sizing: border-box;
     text-decoration: none;
 }
@@ -752,42 +767,38 @@
 }
 
 .journal-cancel-btn:active {
+    background: var(--tonal-active-bg);
     transform: scale(0.97);
 }
 
-/* Save / Validate Button */
+/* Save / Validate Button (Flat 2026 aligned with .btn-primary) */
 .journal-save-btn {
     background: var(--primary-color);
     border: none;
-    color: var(--text-on-primary, #fff) !important;
-    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb), 0.18);
-    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+    color: var(--text-on-primary) !important;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
 }
 
 .journal-save-btn:hover:not(:disabled) {
     background: var(--primary-btn-hover);
-    box-shadow: 0 3px 10px rgba(var(--primary-color-rgb), 0.28);
+    box-shadow: var(--shadow-elevation);
 }
 
 .journal-save-btn:active:not(:disabled) {
     transform: scale(0.97);
-    box-shadow: 0 1px 3px rgba(var(--primary-color-rgb), 0.2);
+    box-shadow: none;
 }
 
 .journal-save-btn:disabled {
-    background: rgba(0, 0, 0, 0.04) !important;
+    background: var(--tonal-bg) !important;
     color: var(--text-tertiary) !important;
     border: 1px solid transparent !important;
     box-shadow: none !important;
     cursor: not-allowed;
-    opacity: 0.45;
+    opacity: 0.5;
     transform: none !important;
     pointer-events: none;
-}
-
-[data-theme="dark"] .journal-save-btn:disabled {
-    background: rgba(255, 255, 255, 0.04) !important;
-    border-color: transparent !important;
 }
 
 /* === Journal Content === */
@@ -894,20 +905,34 @@
 .journal-empty-cta-badge {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
-    padding: 4px 12px;
+    height: 28px;
+    padding: 0 12px;
     border-radius: var(--radius-pill);
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    font-size: 11.5px;
-    font-weight: 550;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     flex-shrink: 0;
-    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background var(--transition-fast), color var(--transition-fast);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition:
+        opacity 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.2s cubic-bezier(0.32, 0.72, 0, 1),
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast),
+        box-shadow var(--transition-fast);
+    box-shadow: var(--shadow-sm);
     opacity: 0;
     transform: translateX(6px);
     pointer-events: none;
+}
+
+[data-theme="dark"] .journal-empty-cta-badge {
+    background: var(--surface-2);
+    border-color: var(--border-default);
 }
 
 @media (hover: none) {
@@ -915,6 +940,7 @@
         opacity: 1;
         transform: none;
         pointer-events: auto;
+        color: var(--text-primary);
     }
 }
 
@@ -924,10 +950,9 @@
     min-width: 13px;
     min-height: 13px;
     font-size: 13px;
-    color: var(--text-secondary);
+    color: inherit;
     opacity: 1;
     flex-shrink: 0;
-    transition: color 0.2s ease;
 }
 
 .journal-empty-interactive:hover .journal-empty-cta-badge,
@@ -936,15 +961,6 @@
     opacity: 1;
     transform: translateX(0);
     pointer-events: auto;
-    background: var(--item-hover-bg);
-    border-color: rgba(0, 0, 0, 0.16);
-    color: var(--text-primary);
-    box-shadow: none;
-}
-
-.journal-empty-interactive:hover .journal-empty-cta-badge iconify-icon,
-.journal-empty-cta-badge:hover iconify-icon {
-    transform: none;
     color: var(--text-primary);
 }
 
@@ -957,10 +973,7 @@
 [data-theme="dark"] .journal-empty-interactive:hover .journal-empty-cta-badge,
 [data-theme="dark"] .journal-empty-interactive:focus-within .journal-empty-cta-badge,
 [data-theme="dark"] .journal-empty-cta-badge:hover {
-    background: var(--item-hover-bg);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: var(--text-primary);
-    box-shadow: none;
+    background: var(--tonal-hover-bg);
 }
 
 /* === Timeline Container & Smooth Transitions === */
@@ -1059,16 +1072,16 @@
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
     font-size: 11px;
-    font-weight: 400;
-    background: color-mix(in srgb, var(--tag-color) 15%, transparent);
-    color: var(--tag-color);
+    font-weight: 500;
+    background: color-mix(in srgb, var(--tag-color) 12%, transparent);
+    color: var(--tag-ink, var(--tag-color));
     box-sizing: border-box;
 }
 
 .journal-tag.below-threshold {
-    opacity: 0.8;
+    opacity: 0.85;
     background: transparent !important;
-    border: 1px dashed var(--tag-color) !important;
+    border: 1px dashed var(--tag-ink, var(--tag-color)) !important;
     box-shadow: none !important;
     /* Lighter appearance matching isolated entries in the card */
 }
@@ -1159,14 +1172,14 @@
 
 .journal-entry-delete:not(.confirm-delete):hover {
     background: rgba(var(--error-rgb), 0.1);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* 2-step Delete Confirmation State */
 .journal-entry-delete.confirm-delete {
     opacity: 1 !important;
     background: rgba(var(--error-rgb), 0.12);
-    color: var(--error-color);
+    color: var(--error-text);
     border: 1px solid rgba(var(--error-rgb), 0.28);
     width: auto;
     height: 24px;
@@ -1210,9 +1223,9 @@
 /* Cleaner "Ghost" indication for tags instead of the whole card */
 .journal-entry.isolated .journal-tag {
     background: transparent;
-    border: 1px dashed var(--tag-color);
+    border: 1px dashed var(--tag-ink, var(--tag-color));
     box-shadow: none;
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 .journal-entry.isolated:hover {

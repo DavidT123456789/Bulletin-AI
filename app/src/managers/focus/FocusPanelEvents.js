@@ -44,26 +44,42 @@ export const FocusPanelEvents = {
         const generateBtn = document.getElementById('focusGenerateBtn');
         const copyBtn = document.getElementById('focusCopyBtn');
 
-        // Dynamic scroll-driven morphing: progressively interpolates header into compact floating capsule
+        // Progressive scroll-driven Dynamic Island morphing (desktop) + hysteresis capsule (mobile 2-tier)
         const focusContent = panelEl?.querySelector('.focus-main-page .focus-content');
         const focusHeader = panelEl?.querySelector('.focus-header');
         if (focusContent && focusHeader) {
             let scrollRafId = null;
             const SCROLL_RANGE = 40;
+            const SCROLL_ENTER_MOBILE = 14;
+            const SCROLL_EXIT_MOBILE = 4;
 
-            const updateHeaderScrollProgress = () => {
+            const updateHeaderScrollState = () => {
                 scrollRafId = null;
                 if (!focusHeader || !focusContent) return;
 
                 if (focusHeader.classList.contains('editing')) {
-                    focusHeader.style.removeProperty('--scroll-p');
-                    focusHeader.classList.remove('scrolled');
+                    FocusPanelHeader.resetScrollState();
                 } else {
                     const scrollTop = Math.max(0, focusContent.scrollTop);
-                    const progress = Math.min(1, scrollTop / SCROLL_RANGE);
-
-                    focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
-                    focusHeader.classList.toggle('scrolled', progress > 0.01);
+                    if (window.innerWidth <= 600) {
+                        focusHeader.style.removeProperty('--scroll-p');
+                        const isScrolled = focusHeader.classList.contains('scrolled');
+                        if (!isScrolled && scrollTop >= SCROLL_ENTER_MOBILE) {
+                            focusHeader.classList.add('scrolled');
+                        } else if (isScrolled && scrollTop <= SCROLL_EXIT_MOBILE) {
+                            focusHeader.classList.remove('scrolled');
+                            FocusPanelHeader.syncHeaderOffset();
+                        }
+                    } else {
+                        const progress = Math.min(1, scrollTop / SCROLL_RANGE);
+                        const wasScrolled = focusHeader.classList.contains('scrolled');
+                        const nowScrolled = progress > 0.01;
+                        focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
+                        focusHeader.classList.toggle('scrolled', nowScrolled);
+                        if (wasScrolled && !nowScrolled) {
+                            FocusPanelHeader.syncHeaderOffset();
+                        }
+                    }
                 }
 
                 panel.updateScrollAffordances();
@@ -71,15 +87,17 @@ export const FocusPanelEvents = {
 
             focusContent.addEventListener('scroll', () => {
                 if (scrollRafId === null) {
-                    scrollRafId = requestAnimationFrame(updateHeaderScrollProgress);
+                    scrollRafId = requestAnimationFrame(updateHeaderScrollState);
                 }
             }, { passive: true });
 
             if (typeof ResizeObserver !== 'undefined') {
                 const resizeObserver = new ResizeObserver(() => {
+                    FocusPanelHeader.syncHeaderOffset();
                     panel.updateScrollAffordances();
                 });
                 resizeObserver.observe(focusContent);
+                resizeObserver.observe(focusHeader);
             }
 
             focusContent.addEventListener('focusin', (e) => {

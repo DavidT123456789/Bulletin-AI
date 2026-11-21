@@ -107,15 +107,15 @@
 
 .btn-danger-outline {
     background: transparent;
-    color: var(--error-color);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--error-text);
+    border: 1px solid rgba(var(--error-rgb), 0.3);
     box-shadow: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-danger-outline:hover:not(:disabled) {
         background: rgba(var(--error-rgb), 0.08);
-        border-color: var(--error-color);
+        border-color: var(--error-text);
         box-shadow: none;
     }
 }
@@ -144,7 +144,7 @@
 
 .btn-warning,
 .btn-smart-action-inline.mode-update {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
+    background: rgba(var(--warning-rgb), 0.13);
     border: 1px solid transparent;
     color: var(--warning-text);
     box-shadow: none;
@@ -152,27 +152,26 @@
 
 [data-theme="dark"] .btn-warning,
 [data-theme="dark"] .btn-smart-action-inline.mode-update {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.18);
-    color: var(--color-amber-bright);
+    background: rgba(var(--warning-rgb), 0.16);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .btn-warning:hover:not(:disabled):not(.disabled):not(.loading),
     .btn-smart-action-inline.mode-update:hover:not(:disabled):not(.loading) {
-        background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.22);
+        background: rgba(var(--warning-rgb), 0.22);
         border-color: transparent;
         box-shadow: none;
     }
 
     [data-theme="dark"] .btn-warning:hover:not(:disabled):not(.disabled):not(.loading),
     [data-theme="dark"] .btn-smart-action-inline.mode-update:hover:not(:disabled):not(.loading) {
-        background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.25);
+        background: rgba(var(--warning-rgb), 0.25);
     }
 }
 
 .btn-warning:active:not(:disabled):not(.disabled):not(.loading) {
     transform: scale(0.97);
-    background-color: rgba(var(--warning-color-rgb, 245, 158, 11), 0.3);
+    background-color: rgba(var(--warning-rgb), 0.3);
 }
 
 /* ====================================================================
@@ -431,7 +430,7 @@
 }
 
 .btn-warning .kbd-hint {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.14);
+    background: rgba(var(--warning-rgb), 0.14);
     border: 1px solid transparent;
     color: inherit;
 }
@@ -492,8 +491,8 @@
 
     .btn-icon.danger:hover:not(:disabled) {
         background-color: var(--error-light);
-        color: var(--error-color);
-        border-color: var(--error-color);
+        color: var(--error-text);
+        border-color: var(--error-text);
     }
 
     .btn-icon.warning:hover:not(:disabled) {
@@ -503,7 +502,7 @@
     }
 
     .icon-button:hover {
-        background-color: var(--bg-secondary);
+        background-color: var(--item-hover-bg);
         color: var(--text-primary);
     }
 }
@@ -535,7 +534,7 @@
 
 .icon-button:active {
     transform: scale(0.92);
-    background-color: var(--bg-secondary);
+    background-color: var(--item-active-bg);
 }
 
 /* Focus clavier unifié dans accessibility.css */
@@ -905,7 +904,7 @@ textarea {
 }
 
 .error-message {
-    color: var(--error-color);
+    color: var(--error-text);
     font-size: 13px;
     margin-top: 6px;
     display: flex;
@@ -954,12 +953,12 @@ textarea {
 }
 
 .btn-dropdown-item.danger {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 .btn-dropdown-item.danger:hover {
     background-color: var(--error-light);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 .dropdown-divider,
@@ -1034,7 +1033,7 @@ textarea {
     padding: 3px 10px;
     border-radius: var(--radius-xs);
     /* moins rond, plus carré-doux */
-    background-color: var(--bg-secondary);
+    background-color: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid transparent;
     /* invisible border */
@@ -1042,31 +1041,31 @@ textarea {
 }
 
 .statut-chip.statut-nouveau {
-    background-color: rgba(14, 165, 233, 0.12);
-    color: var(--color-sky-deep, #0284c7);
-    border-color: rgba(14, 165, 233, 0.28);
+    background-color: rgba(var(--color-sky-rgb), 0.11);
+    color: var(--color-sky-deep);
+    border-color: rgba(var(--color-sky-rgb), 0.26);
 }
 
 [data-theme="dark"] .statut-chip.statut-nouveau {
-    background-color: rgba(56, 189, 248, 0.14);
-    color: var(--color-sky, #38bdf8);
-    border-color: rgba(56, 189, 248, 0.3);
+    background-color: rgba(var(--color-sky-rgb), 0.14);
+    color: var(--color-sky);
+    border-color: rgba(var(--color-sky-rgb), 0.3);
 }
 
 .statut-chip.statut-depart {
-    background-color: rgba(245, 158, 11, 0.12);
-    color: var(--color-amber-deep, #d97706);
-    border-color: rgba(245, 158, 11, 0.28);
+    background-color: rgba(var(--color-amber-rgb), 0.11);
+    color: var(--color-amber-deep);
+    border-color: rgba(var(--color-amber-rgb), 0.26);
 }
 
 [data-theme="dark"] .statut-chip.statut-depart {
-    background-color: rgba(251, 191, 36, 0.14);
-    color: var(--color-amber, #fbbf24);
-    border-color: rgba(251, 191, 36, 0.3);
+    background-color: rgba(var(--color-amber-rgb), 0.14);
+    color: var(--color-amber);
+    border-color: rgba(var(--color-amber-rgb), 0.3);
 }
 
 .detail-chip {
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     /* fond de la maquette */
     color: var(--text-secondary);
     padding: 4px 10px;
@@ -1077,9 +1076,9 @@ textarea {
 }
 
 .detail-chip.over-limit {
-    color: var(--error-color);
+    color: var(--error-text);
     background-color: var(--error-light);
-    border: 1px solid var(--error-color);
+    border: 1px solid rgba(var(--error-rgb), 0.45);
     font-weight: 600;
 }
 
@@ -1127,14 +1126,14 @@ textarea {
 
 /* PWA Install Button - Animated glow effect when visible */
 .pwa-install-btn {
-    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-hover, var(--success-color)) 100%) !important;
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--color-emerald-deep) 100%) !important;
     color: white !important;
     animation: pwa-install-pulse 2s ease-in-out infinite;
 }
 
 .pwa-install-btn:hover {
     animation: none;
-    background: linear-gradient(135deg, var(--success-hover, var(--success-color)) 0%, var(--success-hover, var(--success-color)) 100%) !important;
+    background: color-mix(in srgb, var(--success-color), black 12%) !important;
 }
 
 @keyframes pwa-install-pulse {
@@ -1221,7 +1220,7 @@ textarea {
     width: 100%;
 }
 
-/* Shared Icon Container - frosted glass surface with optical blur */
+/* Shared Icon Container - solid elevated surface */
 .import-drop-zone .drop-zone-icon,
 .trombi-drop-zone .drop-zone-icon {
     width: 56px;
@@ -1229,45 +1228,33 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     color: var(--text-secondary);
     font-size: 1.75rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform var(--transition-spring), box-shadow 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-spring), box-shadow 0.2s ease;
 }
 
 [data-theme="dark"] .import-drop-zone .drop-zone-icon,
 [data-theme="dark"] .trombi-drop-zone .drop-zone-icon {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    background: var(--surface-2);
+    border-color: var(--border-default);
+    color: var(--text-primary);
 }
 
 .import-drop-zone:hover .drop-zone-icon,
 .trombi-drop-zone:hover .drop-zone-icon {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-color: rgba(0, 0, 0, 0.14);
+    border-color: var(--border-color-hover);
     color: var(--text-primary);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .import-drop-zone:hover .drop-zone-icon,
 [data-theme="dark"] .trombi-drop-zone:hover .drop-zone-icon {
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-color: rgba(255, 255, 255, 0.22);
-    color: #ffffff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    background: color-mix(in srgb, var(--surface-2), var(--text-primary) 6%);
+    border-color: var(--border-color-hover);
 }
 
 /* Spring icon animation on hover */

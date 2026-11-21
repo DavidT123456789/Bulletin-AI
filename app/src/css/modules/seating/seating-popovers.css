@@ -113,7 +113,7 @@
     letter-spacing: 0.03em;
     padding: 2px 6px;
     border-radius: var(--radius-pill);
-    background: var(--bg-tertiary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
 }
 
@@ -757,16 +757,12 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     padding: 1.5px 5px;
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     pointer-events: none;
     user-select: none;
     letter-spacing: -0.01em;
     z-index: 3;
     transition: color 0.2s ease, background 0.2s ease, opacity 0.18s ease, top 0.18s ease;
-}
-
-[data-theme="dark"] .sc-station-badge {
-    background: rgba(255, 255, 255, 0.08);
 }
 
 /* In Activity Consultation mode: hide empty non-special stations, condemned stations, and the Tableau bar so formed binômes/groups stand out cleanly without spreadsheet clutter */
@@ -804,7 +800,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     font-size: 0.76rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: var(--shadow-xs);
+    box-shadow: var(--shadow-sm);
     transition: transform 0.18s var(--ease-spring), filter 0.18s ease, box-shadow 0.18s ease;
     animation: scFadeUp 0.22s var(--ease-spring) both;
 }
@@ -982,7 +978,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     height: 31px !important;
     font-size: 0.66rem !important;
     border: 2px solid var(--surface-color, #ffffff);
-    box-shadow: var(--shadow-xs);
+    box-shadow: var(--shadow-sm);
     border-radius: 50%;
 }
 
@@ -1048,7 +1044,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 
 .sc-stacked-name {
     font-size: 0.65rem;
-    font-weight: 560;
+    font-weight: 500;
     line-height: 1.24;
     letter-spacing: -0.01em;
     color: color-mix(in srgb, var(--text-primary) 50%, var(--text-secondary));
@@ -1178,16 +1174,12 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
     margin-left: 3.5px;
     border-radius: 4px;
     color: var(--text-secondary);
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     letter-spacing: -0.01em;
     flex-shrink: 0;
     pointer-events: none;
     user-select: none;
     transition: color var(--transition-fast);
-}
-
-[data-theme="dark"] .sc-stacked-group-tag {
-    background: rgba(255, 255, 255, 0.09);
 }
 
 @media (hover: hover) {

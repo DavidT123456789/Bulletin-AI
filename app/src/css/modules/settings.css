@@ -189,7 +189,7 @@
 
 .settings-evo-icon.negative,
 .settings-evo-icon.very-negative {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 
@@ -423,45 +423,25 @@
 }
 
 .provider-status-badge.status-connected {
-    background: rgba(var(--success-rgb, 16, 185, 129), 0.12);
-    color: var(--color-emerald-deep);
+    background: rgba(var(--success-rgb), 0.11);
+    color: var(--success-text);
 }
 
-[data-theme="dark"] .provider-status-badge.status-connected {
-    color: var(--success-bright);
-}
-
-.provider-status-badge.status-warning {
-    background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
-    color: var(--color-amber-deep);
-}
-
-[data-theme="dark"] .provider-status-badge.status-warning {
-    color: var(--warning-bright);
+.provider-status-badge.status-warning,
+.provider-status-badge.status-untested {
+    background: rgba(var(--warning-rgb), 0.11);
+    color: var(--warning-text);
 }
 
 .provider-status-badge.status-error {
-    background: rgba(var(--error-rgb, 239, 68, 68), 0.12);
-    color: var(--error-dark);
-}
-
-[data-theme="dark"] .provider-status-badge.status-error {
-    color: var(--error-bright);
+    background: rgba(var(--error-rgb), 0.11);
+    color: var(--error-text);
 }
 
 .provider-status-badge.status-unconfigured {
     background: var(--item-hover-bg);
     color: var(--text-tertiary);
     font-weight: 500;
-}
-
-.provider-status-badge.status-untested {
-    background: rgba(var(--warning-color-rgb, 245, 158, 11), 0.1);
-    color: var(--color-amber-deep);
-}
-
-[data-theme="dark"] .provider-status-badge.status-untested {
-    color: var(--warning-bright, #fbbf24);
 }
 
 /* Provider models hint chips */
@@ -812,7 +792,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--error-color);
+    color: var(--error-text);
     font-size: 0.9rem;
     font-weight: 600;
 }
@@ -1431,22 +1411,18 @@ label.settings-row-title {
 }
 
 .data-badge-success {
-    background: rgba(var(--success-rgb, 34, 197, 94), 0.12);
+    background: rgba(var(--success-rgb), 0.11);
     color: var(--success-text);
 }
 
 .data-badge-warning {
-    background: rgba(var(--warning-rgb, 245, 158, 11), 0.12);
+    background: rgba(var(--warning-rgb), 0.11);
     color: var(--warning-text);
 }
 
-[data-theme="dark"] .data-badge-warning {
-    color: var(--warning-bright, #fbbf24);
-}
-
 .data-badge-neutral {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    color: var(--primary-color);
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
 }
 
 .data-badge-dot {
@@ -1571,12 +1547,8 @@ label.settings-row-title {
 
 @media (hover: hover) and (pointer: fine) {
     .pre-restore-discard-btn:hover:not(:disabled) {
-        color: var(--error-color);
+        color: var(--error-text);
         background-color: var(--error-light);
-    }
-
-    [data-theme="dark"] .pre-restore-discard-btn:hover:not(:disabled) {
-        color: var(--error-bright);
     }
 }
 
@@ -1646,12 +1618,8 @@ label.settings-row-title {
 
 @media (hover: hover) and (pointer: fine) {
     .btn-secondary.data-btn-disconnect:hover:not(:disabled) {
-        color: var(--error-color);
+        color: var(--error-text);
         background: var(--error-light);
-    }
-
-    [data-theme="dark"] .btn-secondary.data-btn-disconnect:hover:not(:disabled) {
-        color: var(--error-bright);
     }
 }
 
@@ -1669,7 +1637,7 @@ label.settings-row-title {
 }
 
 .data-danger-title {
-    color: var(--error-color) !important;
+    color: var(--error-text) !important;
 }
 
 .data-danger-card .data-action-row + .data-action-row {
@@ -1731,7 +1699,7 @@ label.settings-row-title {
 }
 
 #evolutionThresholdNegative {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 @media (max-width: 640px) {

@@ -1027,14 +1027,14 @@ export const SettingsModalListeners = {
                     UI.showNotification("Une nouvelle version est disponible !", "info", 4000, { icon: 'solar:download-minimalistic-linear' });
                     await new Promise((r) => setTimeout(r, 1600));
                 } else {
-                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold" style="color: var(--success-color);"></iconify-icon> À jour !';
+                    btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold" style="color: var(--success-text);"></iconify-icon> À jour !';
                     const buildInfo = currentHash ? ` (Build ${currentHash})` : '';
                     UI.showNotification(`Votre application est à jour${buildInfo}.`, "success");
                     await new Promise((r) => setTimeout(r, 1400));
                 }
             } catch (e) {
                 console.error("Update check failed", e);
-                btn.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold" style="color: var(--warning-color);"></iconify-icon> Erreur';
+                btn.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold" style="color: var(--warning-text);"></iconify-icon> Erreur';
                 UI.showNotification("Impossible de vérifier les mises à jour.", "warning");
                 await new Promise((r) => setTimeout(r, 1400));
             } finally {

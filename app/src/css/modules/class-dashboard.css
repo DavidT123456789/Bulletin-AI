@@ -380,11 +380,11 @@
 }
 
 .highlight-group-title iconify-icon.icon-success {
-    color: var(--grade-range-16-20);
+    color: var(--success-text);
 }
 
 .highlight-group-title iconify-icon.icon-warning {
-    color: var(--grade-range-0-4);
+    color: var(--error-text);
 }
 
 .highlight-list-wrapper {
@@ -500,23 +500,23 @@
 
 #highlightProgressList .student-avatar {
     background: rgba(var(--grade-range-16-20-rgb), 0.12) !important;
-    color: var(--grade-range-16-20) !important;
+    color: var(--grade-range-16-20-ink) !important;
     border-color: rgba(var(--grade-range-16-20-rgb), 0.2) !important;
 }
 
 #highlightProgressList .student-avatar .student-avatar__initials {
-    color: var(--grade-range-16-20) !important;
+    color: var(--grade-range-16-20-ink) !important;
     text-shadow: none;
 }
 
 #highlightRiskList .student-avatar {
     background: rgba(var(--grade-range-0-4-rgb), 0.12) !important;
-    color: var(--grade-range-0-4) !important;
+    color: var(--grade-range-0-4-ink) !important;
     border-color: rgba(var(--grade-range-0-4-rgb), 0.2) !important;
 }
 
 #highlightRiskList .student-avatar .student-avatar__initials {
-    color: var(--grade-range-0-4) !important;
+    color: var(--grade-range-0-4-ink) !important;
     text-shadow: none;
 }
 
@@ -568,13 +568,13 @@
 }
 
 .highlight-evolution.positive {
-    background: rgba(var(--grade-range-16-20-rgb), 0.12);
-    color: var(--grade-range-16-20);
+    background: rgba(var(--grade-range-16-20-rgb), 0.11);
+    color: var(--grade-range-16-20-ink);
 }
 
 .highlight-evolution.negative {
-    background: rgba(var(--grade-range-0-4-rgb), 0.12);
-    color: var(--grade-range-0-4);
+    background: rgba(var(--grade-range-0-4-rgb), 0.11);
+    color: var(--grade-range-0-4-ink);
 }
 
 .highlight-empty {
@@ -761,7 +761,7 @@
     z-index: 1;
     background: var(--error-light);
     border: 1px solid rgba(var(--error-rgb), 0.25);
-    color: var(--error-color);
+    color: var(--error-text);
     box-shadow: none;
 }
 

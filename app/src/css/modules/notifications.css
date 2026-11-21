@@ -127,15 +127,11 @@
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.5px;
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     flex: 0 0 auto !important;
     line-height: 1.4;
     transition: all var(--transition-fast);
-}
-
-[data-theme="dark"] .notification-coalesce-badge {
-    background: var(--bg-tertiary);
 }
 
 .notification.success .notification-coalesce-badge {
@@ -145,7 +141,7 @@
 
 .notification.error .notification-coalesce-badge {
     background: rgba(var(--error-rgb), 0.12);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 .notification.warning .notification-coalesce-badge {
@@ -155,12 +151,12 @@
 
 .notification.info .notification-coalesce-badge {
     background: rgba(var(--info-rgb), 0.12);
-    color: var(--info-color);
+    color: var(--info-text);
 }
 
 .notification.prompt .notification-coalesce-badge {
     background: var(--purple-light);
-    color: var(--purple-color);
+    color: var(--purple-text);
 }
 
 .notification-coalesce-badge.badge-bump {
@@ -195,7 +191,7 @@
 /* Error - Solid with Red Accent */
 .notification.error > iconify-icon:first-child {
     background: rgba(var(--error-rgb), 0.12);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* Warning - Solid with Orange Accent */
@@ -207,13 +203,13 @@
 /* Info - Solid with Blue Accent */
 .notification.info > iconify-icon:first-child {
     background: rgba(var(--info-rgb), 0.12);
-    color: var(--info-color);
+    color: var(--info-text);
 }
 
 /* Prompt - Premium Solid Purple Accent (AI features) */
 .notification.prompt > iconify-icon:first-child {
     background: var(--purple-light);
-    color: var(--purple-color);
+    color: var(--purple-text);
 }
 
 /* Loading - Modern iOS/Google Minimalist Ring Spinner (Zero square background) */

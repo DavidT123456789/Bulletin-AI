@@ -219,7 +219,7 @@
 
 .sc-sheet-action-icon.sc-icon-danger {
     background: var(--error-light);
-    color: var(--error-dark);
+    color: var(--error-text);
 }
 
 [data-theme="dark"] .sc-sheet-action-icon.sc-icon-primary {
@@ -234,12 +234,12 @@
 
 [data-theme="dark"] .sc-sheet-action-icon.sc-icon-warning {
     background: rgba(var(--color-amber-rgb), 0.22);
-    color: var(--color-amber-bright);
+    color: var(--warning-text);
 }
 
 [data-theme="dark"] .sc-sheet-action-icon.sc-icon-danger {
     background: rgba(var(--error-rgb), 0.22);
-    color: var(--error-bright);
+    color: var(--error-text);
 }
 
 .sc-sheet-action-text {
@@ -264,7 +264,7 @@
 }
 
 .sc-sheet-action-btn.sc-action-danger .sc-sheet-action-label {
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 /* Unplaced Student Picker inside Sheet */

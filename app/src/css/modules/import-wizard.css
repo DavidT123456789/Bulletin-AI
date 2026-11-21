@@ -344,7 +344,7 @@
 .wizard-context-class,
 #trombiClassBadge {
     font-size: 1.05rem;
-    font-weight: 650;
+    font-weight: 600;
     color: var(--text-primary);
     letter-spacing: -0.015em;
     line-height: 1.2;
@@ -648,24 +648,24 @@
     justify-content: center;
     border-radius: var(--radius-md);
     font-size: 1.5rem;
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     flex-shrink: 0;
 }
 
 .file-preview-icon.type-pdf {
-    background: rgba(var(--error-color-rgb, 239, 68, 68), 0.1);
-    color: var(--error-color, #ef4444);
+    background: rgba(var(--error-rgb), 0.11);
+    color: var(--error-text);
 }
 
 
 .file-preview-icon.type-csv {
-    background: rgba(var(--info-color-rgb, 59, 130, 246), 0.1);
-    color: var(--info-color, #3b82f6);
+    background: rgba(var(--info-rgb), 0.11);
+    color: var(--info-text);
 }
 
 .file-preview-icon.type-generic {
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
 }
 
@@ -719,12 +719,11 @@
 
 .file-remove-btn:hover {
     background: rgba(var(--error-rgb), 0.12);
-    color: var(--error-color);
+    color: var(--error-text);
 }
 
 [data-theme="dark"] .file-remove-btn:hover {
     background: rgba(var(--error-rgb), 0.18);
-    color: var(--error-bright);
 }
 
 .file-remove-btn:active {
@@ -1758,7 +1757,7 @@
 }
 
 .import-preview-table.delete-departed tbody tr.row-departed .preview-status-dot.dot-departed {
-    background: var(--danger-color);
+    background: var(--error-color);
     box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
@@ -1813,7 +1812,7 @@
 }
 
 .guide-legend-count.count-updated {
-    color: var(--info-color, #3b82f6);
+    color: var(--info-text);
 }
 
 .guide-legend-count.count-departed {
@@ -2151,13 +2150,13 @@
 
 /* === ADDITIONAL FILE ICON TYPES === */
 .file-preview-icon.type-text {
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
 }
 
 .file-preview-icon.type-sample {
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
 }
@@ -2174,23 +2173,10 @@
     border-radius: var(--radius-pill);
     font-size: 0.75rem;
     font-weight: 500;
-    background: var(--bg-secondary);
+    background: var(--tonal-bg);
     color: var(--text-secondary);
     border: 1px solid var(--border-color);
 }
-
-#wizardFileBadgeSlot .format-detection-badge.format-mbn {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
-}
-
-#wizardFileBadgeSlot .format-detection-badge.format-pronote {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
-}
-
 
 /* Filled state */
 .drop-zone-content.drop-zone-filled {

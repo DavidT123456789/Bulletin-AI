@@ -141,13 +141,8 @@
 
 .import-hub-demo-alert .demo-alert-icon {
     font-size: 1.25rem;
-    color: var(--warning-dark);
+    color: var(--warning-text);
     flex-shrink: 0;
-}
-
-[data-theme="dark"] .import-hub-demo-alert .demo-alert-icon {
-    color: var(--warning-bright);
-    opacity: 0.9;
 }
 
 .import-hub-demo-alert .demo-alert-text {
@@ -269,36 +264,36 @@
 /* === SEMANTIC ACCENTS (Pastille teintée au repos, carte Zinc neutre) === */
 .import-hub-card[data-action="individual"],
 .empty-state-hub-card[data-action="individual"] {
-    --hub-card-color: var(--color-blue);
+    --hub-card-color: var(--color-blue-deep);
     --hub-card-rgb: var(--color-blue-rgb);
-    --hub-card-bright: var(--color-blue-bright);
+    --hub-card-dark: var(--color-blue);
 }
 
 .import-hub-card[data-action="mass"],
 .empty-state-hub-card[data-action="mass"] {
-    --hub-card-color: var(--color-emerald);
+    --hub-card-color: var(--color-emerald-deep);
     --hub-card-rgb: var(--color-emerald-rgb);
-    --hub-card-bright: var(--color-emerald-bright);
+    --hub-card-dark: var(--color-emerald);
 }
 
 .import-hub-card[data-action="photos"],
 .empty-state-hub-card[data-action="photos"] {
-    --hub-card-color: var(--color-violet);
+    --hub-card-color: var(--color-violet-deep);
     --hub-card-rgb: var(--color-violet-rgb);
-    --hub-card-bright: var(--color-violet-bright);
+    --hub-card-dark: var(--color-violet);
 }
 
 .import-hub-card[data-action="existing"],
 .empty-state-hub-card[data-action="existing"] {
-    --hub-card-color: var(--color-amber);
+    --hub-card-color: var(--color-amber-deep);
     --hub-card-rgb: var(--color-amber-rgb);
-    --hub-card-bright: var(--color-amber-bright);
+    --hub-card-dark: var(--color-amber);
 }
 
 .import-hub-card[data-action] .import-hub-icon,
 .empty-state-hub-card[data-action] .empty-state-hub-icon {
-    background: rgba(var(--hub-card-rgb), 0.08);
-    border-color: rgba(var(--hub-card-rgb), 0.14);
+    background: rgba(var(--hub-card-rgb), 0.09);
+    border-color: rgba(var(--hub-card-rgb), 0.15);
     color: var(--hub-card-color);
 }
 
@@ -306,7 +301,7 @@
 [data-theme="dark"] .empty-state-hub-card[data-action] .empty-state-hub-icon {
     background: rgba(var(--hub-card-rgb), 0.12);
     border-color: rgba(var(--hub-card-rgb), 0.2);
-    color: var(--hub-card-bright);
+    color: var(--hub-card-dark);
 }
 
 .import-hub-card[data-action]:hover,
