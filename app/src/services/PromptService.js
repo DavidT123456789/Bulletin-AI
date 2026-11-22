@@ -725,25 +725,24 @@ export const PromptService = {
 
     /**
      * Extrait les réglages de style qui modifient réellement le prompt
-     * (ton désactivé et consignes personnalisées désactivées ou vides exclus).
+     * (consignes personnalisées désactivées ou vides exclues).
      * Source unique des réglages de style injectés dans le prompt.
      * @param {Object} [iaConfig={}] - Configuration IA effective
-     * @returns {{tone: number|null, voice: string, length: number|null, maxChars: number|null, styleInstructions: string, discipline: string}}
+     * @returns {{voice: string, length: number|null, maxChars: number|null, styleInstructions: string, discipline: string}}
      * @private
      */
     _getEffectiveStyle(iaConfig = {}) {
-        const isToneActive = iaConfig.enableTone ?? (iaConfig.tone !== 3 && iaConfig.tone !== undefined);
-        const hasStyleInstructions = !!iaConfig.styleInstructions && iaConfig.enableStyleInstructions !== false;
+        const rawInstructions = typeof iaConfig.styleInstructions === 'string' ? iaConfig.styleInstructions.trim() : '';
+        const hasStyleInstructions = !!rawInstructions && iaConfig.enableStyleInstructions !== false;
         const maxChars = typeof Utils.normalizeMaxChars === 'function'
             ? Utils.normalizeMaxChars(iaConfig.maxChars)
             : null;
         return {
-            tone: isToneActive ? (iaConfig.tone ?? 3) : null,
             voice: iaConfig.voice || '',
             length: iaConfig.length || null,
             maxChars,
-            styleInstructions: hasStyleInstructions ? iaConfig.styleInstructions : '',
-            discipline: iaConfig.discipline || ''
+            styleInstructions: hasStyleInstructions ? rawInstructions : '',
+            discipline: typeof iaConfig.discipline === 'string' ? iaConfig.discipline.trim() : ''
         };
     },
 
@@ -814,9 +813,11 @@ export const PromptService = {
         // Si anonymisation désactivée, on utilise le prénom mais JAMAIS le nom de famille
         // [FIX] Utiliser appState.anonymizeData (proxy plat) au lieu de appState.privacy.anonymizeData
         const isAnonymous = appState.anonymizeData ?? true;
-        const classId = studentData.classId || appState.currentClassId || null;
+        const isDemoProfile = Boolean(studentData?.isDemo || runtimeOptions?.isDemo);
+        const effectiveExcludeClassStats = Boolean(excludeClassStats || isDemoProfile);
+        const classId = isDemoProfile ? null : (studentData.classId || appState.currentClassId || null);
         const studentIdentity = { id: studentData.id ?? null, prenom, nom, classId };
-        const classmates = this._resolveClassmates(studentIdentity, classId);
+        const classmates = isDemoProfile ? [] : this._resolveClassmates(studentIdentity, classId);
         const scrubOptions = {
             anonymizePrenom: isAnonymous,
             classId,
@@ -865,8 +866,8 @@ export const PromptService = {
             const gradeVal = this._parseGrade(gradeRaw);
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'Non renseignée';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
-            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, p);
-            const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, p, gradeVal);
+            const classStatsStr = effectiveExcludeClassStats ? '' : this._getClassStatsString(classId, p);
+            const classComparisonStr = effectiveExcludeClassStats ? '' : this._getClassComparisonString(classId, p, gradeVal);
             const scrubbedApp = d.appreciation
                 ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions)
                 : '';
@@ -882,16 +883,6 @@ export const PromptService = {
         });
         const hasAnyClassStats = periodRows.some(r => r.hasClassStats);
 
-        const activeStatuses = Array.isArray(statuses) && statuses.length > 0
-            ? (typeof Utils.getActiveStatuses === 'function' ? Utils.getActiveStatuses(statuses, currentPeriod) : statuses)
-            : [];
-        const hasAccompanimentStatus = activeStatuses.some(raw => {
-            const trimmed = String(raw || '').trim();
-            if (!trimmed) return false;
-            const meta = resolveStudentStatus(trimmed);
-            return Boolean(meta?.isGdprSensitive || GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed));
-        });
-
         // Anonymisation RGPD : on utilise [PRÉNOM] au lieu du vrai prénom
         // Le genre est détecté pour permettre l'accord grammatical correct
         const gender = Utils.detectGender(prenom);
@@ -901,12 +892,13 @@ export const PromptService = {
                 : 'non déterminé - privilégier des tournures impersonnelles (ex: "Sa participation...", "Il convient de...")';
 
         const studentIdentifier = isAnonymous ? this.PRENOM_PLACEHOLDER : prenom;
-        const isNeutralVoice = iaConfig.voice === 'neutre';
+        const effectiveStyle = this._getEffectiveStyle(iaConfig);
+        const isNeutralVoice = effectiveStyle.voice === 'neutre';
         const systemParts = [];
 
         // Introduction du prompt (avec discipline si renseignée)
-        const disciplineContext = iaConfig.discipline
-            ? ` en ${iaConfig.discipline}`
+        const disciplineContext = effectiveStyle.discipline
+            ? ` en ${effectiveStyle.discipline}`
             : '';
         const role = disciplineContext
             ? `Tu es un enseignant${disciplineContext}.`
@@ -970,31 +962,20 @@ export const PromptService = {
             `Écris dans un style naturel, précis et varié, sans formules scolaires toutes faites ni éloge excessif.`
         ];
 
-        const toneMap = {
-            1: 'très encourageant et positif',
-            2: 'bienveillant et constructif',
-            3: 'neutre, factuel et mesuré',
-            4: 'exigeant mais constructif',
-            5: 'strict et formel'
-        };
-        const effectiveStyle = this._getEffectiveStyle(iaConfig);
-        if (toneMap[effectiveStyle.tone]) {
-            styleParts.push(`Adopte un ton ${toneMap[effectiveStyle.tone]}.`);
-            if (effectiveStyle.tone >= 4 && hasAccompanimentStatus) {
-                styleParts.push(`En présence de consignes d'accompagnement pour cet élève, maintiens l'exigence sur le travail tout en préservant une formulation respectueuse et constructive.`);
-            }
-        }
-
         const voiceInstruction = {
             'je': 'Rédige à la première personne du singulier, sans commencer chaque phrase par « je ».',
             'nous': 'Rédige à la première personne du pluriel (« nous »), au nom de l\'équipe pédagogique.',
             'neutre': 'Rédige dans un style impersonnel et factuel, sans prénom ni pronom désignant l\'élève ou l\'enseignant (les tournures impersonnelles comme « il convient de » restent possibles).'
-        }[iaConfig.voice] || 'Rédige à la troisième personne dans un style de bulletin scolaire naturel, sans utiliser « je » ni « nous ».';
+        }[effectiveStyle.voice] || 'Rédige à la troisième personne dans un style de bulletin scolaire naturel, sans utiliser « je » ni « nous ».';
 
         styleParts.push(voiceInstruction);
 
-        if (!isNeutralVoice && !hasNoData) {
-            styleParts.push(`Ne t'adresse pas directement à l'élève (ni « tu » ni « vous ») et cite son prénom une fois au maximum.`);
+        if (!hasNoData) {
+            styleParts.push(
+                isNeutralVoice
+                    ? `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »).`
+                    : `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous ») et cite son prénom une fois au maximum.`
+            );
         }
 
         const effectiveCharBudget = effectiveStyle.maxChars
@@ -1056,8 +1037,8 @@ export const PromptService = {
             const gradeVal = this._parseGrade(d.grade);
             const g = !isNaN(gradeVal) ? gradeVal.toFixed(1).replace('.', ',') + '/20' : 'Non renseignée';
             const evalCount = typeof d.evaluationCount === 'number' ? ` (${d.evaluationCount} éval.)` : '';
-            const classStatsStr = excludeClassStats ? '' : this._getClassStatsString(classId, currentPeriod);
-            const classComparisonStr = excludeClassStats ? '' : this._getClassComparisonString(classId, currentPeriod, gradeVal);
+            const classStatsStr = effectiveExcludeClassStats ? '' : this._getClassStatsString(classId, currentPeriod);
+            const classComparisonStr = effectiveExcludeClassStats ? '' : this._getClassComparisonString(classId, currentPeriod, gradeVal);
             const scrubbedApp = d.appreciation
                 ? this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions)
                 : '';
@@ -1099,19 +1080,21 @@ export const PromptService = {
 
         // --- CONTEXTE SCOLAIRE & DONNÉES DE L'ÉLÈVE ---
         const classLines = [];
-        const currentClass = appState.classes?.find(c => c.id === classId);
-        const resolvedClassName = currentClass?.name
-            || (typeof classId === 'string' && classId.startsWith('virtual_') ? Utils.getCurrentClassName(classId) : '');
-        if (resolvedClassName) {
-            let classLevel = currentClass?.level || detectLevelFromName(resolvedClassName);
-            if (classLevel === '3eme') classLevel = 'college';
-            const levelMeta = LEVELS[classLevel] || LEVELS.generique;
+        if (!isDemoProfile && classId) {
+            const currentClass = appState.classes?.find(c => c.id === classId);
+            const resolvedClassName = currentClass?.name
+                || (typeof classId === 'string' && classId.startsWith('virtual_') ? Utils.getCurrentClassName(classId) : '');
+            if (resolvedClassName) {
+                let classLevel = currentClass?.level || detectLevelFromName(resolvedClassName);
+                if (classLevel === '3eme') classLevel = 'college';
+                const levelMeta = LEVELS[classLevel] || LEVELS.generique;
 
-            if (!GDPR_SENSITIVE_STATUS_PATTERN.test(resolvedClassName)) {
-                classLines.push(`Classe : ${resolvedClassName}`);
-            }
-            if (classLevel && classLevel !== 'generique') {
-                classLines.push(`Niveau : ${levelMeta.label}`);
+                if (!GDPR_SENSITIVE_STATUS_PATTERN.test(resolvedClassName)) {
+                    classLines.push(`Classe : ${resolvedClassName}`);
+                }
+                if (classLevel && classLevel !== 'generique') {
+                    classLines.push(`Niveau : ${levelMeta.label}`);
+                }
             }
         }
         const classPrefix = classLines.length > 0 ? classLines.join('\n') + '\n' : '';
@@ -1124,8 +1107,8 @@ export const PromptService = {
 
         // Prompt unifié d'analyse individuelle (Forces / Points de vigilance / Pistes de progrès)
         const analysisHeaderParts = [...classLines];
-        if (iaConfig.discipline) {
-            analysisHeaderParts.push(`Matière : ${iaConfig.discipline}`);
+        if (effectiveStyle.discipline) {
+            analysisHeaderParts.push(`Matière : ${effectiveStyle.discipline}`);
         }
         analysisHeaderParts.push(studentLine);
         analysisHeaderParts.push(`Période analysée : ${periodDisplay}`);
@@ -1222,18 +1205,19 @@ RÈGLES STRICTES DE FIABILITÉ :
                 : []),
             `Conserve la personne grammaticale du texte d'origine (je, nous, troisième personne ou tournure impersonnelle).`,
             `N'invente aucun fait, résultat ou compétence absents du texte.`,
-            `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »).`,
+            `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »), sauf si le texte d'origine ou la consigne de l'enseignant l'emploie déjà.`,
             `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
             ...(charBudget
                 ? [`Respecte impérativement un plafond maximal de ${charBudget} caractères (espaces compris).`]
                 : []),
             ...(effectiveStyle.styleInstructions
-                ? [`Consigne de l'enseignant : ${effectiveStyle.styleInstructions}`]
+                ? [`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`]
                 : []),
             `Réponds uniquement avec le texte brut révisé, sans titre, préambule, commentaire, formatage ni guillemets.`
         ];
 
-        const systemPrompt = `Tu es un enseignant qui retravaille une appréciation de bulletin scolaire français.\n\n--- RÈGLES ---\n${rules.map(r => `- ${r}`).join('\n')}`;
+        const disciplineContext = effectiveStyle.discipline ? ` en ${effectiveStyle.discipline}` : '';
+        const systemPrompt = `Tu es un enseignant${disciplineContext} qui retravaille une appréciation de bulletin scolaire français.\n\n--- RÈGLES ---\n${rules.map(r => `- ${r}`).join('\n')}`;
 
         let taskInstruction = '';
         switch (type) {
@@ -1337,7 +1321,7 @@ RÈGLES STRICTES DE FIABILITÉ :
         const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
         const discipline = effectiveStyle.discipline || (appState.currentSubject !== 'Générique' && appState.currentSubject !== 'MonStyle' ? appState.currentSubject : null);
         const rolePrefix = discipline
-            ? `Tu es un enseignant de ${discipline} qui retravaille la synthèse globale de classe pour le bulletin.`
+            ? `Tu es un enseignant en ${discipline} qui retravaille la synthèse globale de classe pour le bulletin.`
             : `Tu es un conseiller pédagogique expert qui retravaille la synthèse globale de classe pour le bulletin.`;
 
         const rules = [
@@ -1348,7 +1332,7 @@ RÈGLES STRICTES DE FIABILITÉ :
                 : []),
             `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
             ...(effectiveStyle.styleInstructions
-                ? [`Consigne de l'enseignant : ${effectiveStyle.styleInstructions}`]
+                ? [`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`]
                 : []),
             `Réponds uniquement avec le paragraphe révisé en texte brut, sans titre, introduction, commentaire, JSON ni guillemets.`
         ];

@@ -154,10 +154,7 @@ describe('DOM', () => {
                 </div>
                 <textarea id="iaStyleInstructions"></textarea>
                 <input type="range" id="iaLengthSlider" />
-                <input type="range" id="iaToneSlider" />
-                <input type="checkbox" id="iaToneToggle" />
-                <span id="iaToneSliderValue"></span>
-                <div id="iaToneCollapsible"></div>
+                <div id="iaMaxCharsCollapsible"></div>
                 <button id="deleteSubjectBtn"></button>
                 <button id="resetSubjectBtn"></button>
                 <button id="addSubjectBtn"></button>
@@ -224,7 +221,7 @@ describe('DOM', () => {
             expect(DOM.resultsDiv).toBeDefined();
             expect(DOM.settingsModal).toBeDefined();
             expect(DOM.welcomeModal).toBeDefined();
-            expect(DOM.iaToneCollapsible).toBeDefined();
+            expect(DOM.iaMaxCharsCollapsible).toBeDefined();
         });
 
         it('should reference correct DOM elements', () => {

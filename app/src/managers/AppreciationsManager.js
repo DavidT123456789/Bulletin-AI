@@ -76,7 +76,8 @@ export const AppreciationsManager = {
 
     async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null, runtimeOptions = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, analysis: null };
-        const targetClassId = studentData?.classId ?? appState.currentClassId;
+        const isDemoContext = Boolean(isPreview || studentData?.isDemo || runtimeOptions?.isDemo);
+        const targetClassId = isDemoContext ? null : (studentData?.classId ?? appState.currentClassId);
         const targetPeriod = studentData?.currentPeriod || appState.currentPeriod;
 
         if (!UI.checkAPIKeyPresence(true)) {
@@ -92,7 +93,8 @@ export const AppreciationsManager = {
         const normalizedStudentData = {
             ...studentData,
             classId: targetClassId,
-            currentPeriod: targetPeriod
+            currentPeriod: targetPeriod,
+            ...(isDemoContext ? { isDemo: true } : {})
         };
 
         prompts = this.getAllPrompts({ ...normalizedStudentData, generatedAppreciation: '' }, overrideConfig, runtimeOptions);

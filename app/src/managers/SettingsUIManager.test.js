@@ -15,7 +15,7 @@ vi.mock('../state/State.js', () => ({
                 iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral', enableStyleInstructions: true }
             },
             'Français': {
-                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
+                iaConfig: { length: 50, styleInstructions: '', voice: 'default' }
             }
         },
         useSubjectPersonalization: false,
@@ -44,19 +44,16 @@ vi.mock('../state/State.js', () => ({
 vi.mock('../config/Config.js', () => ({
     DEFAULT_PROMPT_TEMPLATES: {
         'Français': {
-            iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
+            iaConfig: { length: 50, styleInstructions: '', voice: 'default' }
         }
     },
-    DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' },
+    DEFAULT_IA_CONFIG: { length: 50, styleInstructions: '', voice: 'default' },
     DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
 }));
 
 vi.mock('../utils/DOM.js', () => ({
     DOM: {
         iaLengthSlider: { value: '50', disabled: false },
-        iaToneSlider: { value: '3', disabled: false },
-        iaToneToggle: { checked: false, disabled: false },
-        iaToneSliderValue: { textContent: '' },
         iaStyleInstructions: { value: '', disabled: false, classList: { add: vi.fn(), remove: vi.fn() }, parentElement: { classList: { add: vi.fn(), remove: vi.fn() } } },
         iaStyleInstructionsToggle: { checked: true, disabled: false },
         openaiApiKey: { value: '' },
@@ -147,7 +144,7 @@ describe('SettingsUIManager', () => {
                 iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral', enableStyleInstructions: true }
             },
             'Français': {
-                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'neutral' }
+                iaConfig: { length: 50, styleInstructions: '', voice: 'default' }
             }
         };
         appState.useSubjectPersonalization = false;
@@ -174,24 +171,24 @@ describe('SettingsUIManager', () => {
     });
 
     describe('_savePersonalStyleChanges()', () => {
-        it('should update MonStyle iaConfig from DOM values', () => {
+        it('should update MonStyle iaConfig from DOM values and activate personalization on savePersonalStyle()', () => {
             DOM.iaLengthSlider.value = '75';
-            DOM.iaToneSlider.value = '4';
-            DOM.iaToneToggle.checked = true;
             DOM.iaStyleInstructions.value = 'Test style';
 
             const mockRadio = document.createElement('input');
             mockRadio.type = 'radio';
             mockRadio.name = 'iaVoiceRadio';
-            mockRadio.value = 'formal';
+            mockRadio.value = 'neutre';
             mockRadio.checked = true;
             document.body.appendChild(mockRadio);
 
-            SettingsUIManager._savePersonalStyleChanges();
+            appState.useSubjectPersonalization = false;
+            SettingsUIManager.savePersonalStyle();
 
             expect(appState.subjects['MonStyle'].iaConfig.length).toBe(75);
-            expect(appState.subjects['MonStyle'].iaConfig.tone).toBe(4);
-            expect(appState.subjects['MonStyle'].iaConfig.enableTone).toBe(true);
+            expect(appState.subjects['MonStyle'].iaConfig.voice).toBe('neutre');
+            expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('Test style');
+            expect(appState.useSubjectPersonalization).toBe(true);
 
             document.body.removeChild(mockRadio);
         });
@@ -380,7 +377,7 @@ describe('SettingsUIManager', () => {
             const cfg = SettingsUIManager.getPersonalStyleConfig();
 
             expect(appState.subjects['MonStyle']).toBeDefined();
-            expect(cfg).toEqual({ length: 50, tone: 3, styleInstructions: '', voice: 'neutral' });
+            expect(cfg).toEqual({ length: 50, styleInstructions: '', voice: 'default' });
         });
 
         it('should toggle previewStatus.hidden', () => {
@@ -600,13 +597,22 @@ describe('SettingsUIManager', () => {
     });
 
     describe('T-08 — Effacement d\'une consigne de style existante (Bug C-02)', () => {
-        it('T-08 (Bug C-02) : vider DOM.iaStyleInstructions.value = "" et appeler saveSettings() écrase l\'ancienne consigne avec ""', () => {
+        it('T-08 (Bug C-02) : vider DOM.iaStyleInstructions.value = "" et appeler savePersonalStyle() écrase l\'ancienne consigne avec ""', () => {
             appState.subjects['MonStyle'].iaConfig.styleInstructions = 'Ancienne consigne personnalisée à effacer';
             DOM.iaStyleInstructions.value = '';
 
-            SettingsUIManager.saveSettings();
+            SettingsUIManager.savePersonalStyle();
 
             expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('');
+        });
+
+        it('saveSettings() ne modifie pas MonStyle (modale Paramètres découplée de Personnalisation)', () => {
+            appState.subjects['MonStyle'].iaConfig.styleInstructions = 'Consigne préservée';
+            DOM.iaStyleInstructions.value = 'Brouillon non sauvegardé';
+
+            SettingsUIManager.saveSettings(false, { skipCloseModal: true });
+
+            expect(appState.subjects['MonStyle'].iaConfig.styleInstructions).toBe('Consigne préservée');
         });
     });
 

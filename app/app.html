@@ -1640,7 +1640,7 @@
                                 <div class="settings-row settings-row-field">
                                     <div class="settings-row-info">
                                         <label for="iaDiscipline" class="settings-row-title">Discipline</label>
-                                        <span class="settings-row-desc">Adapte le vocabulaire et les compétences évoquées. Laissez vide pour un style polyvalent.</span>
+                                        <span class="settings-row-desc">Adapte le vocabulaire à votre matière. Laissez vide pour un style polyvalent.</span>
                                     </div>
                                     <input type="text" id="iaDiscipline" maxlength="50"
                                         placeholder="Ex. Mathématiques, Français, Histoire-Géographie…">
@@ -1672,7 +1672,7 @@
                                                 <output id="iaMaxCharsValue" class="settings-row-value"
                                                     for="iaMaxCharsInput">Désactivée</output>
                                             </div>
-                                            <span class="settings-row-desc">Plafond strict pour Pronote, ÉcoleDirecte ou LSU.</span>
+                                            <span class="settings-row-desc">Plafond maximal pour Pronote, ÉcoleDirecte ou LSU (alerte en cas de dépassement).</span>
                                         </div>
                                         <label class="toggle-switch small">
                                             <input type="checkbox" id="iaMaxCharsToggle">
@@ -1705,35 +1705,6 @@
                             </div>
                             <div class="settings-group-card">
                                 <div class="settings-row settings-row-field">
-                                    <div class="settings-row-head">
-                                        <div class="settings-row-info">
-                                            <div class="settings-row-title-wrap">
-                                                <label for="iaToneToggle" class="settings-row-title">Ton imposé</label>
-                                                <output id="iaToneSliderValue" class="settings-row-value"
-                                                    for="iaToneSlider">Adaptatif (libre)</output>
-                                            </div>
-                                            <span class="settings-row-desc">Désactivé, l'IA adapte le ton à chaque élève (félicitations, encouragements, conseils).</span>
-                                        </div>
-                                        <label class="toggle-switch small">
-                                            <input type="checkbox" id="iaToneToggle">
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                    <div class="settings-collapsible-control" id="iaToneCollapsible">
-                                        <div class="settings-collapsible-inner">
-                                            <div class="slider-container">
-                                                <input type="range" id="iaToneSlider" min="1" max="5" value="3"
-                                                    aria-label="Ton de l'appréciation" aria-describedby="iaToneSliderValue">
-                                            </div>
-                                            <div class="lab-scale-legend">
-                                                <span>Encourageant</span>
-                                                <span>Strict</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="settings-row settings-row-field">
                                     <div class="settings-row-info">
                                         <span class="settings-row-title" id="iaVoiceLabel">Voix du rédacteur</span>
                                         <span class="settings-row-desc">Personne grammaticale employée dans l'appréciation.</span>
@@ -1743,7 +1714,7 @@
                                         <input type="radio" id="voiceDefault" name="iaVoiceRadio" value="default"
                                             checked>
                                         <label for="voiceDefault" class="ui-segment tooltip"
-                                            data-tooltip="L'IA varie naturellement les formulations (Je, Nous ou tournures impersonnelles).">Auto</label>
+                                            data-tooltip="Style bulletin classique à la 3ᵉ personne, avec le prénom de l'élève, sans « je » ni « nous ».">Il / Elle</label>
                                         <input type="radio" id="voiceJe" name="iaVoiceRadio" value="je">
                                         <label for="voiceJe" class="ui-segment tooltip"
                                             data-tooltip="Rédige à la première personne du singulier (« Je remarque », « J'encourage »).">Je</label>
@@ -1752,7 +1723,7 @@
                                             data-tooltip="Rédige à la première personne du pluriel ou de manière collégiale (« Nous constatons »).">Nous</label>
                                         <input type="radio" id="voiceNeutre" name="iaVoiceRadio" value="neutre">
                                         <label for="voiceNeutre" class="ui-segment tooltip"
-                                            data-tooltip="Style concis et administratif sans aucun pronom personnel (« Travail régulier », « Résultats en progrès »). Idéal LSU et lycée.">Neutre</label>
+                                            data-tooltip="Style impersonnel et concis, sans prénom ni pronom personnel (« Travail régulier, résultats en progrès »). Idéal LSU et lycée.">Neutre</label>
                                     </div>
                                 </div>
 
@@ -1768,8 +1739,8 @@
                                         </label>
                                     </div>
                                     <textarea id="iaStyleInstructions" class="style-instructions-textarea" rows="3"
-                                        aria-label="Consignes spécifiques"
-                                        placeholder="Ex. Valoriser l'expression orale, encourager l'autonomie, éviter le jargon…"></textarea>
+                                        maxlength="600" aria-label="Consignes spécifiques"
+                                        placeholder="Ex. Rester sobre et factuel, valoriser la participation orale, proscrire certains mots (« solide », « performance »)…"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -2970,13 +2941,13 @@
                                     <div class="help-pillar-icon"><iconify-icon icon="solar:tuning-2-bold"></iconify-icon></div>
                                     <div class="help-pillar-body">
                                         <div class="help-pillar-title-row">
-                                            <h4>Style & Ton</h4>
+                                            <h4>Style de rédaction</h4>
                                             <button type="button" class="btn btn-secondary btn-small help-pillar-cta" id="helpToPersonalizationBtn">
                                                 <iconify-icon class="iconify-inline" icon="solar:tuning-2-linear"></iconify-icon>
                                                 Personnaliser
                                             </button>
                                         </div>
-                                        <p>Pronom (<em>Je / Nous / Neutre</em>), longueur cible et consignes fixes.</p>
+                                        <p>Discipline, longueur, limite de caractères, voix (<em>Il / Elle, Je, Nous, Neutre</em>) et consignes permanentes.</p>
                                     </div>
                                 </div>
 

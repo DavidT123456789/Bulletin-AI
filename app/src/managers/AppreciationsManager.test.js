@@ -44,7 +44,7 @@ vi.mock('../state/State.js', () => ({
     appState: {
         subjects: {
             'Générique': {
-                iaConfig: { tone: 1, voice: 'je', length: 50 }
+                iaConfig: { voice: 'je', length: 50 }
             }
         },
         currentSubject: 'Générique',
@@ -300,7 +300,7 @@ describe('AppreciationsManager', () => {
             expect(result.appreciation).toContain('NOM');
         });
 
-        it('should include tone instruction in appreciation prompt', () => {
+        it('should include voice and length style instructions in appreciation prompt', () => {
             const studentData = {
                 nom: 'Test',
                 prenom: 'Eleve',
@@ -311,7 +311,8 @@ describe('AppreciationsManager', () => {
 
             const result = AppreciationsManager.getAllPrompts(studentData);
 
-            expect(result.appreciation).toContain('ton');
+            expect(result.appreciation).toContain('première personne du singulier');
+            expect(result.appreciation).toContain('environ 50 mots');
         });
     });
 

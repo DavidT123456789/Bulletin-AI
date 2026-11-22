@@ -43,8 +43,6 @@ export const SettingsModalListeners = {
         return {
             length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length, 10),
             maxChars: FormUI.resolveMaxCharsFromDOM(),
-            tone: parseInt(DOM.iaToneSlider?.value || 3, 10),
-            enableTone: DOM.iaToneToggle ? DOM.iaToneToggle.checked : false,
             styleInstructions: DOM.iaStyleInstructions?.value || '',
             enableStyleInstructions: DOM.iaStyleInstructionsToggle?.checked !== false,
             voice: document.querySelector('input[name="iaVoiceRadio"]:checked')?.value || 'default',
@@ -396,23 +394,9 @@ export const SettingsModalListeners = {
             DOM.iaMaxCharsInput.addEventListener('blur', commitCustomMaxChars);
         }
 
-        if (DOM.iaToneSlider) {
-            // Manipuler le curseur active implicitement le ton imposé
-            DOM.iaToneSlider.addEventListener('input', () => {
-                this._applyStyleChange({ tone: parseInt(DOM.iaToneSlider.value, 10), enableTone: true });
-            });
-        }
-
-        DOM.iaToneToggle?.addEventListener('change', () => {
-            this._applyStyleChange({ enableTone: DOM.iaToneToggle.checked });
-        });
-
         const leftPane = document.getElementById('settings-controls-panel');
         if (leftPane) {
             leftPane.addEventListener('scroll', () => this._syncLeftPaneScrollHint(), { passive: true });
-            (DOM.iaToneCollapsible || document.getElementById('iaToneCollapsible'))?.addEventListener('transitionend', () => {
-                this._syncLeftPaneScrollHint();
-            });
             (DOM.iaMaxCharsCollapsible || document.getElementById('iaMaxCharsCollapsible'))?.addEventListener('transitionend', () => {
                 this._syncLeftPaneScrollHint();
             });
@@ -717,7 +701,7 @@ export const SettingsModalListeners = {
         const promptEl = DOM.settingsPreviewPrompt;
         if (!promptEl) return;
         try {
-            promptEl.textContent = AppreciationsManager.getAllPrompts(studentData, settings).appreciation;
+            promptEl.textContent = AppreciationsManager.getAllPrompts(studentData, settings, { isDemo: true }).appreciation;
             promptEl.classList.remove('placeholder');
         } catch (promptError) {
             promptEl.textContent = `Erreur lors de la génération du prompt : ${promptError.message}`;

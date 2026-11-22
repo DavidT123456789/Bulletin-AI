@@ -17,6 +17,7 @@ import { PromptService } from '../services/PromptService.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { UI } from './UIManager.js';
 import { GRADE_BRACKET_IDS, GRADE_BRACKET_CLASSES } from '../config/academicConstants.js';
+import { DEFAULT_IA_CONFIG } from '../config/Config.js';
 
 /**
  * Module de gestion des statistiques de l'interface utilisateur.
@@ -456,7 +457,7 @@ export const StatsUI = {
                     animationPromises.push(this.animateNumberWithText(avgWordsEl, currentVal, stats.avgWords, 500, (val) => `~ ${val} mot${val > 1 ? 's' : ''}`));
                 }
                 // Update tooltip with richer info: avg chars + target words (+ active char limit)
-                const targetWords = appState.subjects?.['MonStyle']?.iaConfig?.length || 60;
+                const targetWords = appState.subjects?.['MonStyle']?.iaConfig?.length || DEFAULT_IA_CONFIG.length;
                 const activeMaxChars = PromptService.getActiveMaxChars?.() ?? null;
                 const limitSuffix = activeMaxChars ? ` • Limite : ${activeMaxChars} car.` : '';
                 avgWordsEl.setAttribute('data-tooltip', `Moyenne : ${stats.avgWords} mot${stats.avgWords > 1 ? 's' : ''} (${stats.avgChars} car.)<br>Cible : ${targetWords} mots${limitSuffix}<br><span class="kbd-hint">Modifier</span>`);

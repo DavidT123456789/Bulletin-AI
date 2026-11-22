@@ -2750,39 +2750,26 @@ export const ClassDashboardManager = {
         const period = appState.currentPeriod;
         const periodLabel = { T1: 'premier trimestre', T2: 'deuxième trimestre', T3: 'troisième trimestre', S1: 'premier semestre', S2: 'second semestre' }[period] || period;
 
-        // Propagate teacher's active style profile via PromptService SSOT (respects enableTone & enableStyleInstructions)
+        // Propagate teacher's active style profile via PromptService SSOT (respects enableStyleInstructions)
         const effectiveStyle = PromptService._getEffectiveStyle
             ? PromptService._getEffectiveStyle(PromptService._resolveIaConfig?.())
             : (() => {
-                const iaCfg = appState.subjects?.['MonStyle']?.iaConfig || appState.subjects?.['Générique']?.iaConfig || { tone: 3 };
-                const isToneOn = iaCfg.enableTone ?? (iaCfg.tone !== 3 && iaCfg.tone !== undefined);
+                const iaCfg = appState.subjects?.['MonStyle']?.iaConfig || appState.subjects?.['Générique']?.iaConfig || {};
+                const rawInstructions = typeof iaCfg.styleInstructions === 'string' ? iaCfg.styleInstructions.trim() : '';
                 return {
-                    tone: isToneOn ? iaCfg.tone : null,
-                    styleInstructions: iaCfg.enableStyleInstructions !== false ? (iaCfg.styleInstructions || '') : '',
-                    discipline: iaCfg.discipline || ''
+                    styleInstructions: iaCfg.enableStyleInstructions !== false ? rawInstructions : '',
+                    discipline: typeof iaCfg.discipline === 'string' ? iaCfg.discipline.trim() : ''
                 };
             })();
 
-        const toneMap = {
-            1: 'très encourageant et positif',
-            2: 'bienveillant et constructif',
-            3: null,
-            4: 'exigeant mais constructif',
-            5: 'strict et formel'
-        };
-        const toneInstruction = effectiveStyle.tone ? toneMap[effectiveStyle.tone] : null;
-
         let styleInstructionText = '';
-        if (toneInstruction) {
-            styleInstructionText += `\n- Adopte un ton ${toneInstruction} pour l'ensemble du bilan.`;
-        }
         if (effectiveStyle.styleInstructions) {
-            styleInstructionText += `\n- Consignes additionnelles : ${effectiveStyle.styleInstructions}`;
+            styleInstructionText += `\n- Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`;
         }
 
         const discipline = effectiveStyle.discipline || (appState.currentSubject !== 'Générique' && appState.currentSubject !== 'MonStyle' ? appState.currentSubject : null);
         const roleText = discipline
-            ? `Tu es un enseignant de ${discipline}. Tu rédiges un bilan/synthèse de classe précis, nuancé et professionnel dans cette matière pour le conseil de classe du ${periodLabel}.`
+            ? `Tu es un enseignant en ${discipline}. Tu rédiges un bilan/synthèse de classe précis, nuancé et professionnel dans cette matière pour le conseil de classe du ${periodLabel}.`
             : `Tu es un conseiller principal d'éducation ou un professeur principal. Tu rédiges un bilan/synthèse de classe précis, nuancé et professionnel global pour le conseil de classe du ${periodLabel}.`;
 
         const allPeriods = Utils.getPeriods();

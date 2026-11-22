@@ -123,8 +123,6 @@ export const SettingsUIManager = {
         if (DOM.iaMaxCharsToggle) {
             iaConfig.maxChars = FormUI.resolveMaxCharsFromDOM(iaConfig.maxChars);
         }
-        if (DOM.iaToneSlider) iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
-        if (DOM.iaToneToggle) iaConfig.enableTone = DOM.iaToneToggle.checked;
 
         if (DOM.iaStyleInstructions) {
             iaConfig.styleInstructions = DOM.iaStyleInstructions.value.trim();
@@ -143,6 +141,7 @@ export const SettingsUIManager = {
      */
     savePersonalStyle() {
         this._savePersonalStyleChanges();
+        appState.useSubjectPersonalization = true;
         StorageManager.saveAppState();
         UIState.settingsBeforeEdit = {};
         bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
@@ -163,8 +162,6 @@ export const SettingsUIManager = {
         this._isSavingSettings = true;
 
         try {
-            this._savePersonalStyleChanges();
-
             if (DOM.openaiApiKey) appState.openaiApiKey = DOM.openaiApiKey.value.trim();
             if (DOM.googleApiKey) appState.googleApiKey = DOM.googleApiKey.value.trim();
             if (DOM.albertApiKey) appState.albertApiKey = DOM.albertApiKey.value.trim();
@@ -384,7 +381,7 @@ export const SettingsUIManager = {
      * Réinitialise le style personnalisé aux valeurs par défaut.
      */
     resetPersonalStyle() {
-        UI.showCustomConfirm("Tous les réglages du style (consignes, voix, ton et longueur de l'appréciation) seront restaurés aux valeurs par défaut.", () => {
+        UI.showCustomConfirm("Tous vos réglages de personnalisation du style seront restaurés aux valeurs par défaut.", () => {
             appState.subjects['MonStyle'] = { iaConfig: { ...DEFAULT_IA_CONFIG } };
             UI.updateSettingsPromptFields();
             UI.showNotification("Style réinitialisé.", "success");

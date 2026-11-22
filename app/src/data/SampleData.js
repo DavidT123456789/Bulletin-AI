@@ -27,7 +27,7 @@ export const SAMPLE_STUDENTS = [
             },
             P2: {
                 moy: '15.2',
-                app: 'Une grande régularité dans les résultats, poursuivez ainsi.',
+                app: 'Une grande régularité dans les résultats, il faut poursuivre ainsi.',
                 ctx: 'Toujours aussi investi et pertinent à l\'oral.'
             },
             P3: {
@@ -167,7 +167,7 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '10',
                 app: 'Doit travailler davantage pour progresser.',
-                ctx: 'Manque de travail, ressaisissez-vous.'
+                ctx: 'Manque de travail, doit se ressaisir.'
             },
             P2: {
                 moy: '8.5',
@@ -317,7 +317,8 @@ export const DEMO_STUDENT_PROFILES = SAMPLE_STUDENTS.map(s => {
             },
             statuses,
             currentPeriod: 'T2',
-            subject: 'Générique'
+            subject: 'Générique',
+            isDemo: true
         },
         isDemo: true
     };

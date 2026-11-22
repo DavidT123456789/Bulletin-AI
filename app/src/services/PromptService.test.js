@@ -12,9 +12,9 @@ vi.mock('../state/State.js', () => {
         useSubjectPersonalization: false,
         anonymizeData: true,
         subjects: {
-            'Générique': { iaConfig: { tone: 3, voice: 'je', length: 50 } },
+            'Générique': { iaConfig: { voice: 'je', length: 50 } },
             'Mathématiques': {
-                iaConfig: { tone: 1, voice: 'nous', length: 30 }
+                iaConfig: { voice: 'nous', length: 30 }
             }
         }
     };
@@ -30,9 +30,9 @@ vi.mock('../state/State.js', () => {
 });
 
 vi.mock('../config/Config.js', () => ({
-    DEFAULT_IA_CONFIG: { tone: 3, voice: 'je', length: 50 },
+    DEFAULT_IA_CONFIG: { voice: 'je', length: 50 },
     DEFAULT_PROMPT_TEMPLATES: {
-        "Générique": { iaConfig: { tone: 3, voice: 'je', length: 50 } }
+        "Générique": { iaConfig: { voice: 'je', length: 50 } }
     }
 }));
 
@@ -97,24 +97,14 @@ describe('PromptService', () => {
             expect(prompts.appreciation).not.toContain("appréciations des périodes précédentes");
         });
 
-        it('should apply override config with different tone', () => {
-            const overrideCfg = { tone: 1, voice: 'nous', length: 30 };
+        it('should apply override config with voice, length and discipline while ignoring legacy tone fields', () => {
+            const overrideCfg = { tone: 1, enableTone: true, voice: 'nous', length: 30, discipline: '  Anglais  ' };
 
             const prompts = PromptService.getAllPrompts(mockStudentData, overrideCfg);
 
-            expect(prompts.appreciation).toContain('très encourageant'); // tone 1
-            expect(prompts.appreciation).toContain('première personne du pluriel'); // voice nous
-        });
-
-        it('should inject neutral tone when enableTone is true and tone is 3', () => {
-            const overrideCfg = { tone: 3, enableTone: true, voice: 'je', length: 40 };
-            const prompts = PromptService.getAllPrompts(mockStudentData, overrideCfg);
-            expect(prompts.appreciation).toContain('Adopte un ton neutre, factuel et mesuré.');
-        });
-
-        it('should not inject any tone instruction when enableTone is false', () => {
-            const overrideCfg = { tone: 1, enableTone: false, voice: 'je', length: 40 };
-            const prompts = PromptService.getAllPrompts(mockStudentData, overrideCfg);
+            expect(prompts.appreciation).toContain('Tu es un enseignant en Anglais.');
+            expect(prompts.appreciation).toContain('première personne du pluriel');
+            expect(prompts.appreciation).toContain('environ 30 mots');
             expect(prompts.appreciation).not.toContain('Adopte un ton');
         });
 
@@ -161,9 +151,9 @@ describe('PromptService', () => {
         });
 
         it('should use override config if provided', () => {
-            const override = { tone: 5, voice: 'nous', length: 100 };
+            const override = { voice: 'nous', length: 100 };
             const prompts = PromptService.getAllPrompts(mockStudentData, override);
-            expect(prompts.appreciation).toContain('strict et formel'); // tone 5
+            expect(prompts.appreciation).toContain('première personne du pluriel');
             expect(prompts.appreciation).toContain('100 mots');
         });
 
@@ -326,13 +316,49 @@ describe('PromptService', () => {
                 periods: { 'T1': { grade: 12, appreciation: '' } },
                 currentPeriod: 'T1'
             };
-            const prompts = PromptService.getAllPrompts(studentData, { tone: 2, enableTone: true, voice: 'neutre', length: 60 });
+            const prompts = PromptService.getAllPrompts(studentData, { voice: 'neutre', length: 60 });
 
             expect(prompts.appreciation).toBe(`${prompts.appreciationSystem}\n\n${prompts.appreciationUser}`);
             expect(prompts.appreciationSystem).toContain('INSTRUCTIONS DE STYLE');
-            expect(prompts.appreciationSystem).not.toContain("Ne t'adresse pas directement à l'élève");
+            expect(prompts.appreciationSystem).toContain("Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »).");
+            expect(prompts.appreciationSystem).not.toContain('cite son prénom une fois au maximum');
             expect(prompts.appreciationUser).toContain("DONNÉES DE L'ÉLÈVE");
             expect(prompts.appreciationUser).not.toContain('INSTRUCTIONS DE STYLE');
+        });
+
+        it('isole les profils de démo du laboratoire (isDemo) de la classe active, de ses stats et des camarades réels', () => {
+            const prevClasses = appState.classes;
+            const prevClassId = appState.currentClassId;
+            const prevResults = appState.generatedResults;
+            try {
+                appState.classes = [{ id: 'real-class', name: '4e B', level: 'college' }];
+                appState.currentClassId = 'real-class';
+                appState.generatedResults = [
+                    { id: 'r1', classId: 'real-class', prenom: 'Oral', nom: 'TEST', studentData: { periods: { T1: { grade: 8 } } } },
+                    { id: 'r2', classId: 'real-class', prenom: 'Sérieux', nom: 'AUTRE', studentData: { periods: { T1: { grade: 10 } } } },
+                    { id: 'r3', classId: 'real-class', prenom: 'Progrès', nom: 'TIERS', studentData: { periods: { T1: { grade: 12 } } } }
+                ];
+
+                const demoStudent = {
+                    nom: 'BERNARD',
+                    prenom: 'Thomas',
+                    isDemo: true,
+                    statuses: [],
+                    periods: { T1: { grade: 15, appreciation: '', context: 'Pertinent à l\'Oral et Sérieux.' } },
+                    currentPeriod: 'T1'
+                };
+
+                const prompts = PromptService.getAllPrompts(demoStudent, { voice: 'default', length: 40 });
+                expect(prompts.appreciationUser).not.toContain('Classe : 4e B');
+                expect(prompts.appreciationUser).not.toContain('Niveau :');
+                expect(prompts.appreciationUser).not.toContain('[Classe :');
+                expect(prompts.appreciationUser).not.toContain('[CAMARADE]');
+                expect(prompts.appreciationUser).toContain("Pertinent à l'Oral et Sérieux.");
+            } finally {
+                appState.classes = prevClasses;
+                appState.currentClassId = prevClassId;
+                appState.generatedResults = prevResults;
+            }
         });
     });
 
@@ -387,19 +413,21 @@ describe('PromptService', () => {
             expect(pFemale).toContain('avec constance');
         });
 
-        it('should inject active teacher styleInstructions into refinement prompt', () => {
+        it('should inject active teacher styleInstructions (prioritaire) and discipline into refinement prompt with conditional tu/vous rule', () => {
             appState.useSubjectPersonalization = true;
             appState.subjects['MonStyle'] = {
                 iaConfig: {
-                    tone: 3,
+                    discipline: 'Anglais',
                     voice: 'neutre',
                     length: 35,
                     enableStyleInstructions: true,
                     styleInstructions: 'Bannir les superlatifs.'
                 }
             };
-            const p = PromptService.getRefinementPrompt('polish', originalText);
-            expect(p).toContain("Consigne de l'enseignant : Bannir les superlatifs.");
+            const { systemPrompt } = PromptService.getRefinementPrompts('polish', originalText);
+            expect(systemPrompt).toContain('Tu es un enseignant en Anglais qui retravaille');
+            expect(systemPrompt).toContain("Consigne de l'enseignant (prioritaire) : Bannir les superlatifs.");
+            expect(systemPrompt).toContain("sauf si le texte d'origine ou la consigne de l'enseignant l'emploie déjà");
         });
     });
 
@@ -442,8 +470,8 @@ describe('PromptService', () => {
                 classmates: [{ prenom: 'Lucas', nom: 'Martin' }]
             });
 
-            expect(res.systemPrompt).toContain('enseignant de Mathématiques');
-            expect(res.systemPrompt).toContain("Consigne de l'enseignant : Style sobre et direct.");
+            expect(res.systemPrompt).toContain('enseignant en Mathématiques');
+            expect(res.systemPrompt).toContain("Consigne de l'enseignant (prioritaire) : Style sobre et direct.");
             expect(res.systemPrompt).toContain('sans jamais conserver de crochets');
             expect(res.userPrompt).not.toMatch(/\b(Lucas|Martin|PAP)\b/i);
             expect(res.userPrompt).toContain('[ÉLÈVE]');
@@ -517,7 +545,7 @@ describe('PromptService', () => {
             const stateSnapshot = { anonymizeData: appState.anonymizeData, classes: appState.classes, currentClassId: appState.currentClassId };
             const baseHash = PromptService.getPromptHash(mockStudentData);
             try {
-                Object.assign(genericConfig, { length: 90, tone: 5, enableTone: true, voice: 'neutre', discipline: 'Histoire', styleInstructions: 'Sois bref.' });
+                Object.assign(genericConfig, { length: 90, voice: 'neutre', discipline: 'Histoire', styleInstructions: 'Sois bref.' });
                 appState.anonymizeData = false;
                 appState.classes = [{ id: 'class-B', name: '3e B', level: 'college' }];
                 appState.currentClassId = 'class-B';
@@ -1003,7 +1031,7 @@ describe('PromptService', () => {
             expect(lowGrade.appreciationSystem).toContain('sans formulation décourageante');
         });
 
-        it('cadre la voix par défaut, le gabarit de longueur en phrases, l\'arbitrage ton strict/accompagnement et évite le double préfixe Observations', () => {
+        it('cadre la voix par défaut, le gabarit de longueur en phrases et évite le double préfixe Observations', () => {
             const prompts = PromptService.getAllPrompts(
                 {
                     nom: 'DUPONT', prenom: 'Emma', statuses: ['PAP'], currentPeriod: 'T1',
@@ -1013,12 +1041,11 @@ describe('PromptService', () => {
                         { id: 'j2', period: 'T1', tags: ['participation'], note: 'Répond volontiers' }
                     ]
                 },
-                { tone: 5, enableTone: true, voice: 'default', length: 40 }
+                { voice: 'default', length: 40 }
             );
 
             expect(prompts.appreciationSystem).toContain('Rédige à la troisième personne');
             expect(prompts.appreciationSystem).toContain('environ 40 mots (2 phrases, en un seul paragraphe)');
-            expect(prompts.appreciationSystem).toContain("En présence de consignes d'accompagnement pour cet élève");
             expect(prompts.appreciationUser).not.toContain('Observations du professeur : Observations:');
             expect(prompts.appreciationUser).not.toMatch(/\n\n$/);
         });

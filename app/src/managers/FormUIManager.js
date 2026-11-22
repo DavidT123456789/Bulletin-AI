@@ -9,7 +9,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, DEFAULT_SEATING_STATUS_DOTS, MAX_CHARS_CONFIG } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS, MAX_CHARS_CONFIG } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
@@ -58,13 +58,16 @@ export const FormUI = {
             const isPreset = normalizedMaxChars !== null && Boolean(MAX_CHARS_CONFIG?.presets?.includes(normalizedMaxChars));
             DOM.iaMaxCharsInput.value = (normalizedMaxChars && !isPreset) ? String(normalizedMaxChars) : '';
         }
-        if (DOM.iaToneSlider) DOM.iaToneSlider.value = iaConfig.tone ?? 3;
         if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.value = iaConfig.styleInstructions ?? '';
         if (DOM.iaDiscipline) DOM.iaDiscipline.value = iaConfig.discipline ?? '';
 
         document.querySelectorAll('input[name="iaVoiceRadio"]').forEach(radio => {
             radio.checked = radio.value === (iaConfig.voice || 'default');
         });
+        const voiceSelector = document.getElementById('iaVoiceSelector');
+        if (voiceSelector?.classList?.contains('has-glider')) {
+            UI.updateGlider?.(voiceSelector);
+        }
 
         this.syncStyleControls();
 
@@ -104,13 +107,12 @@ export const FormUI = {
     },
 
     /**
-     * Synchronise l'affichage des contrôles de style dépendants (libellés de longueur et de ton,
-     * interrupteurs, état des consignes) depuis MonStyle et la position des curseurs.
+     * Synchronise l'affichage des contrôles de style dépendants (libellé de longueur,
+     * limite de caractères, interrupteur des consignes) depuis MonStyle et la position du curseur.
      * Source unique d'affichage de la modale « Personnalisation du style ».
      */
     syncStyleControls() {
         const config = appState.subjects?.['MonStyle']?.iaConfig || DEFAULT_IA_CONFIG;
-        const toneEnabled = config.enableTone ?? (config.tone !== undefined && config.tone !== 3);
         const instructionsEnabled = config.enableStyleInstructions !== false;
         const maxChars = Utils.normalizeMaxChars?.(config.maxChars) ?? null;
         const maxCharsEnabled = maxChars !== null;
@@ -122,7 +124,7 @@ export const FormUI = {
                 ? (Utils.computeSafeWordCap?.(maxChars) ?? Math.max(8, Math.floor((maxChars * 0.86) / APPROX_CHARS_PER_WORD)))
                 : null;
             DOM.iaLengthSliderValue.textContent = (maxCharsEnabled && words > safeWordCap)
-                ? `~${words} mots • plafonné à ~${safeWordCap} mots / ${maxChars} car.`
+                ? `~${words} → ${safeWordCap} mots max`
                 : `~${words} mots • ~${approxChars} car.`;
         }
 
@@ -147,17 +149,6 @@ export const FormUI = {
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', String(isActive));
         });
-
-        if (DOM.iaToneToggle) DOM.iaToneToggle.checked = toneEnabled;
-        if (DOM.iaToneSlider) DOM.iaToneSlider.disabled = !toneEnabled;
-        DOM.iaToneCollapsible?.classList.toggle('open', toneEnabled);
-
-        const toneVal = parseInt(DOM.iaToneSlider?.value, 10) || 3;
-        if (DOM.iaToneSliderValue) {
-            DOM.iaToneSliderValue.textContent = toneEnabled
-                ? (IA_TONE_LABELS[toneVal] || IA_TONE_LABELS[3])
-                : 'Adaptatif (libre)';
-        }
 
         if (DOM.iaStyleInstructionsToggle) DOM.iaStyleInstructionsToggle.checked = instructionsEnabled;
         if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.disabled = !instructionsEnabled;

@@ -776,6 +776,29 @@ describe('ExportManager', () => {
             window.onafterprint?.();
         });
 
+        it('affiche la discipline configurée dans MonStyle sur l en-tête PDF au lieu de la clé interne MonStyle', () => {
+            appState.currentPeriod = 'T2';
+            appState.currentSubject = 'MonStyle';
+            appState.subjects = {
+                MonStyle: { iaConfig: { discipline: 'Technologie' } }
+            };
+            const student = buildStudentFixture();
+            student.studentData.subject = 'MonStyle';
+            appState.generatedResults = [student];
+
+            let capturedHtml = '';
+            mockPrint.mockImplementationOnce(() => {
+                capturedHtml = document.getElementById('print-report-root')?.innerHTML || '';
+            });
+
+            ExportManager.exportStudentReportPdf('stu-1');
+
+            expect(capturedHtml).toContain('Technologie');
+            expect(capturedHtml).not.toContain('MonStyle');
+            window.onafterprint?.();
+            appState.subjects = {};
+        });
+
         it('cloisonne l analyse PDF sur la période demandée (T1 vs T2) sans fuite inter-périodes', () => {
             appState.currentPeriod = 'T2';
             const student = {

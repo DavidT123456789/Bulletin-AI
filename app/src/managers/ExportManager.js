@@ -252,16 +252,8 @@ export const ExportManager = {
                 ].filter(Boolean).join(' | ')
                 : '';
 
-            const configuredDiscipline = (
-                appState.subjects?.[appState.currentSubject]?.iaConfig?.discipline ||
-                appState.subjects?.MonStyle?.iaConfig?.discipline ||
-                ''
-            ).trim();
-            const sanitizeSubject = (raw) => {
-                const val = String(raw || '').trim();
-                return val && val !== 'MonStyle' && val !== 'Générique' ? val : '';
-            };
-            const csvSubject = configuredDiscipline || sanitizeSubject(sd.subject) || sanitizeSubject(appState.currentSubject);
+            const configuredDiscipline = this._getConfiguredDiscipline();
+            const csvSubject = configuredDiscipline || this._sanitizeSubjectLabel(sd.subject) || this._sanitizeSubjectLabel(appState.currentSubject);
 
             row.push(
                 csvSubject,
@@ -357,13 +349,28 @@ export const ExportManager = {
     },
 
     /**
+     * Retourne la discipline configurée dans les réglages de style (MonStyle / sujet actif).
+     * Source unique pour le CSV et les rapports PDF.
+     * @returns {string}
+     * @private
+     */
+    _getConfiguredDiscipline() {
+        return (
+            appState.subjects?.[appState.currentSubject]?.iaConfig?.discipline ||
+            appState.subjects?.MonStyle?.iaConfig?.discipline ||
+            ''
+        ).trim();
+    },
+
+    /**
      * Filtre les libellés internes de style IA qui ne doivent pas apparaître sur un document imprimé.
      * @param {string|null|undefined} subject
      * @returns {string}
      * @private
      */
     _sanitizeSubjectLabel(subject) {
-        return (subject && subject !== 'Générique' && subject !== 'MonStyle') ? subject : '';
+        const val = String(subject || '').trim();
+        return (val && val !== 'Générique' && val !== 'MonStyle') ? val : '';
     },
 
     /**
@@ -385,7 +392,7 @@ export const ExportManager = {
      */
     _getReportContextMeta(classId = appState.currentClassId) {
         const classLabel = Utils.getCurrentClassName(classId) || '';
-        const subjectLabel = this._sanitizeSubjectLabel(appState.currentSubject);
+        const subjectLabel = this._getConfiguredDiscipline() || this._sanitizeSubjectLabel(appState.currentSubject);
         const periodLabel = Utils.getPeriodLabel(appState.currentPeriod, true) || appState.currentPeriod;
         const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
         return { classLabel, subjectLabel, periodLabel, dateStr };
@@ -716,7 +723,7 @@ export const ExportManager = {
         const includeSensitive = Boolean(options.includeSensitive);
         const { classLabel: defaultClass, subjectLabel: defaultSubject, dateStr } = this._getReportContextMeta(result.classId || appState.currentClassId);
         const periodLabel = Utils.getPeriodLabel(currentPeriod, true) || currentPeriod;
-        const subjectLabel = this._sanitizeSubjectLabel(result.studentData?.subject) || defaultSubject;
+        const subjectLabel = this._getConfiguredDiscipline() || this._sanitizeSubjectLabel(result.studentData?.subject) || defaultSubject;
 
         // Statuts filtrés RGPD (exclut PPRE/PAP/PAI/AESH/ULIS/GEVA-Sco et tout statut libre/composite sensible par défaut sur fiche famille)
         const visibleStatuses = (Utils.getActiveStatuses?.(result, currentPeriod) || result.studentData?.statuses || [])

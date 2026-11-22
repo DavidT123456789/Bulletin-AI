@@ -11,10 +11,10 @@ vi.mock('../state/State.js', () => ({
         useSubjectPersonalization: false,
         subjects: {
             'MonStyle': {
-                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' }
+                iaConfig: { length: 50, styleInstructions: '', voice: 'default', discipline: '' }
             },
             'Générique': {
-                iaConfig: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' }
+                iaConfig: { length: 50, styleInstructions: '', voice: 'default', discipline: '' }
             }
         },
         periodSystem: 'trimestre',
@@ -31,15 +31,8 @@ vi.mock('../state/State.js', () => ({
 
 vi.mock('../config/Config.js', () => ({
     CONFIG: {},
-    DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' },
+    DEFAULT_IA_CONFIG: { length: 50, styleInstructions: '', voice: 'default', discipline: '' },
     MAX_CHARS_CONFIG: { min: 50, max: 2000, defaultValue: 400, nearRatio: 0.92, presets: [255, 400, 500] },
-    IA_TONE_LABELS: {
-        1: 'Très encourageant',
-        2: 'Bienveillant',
-        3: 'Neutre / Factuel',
-        4: 'Exigeant',
-        5: 'Strict'
-    },
     APP_VERSION: '4.3.0',
     DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
 }));
@@ -56,10 +49,6 @@ vi.mock('../utils/DOM.js', () => ({
         iaMaxCharsCollapsible: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
         iaMaxCharsInput: { value: '', disabled: false },
         iaMaxCharsPresets: { querySelectorAll: vi.fn(() => []) },
-        iaToneSlider: { min: '1', max: '5', value: '3', disabled: false },
-        iaToneToggle: { checked: false, disabled: false },
-        iaToneCollapsible: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
-        iaToneSliderValue: { textContent: '', classList: { toggle: vi.fn() } },
         iaStyleInstructions: { value: '', disabled: false, classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
         iaStyleInstructionsToggle: { checked: true },
         iaDiscipline: { value: '' },
@@ -194,18 +183,17 @@ describe('FormUIManager', () => {
             expect(DOM.aiModelSelect.value).toBe('gemini-pro');
         });
 
-        it('should update tone slider, toggle, and display label properly', () => {
-            // When enableTone is true and tone is 3
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
-            FormUI.updateSettingsFields();
-            expect(DOM.iaToneToggle.checked).toBe(true);
-            expect(DOM.iaToneSliderValue.textContent).toBe('Neutre / Factuel');
+        it('should sync iaVoiceSelector glider when resetting or restoring fields', async () => {
+            const { UI } = await import('./UIManager.js');
+            const updateGliderSpy = vi.spyOn(UI, 'updateGlider').mockImplementation(() => {});
+            const voiceSelectorMock = { classList: { contains: vi.fn((c) => c === 'has-glider') } };
+            document.getElementById = vi.fn((id) => (id === 'iaVoiceSelector' ? voiceSelectorMock : null));
 
-            // When enableTone is false
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
+            appState.subjects['MonStyle'] = { iaConfig: { length: 40, voice: 'default' } };
             FormUI.updateSettingsFields();
-            expect(DOM.iaToneToggle.checked).toBe(false);
-            expect(DOM.iaToneSliderValue.textContent).toBe('Adaptatif (libre)');
+
+            expect(updateGliderSpy).toHaveBeenCalledWith(voiceSelectorMock);
+            updateGliderSpy.mockRestore();
         });
 
         it('should set style instructions from MonStyle when personalization enabled', () => {
@@ -242,7 +230,7 @@ describe('FormUIManager', () => {
     describe('syncStyleControls()', () => {
         it('should format length display with words and estimated characters rounded to nearest 10', () => {
             DOM.iaLengthSlider.value = '40';
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, enableStyleInstructions: true } };
+            appState.subjects['MonStyle'] = { iaConfig: { enableStyleInstructions: true } };
 
             FormUI.syncStyleControls();
 
@@ -255,7 +243,7 @@ describe('FormUIManager', () => {
         });
 
         it('should sync style instructions toggle and disabled state', () => {
-            appState.subjects['MonStyle'] = { iaConfig: { enableTone: false, enableStyleInstructions: false } };
+            appState.subjects['MonStyle'] = { iaConfig: { enableStyleInstructions: false } };
 
             FormUI.syncStyleControls();
 
@@ -263,21 +251,9 @@ describe('FormUIManager', () => {
             expect(DOM.iaStyleInstructions.disabled).toBe(true);
         });
 
-        it('should toggle disabled state on iaToneSlider and open class on iaToneCollapsible based on enableTone', () => {
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false } };
-            FormUI.syncStyleControls();
-            expect(DOM.iaToneSlider.disabled).toBe(true);
-            expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', false);
-
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: true } };
-            FormUI.syncStyleControls();
-            expect(DOM.iaToneSlider.disabled).toBe(false);
-            expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', true);
-        });
-
         it('should sync maxChars controls and indicate capped length when word slider exceeds safeWordCap', () => {
             DOM.iaLengthSlider.value = '60';
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 255 } };
+            appState.subjects['MonStyle'] = { iaConfig: { maxChars: 255 } };
 
             FormUI.syncStyleControls();
 
@@ -285,21 +261,21 @@ describe('FormUIManager', () => {
             expect(DOM.iaMaxCharsInput.disabled).toBe(false);
             expect(DOM.iaMaxCharsInput.value).toBe(''); // Preset 255 leaves custom field empty
             expect(DOM.iaMaxCharsValue.textContent).toBe('Max 255 car.');
-            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • plafonné à ~33 mots / 255 car.');
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 → 33 mots max');
 
             // At 60 words with 400 maxChars, safeWordCap is 52 words (< 60) even though 60*6.5=390 <= 400
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 400 } };
+            appState.subjects['MonStyle'] = { iaConfig: { maxChars: 400 } };
             FormUI.syncStyleControls();
             expect(DOM.iaMaxCharsInput.value).toBe('');
-            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • plafonné à ~52 mots / 400 car.');
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 → 52 mots max');
 
             // Custom non-preset value fills the custom input
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 350 } };
+            appState.subjects['MonStyle'] = { iaConfig: { maxChars: 350 } };
             FormUI.syncStyleControls();
             expect(DOM.iaMaxCharsInput.value).toBe('350');
             expect(DOM.iaMaxCharsValue.textContent).toBe('Max 350 car.');
 
-            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: null } };
+            appState.subjects['MonStyle'] = { iaConfig: { maxChars: null } };
             FormUI.syncStyleControls();
             expect(DOM.iaMaxCharsToggle.checked).toBe(false);
             expect(DOM.iaMaxCharsInput.disabled).toBe(true);

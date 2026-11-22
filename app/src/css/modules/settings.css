@@ -196,7 +196,7 @@
 
 
 
-/* Zone repliable pour contrôles dépendants d'un interrupteur (Ton imposé, Limite de caractères) */
+/* Zone repliable pour contrôles dépendants d'un interrupteur (Limite de caractères) */
 .settings-collapsible-control {
     display: grid;
     grid-template-rows: 0fr;

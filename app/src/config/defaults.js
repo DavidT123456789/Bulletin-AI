@@ -16,23 +16,10 @@ export const MAX_CHARS_CONFIG = Object.freeze({
 export const DEFAULT_IA_CONFIG = {
     length: 40,
     maxChars: null,
-    tone: 3,
-    enableTone: false,
     voice: 'default',
     styleInstructions: "",
     enableStyleInstructions: true,
     discipline: "",  // Optionnel: Mathématiques, Français, etc.
-};
-
-/**
- * Libellés d'affichage des 5 crans du curseur de ton (Personnalisation du style).
- */
-export const IA_TONE_LABELS = {
-    1: 'Très encourageant',
-    2: 'Bienveillant',
-    3: 'Neutre / Factuel',
-    4: 'Exigeant',
-    5: 'Strict'
 };
 
 /**

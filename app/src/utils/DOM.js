@@ -187,10 +187,6 @@ export function initDOM() {
     DOM.iaMaxCharsCollapsible = document.getElementById('iaMaxCharsCollapsible');
     DOM.iaMaxCharsPresets = document.getElementById('iaMaxCharsPresets');
     DOM.iaMaxCharsInput = document.getElementById('iaMaxCharsInput');
-    DOM.iaToneSlider = document.getElementById('iaToneSlider');
-    DOM.iaToneToggle = document.getElementById('iaToneToggle');
-    DOM.iaToneSliderValue = document.getElementById('iaToneSliderValue');
-    DOM.iaToneCollapsible = document.getElementById('iaToneCollapsible');
     DOM.previewStudentSelect = document.getElementById('previewStudentSelect');
     DOM.refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
     DOM.settingsPreviewResultGroup = document.getElementById('settingsPreviewResultGroup');
