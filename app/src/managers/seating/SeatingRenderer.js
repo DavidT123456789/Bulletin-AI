@@ -186,7 +186,6 @@ export const SeatingRenderer = {
                 <button type="button" class="sc-cell-pin" data-result-id="${safeStudentId}" aria-label="${isPinned ? 'Détacher' : 'Fixer'}" data-tooltip="${isPinned ? 'Détacher' : 'Fixer'}">
                     <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
                 </button>
-                ${this._getEvolutionDotHTML(student)}
             `;
 
             cell.addEventListener('click', (e) => {
@@ -506,17 +505,6 @@ export const SeatingRenderer = {
         return { html, plain, isLong, isExtraLong, modifierClass };
     },
 
-    _getEvolutionDotHTML(student) {
-        const evo = student.evolution;
-        if (!evo) return '';
-
-        const cls = evo === 'up' ? 'progress'
-            : (evo === 'stable' || evo === 'equal') ? 'stable'
-            : evo === 'down' ? 'regression'
-            : '';
-
-        return cls ? `<div class="sc-evolution-dot ${cls}"></div>` : '';
-    },
     _formatShortDate(timestamp) {
         if (!timestamp) return '';
         try {

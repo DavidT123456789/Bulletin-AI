@@ -33,6 +33,7 @@ export const EVENTS = Object.freeze({
     MODAL_HELP_OPENED: 'modal:help-opened',
     APP_UPDATE_AVAILABLE: 'app:update-available',
     APP_DATA_RESTORED: 'app:data-restored',
+    LOCAL_BACKUP_UPDATED: 'storage:local-backup-updated',
 });
 
 export class EventBus {

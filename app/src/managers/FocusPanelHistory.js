@@ -1,14 +1,20 @@
 /**
  * @fileoverview Focus Panel History Manager
- * UI layer for history management - delegates logic to HistoryUtils
+ * UI layer for student appreciation version history — delegates state logic to HistoryUtils
+ * and shared stepper/popover rendering to HistoryPopoverUI.
  * @module managers/FocusPanelHistory
  */
 
 import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
+import { AnimationManager } from './AnimationManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
+import * as HistoryPopoverUI from '../utils/HistoryPopoverUI.js';
 import { Utils } from '../utils/Utils.js';
-import { HistoryManager } from './HistoryManager.js';
+
+const POPOVER_ID = 'historyPopover';
+const HISTORY_KEY = 'focusHistoryPopover';
+const EDIT_COMMIT_DEBOUNCE_MS = 450;
 
 /**
  * Focus Panel history UI controller
@@ -18,6 +24,10 @@ export const FocusPanelHistory = {
     _currentResultId: null,
     _panel: null,
     _callbacks: { onContentChange: null, onHistoryChange: null },
+    _editSession: HistoryUtils.createEditSession(),
+    _editCommitTimer: null,
+    _animTimeoutExit: null,
+    _animTimeoutEnter: null,
 
     init(callbacksOrPanel = {}, maybeCallbacks = null) {
         if (callbacksOrPanel && typeof callbacksOrPanel === 'object' && ('currentStudentId' in callbacksOrPanel || '_getCurrentStudent' in callbacksOrPanel)) {
@@ -30,84 +40,168 @@ export const FocusPanelHistory = {
         }
     },
 
+    _getActiveStudentId(studentId = null) {
+        return studentId || this._currentResultId || this._panel?.currentStudentId || null;
+    },
+
     _getResult(studentId = null) {
-        const targetId = studentId || this._currentResultId || this._panel?.currentStudentId;
+        const targetId = this._getActiveStudentId(studentId);
         if (!targetId) return null;
         return appState.generatedResults.find(r => r.id === targetId);
     },
 
+    _isBusy(studentId = null) {
+        const targetId = this._getActiveStudentId(studentId);
+        return Boolean(targetId && this._panel?._activeGenerations?.has(targetId));
+    },
+
     /**
      * Get period-scoped history state for the current (or specified) period.
-     *
-     * Architecture:
-     * - History lives in result.historyPerPeriod[period] (one state per period)
-     * - Legacy result.historyState is migrated to the correct period on first access
-     * - History entries are ONLY created through push() (generation, edit, refinement)
-     * - No auto-seeding: this avoids cross-period contamination
-     *
      * @param {boolean} [createIfMissing=false]
      * @param {string|null} [targetPeriod=null]
      * @param {string|null} [targetStudentId=null]
+     * @param {boolean} [autoSeed=true]
      * @returns {Object|null}
      * @private
      */
-    _getState(createIfMissing = false, targetPeriod = null, targetStudentId = null) {
+    _getState(createIfMissing = false, targetPeriod = null, targetStudentId = null, autoSeed = true) {
         const result = this._getResult(targetStudentId);
         if (!result) return null;
-
         const currentPeriod = targetPeriod || appState.currentPeriod;
-
-        // 1. Migrate legacy historyState → historyPerPeriod
-        if (result.historyState?.versions?.length > 0) {
-            if (!result.historyPerPeriod) result.historyPerPeriod = {};
-            const legacyPeriod = result.generationPeriod;
-            if (legacyPeriod && !result.historyPerPeriod[legacyPeriod]) {
-                result.historyPerPeriod[legacyPeriod] = result.historyState;
-            }
-            result.historyState = null;
-        }
-
-        // 2. Return existing period history, or create empty state only if requested
-        if (!result.historyPerPeriod?.[currentPeriod]) {
-            if (createIfMissing) {
-                if (!result.historyPerPeriod) result.historyPerPeriod = {};
-                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-                this._seedInitialVersionIfNeeded(result, currentPeriod);
-                return result.historyPerPeriod[currentPeriod];
-            }
-            return { versions: [], currentIndex: -1 };
-        }
-
-        this._seedInitialVersionIfNeeded(result, currentPeriod);
-        return result.historyPerPeriod[currentPeriod];
-    },
-
-    _seedInitialVersionIfNeeded(result, period) {
-        if (!result || !result.historyPerPeriod?.[period]) return;
-        HistoryUtils.seedInitialVersion(result.historyPerPeriod[period], result, period);
+        return HistoryUtils.getStudentPeriodState(result, currentPeriod, { createIfMissing, autoSeed });
     },
 
     _save() {
         StorageManager.saveAppState();
     },
 
+    _isTextAnimating(textEl = null) {
+        const el = textEl || document.getElementById('focusAppreciationText');
+        return Boolean(
+            this._animTimeoutExit
+            || this._animTimeoutEnter
+            || el?._activeRevealId
+            || el?.classList?.contains('progressive-reveal-container')
+            || el?.classList?.contains('history-animating')
+        );
+    },
+
+    _cancelVersionAnimation() {
+        if (this._animTimeoutExit) {
+            clearTimeout(this._animTimeoutExit);
+            this._animTimeoutExit = null;
+        }
+        if (this._animTimeoutEnter) {
+            clearTimeout(this._animTimeoutEnter);
+            this._animTimeoutEnter = null;
+        }
+        const textEl = document.getElementById('focusAppreciationText');
+        if (textEl) {
+            textEl.classList.remove(
+                'history-animating',
+                'history-exit-forward',
+                'history-exit-backward',
+                'history-enter-forward',
+                'history-enter-backward'
+            );
+        }
+    },
+
     load(resultId, targetPeriod = null) {
+        this._cancelVersionAnimation();
+        this.endEditSession();
         this.closePopover();
         this._currentResultId = resultId;
         const result = this._getResult(resultId);
         const currentPeriod = targetPeriod || appState.currentPeriod;
-        if (result?.studentData?.periods?.[currentPeriod]?.appreciation?.trim()) {
-            this._getState(true, currentPeriod, resultId);
-        } else {
-            this._getState(false, currentPeriod, resultId);
-        }
+        const hasPeriodAppreciation = Boolean(
+            result?.studentData?.periods?.[currentPeriod]?.appreciation?.trim()
+            || (result?.generationPeriod === currentPeriod && result?.appreciation?.trim())
+        );
+        this._getState(hasPeriodAppreciation, currentPeriod, resultId, true);
         this._notifyHistoryChange();
     },
 
     reset() {
+        this._cancelVersionAnimation();
+        this.endEditSession();
         this.closePopover();
         this._currentResultId = null;
         this._notifyHistoryChange();
+    },
+
+    /**
+     * Schedule a coalesced manual-edit commit during active typing (so `< 2/2 >` appears live without polluting the popover).
+     * @param {string} content
+     */
+    scheduleEditCommit(content) {
+        if (this._editCommitTimer) {
+            clearTimeout(this._editCommitTimer);
+            this._editCommitTimer = null;
+        }
+        const targetStudentId = this._getActiveStudentId();
+        const targetPeriod = appState.currentPeriod;
+        this._editCommitTimer = setTimeout(() => {
+            this._editCommitTimer = null;
+            if (this._getActiveStudentId() !== targetStudentId || appState.currentPeriod !== targetPeriod) return;
+            if (this._isBusy(targetStudentId)) return;
+            this.flushEditSession(content, { studentId: targetStudentId, period: targetPeriod });
+        }, EDIT_COMMIT_DEBOUNCE_MS);
+    },
+
+    /**
+     * Immediately commit or update in-place the active manual-edit session.
+     * @param {string|null} [content=null]
+     * @param {Object} [options={}]
+     * @returns {boolean} True if history state changed
+     */
+    flushEditSession(content = null, options = {}) {
+        if (this._editCommitTimer) {
+            clearTimeout(this._editCommitTimer);
+            this._editCommitTimer = null;
+        }
+
+        const rawContent = typeof content === 'string'
+            ? content
+            : (document.getElementById('focusAppreciationText')?.textContent || '');
+        const cleanContent = rawContent.trim();
+        if (!cleanContent || cleanContent.includes('Aucune appréciation')) return false;
+
+        const targetPeriod = options?.period || appState.currentPeriod;
+        const targetStudentId = options?.studentId || this._getActiveStudentId();
+        const result = this._getResult(targetStudentId);
+        if (!result) return false;
+
+        const state = this._getState(true, targetPeriod, targetStudentId, true);
+        if (!state) return false;
+
+        const res = HistoryUtils.upsertEditVersion(state, cleanContent, this._editSession, {
+            appreciationSource: result.appreciationSource ?? 'manual',
+            aiModel: result.studentData?.currentAIModel ?? null,
+            tokenUsage: null
+        });
+        this._editSession = res.session;
+
+        if (res.changed) {
+            this._save();
+            const isCurrentStudent = !targetStudentId || targetStudentId === this._getActiveStudentId();
+            const isCurrentPeriod = !targetPeriod || targetPeriod === appState.currentPeriod;
+            if (isCurrentStudent && isCurrentPeriod) {
+                this._notifyHistoryChange();
+            }
+        }
+        return res.changed;
+    },
+
+    /**
+     * Close the current manual-edit coalescing session (on blur, version switch, or AI action).
+     */
+    endEditSession() {
+        if (this._editCommitTimer) {
+            clearTimeout(this._editCommitTimer);
+            this._editCommitTimer = null;
+        }
+        this._editSession = HistoryUtils.createEditSession();
     },
 
     push(content, source = 'edit', options = {}) {
@@ -118,19 +212,24 @@ export const FocusPanelHistory = {
 
         const targetPeriod = typeof options === 'string' ? options : (options?.period || null);
         const targetStudentId = typeof options === 'object' ? (options?.studentId || null) : null;
+        const autoSeed = typeof options === 'object' && options?.autoSeed === false ? false : true;
 
-        const state = this._getState(true, targetPeriod, targetStudentId);
-        // Capture all metadata from the result so the version carries full context
+        const isCurrentStudent = !targetStudentId || targetStudentId === this._getActiveStudentId();
+        const isCurrentPeriod = !targetPeriod || targetPeriod === appState.currentPeriod;
+        if (isCurrentStudent && isCurrentPeriod) {
+            this.endEditSession();
+        }
+
+        const state = this._getState(true, targetPeriod, targetStudentId, autoSeed);
         const result = this._getResult(targetStudentId);
         if (!state || !result) return;
+
         const appreciationSource = result?.appreciationSource ?? null;
         const aiModel = result?.studentData?.currentAIModel ?? null;
         const tokenUsage = result?.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
 
         if (HistoryUtils.pushToState(state, cleanContent, source, appreciationSource, aiModel, tokenUsage)) {
             this._save();
-            const isCurrentStudent = !targetStudentId || targetStudentId === (this._currentResultId || this._panel?.currentStudentId);
-            const isCurrentPeriod = !targetPeriod || targetPeriod === appState.currentPeriod;
             if (isCurrentStudent && isCurrentPeriod) {
                 this._notifyHistoryChange();
             }
@@ -145,19 +244,50 @@ export const FocusPanelHistory = {
         return HistoryUtils.canRedo(this._getState());
     },
 
+    /**
+     * True when Ctrl+Z should be handled by FocusPanelHistory instead of browser native undo:
+     * either there is a previous version, the editor was cleared with a recoverable version,
+     * or the user has typed uncommitted edits on top of an existing stored version.
+     * @param {string} [currentText='']
+     * @returns {boolean}
+     */
+    canUndoWithPending(currentText = '') {
+        if (this._isBusy()) return false;
+        const state = this._getState();
+        if (!state || !Array.isArray(state.versions) || state.versions.length === 0) return false;
+
+        const clean = String(currentText || '').trim();
+        if (!clean) {
+            return state.currentIndex >= 0 && Boolean(state.versions[state.currentIndex]);
+        }
+        if (HistoryUtils.canUndo(state)) return true;
+
+        const activeContent = HistoryUtils.getVersionContent(state.versions[state.currentIndex]).trim();
+        return Boolean(activeContent) && clean !== activeContent;
+    },
+
     undo() {
+        if (this._isBusy()) return;
         const textEl = document.getElementById('focusAppreciationText');
         const state = this._getState();
         if (!state) return;
 
-        // Si l'utilisateur a effacé le texte dans l'éditeur, Undo restaure directement la version courante
-        const isCurrentlyEmpty = textEl?.classList.contains('empty') || !textEl?.textContent?.trim();
+        const isAnimating = this._isTextAnimating(textEl);
+        const isCurrentlyEmpty = !isAnimating && (textEl?.classList.contains('empty') || !textEl?.textContent?.trim());
         if (isCurrentlyEmpty && state.currentIndex >= 0 && state.versions[state.currentIndex]) {
+            this.endEditSession();
             const version = HistoryUtils.normalizeVersion(state.versions[state.currentIndex]);
             this._save();
             this._animateVersionChange(version, 'backward');
             return;
         }
+
+        // Flush any uncommitted typing so the draft is preserved in history (Redo restores it)
+        // Skip while animating so transitional/previous DOM text is never committed as a manual edit.
+        if (textEl && !isAnimating) {
+            this.flushEditSession(textEl.textContent || '');
+        }
+        this.endEditSession();
 
         const version = HistoryUtils.undo(state);
         if (version !== null) {
@@ -167,23 +297,13 @@ export const FocusPanelHistory = {
     },
 
     redo() {
+        if (this._isBusy()) return;
+        this.endEditSession();
         const version = HistoryUtils.redo(this._getState());
         if (version !== null) {
             this._save();
             this._animateVersionChange(version, 'forward');
         }
-    },
-
-    clearForResult() {
-        const result = this._getResult();
-        if (result) {
-            const currentPeriod = appState.currentPeriod;
-            if (result.historyPerPeriod?.[currentPeriod]) {
-                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-            }
-            this._save();
-        }
-        this._notifyHistoryChange();
     },
 
     getModificationCount() {
@@ -194,7 +314,7 @@ export const FocusPanelHistory = {
         const result = this._getResult(targetStudentId);
         const currentPeriod = targetPeriod || appState.currentPeriod;
         const hasExistingAppreciation = Boolean(result?.studentData?.periods?.[currentPeriod]?.appreciation?.trim());
-        const state = this._getState(hasExistingAppreciation, currentPeriod, targetStudentId);
+        const state = this._getState(hasExistingAppreciation, currentPeriod, targetStudentId, true);
         return state ? state.versions.length : 0;
     },
 
@@ -210,145 +330,48 @@ export const FocusPanelHistory = {
     },
 
     restoreVersion(index) {
+        if (this._isBusy()) return;
         const state = this._getState();
+        const textEl = document.getElementById('focusAppreciationText');
+        const isAnimating = this._isTextAnimating(textEl);
+        const isCurrentlyEmpty = !isAnimating && (textEl?.classList.contains('empty') || !textEl?.textContent?.trim());
         const oldIndex = state?.currentIndex ?? 0;
-        if (index === oldIndex) return;
+
+        if (!isCurrentlyEmpty && index === oldIndex) return;
+        this.endEditSession();
+
         const version = HistoryUtils.goToVersion(state, index);
         if (version !== null) {
             this._save();
-            this._animateVersionChange(version, index < oldIndex ? 'backward' : 'forward');
+            this._animateVersionChange(version, index <= oldIndex ? 'backward' : 'forward');
         }
     },
 
     closePopover(options = {}) {
-        if (this._popoverCloseHandler) {
-            document.removeEventListener('click', this._popoverCloseHandler);
-            this._popoverCloseHandler = null;
-        }
-        const existing = document.getElementById('historyPopover');
-        if (existing) {
-            existing.remove();
-        }
-        const indicator = document.getElementById('focusHistoryIndicator');
-        indicator?.classList.remove('active');
-
-        if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusHistoryPopover')) {
-            HistoryManager.handleManualClose('focusHistoryPopover');
-        }
+        HistoryPopoverUI.closePopover(POPOVER_ID, options);
     },
 
     showPopover() {
+        if (this._isBusy()) return;
         const indicator = document.getElementById('focusHistoryIndicator');
-        const existing = document.getElementById('historyPopover');
-        if (existing) {
-            this.closePopover();
-            return;
+        const textEl = document.getElementById('focusAppreciationText');
+        const isAnimating = this._isTextAnimating(textEl);
+        const isCurrentlyEmpty = !isAnimating && (textEl?.classList.contains('empty') || !textEl?.textContent?.trim());
+
+        if (!isCurrentlyEmpty && !isAnimating && textEl) {
+            this.flushEditSession(textEl.textContent || '');
         }
 
         const state = this._getState();
-        if (!HistoryUtils.hasMultipleVersions(state)) return;
-
-        indicator?._tippy?.hide();
-        indicator?.classList.add('active');
-
-        const popover = document.createElement('div');
-        popover.id = 'historyPopover';
-        popover.className = 'history-popover';
-
-        let html = '<div class="history-popover-title"><iconify-icon icon="solar:history-linear"></iconify-icon> Historique des versions</div>';
-        html += '<div class="history-popover-list">';
-
-        for (let i = state.versions.length - 1; i >= 0; i--) {
-            const versionData = HistoryUtils.normalizeVersion(state.versions[i]);
-            const content = versionData.content;
-            const isCurrent = i === state.currentIndex;
-            const presentation = this._getVersionPresentation(versionData, i);
-
-            // Format relative timestamp
-            let timeHtml = '';
-            if (versionData.timestamp) {
-                timeHtml = `<span class="history-time">${this._formatRelativeTime(versionData.timestamp)}</span>`;
-            }
-
-            const currentBadgeHtml = isCurrent ? '<span class="history-badge-current">Actuelle</span>' : '';
-            const escapedContent = Utils.escapeHtml(content);
-
-            html += `
-                    <div class="history-version-item ${isCurrent ? 'current' : ''}" data-index="${i}">
-                        <div class="history-version-header">
-                            <div class="history-version-title-group">
-                                <span class="history-source-icon ${presentation.typeClass}">
-                                    ${presentation.icon}
-                                </span>
-                                <span class="history-version-label">${presentation.title}</span>
-                                ${currentBadgeHtml}
-                            </div>
-                            ${timeHtml}
-                        </div>
-                        <span class="history-version-preview">${escapedContent}</span>
-                    </div>
-                `;
-        }
-
-        html += '</div>';
-        popover.innerHTML = html;
-
-        const listEl = popover.querySelector('.history-popover-list');
-        if (indicator) {
-            const rect = indicator.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom - 20;
-            const spaceAbove = rect.top - 20;
-            const titleHeight = 50;
-
-            popover.style.position = 'fixed';
-            popover.style.right = `${window.innerWidth - rect.right}px`;
-
-            // Always choose direction with MORE space
-            const placeAbove = spaceAbove > spaceBelow;
-
-            if (placeAbove) {
-                popover.style.bottom = `${window.innerHeight - rect.top + 8}px`;
-                popover.style.transformOrigin = 'bottom right';
-            } else {
-                popover.style.top = `${rect.bottom + 8}px`;
-                popover.style.transformOrigin = 'top right';
-            }
-
-            // Calculate maxHeight based on available space (up to 400px)
-            const availableSpace = placeAbove ? spaceAbove : spaceBelow;
-            if (listEl) {
-                const maxListHeight = Math.min(400, Math.max(150, availableSpace - titleHeight));
-                listEl.style.maxHeight = `${maxListHeight}px`;
-            }
-        }
-
-        document.body.appendChild(popover);
-        HistoryManager.pushState('focusHistoryPopover', (opts) => this.closePopover(opts));
-        if (listEl) {
-            this._panel?.bindScrollAffordances?.(listEl);
-        }
-
-        popover.querySelectorAll('.history-version-item').forEach(item => {
-            item.addEventListener('click', () => {
-                this.restoreVersion(parseInt(item.dataset.index, 10));
-                this.closePopover();
-            });
+        HistoryPopoverUI.togglePopover({
+            popoverId: POPOVER_ID,
+            historyKey: HISTORY_KEY,
+            indicatorEl: indicator,
+            state,
+            isCurrentlyEmpty,
+            onSelectVersion: (idx) => this.restoreVersion(idx),
+            bindScrollAffordances: (listEl) => this._panel?.bindScrollAffordances?.(listEl)
         });
-
-        if (this._popoverCloseHandler) {
-            document.removeEventListener('click', this._popoverCloseHandler);
-            this._popoverCloseHandler = null;
-        }
-        setTimeout(() => {
-            if (!document.body.contains(popover)) return;
-            const closeHandler = (e) => {
-                if (!popover.contains(e.target) && !indicator?.contains(e.target)) {
-                    this.closePopover();
-                }
-            };
-            this._popoverCloseHandler = closeHandler;
-            document.addEventListener('click', closeHandler);
-        }, 100);
     },
 
     _animateVersionChange(versionData, direction = 'forward') {
@@ -357,69 +380,94 @@ export const FocusPanelHistory = {
 
         const content = versionData.content;
         const appreciationSource = versionData.appreciationSource;
+        const expectedStudentId = this._getActiveStudentId();
+        const expectedPeriod = appState.currentPeriod;
 
         // Restore ALL metadata on the result BEFORE notifying
         const result = this._getResult();
         if (result) {
             result.appreciation = content;
             const currentPeriod = appState.currentPeriod;
+            Utils.setAppreciationCopied(result, currentPeriod, false);
             if (result.studentData?.periods) {
                 Utils.markStudentModified(result, currentPeriod);
                 result.studentData.periods[currentPeriod].appreciation = content;
             }
 
-            // 1. Source Indicator
             if (appreciationSource !== undefined) {
                 result.appreciationSource = appreciationSource;
                 if (appreciationSource === 'ai') {
-                    result.wasGenerated = true; // Restore "Generated" status for dirty logic
+                    result.wasGenerated = true;
                 } else if (appreciationSource === 'manual' || appreciationSource === 'imported') {
                     result.wasGenerated = false;
                 }
             }
 
-            // 2. AI Model (for tooltip)
             if (versionData.aiModel) {
                 if (!result.studentData) result.studentData = {};
                 result.studentData.currentAIModel = versionData.aiModel;
             }
 
-            // 3. Token Usage (for tooltip)
             if (versionData.tokenUsage) {
                 result.tokenUsage = Utils.deepClone(versionData.tokenUsage);
             }
         }
 
-        // Notify history change immediately for snappy UI feel (updates arrows and x/y badge)
+        const wasExitPending = Boolean(this._animTimeoutExit);
+        AnimationManager.cancelHtmlReveal(textEl);
+        this._cancelVersionAnimation();
+
+        const wasEmpty = !wasExitPending && (textEl.classList.contains('empty') || !textEl.textContent?.trim());
+        textEl.classList.remove('empty');
+
+        const exitClass = direction === 'backward' ? 'history-exit-forward' : 'history-exit-backward';
+        const enterClass = direction === 'backward' ? 'history-enter-backward' : 'history-enter-forward';
+
+        // When recovering from an erased editor or superseding a pending exit, skip exit and slide directly in
+        if (wasEmpty || wasExitPending) {
+            textEl.innerHTML = Utils.cleanMarkdown(content);
+            textEl.classList.add('filled', 'history-animating');
+            this._notifyContentChange(content);
+            this._notifyHistoryChange();
+
+            void textEl.offsetWidth;
+            textEl.classList.add(enterClass);
+
+            this._animTimeoutEnter = setTimeout(() => {
+                this._animTimeoutEnter = null;
+                if (this._getActiveStudentId() !== expectedStudentId || appState.currentPeriod !== expectedPeriod) {
+                    return;
+                }
+                textEl.classList.remove(enterClass, 'history-animating');
+            }, 280);
+            return;
+        }
+
         this._notifyHistoryChange();
-
-        // Prevent overlapping animations by clearing previous timeouts
-        if (this._animTimeoutExit) clearTimeout(this._animTimeoutExit);
-        if (this._animTimeoutEnter) clearTimeout(this._animTimeoutEnter);
-
-        // Reset classes from any ongoing animation
-        textEl.classList.remove('history-animating', 'history-exit-forward', 'history-exit-backward', 'history-enter-forward', 'history-enter-backward');
 
         // Force reflow to restart CSS animation synchronously
         void textEl.offsetWidth;
 
-        textEl.classList.add('history-animating');
-        const exitClass = direction === 'backward' ? 'history-exit-forward' : 'history-exit-backward';
-        const enterClass = direction === 'backward' ? 'history-enter-backward' : 'history-enter-forward';
-
-        textEl.classList.add(exitClass);
+        textEl.classList.add('history-animating', exitClass);
 
         this._animTimeoutExit = setTimeout(() => {
+            this._animTimeoutExit = null;
+            if (this._getActiveStudentId() !== expectedStudentId || appState.currentPeriod !== expectedPeriod) {
+                return;
+            }
             textEl.classList.remove(exitClass);
             textEl.innerHTML = Utils.cleanMarkdown(content);
-            textEl.classList.add(enterClass);
+            textEl.classList.add('filled', enterClass);
 
             this._notifyContentChange(content);
+            this._notifyHistoryChange();
 
             this._animTimeoutEnter = setTimeout(() => {
-                textEl.classList.remove(enterClass, 'history-animating');
-                this._animTimeoutExit = null;
                 this._animTimeoutEnter = null;
+                if (this._getActiveStudentId() !== expectedStudentId || appState.currentPeriod !== expectedPeriod) {
+                    return;
+                }
+                textEl.classList.remove(enterClass, 'history-animating');
             }, 280);
         }, 180);
     },
@@ -432,133 +480,11 @@ export const FocusPanelHistory = {
         this._callbacks.onHistoryChange?.();
     },
 
-    /**
-     * Get user-friendly label and icon for a history version
-     * @private
-     * @param {Object} versionData
-     * @param {number} index
-     * @returns {{ title: string, icon: string, typeClass: string }}
-     */
     _getVersionPresentation(versionData, index) {
-        const isOriginal = index === 0;
-        const source = versionData.source;
-        let sourceType = versionData.appreciationSource;
-
-        if (!sourceType) {
-            if (source === 'edit') sourceType = 'manual';
-            else if (source === 'imported') sourceType = 'imported';
-            else if (source === 'dictation') sourceType = 'dictation';
-            else if (versionData.aiModel || (isOriginal && versionData.aiModel)) sourceType = 'ai';
-            else sourceType = 'manual';
-        }
-
-        if (source === 'dictation' || sourceType === 'dictation') {
-            return {
-                title: 'Dictée vocale',
-                icon: '<iconify-icon icon="solar:microphone-3-linear"></iconify-icon>',
-                typeClass: 'source-dictation'
-            };
-        }
-
-        if (source === 'concise') {
-            return {
-                title: 'Version concise',
-                icon: '<iconify-icon icon="solar:minimize-square-linear"></iconify-icon>',
-                typeClass: 'source-concise'
-            };
-        }
-
-        if (source === 'polish') {
-            return {
-                title: 'Version peaufinée',
-                icon: '<iconify-icon icon="solar:stars-line-linear"></iconify-icon>',
-                typeClass: 'source-polish'
-            };
-        }
-
-        if (source === 'encouraging') {
-            return {
-                title: 'Version encourageante',
-                icon: '<iconify-icon icon="solar:heart-linear"></iconify-icon>',
-                typeClass: 'source-encouraging'
-            };
-        }
-
-        if (source === 'regenerate') {
-            return {
-                title: 'Régénération IA',
-                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai'
-            };
-        }
-
-        if (sourceType === 'ai') {
-            return {
-                title: isOriginal ? 'Génération initiale' : 'Génération IA',
-                icon: '<iconify-icon icon="solar:stars-line-duotone"></iconify-icon>',
-                typeClass: 'source-ai'
-            };
-        }
-
-        if (sourceType === 'imported' || source === 'imported') {
-            return {
-                title: 'Texte importé',
-                icon: '<iconify-icon icon="solar:file-download-linear"></iconify-icon>',
-                typeClass: 'source-imported'
-            };
-        }
-
-        if (isOriginal) {
-            return {
-                title: 'Version initiale',
-                icon: '<iconify-icon icon="solar:document-text-linear"></iconify-icon>',
-                typeClass: 'source-initial'
-            };
-        }
-
-        return {
-            title: 'Modifié à la main',
-            icon: '<iconify-icon icon="solar:pen-linear"></iconify-icon>',
-            typeClass: 'source-manual'
-        };
+        return HistoryPopoverUI.getVersionPresentation(versionData, index);
     },
 
-    /**
-     * Format a timestamp as relative time in French
-     * @param {number} timestamp - Unix timestamp in milliseconds
-     * @returns {string} Formatted relative time (e.g., "il y a 5 min")
-     */
     _formatRelativeTime(timestamp) {
-        if (!timestamp) return '';
-
-        const now = Date.now();
-        const diff = now - timestamp;
-
-        // Less than 1 minute
-        if (diff < 60 * 1000) {
-            return 'à l\'instant';
-        }
-
-        // Less than 1 hour
-        if (diff < 60 * 60 * 1000) {
-            const minutes = Math.floor(diff / (60 * 1000));
-            return `il y a ${minutes} min`;
-        }
-
-        // Less than 24 hours
-        if (diff < 24 * 60 * 60 * 1000) {
-            const hours = Math.floor(diff / (60 * 60 * 1000));
-            return `il y a ${hours}h`;
-        }
-
-        // Less than 7 days
-        if (diff < 7 * 24 * 60 * 60 * 1000) {
-            const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-            return `il y a ${days}j`;
-        }
-
-        // Older than 7 days - show date
-        const date = new Date(timestamp);
-        return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        return HistoryPopoverUI.formatRelativeTime(timestamp);
     }
 };

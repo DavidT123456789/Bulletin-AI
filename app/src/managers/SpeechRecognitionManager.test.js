@@ -521,7 +521,8 @@ describe('SpeechRecognitionManager', () => {
             expect(FocusPanelHistory.push).toHaveBeenCalledTimes(1);
             expect(FocusPanelHistory.push).toHaveBeenCalledWith(
                 'Première phrase deuxième phrase troisième phrase',
-                'dictation'
+                'dictation',
+                { studentId: 'student-123', period: 'T1', autoSeed: false }
             );
         });
 
@@ -537,7 +538,11 @@ describe('SpeechRecognitionManager', () => {
             expect(testStudent.errorMessage).toBeNull();
             expect(testStudent.errorPeriod).toBeNull();
             expect(FocusPanelHistory.push).toHaveBeenCalledTimes(1);
-            expect(FocusPanelHistory.push).toHaveBeenCalledWith('Élève sérieux et impliqué.', 'dictation');
+            expect(FocusPanelHistory.push).toHaveBeenCalledWith(
+                'Élève sérieux et impliqué.',
+                'dictation',
+                { studentId: 'student-123', period: 'T1', autoSeed: false }
+            );
         });
     });
 });

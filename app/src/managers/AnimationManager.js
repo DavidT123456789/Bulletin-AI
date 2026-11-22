@@ -161,127 +161,150 @@ export const AnimationManager = {
      * @param {HTMLElement} container - Le conteneur cible
      * @param {string} htmlContent - La chaîne HTML à injecter et animer
      * @param {Object} [options] - Options de configuration
+     * @returns {Promise<boolean>} True si la révélation s'est achevée, false si annulée ou supplantée
      */
     async animateHtmlReveal(container, htmlContent, options = {}) {
-        if (!container) return;
+        if (!container) return false;
         this.cancelHtmlReveal(container);
 
         const signal = options.signal || null;
-        if (signal?.aborted) return;
+        if (signal?.aborted) return false;
 
         const safeHtml = htmlContent ?? '';
         const revealId = Symbol('htmlReveal');
-        container._activeRevealId = revealId;
+        const localAbort = new AbortController();
+        const localSignal = localAbort.signal;
 
-        let cancelCurrent = null;
-        container._cancelHtmlReveal = () => {
+        const cancelThisReveal = () => {
             if (container._activeRevealId === revealId) {
                 container._activeRevealId = null;
             }
-            container._cancelHtmlReveal = null;
-            container.classList.remove('progressive-reveal-container');
-            cancelCurrent?.();
-        };
-
-        await this.fadeOutSkeleton(container, signal);
-        if (signal?.aborted || container._activeRevealId !== revealId) {
-            container._cancelHtmlReveal?.();
-            return;
-        }
-
-        if (!safeHtml || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
-            container._cancelHtmlReveal?.();
-            container.innerHTML = safeHtml;
-            return;
-        }
-
-        const speedConfig = {
-            slow: { wordDelay: 60, wordsPerBatch: 2 },
-            normal: { wordDelay: 40, wordsPerBatch: 3 },
-            fast: { wordDelay: 25, wordsPerBatch: 4 }
-        };
-        const config = speedConfig[options.speed] || speedConfig.normal;
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = safeHtml;
-
-        const textNodes = [];
-        const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        let totalWordCount = 0;
-        while (node = walker.nextNode()) {
-            if (node.textContent.trim().length > 0) {
-                textNodes.push(node);
-                totalWordCount += node.textContent.split(/\s+/).length;
+            if (container._cancelHtmlReveal === cancelThisReveal) {
+                container._cancelHtmlReveal = null;
+                container.classList.remove('progressive-reveal-container');
             }
-        }
+            if (!localSignal.aborted) {
+                localAbort.abort();
+            }
+        };
 
-        const isFast = totalWordCount > 100;
-        const wordAnimDuration = isFast ? 300 : 400;
+        const onExternalAbort = () => cancelThisReveal();
+        signal?.addEventListener?.('abort', onExternalAbort, { once: true });
 
-        let globalWordIndex = 0;
-        let maxDelay = 0;
+        container._activeRevealId = revealId;
+        container._cancelHtmlReveal = cancelThisReveal;
 
-        textNodes.forEach(textNode => {
-            const text = textNode.textContent;
-            const words = text.split(/(\s+)/);
-            const fragment = document.createDocumentFragment();
-
-            words.forEach(word => {
-                if (word.trim() === '') {
-                    fragment.appendChild(document.createTextNode(word));
-                } else {
-                    const wordSpan = document.createElement('span');
-                    wordSpan.className = 'reveal-word' + (isFast ? ' fast' : '');
-                    wordSpan.textContent = word;
-
-                    const batchIndex = Math.floor(globalWordIndex / config.wordsPerBatch);
-                    const offsetInBatch = globalWordIndex % config.wordsPerBatch;
-
-                    const batchDelay = batchIndex * config.wordDelay;
-                    const intraBatchDelay = offsetInBatch * 30;
-
-                    const delay = batchDelay + intraBatchDelay;
-
-                    wordSpan.style.animationDelay = `${delay}ms`;
-                    fragment.appendChild(wordSpan);
-
-                    globalWordIndex++;
-                    maxDelay = Math.max(maxDelay, delay);
+        try {
+            if (container.querySelector('.appreciation-skeleton, .generating-badge')) {
+                await this.fadeOutSkeleton(container, localSignal);
+                if (localSignal.aborted || container._activeRevealId !== revealId) {
+                    cancelThisReveal();
+                    return false;
                 }
+            }
+
+            if (!safeHtml || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+                cancelThisReveal();
+                container.innerHTML = safeHtml;
+                return true;
+            }
+
+            const speedConfig = {
+                slow: { wordDelay: 60, wordsPerBatch: 2 },
+                normal: { wordDelay: 40, wordsPerBatch: 3 },
+                fast: { wordDelay: 25, wordsPerBatch: 4 }
+            };
+            const config = speedConfig[options.speed] || speedConfig.normal;
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = safeHtml;
+
+            const textNodes = [];
+            const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            let totalWordCount = 0;
+            while (node = walker.nextNode()) {
+                if (node.textContent.trim().length > 0) {
+                    textNodes.push(node);
+                    totalWordCount += node.textContent.split(/\s+/).length;
+                }
+            }
+
+            const isFast = totalWordCount > 100;
+            const wordAnimDuration = isFast ? 300 : 400;
+
+            let globalWordIndex = 0;
+            let maxDelay = 0;
+
+            textNodes.forEach(textNode => {
+                const text = textNode.textContent;
+                const words = text.split(/(\s+)/);
+                const fragment = document.createDocumentFragment();
+
+                words.forEach(word => {
+                    if (word.trim() === '') {
+                        fragment.appendChild(document.createTextNode(word));
+                    } else {
+                        const wordSpan = document.createElement('span');
+                        wordSpan.className = 'reveal-word' + (isFast ? ' fast' : '');
+                        wordSpan.textContent = word;
+
+                        const batchIndex = Math.floor(globalWordIndex / config.wordsPerBatch);
+                        const offsetInBatch = globalWordIndex % config.wordsPerBatch;
+
+                        const batchDelay = batchIndex * config.wordDelay;
+                        const intraBatchDelay = offsetInBatch * 30;
+
+                        const delay = batchDelay + intraBatchDelay;
+
+                        wordSpan.style.animationDelay = `${delay}ms`;
+                        fragment.appendChild(wordSpan);
+
+                        globalWordIndex++;
+                        maxDelay = Math.max(maxDelay, delay);
+                    }
+                });
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            });
+            container.innerHTML = '';
+            container.classList.add('progressive-reveal-container');
+
+            while (tempDiv.firstChild) {
+                container.appendChild(tempDiv.firstChild);
+            }
+
+            const totalDuration = maxDelay + wordAnimDuration;
+
+            await new Promise(resolve => {
+                if (localSignal.aborted) {
+                    resolve();
+                    return;
+                }
+                const finish = () => {
+                    clearTimeout(timerId);
+                    localSignal.removeEventListener('abort', finish);
+                    resolve();
+                };
+                const timerId = setTimeout(finish, totalDuration);
+                localSignal.addEventListener('abort', finish, { once: true });
             });
 
-            textNode.parentNode.replaceChild(fragment, textNode);
-        });
-        container.innerHTML = '';
-        container.classList.add('progressive-reveal-container');
+            if (localSignal.aborted || container._activeRevealId !== revealId) {
+                cancelThisReveal();
+                return false;
+            }
 
-        while (tempDiv.firstChild) {
-            container.appendChild(tempDiv.firstChild);
+            container._activeRevealId = null;
+            if (container._cancelHtmlReveal === cancelThisReveal) {
+                container._cancelHtmlReveal = null;
+            }
+            container.innerHTML = safeHtml;
+            container.classList.remove('progressive-reveal-container');
+            return true;
+        } finally {
+            signal?.removeEventListener?.('abort', onExternalAbort);
         }
-
-        const totalDuration = maxDelay + wordAnimDuration;
-
-        await new Promise(resolve => {
-            const finish = () => {
-                clearTimeout(timerId);
-                signal?.removeEventListener?.('abort', finish);
-                resolve();
-            };
-            cancelCurrent = finish;
-            const timerId = setTimeout(finish, totalDuration);
-            signal?.addEventListener?.('abort', finish, { once: true });
-        });
-
-        if (signal?.aborted || container._activeRevealId !== revealId) {
-            container._cancelHtmlReveal?.();
-            return;
-        }
-
-        container._activeRevealId = null;
-        container._cancelHtmlReveal = null;
-        container.innerHTML = safeHtml;
-        container.classList.remove('progressive-reveal-container');
     },
 
     /**

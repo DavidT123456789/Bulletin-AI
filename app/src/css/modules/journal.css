@@ -69,15 +69,11 @@
 /* === Threshold Quick Control === */
 .journal-threshold-control {
     position: relative;
-}
-
-.journal-count-badge.is-hidden + .journal-threshold-control {
-    display: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .journal-count-badge:not(.is-hidden) + .journal-threshold-control {
-    display: inline-flex;
-    align-items: center;
     margin-left: 2px;
 }
 
@@ -180,9 +176,10 @@
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
-    padding: 0 8px;
+    padding: 0 9px;
     height: 26px;
     font-size: 11.5px;
+    white-space: nowrap;
     box-shadow: none;
     transition: all var(--transition-fast);
 }
@@ -216,19 +213,30 @@
     color: var(--text-primary);
 }
 
+.journal-threshold-btn.is-ai-excluded {
+    color: var(--text-tertiary);
+    background: transparent;
+    border-color: var(--border-color);
+}
+
+.journal-threshold-btn.is-ai-excluded:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color-hover);
+}
+
 /* Threshold Popover */
 .journal-threshold-popover {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
     transform: translateY(-8px);
-    width: max-content;
-    min-width: 236px;
+    width: 262px;
     padding: 14px 16px;
     z-index: 150;
     opacity: 0;
     visibility: hidden;
-    text-align: center;
+    text-align: left;
     transition: opacity 0.2s var(--ease-spring), transform 0.2s var(--ease-spring), visibility 0.2s;
     box-sizing: border-box;
 }
@@ -239,79 +247,88 @@
     transform: translateY(0);
 }
 
-.threshold-popover-header {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 3px;
-    letter-spacing: -0.01em;
+.threshold-popover-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.threshold-popover-desc {
+.threshold-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.threshold-toggle-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.25;
+}
+
+.threshold-scope-label {
     font-size: 11px;
-    line-height: 1.35;
+    font-weight: 400;
     color: var(--text-tertiary);
-    margin-bottom: 14px;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.threshold-popover-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    margin-bottom: 12px;
+.threshold-stepper-block {
+    text-align: left;
+    transition: opacity 0.16s ease;
 }
 
-.threshold-adjust-btn {
-    width: 32px;
-    height: 32px;
-    padding: 0 0 1px 0;
-    line-height: 1;
-    border: 1px solid transparent;
-    border-radius: 50%;
-    background: var(--tonal-bg);
-    color: var(--text-secondary);
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
-}
-
-.threshold-adjust-btn:hover:not(:disabled) {
-    border-color: transparent;
-    background: var(--tonal-hover-bg);
-    color: var(--text-primary);
-}
-
-.threshold-adjust-btn:active:not(:disabled) {
-    transform: scale(0.94);
-}
-
-.threshold-adjust-btn:disabled {
-    opacity: 0.25;
-    cursor: default;
+.threshold-stepper-block.is-disabled {
+    opacity: 0.4;
     pointer-events: none;
 }
 
-.threshold-current {
-    font-size: 24px;
-    font-weight: 700;
+.threshold-popover-header {
+    font-size: 12px;
+    font-weight: 600;
     color: var(--text-primary);
-    min-width: 36px;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.journal-threshold-segmented {
+    width: 100%;
+    height: 30px;
+    margin-bottom: 8px;
+}
+
+.journal-threshold-segmented .ui-segment {
+    font-size: 11.5px;
+    padding: 0 6px;
+}
+
+.threshold-ai-off-hint {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.threshold-ai-off-hint.is-hidden {
+    display: none;
 }
 
 .threshold-popover-hint {
-    font-size: 10.5px;
+    font-size: 11px;
+    line-height: 1.35;
     color: var(--text-tertiary);
-    text-align: center;
+    text-align: left;
+    white-space: normal;
 }
 
 
@@ -446,12 +463,7 @@
     box-sizing: border-box;
 }
 
-.journal-draft-close-btn {
-    --close-btn-size: 28px;
-    --close-btn-icon-size: 14px;
-}
-
-/* === Pills Row === */
+/* === Pills Row (Flat direct-toggle tags) === */
 .journal-draft-pills-row {
     width: 100%;
     margin-bottom: 10px;
@@ -459,35 +471,36 @@
 
 .journal-draft-pills {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     width: 100%;
 }
 
-/* Pill Dropdown Container */
-.journal-pill-dropdown {
-    position: relative;
-    display: inline-flex;
+.journal-pills-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
 }
 
-/* Pill Button Base — Desktop: compact, natural width, elegant (borderless tonal at rest & hover) */
+/* Direct-toggle tag pill — Calm neutral surface at rest with tinted icon; crisp tinted surface when selected */
 .journal-pill-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     width: auto;
-    min-height: 30px;
+    min-height: 28px;
     padding: 0 10px;
     border-radius: var(--radius-pill);
     border: 1px solid transparent;
-    background: color-mix(in srgb, var(--pill-color) 11%, transparent);
-    color: var(--pill-ink, var(--pill-color));
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform 0.16s var(--ease-spring);
     box-sizing: border-box;
     white-space: nowrap;
     user-select: none;
@@ -495,200 +508,38 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+.journal-pill-btn iconify-icon {
+    color: var(--pill-ink, var(--pill-color));
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
 .journal-pill-btn:hover {
-    border-color: transparent;
-    background: color-mix(in srgb, var(--pill-color) 17%, transparent);
-}
-
-.journal-pill-btn[data-tag-id="remarque"] {
-    background: var(--tonal-bg);
-}
-
-.journal-pill-btn[data-tag-id="remarque"]:hover {
-    background: var(--tonal-hover-bg);
+    background: color-mix(in srgb, var(--pill-color) 11%, var(--tonal-bg));
     color: var(--text-primary);
 }
 
 .journal-pill-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
-.journal-pill-btn iconify-icon:first-child {
-    color: currentColor;
-    font-size: 13px;
-    flex-shrink: 0;
+.journal-pill-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
 }
 
-.journal-pill-arrow {
-    font-size: 9px;
-    opacity: 0.65;
-    transition: transform 0.2s ease;
-    margin-left: 2px;
-    flex-shrink: 0;
-}
-
-.journal-pill-dropdown.open .journal-pill-arrow {
-    transform: rotate(180deg);
-}
-
-/* Active highlight on dropdown trigger when category has active tag */
-.journal-pill-dropdown.has-selected .journal-pill-btn {
-    border-color: color-mix(in srgb, var(--pill-ink, var(--pill-color)) 45%, transparent);
-    background: color-mix(in srgb, var(--pill-color) 17%, transparent);
-    font-weight: 600;
-    box-shadow: none;
-}
-
-/* Pill Menu (dropdown) */
-.journal-pill-menu {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    min-width: 165px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    z-index: 100;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-6px) scale(0.98);
-    transition: all 0.18s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* Align Negative dropdown to the right column so it never overflows screen edge */
-.journal-pill-dropdown[data-category="negative"] .journal-pill-menu {
-    left: auto;
-    right: 0;
-}
-
-.journal-pill-dropdown.open .journal-pill-menu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-}
-
-.journal-pill-menu .journal-dropdown-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 10px;
-    border: none;
-    border-radius: var(--dropdown-item-radius);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: left;
-    touch-action: manipulation;
-}
-
-.journal-pill-menu .journal-dropdown-option:hover {
-    background: color-mix(in srgb, var(--tag-color) 12%, transparent);
-    color: var(--tag-ink, var(--tag-color));
-}
-
-.journal-pill-menu .journal-dropdown-option iconify-icon {
-    width: 16px;
-    text-align: center;
-    color: var(--tag-ink, var(--tag-color));
-    font-size: 13px;
-    flex-shrink: 0;
-}
-
-/* Direct Pill (Difficulté & Remarque) — Solid tonal border (dashed is reserved for below-threshold tags) */
+/* Selected state — Clear semantic fill & border (dashed reserved for below-threshold timeline tags) */
 .journal-pill-direct.selected {
-    background: color-mix(in srgb, var(--pill-color) 18%, transparent);
-    border-color: color-mix(in srgb, var(--pill-ink, var(--pill-color)) 45%, transparent);
+    background: color-mix(in srgb, var(--pill-color) 16%, transparent);
+    border-color: color-mix(in srgb, var(--pill-ink, var(--pill-color)) 48%, transparent);
     color: var(--pill-ink, var(--pill-color));
     font-weight: 600;
     box-shadow: none;
 }
 
-.journal-pill-direct[data-tag-id="remarque"].selected {
-    background: var(--tonal-active-bg);
-    border-color: var(--border-color-strong);
-    color: var(--text-primary);
-}
-
-/* === Selected Chips Row === */
-.journal-draft-chips-row {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-.journal-draft-chips-row:has(.journal-selected-tags:empty) {
-    display: none;
-}
-
-/* Selected Tags (Chips) */
-.journal-selected-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    flex: 1;
-    min-height: 32px;
-    align-items: center;
-}
-
-.journal-selected-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: var(--radius-pill);
-    font-size: 12px;
-    font-weight: 500;
-    background: color-mix(in srgb, var(--tag-color) 12%, transparent);
-    color: var(--tag-ink, var(--tag-color));
-    animation: chip-appear 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.journal-selected-chip[data-tag-id="remarque"] {
-    background: var(--tonal-bg);
-}
-
-@keyframes chip-appear {
-    from {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.journal-selected-chip i {
-    font-size: 10px;
-}
-
-.journal-chip-remove {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    margin-left: 2px;
-    border: none;
-    background: transparent;
-    color: inherit;
-    opacity: 0.6;
-    cursor: pointer;
-    border-radius: 50%;
-    font-size: 8px;
-    transition: all 0.15s ease;
-}
-
-.journal-chip-remove:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-[data-theme="dark"] .journal-chip-remove:hover {
-    background: rgba(255, 255, 255, 0.1);
+.journal-pill-direct.selected:hover {
+    background: color-mix(in srgb, var(--pill-color) 22%, transparent);
+    color: var(--pill-ink, var(--pill-color));
 }
 
 /* === Input Container === */
@@ -714,14 +565,19 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    padding-top: 4px;
     padding-right: 2px;
 }
 
 .journal-char-count {
+    display: none;
+    padding-top: 4px;
     font-size: 11px;
     color: var(--text-tertiary);
     font-variant-numeric: tabular-nums;
+}
+
+.journal-char-count.is-visible {
+    display: inline-block;
 }
 
 /* === Actions Footer === */
@@ -1323,24 +1179,15 @@
         font-size: 12px;
     }
 
-    /* 2x2 grid for mobile pills */
+    /* Flat wrap pills on mobile */
     .journal-draft-pills {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-        width: 100%;
-    }
-
-    .journal-pill-dropdown {
-        width: 100%;
+        gap: 6px;
     }
 
     .journal-pill-btn {
-        width: 100%;
-        min-height: 42px;
-        justify-content: center;
-        font-size: 13px;
-        padding: 0 8px;
+        min-height: 36px;
+        font-size: 12.5px;
+        padding: 0 11px;
     }
 
     /* Mobile Action Footer */
@@ -1356,22 +1203,6 @@
         width: 100%;
         height: 44px;
         font-size: 13px;
-    }
-
-    .journal-draft-close-btn {
-        --close-btn-size: 44px;
-        --close-btn-icon-size: 16px;
-    }
-
-    .journal-chip-remove {
-        width: 24px;
-        height: 24px;
-        font-size: 10px;
-    }
-
-    .journal-selected-chip {
-        padding: 4px 10px;
-        font-size: 12px;
     }
 }
 
@@ -1394,18 +1225,16 @@
         padding: 0 12px;
     }
 
-    .journal-chip-remove {
-        width: 28px;
-        height: 28px;
-        margin-left: 4px;
-    }
-
     .journal-footer-btn {
         min-height: 44px;
     }
 
     .journal-pill-btn {
         min-height: 44px;
+    }
+
+    .journal-threshold-segmented {
+        height: 40px;
     }
 }
 

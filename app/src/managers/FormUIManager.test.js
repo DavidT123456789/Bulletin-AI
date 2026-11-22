@@ -50,6 +50,11 @@ vi.mock('../utils/DOM.js', () => ({
         settingsEvolutionThresholdNegative: { value: '-1' },
         iaLengthSlider: { min: '10', max: '90', value: '50', dispatchEvent: vi.fn() },
         iaLengthSliderValue: { textContent: '' },
+        iaMaxCharsToggle: { checked: false },
+        iaMaxCharsValue: { textContent: '' },
+        iaMaxCharsCollapsible: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
+        iaMaxCharsInput: { value: '', disabled: false },
+        iaMaxCharsPresets: { querySelectorAll: vi.fn(() => []) },
         iaToneSlider: { min: '1', max: '5', value: '3', disabled: false },
         iaToneToggle: { checked: false, disabled: false },
         iaToneCollapsible: { classList: { toggle: vi.fn(), add: vi.fn(), remove: vi.fn() } },
@@ -75,7 +80,12 @@ vi.mock('../utils/DOM.js', () => ({
 vi.mock('../utils/Utils.js', () => ({
     Utils: {
         getPeriods: vi.fn(() => ['T1', 'T2', 'T3']),
-        getPeriodLabel: vi.fn((p, short) => short ? p : `Période ${p}`)
+        getPeriodLabel: vi.fn((p, short) => short ? p : `Période ${p}`),
+        normalizeMaxChars: vi.fn((v) => {
+            if (v === null || v === undefined || v === '') return null;
+            const n = parseInt(String(v), 10);
+            return Number.isFinite(n) && n > 0 ? Math.min(2000, Math.max(50, n)) : null;
+        })
     }
 }));
 
@@ -261,6 +271,25 @@ describe('FormUIManager', () => {
             FormUI.syncStyleControls();
             expect(DOM.iaToneSlider.disabled).toBe(false);
             expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', true);
+        });
+
+        it('should sync maxChars controls and indicate capped length when word slider exceeds maxChars', () => {
+            DOM.iaLengthSlider.value = '60';
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 255 } };
+
+            FormUI.syncStyleControls();
+
+            expect(DOM.iaMaxCharsToggle.checked).toBe(true);
+            expect(DOM.iaMaxCharsInput.disabled).toBe(false);
+            expect(DOM.iaMaxCharsValue.textContent).toBe('Max 255 car.');
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • plafonné à 255 car.');
+
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: null } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaMaxCharsToggle.checked).toBe(false);
+            expect(DOM.iaMaxCharsInput.disabled).toBe(true);
+            expect(DOM.iaMaxCharsValue.textContent).toBe('Désactivée');
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • ~390 car.');
         });
     });
 

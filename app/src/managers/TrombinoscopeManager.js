@@ -160,7 +160,7 @@ export const TrombinoscopeManager = {
         // Sample button
         document.getElementById('trombiSampleBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this._loadImageFromUrl('/images/sample-trombinoscope.png');
+            this._loadImageFromUrl('./images/sample-trombinoscope.png');
         }, { signal });
 
         // Remove image button (× in corner)

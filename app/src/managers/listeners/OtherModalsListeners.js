@@ -29,6 +29,11 @@ const HELP_REFINE_DEMO_DATA = {
         hint: 'Encourageante : valorise les efforts et la dynamique avec bienveillance',
         text: 'Un deuxième trimestre très positif : l\'investissement régulier de Lucas et son rôle moteur en classe portent pleinement leurs fruits. Il faut continuer sur cette belle lancée.'
     },
+    demanding: {
+        words: '25 mots · Ton exigeant',
+        hint: 'Exigeante : renforce le niveau d\'attente avec un ton plus ferme et direct',
+        text: 'Un bon deuxième trimestre. Lucas participe activement et progresse, mais doit désormais viser davantage de rigueur et d\'autonomie à l\'écrit pour franchir un nouveau cap.'
+    },
     polish: {
         words: '24 mots · Style fluide',
         hint: 'Peaufiner : corrige et fluidifie la rédaction sans modifier le fond',
@@ -246,19 +251,32 @@ export const OtherModalsListeners = {
             withLazyManager(loadClassDashboard, (dashboard) => dashboard.exportPdf())
         );
 
-        // Click handlers for interactive elements
+        const openStudentFromHighlight = (highlightItem) => {
+            const studentId = highlightItem?.dataset?.studentId;
+            if (!studentId) return;
+            withLazyManager(loadClassDashboard, (dashboard) => {
+                dashboard.closeDashboard();
+                // Open focus panel for this student
+                setTimeout(() => {
+                    FocusPanelManager.open(studentId);
+                }, 300);
+            });
+        };
+
+        // Click & keyboard handlers for interactive student highlights
         modal.addEventListener('click', (e) => {
-            // Click on student highlight to focus on them
             const highlightItem = e.target.closest('.highlight-item[data-student-id]');
             if (highlightItem) {
-                const studentId = highlightItem.dataset.studentId;
-                withLazyManager(loadClassDashboard, (dashboard) => {
-                    dashboard.closeDashboard();
-                    // Open focus panel for this student
-                    setTimeout(() => {
-                        FocusPanelManager.open(studentId);
-                    }, 300);
-                });
+                openStudentFromHighlight(highlightItem);
+            }
+        });
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const highlightItem = e.target.closest('.highlight-item[data-student-id]');
+            if (highlightItem) {
+                e.preventDefault();
+                openStudentFromHighlight(highlightItem);
             }
         });
 

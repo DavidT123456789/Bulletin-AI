@@ -5,6 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { appState } from '../state/State.js';
+import { UI } from './UIManager.js';
+import { PromptService } from '../services/PromptService.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 
 // Mock dependencies
@@ -40,6 +42,7 @@ vi.mock('./JournalManager.js', () => ({
 vi.mock('../services/PromptService.js', () => ({
     PromptService: {
         PROMPT_HASH_PREFIX: 'hash_',
+        getActiveMaxChars: vi.fn(() => null),
         getPromptHash: vi.fn((data) => {
             if (data.context === 'MODIFIED') return 'hash_new';
             return 'hash_initial';
@@ -433,6 +436,65 @@ describe('FocusPanelStatus', () => {
             expect(copyBtn.classList.contains('disabled')).toBe(true);
             expect(copyBtn.getAttribute('aria-disabled')).toBe('true');
             expect(labelEl.textContent).toBe('Copier');
+
+            // Si l'appréciation a déjà été copiée pour la période, le tooltip et l'aria-label le signalent tout en gardant le clic droit prompt
+            appState.currentPeriod = 'T1';
+            appState.generatedResults = [{
+                id: 'stu-copied',
+                studentData: { periods: { T1: { appreciation: 'Très bon trimestre.', copied: true } } }
+            }];
+            FocusPanelStatus.init({ getCurrentStudentId: () => 'stu-copied' });
+            UI.updateTooltip.mockClear();
+            FocusPanelStatus.syncCopyButton({ isEmpty: false, isGenerating: false });
+
+            expect(UI.updateTooltip).toHaveBeenCalledWith(copyBtn, 'Déjà copiée · Clic droit : copier le prompt');
+            expect(copyBtn.getAttribute('aria-label')).toBe('Copier à nouveau (déjà copiée)');
+        });
+
+        it('affiche le compteur caractères/limite avec alertes near/over et met en avant Concise en cas de dépassement', () => {
+            PromptService.getActiveMaxChars.mockReturnValue(255);
+            document.body.innerHTML = `
+                <div id="focusAppreciationText" contenteditable="true"></div>
+                <span id="focusWordCount"></span>
+                <div id="focusRefinementOptions">
+                    <button type="button" data-refine-type="concise">Concise</button>
+                </div>
+            `;
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            const wordCountEl = document.getElementById('focusWordCount');
+            const conciseBtn = document.querySelector('[data-refine-type="concise"]');
+
+            // Sous le seuil (< 92 %)
+            appreciationEl.textContent = 'A'.repeat(120);
+            FocusPanelStatus.updateWordCount();
+            expect(wordCountEl.textContent).toBe('120/255 car.');
+            expect(wordCountEl.classList.contains('is-limit-near')).toBe(false);
+            expect(wordCountEl.classList.contains('is-limit-over')).toBe(false);
+            expect(conciseBtn.classList.contains('is-limit-recommended')).toBe(false);
+
+            // Proche de la limite (92 %–100 %)
+            appreciationEl.textContent = 'A'.repeat(240);
+            FocusPanelStatus.updateWordCount();
+            expect(wordCountEl.textContent).toBe('240/255 car.');
+            expect(wordCountEl.classList.contains('is-limit-near')).toBe(true);
+            expect(wordCountEl.classList.contains('is-limit-over')).toBe(false);
+            expect(conciseBtn.classList.contains('is-limit-recommended')).toBe(false);
+
+            // Dépassement (> 255)
+            appreciationEl.textContent = 'A'.repeat(270);
+            FocusPanelStatus.updateWordCount();
+            expect(wordCountEl.textContent).toBe('270/255 car.');
+            expect(wordCountEl.classList.contains('is-limit-over')).toBe(true);
+            expect(conciseBtn.classList.contains('is-limit-recommended')).toBe(true);
+
+            // Retour à vide : réinitialise toutes les classes d'alerte
+            appreciationEl.textContent = '';
+            FocusPanelStatus.updateWordCount();
+            expect(wordCountEl.textContent).toBe('');
+            expect(wordCountEl.classList.contains('is-limit-over')).toBe(false);
+            expect(conciseBtn.classList.contains('is-limit-recommended')).toBe(false);
+
+            PromptService.getActiveMaxChars.mockReturnValue(null);
         });
     });
 });

@@ -361,6 +361,12 @@ describe('PromptService', () => {
             expect(p).toContain('sans masquer les difficultés réelles');
         });
 
+        it('should generate demanding prompt', () => {
+            const p = PromptService.getRefinementPrompt('demanding', originalText);
+            expect(p).toContain('plus ferme, direct et exigeant');
+            expect(p).toContain('sans complaisance');
+        });
+
         it('should generate polish prompt', () => {
             const p = PromptService.getRefinementPrompt('polish', originalText);
             expect(p).toContain('Peaufine');
@@ -394,6 +400,66 @@ describe('PromptService', () => {
             };
             const p = PromptService.getRefinementPrompt('polish', originalText);
             expect(p).toContain("Consigne de l'enseignant : Bannir les superlatifs.");
+        });
+    });
+
+    describe('getClassSynthesisRefinementPrompts', () => {
+        const sampleIntro = 'La classe de Lucas Martin progresse malgré des bavardages ponctuels et un élève PAP.';
+        const longIntro = 'La classe a globalement progressé sur l\'ensemble de l\'année scolaire avec une amélioration notable des résultats écrits et oraux au second semestre. Le climat de travail demeure positif, marqué par une implication variée mais réelle de la majorité des élèves. Les écarts de niveau se sont légèrement réduits malgré quelques bavardages ponctuels.';
+        const mediumIntro = 'La classe a progressé au second semestre avec un bon climat de travail, même si certains élèves doivent encore renforcer leur régularité et leur concentration en fin de séance.';
+
+        it('devrait couvrir les 4 types harmonisés (concise adaptatif, encouraging, demanding, polish) et rejeter les types inconnus', () => {
+            expect(PromptService.getClassSynthesisRefinementPrompts('unknown', sampleIntro)).toBeNull();
+            expect(PromptService.getClassSynthesisRefinementPrompts(null, sampleIntro)).toBeNull();
+
+            const conciseLong = PromptService.getClassSynthesisRefinementPrompts('concise', longIntro);
+            const conciseMedium = PromptService.getClassSynthesisRefinementPrompts('concise', mediumIntro);
+            const conciseShort = PromptService.getClassSynthesisRefinementPrompts('concise', sampleIntro);
+            const encouraging = PromptService.getClassSynthesisRefinementPrompts('encouraging', sampleIntro);
+            const demanding = PromptService.getClassSynthesisRefinementPrompts('demanding', sampleIntro);
+            const polish = PromptService.getClassSynthesisRefinementPrompts('polish', sampleIntro);
+
+            expect(conciseLong.userPrompt).toContain('max 35 mots');
+            expect(conciseMedium.userPrompt).toMatch(/vise environ \d+ mots maximum/);
+            expect(conciseShort.userPrompt).toContain('1 phrase directe et percutante');
+            expect(encouraging.userPrompt).toContain('bienveillant, valorisant et constructif');
+            expect(demanding.userPrompt).toContain('plus ferme, direct et exigeant');
+            expect(polish.userPrompt).toContain('Peaufine cette synthèse globale');
+        });
+
+        it('devrait injecter la discipline, les consignes de style, anonymiser les identités et bloquer la fuite des marqueurs entre crochets', () => {
+            appState.anonymizeData = true;
+            appState.useSubjectPersonalization = true;
+            appState.subjects['MonStyle'] = {
+                iaConfig: {
+                    discipline: 'Mathématiques',
+                    enableStyleInstructions: true,
+                    styleInstructions: 'Style sobre et direct.'
+                }
+            };
+
+            const res = PromptService.getClassSynthesisRefinementPrompts('demanding', sampleIntro, {
+                classmates: [{ prenom: 'Lucas', nom: 'Martin' }]
+            });
+
+            expect(res.systemPrompt).toContain('enseignant de Mathématiques');
+            expect(res.systemPrompt).toContain("Consigne de l'enseignant : Style sobre et direct.");
+            expect(res.systemPrompt).toContain('sans jamais conserver de crochets');
+            expect(res.userPrompt).not.toMatch(/\b(Lucas|Martin|PAP)\b/i);
+            expect(res.userPrompt).toContain('[ÉLÈVE]');
+            expect(res.userPrompt).toContain('[AMÉNAGEMENT]');
+
+            const cleanRes = PromptService.getClassSynthesisRefinementPrompts('polish', mediumIntro);
+            expect(cleanRes.systemPrompt).not.toContain('sans jamais conserver de crochets');
+        });
+
+        it('sanitizeAppreciationOutput retire les préambules de synthèse et préserve les guillemets internes légitimes', () => {
+            expect(
+                PromptService.sanitizeAppreciationOutput('Voici la synthèse globale révisée : « Classe dynamique et investie. »')
+            ).toBe('Classe dynamique et investie.');
+            expect(
+                PromptService.sanitizeAppreciationOutput('La classe adopte une attitude « très constructive »')
+            ).toBe('La classe adopte une attitude « très constructive »');
         });
     });
 
@@ -988,6 +1054,170 @@ describe('PromptService', () => {
                 .toBe('"Très bien" au début, puis "fragile" en fin de période.');
             expect(PromptService.sanitizeAppreciationOutput('')).toBe('');
             expect(PromptService.sanitizeAppreciationOutput(null)).toBe('');
+        });
+    });
+
+    describe('Garde-fou limite de caractères (Pronote / ÉcoleDirecte / LSU)', () => {
+        const studentWithShortName = {
+            nom: 'DUPONT',
+            prenom: 'Léo',
+            statuses: [],
+            periods: { T1: { grade: 14, appreciation: '' } },
+            currentPeriod: 'T1'
+        };
+
+        it('plafonne la cible de mots et injecte le plafond strict en caractères sans consigne contradictoire', () => {
+            appState.anonymizeData = true;
+            const prompts = PromptService.getAllPrompts(studentWithShortName, {
+                length: 75,
+                maxChars: 255,
+                voice: 'default'
+            });
+
+            expect(prompts.appreciationSystem).toContain('sans jamais dépasser 255 caractères (espaces compris)');
+            expect(prompts.appreciationSystem).not.toContain('environ 75 mots');
+            expect(prompts.appreciationSystem).toMatch(/environ 3[0-4] mots/);
+        });
+
+        it('déduit l\'écart de longueur entre [PRÉNOM] et un prénom long en mode anonyme pour éviter un dépassement après désanonymisation', () => {
+            appState.anonymizeData = true;
+            const longNameStudent = { ...studentWithShortName, prenom: 'Jean-Baptiste' }; // 13 car. vs 8 ([PRÉNOM]) -> -5
+            const prompts = PromptService.getAllPrompts(longNameStudent, {
+                length: 40,
+                maxChars: 255,
+                voice: 'default'
+            });
+
+            expect(prompts.appreciationSystem).toContain('sans jamais dépasser 250 caractères (espaces compris)');
+        });
+
+        it('ne modifie pas le prompt lorsque maxChars est désactivé (null)', () => {
+            const prompts = PromptService.getAllPrompts(studentWithShortName, {
+                length: 40,
+                maxChars: null,
+                voice: 'default'
+            });
+
+            expect(prompts.appreciationSystem).toContain('environ 40 mots');
+            expect(prompts.appreciationSystem).not.toContain('sans jamais dépasser');
+        });
+
+        it('oriente le raffinement Concise sous le plafond actif en cas de dépassement et protège les autres raffinements', () => {
+            appState.useSubjectPersonalization = true;
+            appState.anonymizeData = true;
+            appState.subjects['MonStyle'] = {
+                iaConfig: { length: 40, maxChars: 255, tone: 3, voice: 'default' }
+            };
+
+            const overText = 'A'.repeat(320);
+            const conciseOver = PromptService.getRefinementPrompts('concise', overText, { prenom: 'Léo' });
+            expect(conciseOver.userPrompt).toContain('impérativement sous 255 caractères');
+            expect(conciseOver.systemPrompt).toContain('plafond maximal de 255 caractères');
+
+            const underText = 'Travail sérieux et régulier, bonne implication en classe ce trimestre.';
+            const conciseUnder = PromptService.getRefinementPrompts('concise', underText, { prenom: 'Léo' });
+            expect(conciseUnder.userPrompt).toContain('plus courte');
+            expect(conciseUnder.systemPrompt).toContain('plafond maximal de 255 caractères');
+
+            const polishRes = PromptService.getRefinementPrompts('polish', underText, { prenom: 'Jean-Baptiste' });
+            expect(polishRes.systemPrompt).toContain('plafond maximal de 250 caractères');
+
+            delete appState.subjects['MonStyle'];
+            appState.useSubjectPersonalization = false;
+        });
+    });
+
+    describe('Anti-répétition des amorces en lot (recentOpenings)', () => {
+        const sampleStudent = {
+            nom: 'MARTIN',
+            prenom: 'Camille',
+            currentPeriod: 'T1',
+            periods: { T1: { grade: 14.5, context: 'Travail sérieux' } },
+            statuses: []
+        };
+
+        it('extrait une amorce courte RGPD-safe en remplaçant le prénom réel par [PRÉNOM]', () => {
+            expect(PromptService.extractOpeningSnippet('Camille réalise un très bon trimestre. Bravo !', 'Camille'))
+                .toBe('[PRÉNOM] réalise un très bon');
+            expect(PromptService.extractOpeningSnippet('[PRÉNOM] progresse nettement, poursuivez ainsi.', 'Léo'))
+                .toBe('[PRÉNOM] progresse nettement, poursuivez ainsi');
+            expect(PromptService.extractOpeningSnippet('Très bien.', 'Léo')).toBe('Très bien');
+            expect(PromptService.extractOpeningSnippet('Bravo.', 'Léo')).toBe('');
+        });
+
+        it('maintient une fenêtre glissante dédupliquée de 5 amorces maximum', () => {
+            const list = [];
+            for (let i = 1; i <= 7; i++) {
+                PromptService.pushOpeningSnippet(list, `Amorce numéro ${i}`);
+            }
+            expect(list).toHaveLength(5);
+            expect(list[0]).toBe('Amorce numéro 3');
+            expect(list[4]).toBe('Amorce numéro 7');
+
+            PromptService.pushOpeningSnippet(list, 'amorce numéro 4');
+            expect(list).toHaveLength(5);
+            expect(list[4]).toBe('amorce numéro 4');
+        });
+
+        it('injecte recentOpenings dans le prompt système sans modifier getPromptHash()', () => {
+            const hashBefore = PromptService.getPromptHash(sampleStudent);
+            const promptsWithout = PromptService.getAllPrompts(sampleStudent);
+            const promptsWith = PromptService.getAllPrompts(sampleStudent, null, false, {
+                recentOpenings: ['[PRÉNOM] réalise un trimestre sérieux', 'Un très bon trimestre pour']
+            });
+            const hashAfter = PromptService.getPromptHash(sampleStudent);
+
+            expect(promptsWithout.appreciationSystem).not.toContain('Varie l\'amorce');
+            expect(promptsWith.appreciationSystem).toContain('Varie l\'amorce de ta première phrase');
+            expect(promptsWith.appreciationSystem).toContain('« [PRÉNOM] réalise un trimestre sérieux »');
+            expect(hashAfter).toBe(hashBefore);
+        });
+    });
+
+    describe('_extractJournalSynthesis — étanchéité mode Hors IA', () => {
+        it('ne transmet aucune note rédigée quand la classe ou le réglage global est en mode Hors IA', () => {
+            const prevClasses = appState.classes;
+            const prevClassId = appState.currentClassId;
+            const prevInclude = appState.journalIncludeInAI;
+
+            try {
+                appState.classes = [
+                    { id: 'c-private', name: '3A', journalIncludeInAI: false },
+                    { id: 'c-active', name: '3B', journalIncludeInAI: true }
+                ];
+                appState.currentClassId = 'c-private';
+                appState.journalIncludeInAI = true;
+
+                const privateStudent = {
+                    id: 'stu-priv',
+                    classId: 'c-private',
+                    journal: [
+                        { id: 'j1', period: 'T1', tags: ['bavardage'], note: 'Note confidentielle prof' },
+                        { id: 'j2', period: 'T1', tags: ['bavardage'], note: '' }
+                    ]
+                };
+                const activeStudent = {
+                    id: 'stu-act',
+                    classId: 'c-active',
+                    journal: [
+                        { id: 'j3', period: 'T1', tags: ['participation+'], note: 'Très pertinent à l\'oral' }
+                    ]
+                };
+
+                // Mode Hors IA classe : aucune fuite via le fallback studentData.journal
+                expect(PromptService._extractJournalSynthesis(privateStudent, 'T1')).toBe('');
+                // Classe active : note rédigée transmise normalement
+                expect(PromptService._extractJournalSynthesis(activeStudent, 'T1')).toContain('Très pertinent à l\'oral');
+
+                // Mode Hors IA global sans classId
+                appState.currentClassId = null;
+                appState.journalIncludeInAI = false;
+                expect(PromptService._extractJournalSynthesis({ journal: privateStudent.journal }, 'T1')).toBe('');
+            } finally {
+                appState.classes = prevClasses;
+                appState.currentClassId = prevClassId;
+                appState.journalIncludeInAI = prevInclude;
+            }
         });
     });
 });

@@ -1033,11 +1033,11 @@ export const SeatingMobileSheet = {
                     </button>
                     <button type="button" class="sc-onboarding-btn secondary" id="scHintRandomBtn">
                         <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                        <span>Mélanger (regroupé)</span>
+                        <span>Aléatoire (vers l'avant)</span>
                     </button>
                     <button type="button" class="sc-onboarding-btn secondary" id="scHintDisperseBtn">
                         <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
-                        <span>Disperser (toute la salle)</span>
+                        <span>Disperser (espacement max.)</span>
                     </button>
                     <div class="sc-onboarding-footer-links">
                         <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">

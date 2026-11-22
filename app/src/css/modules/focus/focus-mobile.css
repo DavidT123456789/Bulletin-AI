@@ -418,7 +418,6 @@
 
     .focus-appreciation-header .history-navigation-group {
         height: 24px;
-        padding: 1px 2px;
     }
 
     .focus-appreciation-header .history-nav-btn {
@@ -436,7 +435,7 @@
     .focus-appreciation-header .history-indicator-btn {
         height: 20px;
         padding: 0 4px;
-        font-size: 10.5px;
+        font-size: 11px;
     }
 
     .focus-appreciation-header .ai-indicator {
@@ -451,18 +450,23 @@
         line-height: 1.5;
     }
 
-    /* Refinement buttons: Horizontal scroll */
+    /* Refinement buttons: 2x2 balanced wrap on mobile (works with inline display:flex, 44px touch targets) */
     .focus-refinement-options {
+        flex-wrap: wrap;
+        overflow-x: visible;
         margin: 2px 0 0;
-        padding: 0 14px 10px;
+        padding: 0 14px 12px;
         gap: 6px;
     }
 
     .focus-refinement-options .btn {
+        flex: 1 1 calc(50% - 3px);
+        min-width: 0;
         font-size: 12px;
-        padding: 8px 12px;
-        min-height: 40px;
+        padding: 8px 10px;
+        min-height: 44px;
         height: auto;
+        justify-content: center;
     }
 
     /* Inline appreciation actions — mobile */
@@ -505,7 +509,8 @@
 
     /* Preserve generous name space inside the single-row scrolled pill */
     .focus-header.scrolled:not(.editing) .focus-nav-buttons,
-    .focus-header.scrolled:not(.editing) .focus-origin-class-badge {
+    .focus-header.scrolled:not(.editing) .focus-origin-class-badge,
+    #focusWordCount .word-count-unit {
         display: none;
     }
 }

@@ -290,6 +290,23 @@ export const JournalManager = {
     },
 
     /**
+     * Check whether journal entries are transmitted to AI for a class (or globally)
+     * When false, the journal works as a purely personal notepad.
+     * @param {string|null} [classId=null] - Optional class ID
+     * @returns {boolean} True if journal is included in AI prompts (default true)
+     */
+    isIncludedInAI(classId = null) {
+        const targetClassId = classId || appState.currentClassId;
+        if (targetClassId) {
+            const classObj = appState.classes?.find(c => c.id === targetClassId);
+            if (classObj && classObj.journalIncludeInAI !== undefined) {
+                return classObj.journalIncludeInAI !== false;
+            }
+        }
+        return appState.journalIncludeInAI !== false;
+    },
+
+    /**
      * Resolve period journal entries and classId for a student ID or student object
      * @param {string|Object} studentOrId - Student ID or student object ({ id, classId, journal })
      * @param {string|null} [period=null] - Period filter
@@ -319,7 +336,7 @@ export const JournalManager = {
      */
     getSignificantTagIds(studentOrId, period = null) {
         const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
-        if (entries.length === 0) return [];
+        if (entries.length === 0 || !this.isIncludedInAI(classId)) return [];
         const threshold = this.getThreshold(classId);
         const tagCounts = this.countTags(entries);
         return Object.entries(tagCounts)
@@ -330,15 +347,17 @@ export const JournalManager = {
 
     /**
      * Synthesize journal entries for prompt injection
-     * Creates a compact summary suitable for the AI prompt
-     * Only includes tags that meet the threshold (default 2)
+     * Creates a compact summary suitable for the AI prompt.
+     * - Returns '' when journal is set to personal notepad mode (Hors IA).
+     * - Tag-only entries require meeting the threshold (default 2).
+     * - Written notes (entry.note.trim().length > 0) are ALWAYS included (up to 3 most recent).
      * @param {string|Object} studentId - Student ID or student object
      * @param {string} [period] - Optional period filter (defaults to active period)
-     * @returns {string} Synthesized text for prompt (empty if no entries)
+     * @returns {string} Synthesized text for prompt (empty if no entries or Hors IA)
      */
     synthesizeForPrompt(studentId, period = null) {
-        const { entries } = this._resolveStudentPeriodEntries(studentId, period);
-        if (entries.length === 0) return '';
+        const { entries, classId } = this._resolveStudentPeriodEntries(studentId, period);
+        if (entries.length === 0 || !this.isIncludedInAI(classId)) return '';
 
         const significantTagIdsList = this.getSignificantTagIds(studentId, period).slice(0, 5);
         const parts = [];
@@ -351,33 +370,48 @@ export const JournalManager = {
             parts.push(`Observations: ${tagLabels.join(', ')}`);
         }
 
-        // Include recent notes only from entries with significant tags
-        const significantTagIds = new Set(significantTagIdsList);
-        const significantNotes = entries
-            .filter(e => e.note && e.note.length > 0 && Array.isArray(e.tags) && e.tags.some(t => significantTagIds.has(t)))
+        // Always include written notes (up to 3 most recent), regardless of tag threshold.
+        // If an entry carries an explicit tag (not generic 'remarque') below threshold, prefix its label so AI keeps the context.
+        const significantSet = new Set(significantTagIdsList);
+        const writtenNotes = entries
+            .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
             .slice(-3)
-            .map(e => `"${e.note}"`)
+            .map(e => {
+                const text = e.note.trim();
+                const extraTags = (Array.isArray(e.tags) ? e.tags : [])
+                    .filter(tagId => tagId && tagId !== 'remarque' && !significantSet.has(tagId))
+                    .map(tagId => this.getTag(tagId)?.label || tagId);
+                return extraTags.length > 0
+                    ? `"[${extraTags.join(', ')}] ${text}"`
+                    : `"${text}"`;
+            })
             .join(' | ');
 
-        if (significantNotes) {
-            parts.push(`Notes: ${significantNotes}`);
+        if (writtenNotes) {
+            parts.push(`Notes: ${writtenNotes}`);
         }
 
         return parts.join('. ');
     },
 
     /**
-     * Check if an entry is "isolated" (all its tags are below threshold)
-     * Used for visual feedback - isolated entries won't influence AI
+     * Check if an entry is "isolated" (tag-only entry whose tags are all below threshold)
+     * Written notes and entries in personal notepad mode (Hors IA) are never dimmed as isolated.
      * @param {Object} entry - Journal entry object
      * @param {Object} tagCounts - Pre-computed tag counts { tagId: count }
      * @param {number} [threshold] - Threshold value (optional, computed if not provided)
-     * @returns {boolean} True if ALL tags in entry are below threshold
+     * @param {string|null} [classId=null] - Optional class ID
+     * @returns {boolean} True if tag-only entry is below threshold and AI transmission is active
      */
-    isEntryIsolated(entry, tagCounts, threshold = null) {
-        const limit = threshold ?? this.getThreshold(appState.currentClassId);
-        // Entry is isolated if ALL its tags are below limit
-        return entry.tags.every(tagId => (tagCounts[tagId] || 0) < limit);
+    isEntryIsolated(entry, tagCounts, threshold = null, classId = null) {
+        if (!entry || !this.isIncludedInAI(classId)) return false;
+        // Written observations are always transmitted to AI -> never isolated
+        if (typeof entry.note === 'string' && entry.note.trim().length > 0) return false;
+        const limit = threshold ?? this.getThreshold(classId || appState.currentClassId);
+        // Tag-only entry is isolated if ALL its tags are below limit
+        const tags = Array.isArray(entry.tags) ? entry.tags : [];
+        if (tags.length === 0) return false;
+        return tags.every(tagId => (tagCounts[tagId] || 0) < limit);
     },
 
     /**
@@ -402,6 +436,73 @@ export const JournalManager = {
     },
 
     /**
+     * Render a single journal entry card HTML (shared by renderTimeline & inline edit crossfade)
+     * @param {Object} entry - Journal entry
+     * @param {Object} tagCounts - Pre-computed tag counts
+     * @param {number} threshold - Active threshold
+     * @param {string|null} [classId=null] - Student class ID
+     * @param {string} [extraClass=''] - Optional animation/extra CSS class
+     * @returns {string} HTML string
+     */
+    renderEntryCard(entry, tagCounts, threshold, classId = null, extraClass = '') {
+        const tagsHTML = (Array.isArray(entry.tags) ? entry.tags : []).map(tagId => {
+            const tag = this.getTag(tagId);
+            if (!tag) return '';
+            return `<span class="journal-tag" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
+                <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
+            </span>`;
+        }).join('');
+
+        const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
+        const isolatedClass = isIsolated ? 'isolated' : '';
+
+        const infoIcon = isIsolated
+            ? `<span class="journal-entry-info tooltip" data-tooltip="Tag isolé (&lt; ${threshold}×) — non transmis à l'IA (ajoutez une note ou répétez)"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
+            : '';
+
+        const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
+
+        return `
+            <div class="journal-entry ${extraClass} ${isolatedClass}" data-entry-id="${safeEntryId}">
+                <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
+                <div class="journal-entry-content">
+                    <div class="journal-entry-tags">
+                        ${tagsHTML}
+                        ${infoIcon}
+                    </div>
+                    ${entry.note ? `<div class="journal-entry-note">${Utils.escapeHtml(entry.note)}</div>` : ''}
+                </div>
+                <div class="journal-entry-actions">
+                    <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${safeEntryId}" aria-label="Modifier l'observation" data-tooltip="Modifier">
+                        <iconify-icon icon="solar:pen-linear"></iconify-icon>
+                    </button>
+                    <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${safeEntryId}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
+                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Get empty-state title and subtitle for a class & period (SSOT)
+     * @param {string|null} [classId=null]
+     * @param {string|null} [period=null]
+     * @returns {{ title: string, subtitle: string }}
+     */
+    getEmptyStateCopy(classId = null, period = null) {
+        const targetPeriod = period || appState.currentPeriod;
+        const periodLabel = targetPeriod ? Utils.getPeriodLabel(targetPeriod, false) : '';
+        const title = periodLabel
+            ? `Aucune observation pour le ${periodLabel}`
+            : 'Aucune observation pour cette période';
+        const subtitle = this.isIncludedInAI(classId)
+            ? 'Faits datés au fil de la période (notes rédigées et tags répétés transmis à l\'IA)'
+            : 'Mode bloc-notes personnel (non transmis à l\'IA)';
+        return { title, subtitle };
+    },
+
+    /**
      * Render journal timeline HTML for Focus Panel
      * @param {string} studentId - Student ID
      * @param {string} [period] - Optional period filter
@@ -414,16 +515,16 @@ export const JournalManager = {
             ? this.getEntriesForPeriod(studentId, targetPeriod)
             : this.getEntries(studentId));
 
+        const student = Array.isArray(studentId) ? null : appState.generatedResults?.find(s => s.id === studentId);
+        const classId = student?.classId || null;
+
         if (entries.length === 0) {
-            const periodLabel = targetPeriod ? Utils.getPeriodLabel(targetPeriod, false) : '';
-            const emptyTitle = periodLabel
-                ? `Aucune observation pour le ${periodLabel}`
-                : 'Aucune observation pour cette période';
+            const { title: emptyTitle, subtitle: emptySubtitle } = this.getEmptyStateCopy(classId, targetPeriod);
             return `
                 <div class="journal-empty journal-empty-interactive" role="button" tabindex="0" aria-label="Ajouter une observation">
                     <div class="journal-empty-content">
                         <span class="journal-empty-title">${emptyTitle}</span>
-                        <span class="journal-empty-subtitle">Consignez des faits marquants pour guider l'IA</span>
+                        <span class="journal-empty-subtitle">${emptySubtitle}</span>
                     </div>
                     <span class="journal-empty-cta-badge">
                         <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
@@ -435,9 +536,7 @@ export const JournalManager = {
 
         // Compute tag counts for threshold check (visual feedback)
         const tagCounts = this.countTags(studentId, period);
-        // Find Class ID for student
-        const student = appState.generatedResults?.find(s => s.id === studentId);
-        const threshold = this.getThreshold(student?.classId);
+        const threshold = this.getThreshold(classId);
 
         // Sort by date (newest first)
         const sortedEntries = [...entries].sort((a, b) =>
@@ -450,46 +549,8 @@ export const JournalManager = {
                 return this.renderDraftPreview(entry);
             }
 
-            // OTHERWISE: Render Standard Card
-            const tagsHTML = entry.tags.map(tagId => {
-                const tag = this.getTag(tagId);
-                if (!tag) return '';
-                return `<span class="journal-tag" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
-                    <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
-                </span>`;
-            }).join('');
-
             const animationClass = entry.id === highlightEntryId ? 'enter' : '';
-            const isIsolated = this.isEntryIsolated(entry, tagCounts);
-            const isolatedClass = isIsolated ? 'isolated' : '';
-
-            // New design: Tooltip is only on the small 'i' icon, not the whole row
-            const infoIcon = isIsolated
-                ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
-                : '';
-
-            const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
-
-            return `
-                <div class="journal-entry ${animationClass} ${isolatedClass}" data-entry-id="${safeEntryId}">
-                    <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
-                    <div class="journal-entry-content">
-                        <div class="journal-entry-tags">
-                            ${tagsHTML}
-                            ${infoIcon}
-                        </div>
-                        ${entry.note ? `<div class="journal-entry-note">${Utils.escapeHtml(entry.note)}</div>` : ''}
-                    </div>
-                    <div class="journal-entry-actions">
-                        <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${safeEntryId}" aria-label="Modifier l'observation" data-tooltip="Modifier">
-                            <iconify-icon icon="solar:pen-linear"></iconify-icon>
-                        </button>
-                        <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${safeEntryId}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
-                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
-                        </button>
-                    </div>
-                </div>
-            `;
+            return this.renderEntryCard(entry, tagCounts, threshold, classId, animationClass);
         }).join('');
 
         return `<div class="journal-timeline">${entriesHTML}</div>`;
@@ -501,35 +562,19 @@ export const JournalManager = {
      * @returns {string} HTML string
      */
     renderDraftPreview(entry = null) {
-        // Mode detection
         const isEdit = !!entry;
         const noteValue = isEdit ? (entry.note || '') : '';
         const dateStr = isEdit ? entry.date : new Date().toISOString();
         const formattedDate = this.formatDate(dateStr);
-
-        // Header Label
         const labelText = isEdit ? 'Modifier l\'observation' : 'Nouvelle observation';
 
-        // Pre-render selected tags if editing
-        let chipsHTML = '';
-        if (isEdit && entry.tags) {
-            chipsHTML = entry.tags.map(tagId => {
-                const tag = this.getTag(tagId);
-                if (!tag) return '';
-                return `
-                    <span class="journal-selected-chip" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}" data-tag-id="${tagId}">
-                        <iconify-icon icon="${tag.icon}"></iconify-icon>
-                        <span>${tag.label}</span>
-                        <button type="button" class="journal-chip-remove" aria-label="Retirer ${tag.label}">
-                            <iconify-icon icon="ph:x"></iconify-icon>
-                        </button>
-                    </span>
-                `;
-            }).join('');
-        }
+        const selectedTags = isEdit && Array.isArray(entry.tags)
+            ? entry.tags.filter(tagId => tagId !== 'remarque')
+            : [];
+        const canSave = isEdit && (selectedTags.length > 0 || noteValue.trim().length > 0);
+        const showCharCount = noteValue.length >= 200;
 
-        // Render pill buttons for tag selection
-        const pillButtonsHTML = this.renderTagPillButtons();
+        const pillButtonsHTML = this.renderTagPillButtons(selectedTags);
 
         return `
             <div class="journal-draft-preview ${isEdit ? 'visible is-editing' : ''}" id="journalDraftPreview">
@@ -547,29 +592,20 @@ export const JournalManager = {
                             </svg>
                         </button>
                     </div>
-                    <button type="button" class="close-button journal-draft-close-btn" id="journalDraftCancelBtn" aria-label="Fermer">
-                        <iconify-icon icon="ph:x"></iconify-icon>
-                    </button>
                 </div>
 
                 <div class="journal-draft-pills-row">
-                    <div class="journal-draft-pills" id="journalDraftPills">
+                    <div class="journal-draft-pills" id="journalDraftPills" role="group" aria-label="Tags d'observation">
                         ${pillButtonsHTML}
                     </div>
                 </div>
 
-                <div class="journal-draft-chips-row" id="journalSelectedTagsRow">
-                    <div class="journal-selected-tags" id="journalSelectedTags">
-                        ${chipsHTML}
-                    </div>
-                </div>
-
                 <div class="journal-draft-input-wrap">
-                    <textarea class="journal-note-input" id="journalNoteInput" 
-                        placeholder="Précision ou contexte (optionnel)..." 
+                    <textarea class="journal-note-input" id="journalNoteInput"
+                        placeholder="Précision ou contexte (optionnel)..."
                         rows="2" maxlength="280">${Utils.escapeHtml(noteValue)}</textarea>
                     <div class="journal-input-footer">
-                        <span class="journal-char-count"><span id="journalCharCount">${noteValue.length}</span>/280</span>
+                        <span class="journal-char-count${showCharCount ? ' is-visible' : ''}"><span id="journalCharCount">${noteValue.length}</span>/280</span>
                     </div>
                 </div>
 
@@ -577,7 +613,7 @@ export const JournalManager = {
                     <button type="button" class="journal-footer-btn journal-cancel-btn" id="journalDraftCancelFooterBtn">
                         Annuler
                     </button>
-                    <button type="button" class="journal-footer-btn journal-save-btn" id="journalDraftSaveBtn" ${isEdit ? '' : 'disabled'}>
+                    <button type="button" class="journal-footer-btn journal-save-btn" id="journalDraftSaveBtn" ${canSave ? '' : 'disabled'}>
                         <span>${isEdit ? 'Mettre à jour' : 'Enregistrer'}</span>
                     </button>
                 </div>
@@ -586,48 +622,35 @@ export const JournalManager = {
     },
 
     /**
-     * Render pill buttons with dropdowns for tag selection (inside draft)
+     * Render flat direct-toggle pill buttons grouped by polarity (positive vs vigilance)
+     * Excludes 'remarque' which is assigned automatically when saving a text-only note.
+     * @param {string[]} [selectedTagIds=[]] - Tag IDs pre-selected in edit mode
      * @returns {string} HTML string
      */
-    renderTagPillButtons() {
+    renderTagPillButtons(selectedTagIds = []) {
+        const selectedSet = new Set(Array.isArray(selectedTagIds) ? selectedTagIds : []);
         const positiveTags = this.tags.filter(t => t.category === 'positive');
-        const negativeTags = this.tags.filter(t => t.category === 'negative');
-        const neutralTags = this.tags.filter(t => t.category === 'neutral');
+        const vigilanceTags = this.tags.filter(t => t.category !== 'positive' && t.id !== 'remarque');
 
-        const renderPillDropdown = (category, label, icon, tags, color, ink) => {
-            const optionsHTML = tags.map(tag => `
-                <button type="button" class="journal-dropdown-option" data-tag-id="${tag.id}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
-                    <iconify-icon icon="${tag.icon}"></iconify-icon>
+        const renderPill = (tag) => {
+            const isSelected = selectedSet.has(tag.id);
+            return `
+                <button type="button" class="journal-pill-btn journal-pill-direct${isSelected ? ' selected' : ''}"
+                    data-tag-id="${tag.id}" aria-pressed="${isSelected ? 'true' : 'false'}"
+                    style="--pill-color: ${tag.color}; --pill-ink: ${tag.ink}">
+                    <iconify-icon icon="${tag.icon}" aria-hidden="true"></iconify-icon>
                     <span>${tag.label}</span>
                 </button>
-            `).join('');
-
-            return `
-                <div class="journal-pill-dropdown" data-category="${category}">
-                    <button type="button" class="journal-pill-btn" style="--pill-color: ${color}; --pill-ink: ${ink}">
-                        <iconify-icon icon="${icon}"></iconify-icon>
-                        <span>${label}</span>
-                        <iconify-icon icon="solar:alt-arrow-down-linear" class="journal-pill-arrow"></iconify-icon>
-                    </button>
-                    <div class="journal-pill-menu">
-                        ${optionsHTML}
-                    </div>
-                </div>
             `;
         };
 
-        // Neutral tags are rendered as direct buttons (no dropdown)
-        const neutralBtnsHTML = neutralTags.map(tag => `
-            <button type="button" class="journal-pill-btn journal-pill-direct" data-tag-id="${tag.id}" style="--pill-color: ${tag.color}; --pill-ink: ${tag.ink}">
-                <iconify-icon icon="${tag.icon}"></iconify-icon>
-                <span>${tag.label}</span>
-            </button>
-        `).join('');
-
         return `
-            ${renderPillDropdown('positive', 'Positif', 'ph:plus', positiveTags, 'var(--success-color)', 'var(--success-text)')}
-            ${renderPillDropdown('negative', 'Négatif', 'ph:minus', negativeTags, 'var(--error-color)', 'var(--error-text)')}
-            ${neutralBtnsHTML}
+            <div class="journal-pills-group" data-polarity="positive">
+                ${positiveTags.map(renderPill).join('')}
+            </div>
+            <div class="journal-pills-group" data-polarity="vigilance">
+                ${vigilanceTags.map(renderPill).join('')}
+            </div>
         `;
     },
 

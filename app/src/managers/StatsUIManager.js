@@ -13,6 +13,7 @@ import { appState } from '../state/State.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { StatsService } from '../services/StatsService.js';
+import { PromptService } from '../services/PromptService.js';
 import { SettingsModalListeners } from './listeners/SettingsModalListeners.js';
 import { UI } from './UIManager.js';
 import { GRADE_BRACKET_IDS, GRADE_BRACKET_CLASSES } from '../config/academicConstants.js';
@@ -450,13 +451,15 @@ export const StatsUI = {
         if (avgWordsEl) {
             avgWordsEl.style.display = stats.avgWords > 0 ? 'inline-flex' : 'none';
             if (stats.avgWords > 0) {
-                const currentVal = parseInt(avgWordsEl.textContent.replace('Ø ', '')) || 0;
+                const currentVal = parseInt(avgWordsEl.textContent.replace(/[^\d]/g, ''), 10) || 0;
                 if (currentVal !== stats.avgWords) {
-                    animationPromises.push(this.animateNumberWithText(avgWordsEl, currentVal, stats.avgWords, 500, (val) => `Ø ${val} mot${val > 1 ? 's' : ''}`));
+                    animationPromises.push(this.animateNumberWithText(avgWordsEl, currentVal, stats.avgWords, 500, (val) => `~ ${val} mot${val > 1 ? 's' : ''}`));
                 }
-                // Update tooltip with richer info: avg chars + target words
+                // Update tooltip with richer info: avg chars + target words (+ active char limit)
                 const targetWords = appState.subjects?.['MonStyle']?.iaConfig?.length || 60;
-                avgWordsEl.setAttribute('data-tooltip', `Ø ${stats.avgWords} mot${stats.avgWords > 1 ? 's' : ''} (${stats.avgChars} car.)<br>Cible : ${targetWords} mots<br><span class="kbd-hint">Modifier</span>`);
+                const activeMaxChars = PromptService.getActiveMaxChars?.() ?? null;
+                const limitSuffix = activeMaxChars ? ` • Limite : ${activeMaxChars} car.` : '';
+                avgWordsEl.setAttribute('data-tooltip', `Moyenne : ${stats.avgWords} mot${stats.avgWords > 1 ? 's' : ''} (${stats.avgChars} car.)<br>Cible : ${targetWords} mots${limitSuffix}<br><span class="kbd-hint">Modifier</span>`);
                 avgWordsEl.classList.add('tooltip', 'clickable-chip');
                 avgWordsEl.style.cursor = 'pointer';
 

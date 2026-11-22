@@ -383,7 +383,6 @@ export const StudentDataManager = {
         existingResult.errorPeriod = newResult.errorPeriod ?? (newResult.errorMessage ? appState.currentPeriod : null);
         existingResult.timestamp = newResult.timestamp;
         existingResult.tokenUsage = newResult.tokenUsage;
-        existingResult.copied = false;
         existingResult.wasGenerated = newResult.wasGenerated;
         existingResult.isPending = false;
         existingResult.generationSnapshot = newResult.generationSnapshot;
@@ -409,6 +408,8 @@ export const StudentDataManager = {
             existingResult.studentData.prompts = newResult.studentData.prompts;
             existingResult.studentData.statuses = newResult.studentData.statuses;
         }
+        const targetPeriod = newResult.generationPeriod || newResult.studentData?.currentPeriod || appState.currentPeriod;
+        Utils.setAppreciationCopied(existingResult, targetPeriod, false);
 
         // Restaurer les données utilisateur préservées
         existingResult.id = preserved.id;

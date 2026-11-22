@@ -767,7 +767,11 @@ export const UI = {
         }
         const orig = el.dataset.originalContent;
         const textContent = label || (orig.includes('Générer') || orig.includes('Régénérer') || orig.includes('Actualiser') ? 'Génération...' : '');
-        const isCancellable = options.canCancel ?? (el.id === 'focusGenerateBtn' || el.id === 'focusGenerateAnalysisBtn');
+        const isCancellable = options.canCancel ?? (
+            el.id === 'focusGenerateBtn' ||
+            el.id === 'focusGenerateAnalysisBtn' ||
+            el.id === 'generateSynthesisBtn'
+        );
 
         if (isCancellable) {
             el.innerHTML = `${Utils.getStopSquareHTML(13)}<span>Annuler</span>`;
@@ -1138,12 +1142,17 @@ export const UI = {
         }
         return true;
     },
-    updateWordCount(id, text) {
+    updateWordCount(id, text, maxChars = null) {
         const el = document.getElementById(id);
         if (el) {
             const wordCount = Utils.countWords(text);
             const charCount = Utils.countCharacters(text);
-            el.textContent = `${wordCount} mot${wordCount > 1 ? 's' : ''} • ${charCount} car.`;
+            const { limit, state } = Utils.getCharLimitState?.(charCount, maxChars) || { limit: null, state: 'none' };
+            el.classList?.toggle('is-limit-near', state === 'near');
+            el.classList?.toggle('is-limit-over', state === 'over');
+            el.textContent = limit
+                ? `${wordCount} mot${wordCount > 1 ? 's' : ''} • ${charCount}/${limit} car.`
+                : `${wordCount} mot${wordCount > 1 ? 's' : ''} • ${charCount} car.`;
         }
     },
 
@@ -1185,6 +1194,18 @@ export const UI = {
 
             // Determine target element (closest matching ancestor or element itself)
             const target = (parentSelector && element.closest(parentSelector)) || element;
+
+            // Déplier automatiquement l'accordéon des moteurs avancés si la cible s'y trouve
+            const advAccordion = target.closest('#advancedProvidersAccordion');
+            if (advAccordion) {
+                const advBody = document.getElementById('advancedProvidersBody');
+                const advBtn = document.getElementById('advancedProvidersToggleBtn');
+                if (advBody?.hidden) {
+                    advBody.hidden = false;
+                    advAccordion.classList.add('is-open');
+                    advBtn?.setAttribute('aria-expanded', 'true');
+                }
+            }
 
             // Scroll into view only when target is outside the visible area of its scroll container
             if (scrollIntoView) {

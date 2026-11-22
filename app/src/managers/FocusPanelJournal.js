@@ -132,37 +132,72 @@ export const FocusPanelJournal = {
                 }
             });
 
-            // Adjust buttons
-            thresholdControl.querySelectorAll('.threshold-adjust-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const delta = parseInt(btn.dataset.delta, 10);
-                    // Get current value via JournalManager (handles class vs global)
-                    const current = JournalManager.getThreshold();
-                    const newValue = Math.max(1, Math.min(5, current + delta)); // Clamp 1-5
+            const applyJournalAISetting = (updates) => {
+                const currentClassId = appState.currentClassId;
+                const currentClass = currentClassId ? ClassManager.getClassById(currentClassId) : null;
+                if (currentClass) {
+                    Object.assign(currentClass, updates);
+                } else {
+                    Object.assign(appState, updates);
+                }
 
-                    // SAVE: Update Class if selected, or global fallback
-                    const currentClassId = appState.currentClassId;
+                const studentId = this._getCurrentStudentId();
+                const result = appState.generatedResults.find(r => r.id === studentId);
+                if (result) {
+                    this.render(result);
+                } else {
+                    this._updateThresholdUI();
+                }
+
+                // Defer persistence, prompt-hash & background list refresh after paint so the toggle animates at 0ms
+                if (this._thresholdDeferredTimer) {
+                    clearTimeout(this._thresholdDeferredTimer);
+                }
+                this._pendingThresholdUpdates = {
+                    ...(this._pendingThresholdUpdates || {}),
+                    ...updates
+                };
+                const flushDeferred = () => {
+                    this._thresholdDeferredTimer = null;
+                    const pending = this._pendingThresholdUpdates;
+                    this._pendingThresholdUpdates = null;
+                    if (!pending) return;
+
                     if (currentClassId) {
-                        ClassManager.updateClass(currentClassId, { journalThreshold: newValue });
+                        ClassManager.updateClass(currentClassId, pending);
                     } else {
-                        appState.journalThreshold = newValue;
                         StorageManager.saveAppState();
                     }
-
-                    this._updateThresholdUI();
-
-                    // Re-render journal to update isolated states
-                    const studentId = this._getCurrentStudentId();
-                    const result = appState.generatedResults.find(r => r.id === studentId);
                     if (result) {
-                        this.render(result);
                         this._refreshStatus();
                     }
+                    bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, {
+                        newThreshold: JournalManager.getThreshold(),
+                        includeInAI: JournalManager.isIncludedInAI(),
+                        classId: currentClassId || null
+                    });
+                };
+                this._thresholdDeferredTimer = setTimeout(flushDeferred, 0);
+            };
 
-                    // CRITICAL: Threshold affects ALL students' dirty state
-                    // Emit global event to refresh entire list view
-                    bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, { newThreshold: newValue });
+            // AI Inclusion toggle ("Transmettre à l'IA" / Hors IA personal notepad mode)
+            const includeAIToggle = document.getElementById('journalIncludeAIToggle');
+            if (includeAIToggle) {
+                includeAIToggle.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    applyJournalAISetting({ journalIncludeInAI: Boolean(includeAIToggle.checked) });
+                });
+            }
+
+            // Threshold segmented buttons (1, 2, 3)
+            thresholdControl.querySelectorAll('.journal-threshold-option[data-threshold]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!JournalManager.isIncludedInAI()) return;
+                    const newValue = parseInt(btn.dataset.threshold, 10);
+                    if (Number.isNaN(newValue) || newValue < 1 || newValue > 3) return;
+                    if (newValue === JournalManager.getThreshold()) return;
+                    applyJournalAISetting({ journalThreshold: newValue });
                 });
             });
         }
@@ -238,12 +273,10 @@ export const FocusPanelJournal = {
         this._draftListenersAbortController = new AbortController();
         const { signal } = this._draftListenersAbortController;
 
-        const draftCancel = container.querySelector('#journalDraftCancelBtn');
         const draftCancelFooter = container.querySelector('#journalDraftCancelFooterBtn');
         const draftSave = container.querySelector('#journalDraftSaveBtn');
         const draftInput = container.querySelector('#journalNoteInput');
 
-        if (draftCancel) draftCancel.addEventListener('click', () => this.toggleQuickAdd(false), { signal });
         if (draftCancelFooter) draftCancelFooter.addEventListener('click', () => this.toggleQuickAdd(false), { signal });
 
         if (draftSave) {
@@ -258,8 +291,12 @@ export const FocusPanelJournal = {
 
         if (draftInput) {
             draftInput.addEventListener('input', () => {
+                const len = draftInput.value.length;
                 const charCount = container.querySelector('#journalCharCount');
-                if (charCount) charCount.textContent = draftInput.value.length;
+                if (charCount) {
+                    charCount.textContent = len;
+                    charCount.closest('.journal-char-count')?.classList.toggle('is-visible', len >= 200);
+                }
                 this._updateSaveButton();
             }, { signal });
             draftInput.addEventListener('keydown', (e) => {
@@ -318,7 +355,6 @@ export const FocusPanelJournal = {
             );
             this._setupDraftListeners(contentEl);
             this._setupDeleteHandlers(contentEl, result);
-            this._setupChipRemoveHandlers(contentEl);
             this._initTooltips(contentEl);
             this._updateCountBadge(result);
             return;
@@ -350,7 +386,12 @@ export const FocusPanelJournal = {
         const existingEmpty = timelineContainer.querySelector('.journal-empty');
 
         if (isNewEmpty && existingEmpty) {
-            // Stable empty state: keep DOM node intact to eliminate disappearance flicker and layout shift
+            // Keep DOM node intact (no flicker/layout shift) while keeping title/subtitle synced
+            const { title, subtitle } = JournalManager.getEmptyStateCopy(result.classId, appState.currentPeriod);
+            const titleEl = existingEmpty.querySelector('.journal-empty-title');
+            const subtitleEl = existingEmpty.querySelector('.journal-empty-subtitle');
+            if (titleEl && titleEl.textContent !== title) titleEl.textContent = title;
+            if (subtitleEl && subtitleEl.textContent !== subtitle) subtitleEl.textContent = subtitle;
         } else if (isNewEmpty) {
             TooltipsUI.cleanupTooltipsIn(timelineContainer);
             timelineContainer.innerHTML = JournalManager.renderTimeline(
@@ -373,7 +414,6 @@ export const FocusPanelJournal = {
             timelineEl?.classList.add('fade-in');
 
             this._setupDeleteHandlers(timelineContainer, result);
-            this._setupChipRemoveHandlers(timelineContainer);
             this._initTooltips(timelineContainer);
         }
 
@@ -497,28 +537,6 @@ export const FocusPanelJournal = {
     },
 
     /**
-     * Setup chip remove handlers
-     * @param {HTMLElement} contentEl - Content container
-     * @private
-     */
-    _setupChipRemoveHandlers(contentEl) {
-        contentEl.querySelectorAll('.journal-chip-remove').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const chip = btn.closest('.journal-selected-chip');
-                const tagId = chip?.dataset?.tagId;
-
-                if (tagId) {
-                    this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
-                }
-                chip?.remove();
-                this._updatePillDirectStates();
-                this._updateSaveButton();
-            });
-        });
-    },
-
-    /**
      * Update count badge with journal entry counts
      * @param {Object} result - Student result
      * @private
@@ -529,11 +547,12 @@ export const FocusPanelJournal = {
             const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod);
 
             if (aggregated.length > 0) {
-                const threshold = JournalManager.getThreshold();
+                const includeInAI = JournalManager.isIncludedInAI(result.classId);
+                const threshold = JournalManager.getThreshold(result.classId);
 
                 // Render detailed counts with icons using standard journal-tag class for consistency
                 const html = aggregated.map(item => {
-                    const isBelow = item.count < threshold;
+                    const isBelow = includeInAI && item.count < threshold;
                     const belowClass = isBelow ? 'below-threshold' : '';
                     const escapedLabel = Utils.escapeHtml(item.label);
                     return `
@@ -550,151 +569,124 @@ export const FocusPanelJournal = {
                 TooltipsUI.cleanupTooltipsIn(countBadge);
                 countBadge.innerHTML = '';
                 countBadge.classList.add('is-hidden');
-                this.closeThresholdPopover();
             }
         }
     },
 
     /**
-     * Handle tag selection from dropdown
-     * @param {string} tagId - ID of selected tag
-     * @param {HTMLElement} originElement - Element that triggered the selection
+     * Handle tag toggle from direct pill buttons
+     * @param {string} tagId - ID of toggled tag
      */
-    handleTagSelection(tagId, originElement) {
-        // Ensure editing mode is open
-        const section = document.getElementById('focusJournalSection');
-        if (!section?.classList.contains('editing')) {
-            // Force reset when opening from a fresh tag selection
-            this.toggleQuickAdd(true, true);
-            // Show draft preview immediately since we are adding a tag
-            const draftPreview = document.getElementById('journalDraftPreview');
-            if (draftPreview) {
-                draftPreview.classList.add('visible');
-                // Auto-scroll journal content to top to show draft
-                const journalContent = document.getElementById('focusJournalContent');
-                if (journalContent) {
-                    requestAnimationFrame(() => {
-                        journalContent.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-                }
-            }
-        }
+    handleTagSelection(tagId) {
+        if (!tagId || tagId === 'remarque') return;
 
-        const tag = JournalManager.getTag(tagId);
-
-        // If already selected: if it's a direct pill, toggle it off!
         if (this._selectedJournalTags.includes(tagId)) {
-            if (originElement?.classList?.contains('journal-pill-direct')) {
-                this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
-                const chipsContainer = document.getElementById('journalSelectedTags');
-                const existingChip = chipsContainer?.querySelector(`[data-tag-id="${tagId}"]`);
-                existingChip?.remove();
-                this._updatePillDirectStates();
-                this._updateSaveButton();
-                return;
-            }
-            originElement?.closest('.journal-pill-dropdown')?.classList.remove('open');
-            originElement?.closest('.journal-tag-dropdown')?.classList.remove('open');
-            return;
+            this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
+        } else {
+            this._selectedJournalTags.push(tagId);
         }
 
-        // Add to selection
-        this._selectedJournalTags.push(tagId);
-
-        // Add chip to display
-        const chipsContainer = document.getElementById('journalSelectedTags');
-        if (chipsContainer && tag) {
-            const chip = document.createElement('span');
-            chip.className = 'journal-selected-chip';
-            chip.style.setProperty('--tag-color', tag.color);
-            chip.style.setProperty('--tag-ink', tag.ink || tag.color);
-            chip.dataset.tagId = tagId;
-            chip.innerHTML = `
-                <iconify-icon icon="${tag.icon}"></iconify-icon>
-                <span>${tag.label}</span>
-                <button type="button" class="journal-chip-remove" aria-label="Retirer ${tag.label}">
-                    <iconify-icon icon="ph:x"></iconify-icon>
-                </button>
-            `;
-
-            // Remove handler
-            chip.querySelector('.journal-chip-remove').addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                this._selectedJournalTags = this._selectedJournalTags.filter(t => t !== tagId);
-                chip.remove();
-                this._updatePillDirectStates();
-                this._updateSaveButton();
-            });
-
-            chipsContainer.appendChild(chip);
-        }
-
-        // Close dropdown
-        originElement?.closest('.journal-pill-dropdown')?.classList.remove('open');
-        originElement?.closest('.journal-tag-dropdown')?.classList.remove('open');
         this._updatePillDirectStates();
         this._updateSaveButton();
-        this._updateDraftPreviewVisibility();
     },
 
     /**
-     * Update active visual state for direct pill buttons (Difficulté, Remarque) and dropdown triggers
+     * Update active visual & ARIA state for direct tag pill buttons
      * @private
      */
     _updatePillDirectStates() {
         const pillsContainer = document.getElementById('journalDraftPills');
         if (!pillsContainer) return;
 
-        // Direct pill buttons (Difficulté, Remarque)
         pillsContainer.querySelectorAll('.journal-pill-direct').forEach(btn => {
             const tagId = btn.dataset.tagId;
-            btn.classList.toggle('selected', this._selectedJournalTags.includes(tagId));
-        });
-
-        // Dropdown triggers (Positif, Négatif)
-        pillsContainer.querySelectorAll('.journal-pill-dropdown').forEach(dd => {
-            const category = dd.dataset.category;
-            const categoryTags = JournalManager.tags.filter(t => t.category === category).map(t => t.id);
-            const hasSelected = this._selectedJournalTags.some(t => categoryTags.includes(t));
-            dd.classList.toggle('has-selected', hasSelected);
+            const isSelected = this._selectedJournalTags.includes(tagId);
+            btn.classList.toggle('selected', isSelected);
+            btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
         });
     },
 
     /**
-     * Update threshold UI (button label + popover value)
+     * Update threshold & AI inclusion UI (button label, icon, scope, segmented control + popover state)
      * @private
      */
     _updateThresholdUI() {
         const threshold = JournalManager.getThreshold();
+        const includeInAI = JournalManager.isIncludedInAI();
         const currentClassId = appState.currentClassId;
         const currentClass = currentClassId ? ClassManager.getClassById(currentClassId) : null;
 
-        // Update button label
+        // Update button label & icon
         const btnValue = document.getElementById('journalThresholdValue');
         if (btnValue) {
-            btnValue.textContent = `≥${threshold}`;
+            btnValue.textContent = includeInAI ? `IA · ≥${threshold}` : 'Hors IA';
+        }
+        const btnIcon = document.getElementById('journalThresholdIcon');
+        if (btnIcon) {
+            btnIcon.setAttribute('icon', includeInAI ? 'solar:stars-minimalistic-linear' : 'solar:eye-closed-linear');
         }
 
-        // Update popover value
-        const popoverValue = document.getElementById('thresholdCurrentValue');
-        if (popoverValue) {
-            popoverValue.textContent = threshold;
+        // Update scope subtitle in popover
+        const scopeLabel = document.getElementById('journalThresholdScope');
+        if (scopeLabel) {
+            scopeLabel.textContent = currentClass ? `Classe : ${currentClass.name}` : 'Réglage global';
         }
 
-        // Update stepper bounds (- disabled at 1, + disabled at 5)
+        // Update AI toggle & segmented block state
+        const includeAIToggle = document.getElementById('journalIncludeAIToggle');
+        if (includeAIToggle) {
+            includeAIToggle.checked = includeInAI;
+        }
+        const stepperBlock = document.getElementById('journalThresholdStepperBlock');
+        if (stepperBlock) {
+            stepperBlock.classList.toggle('is-disabled', !includeInAI);
+        }
+        const aiOffHint = document.getElementById('journalAiOffHint');
+        if (aiOffHint) {
+            aiOffHint.classList.toggle('is-hidden', includeInAI);
+        }
+
+        // Update segmented control (1, 2, 3) & glider index
         const thresholdControl = document.getElementById('journalThresholdControl');
+        const segmented = document.getElementById('journalThresholdSegmented');
         if (thresholdControl) {
-            const decBtn = thresholdControl.querySelector('.threshold-adjust-btn[data-delta="-1"]');
-            const incBtn = thresholdControl.querySelector('.threshold-adjust-btn[data-delta="+1"]');
-            if (decBtn) decBtn.disabled = threshold <= 1;
-            if (incBtn) incBtn.disabled = threshold >= 5;
+            thresholdControl.classList.toggle('is-ai-excluded', !includeInAI);
+        }
+        if (segmented) {
+            const clampedIndex = Math.max(0, Math.min(2, threshold - 1));
+            segmented.dataset.activeIndex = String(clampedIndex);
+            segmented.querySelectorAll('.journal-threshold-option[data-threshold]').forEach(opt => {
+                const val = parseInt(opt.dataset.threshold, 10);
+                const isSelected = val === Math.max(1, Math.min(3, threshold));
+                opt.classList.toggle('active', isSelected);
+                opt.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+                opt.disabled = !includeInAI;
+            });
+        }
+
+        // Update dynamic contextual hint
+        const hintEl = document.getElementById('thresholdHintText');
+        if (hintEl) {
+            if (threshold <= 1) {
+                hintEl.textContent = 'Chaque tag et chaque note écrite est transmis à l\'IA.';
+            } else if (threshold === 2) {
+                hintEl.textContent = 'Tags répétés (≥2) et toutes les notes écrites transmis.';
+            } else if (threshold === 3) {
+                hintEl.textContent = 'Uniquement les tendances fréquentes (≥3) et notes écrites.';
+            } else {
+                hintEl.textContent = `Tags répétés (≥${threshold}) et toutes les notes écrites transmis.`;
+            }
         }
 
         // Update tooltip on button
         const btn = document.getElementById('journalThresholdBtn');
         if (btn) {
+            btn.classList.toggle('is-ai-excluded', !includeInAI);
             const contextLabel = currentClass ? `(Classe : ${currentClass.name})` : '(Global)';
-            btn.setAttribute('data-tooltip', `Seuil : ${threshold} ${contextLabel}<br><span class="kbd-hint">Modifier</span>`);
+            const tooltip = includeInAI
+                ? `Journal transmis à l'IA · Seuil ≥${threshold} ${contextLabel}<br><span class="kbd-hint">Notes écrites toujours incluses · Cliquer pour régler</span>`
+                : `Bloc-notes personnel (Hors IA) ${contextLabel}<br><span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
+            TooltipsUI.updateTooltip(btn, tooltip);
         }
     },
 
@@ -731,9 +723,10 @@ export const FocusPanelJournal = {
                     const noteInput = draft.querySelector('#journalNoteInput');
                     if (noteInput) noteInput.value = '';
                     const charCount = draft.querySelector('#journalCharCount');
-                    if (charCount) charCount.textContent = '0';
-                    const selectedTags = draft.querySelector('#journalSelectedTags');
-                    if (selectedTags) selectedTags.innerHTML = '';
+                    if (charCount) {
+                        charCount.textContent = '0';
+                        charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+                    }
                     const saveBtn = draft.querySelector('#journalDraftSaveBtn');
                     if (saveBtn) saveBtn.disabled = true;
                 }
@@ -749,43 +742,12 @@ export const FocusPanelJournal = {
                 if (editingId) {
                     const entry = JournalManager.getEntry(studentId, editingId);
                     if (entry) {
-                        // Build the original entry HTML to inject
+                        // Build the original entry HTML to inject via shared SSOT helper
+                        const currentStudent = getCurrentResult();
+                        const classId = currentStudent?.classId || null;
                         const tagCounts = JournalManager.countTags(studentId, appState.currentPeriod);
-                        const threshold = JournalManager.getThreshold();
-                        const isIsolated = JournalManager.isEntryIsolated(entry, tagCounts);
-
-                        const tagsHTML = entry.tags.map(tagId => {
-                            const tag = JournalManager.getTag(tagId);
-                            if (!tag) return '';
-                            return `<span class="journal-tag" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink || tag.color}">
-                            <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
-                            </span>`;
-                        }).join('');
-
-                        const infoIcon = isIsolated
-                            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (< ${threshold}×) — non transmise à l'IA"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
-                            : '';
-
-                        const entryHTML = `
-                            <div class="journal-entry crossfade-in ${isIsolated ? 'isolated' : ''}" data-entry-id="${entry.id}">
-                                <div class="journal-entry-date">${JournalManager.formatDate(entry.date)}</div>
-                                <div class="journal-entry-content">
-                                    <div class="journal-entry-tags">
-                                        ${tagsHTML}
-                                        ${infoIcon}
-                                    </div>
-                                    ${entry.note ? `<div class="journal-entry-note">${entry.note}</div>` : ''}
-                                </div>
-                                <div class="journal-entry-actions">
-                                    <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${entry.id}" aria-label="Modifier l'observation" data-tooltip="Modifier">
-                                        <iconify-icon icon="solar:pen-linear"></iconify-icon>
-                                    </button>
-                                    <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${entry.id}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
-                                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
+                        const threshold = JournalManager.getThreshold(classId);
+                        const entryHTML = JournalManager.renderEntryCard(entry, tagCounts, threshold, classId, 'crossfade-in');
 
                         // Inject the entry card at the same position as the draft
                         const entryWrapper = document.createElement('div');
@@ -830,12 +792,11 @@ export const FocusPanelJournal = {
                 if (headerTitleText) {
                     headerTitleText.textContent = 'Nouvelle observation';
                 }
-                const headerIcon = document.querySelector('.journal-draft-title iconify-icon');
-                if (headerIcon) {
-                    headerIcon.setAttribute('icon', 'solar:add-circle-linear');
-                }
                 const charCount = document.getElementById('journalCharCount');
-                if (charCount) charCount.textContent = '0';
+                if (charCount) {
+                    charCount.textContent = '0';
+                    charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+                }
 
                 if (noteInput) noteInput.value = '';
                 if (saveBtn) {
@@ -843,10 +804,6 @@ export const FocusPanelJournal = {
                     const saveBtnSpan = saveBtn.querySelector('span');
                     if (saveBtnSpan) saveBtnSpan.textContent = 'Enregistrer';
                 }
-
-                // Clear selected chips
-                const chipsContainer = document.getElementById('journalSelectedTags');
-                if (chipsContainer) chipsContainer.innerHTML = '';
 
                 this._updatePillDirectStates();
             }
@@ -856,29 +813,8 @@ export const FocusPanelJournal = {
             HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
         }
 
-        // Close any open dropdowns
-        document.querySelectorAll('.journal-tag-dropdown.open').forEach(d => d.classList.remove('open'));
-        document.querySelectorAll('.journal-pill-dropdown.open').forEach(d => d.classList.remove('open'));
-
         // Remove visual dimming from original entries
         document.querySelectorAll('.journal-entry.editing-original').forEach(el => el.classList.remove('editing-original'));
-    },
-
-    /**
-     * Ensure draft preview is visible when tags are selected
-     * @private
-     */
-    _updateDraftPreviewVisibility() {
-        const draftPreview = document.getElementById('journalDraftPreview');
-        if (!draftPreview) return;
-
-        // If tags are selected, ensure draft preview is visible.
-        // Never auto-hide when tags become empty: the user is in editing mode
-        // and may write a note or pick another tag.
-        if (this._selectedJournalTags.length > 0) {
-            draftPreview.classList.add('visible');
-            HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
-        }
     },
 
     /**
@@ -898,7 +834,7 @@ export const FocusPanelJournal = {
     },
 
     /**
-     * Setup pill button event handlers inside draft
+     * Setup flat direct-toggle pill button event handlers inside draft
      * @param {HTMLElement} container - The content container
      * @private
      */
@@ -908,56 +844,11 @@ export const FocusPanelJournal = {
 
         const listenerOpts = signal ? { signal } : undefined;
 
-        // Handle pill dropdown triggers
-        pillsContainer.querySelectorAll('.journal-pill-btn:not(.journal-pill-direct)').forEach(trigger => {
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const dropdown = trigger.closest('.journal-pill-dropdown');
-                const wasOpen = dropdown?.classList.contains('open');
-
-                // Close all dropdowns first
-                pillsContainer.querySelectorAll('.journal-pill-dropdown.open').forEach(dd => {
-                    dd.classList.remove('open');
-                });
-
-                // Toggle clicked dropdown
-                if (!wasOpen) {
-                    dropdown?.classList.add('open');
-
-                    // Show draft if not visible
-                    const draftPreview = document.getElementById('journalDraftPreview');
-                    draftPreview?.classList.add('visible');
-                    HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
-
-                    // Close on outside click
-                    const closeHandler = (ev) => {
-                        if (!dropdown?.contains(ev.target)) {
-                            dropdown?.classList.remove('open');
-                            document.removeEventListener('click', closeHandler);
-                        }
-                    };
-                    setTimeout(() => document.addEventListener('click', closeHandler), 0);
-                }
-            }, listenerOpts);
-        });
-
-        // Handle dropdown option clicks
-        pillsContainer.querySelectorAll('.journal-dropdown-option').forEach(option => {
-            option.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const tagId = option.dataset.tagId;
-                this.handleTagSelection(tagId, option);
-                // Close dropdown after selection
-                option.closest('.journal-pill-dropdown')?.classList.remove('open');
-            }, listenerOpts);
-        });
-
-        // Handle direct pill buttons (Difficulté, Remarque)
         pillsContainer.querySelectorAll('.journal-pill-direct').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const tagId = btn.dataset.tagId;
-                this.handleTagSelection(tagId, btn);
+                this.handleTagSelection(tagId);
             }, listenerOpts);
         });
     },
@@ -972,9 +863,9 @@ export const FocusPanelJournal = {
         const entry = JournalManager.getEntry(studentId, entryId);
         if (!entry) return;
 
-        // 1. Set editing state and sync tags
+        // 1. Set editing state and sync tags (exclude implicit 'remarque' auto-tag)
         this._editingJournalEntryId = entryId;
-        this._selectedJournalTags = [...entry.tags];
+        this._selectedJournalTags = (Array.isArray(entry.tags) ? entry.tags : []).filter(t => t !== 'remarque');
 
         // 2. Re-render journal to show inline editor
         const result = appState.generatedResults.find(r => r.id === studentId);
@@ -1068,9 +959,10 @@ export const FocusPanelJournal = {
                     const noteInput = draft.querySelector('#journalNoteInput');
                     if (noteInput) noteInput.value = '';
                     const charCount = draft.querySelector('#journalCharCount');
-                    if (charCount) charCount.textContent = '0';
-                    const selectedTags = draft.querySelector('#journalSelectedTags');
-                    if (selectedTags) selectedTags.innerHTML = '';
+                    if (charCount) {
+                        charCount.textContent = '0';
+                        charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+                    }
                     const saveBtn = draft.querySelector('#journalDraftSaveBtn');
                     if (saveBtn) saveBtn.disabled = true;
                 }

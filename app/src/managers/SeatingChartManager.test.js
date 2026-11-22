@@ -6013,6 +6013,7 @@ describe('SeatingChartManager - Menu contextuel clic droit, Mobile Sheet Élève
             const menu = document.getElementById('scContextMenu');
             const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
             expect(items.length).toBe(4); // Voir la fiche, Copier / Déplacer…, Effacer le contenu…, Retirer de PAPD
+            expect(menu.querySelector('.sc-ctx-quick-journal')).toBeNull();
 
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
             expect(document.activeElement).toBe(items[0]);
@@ -6319,5 +6320,209 @@ describe('SeatingChartManager - Menu contextuel clic droit, Mobile Sheet Élève
         expect(appState.seatingGrid.specialLayout['0,3']).toBeUndefined();
         expect(SeatingChartManager._getCellSpecial(0, 3)).toEqual({ type: 'aesh', scope: 'class' });
         document.body.innerHTML = '';
+    });
+
+    describe('Groupes équilibrés (par niveau) & Placement Intelligent (Journal)', () => {
+        it('répartit en serpentin des groupes équilibrés en mode Activité et exige ≥4 moyennes', () => {
+            const cls = ClassManager.createClass('5e Balanced');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.currentPeriod = 'T1';
+
+            const notifySpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+
+            // 1. Cas garde : moins de 4 moyennes -> notification informative, grille intacte
+            appState.generatedResults = [
+                { id: 'b1', nom: 'A', prenom: 'Un', classId: cls.id, studentData: { periods: { T1: { grade: 18 } } } },
+                { id: 'b2', nom: 'B', prenom: 'Deux', classId: cls.id, studentData: { periods: { T1: { grade: 14 } } } },
+                { id: 'b3', nom: 'C', prenom: 'Trois', classId: cls.id, studentData: { periods: { T1: { grade: 10 } } } },
+                { id: 'b4', nom: 'D', prenom: 'Quatre', classId: cls.id, studentData: { periods: { T1: { grade: null } } } }
+            ];
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._applyLockState(false, { skipSmartFit: true });
+
+            SeatingChartManager._autoPlace('groups-balanced');
+            expect(SeatingChartManager._getPlacedIds().size).toBe(0);
+            expect(notifySpy).toHaveBeenCalledWith(expect.stringContaining('au moins 4 moyennes'), 'info');
+
+            // 2. Cas nominal : 6 élèves notés -> 2 groupes de 3 équilibrés (serpentin)
+            const grades = [18, 17, 13, 12, 8, 7];
+            appState.generatedResults = grades.map((g, i) => ({
+                id: `g${i}`,
+                nom: `ELEVE${i}`,
+                prenom: `P${i}`,
+                classId: cls.id,
+                studentData: { periods: { T1: { grade: g } } }
+            }));
+            SeatingChartManager.refreshStudents();
+            SeatingChartManager._autoPlace('groups-balanced');
+
+            const placedStations = [];
+            for (let r = 0; r < SeatingChartManager._getRows(); r++) {
+                for (let c = 0; c < SeatingChartManager._getCols(); c++) {
+                    const ids = SeatingChartManager._getCellStudentIds(r, c);
+                    if (ids.length > 0) placedStations.push(ids);
+                }
+            }
+            expect(placedStations.length).toBe(2);
+            const avg = (ids) => ids.reduce((s, id) => s + appState.generatedResults.find(r => r.id === id).studentData.periods.T1.grade, 0) / ids.length;
+            // Serpentin sur [18, 17, 13, 12, 8, 7] => G0: [18, 12, 8] (12.67), G1: [17, 13, 7] (12.33) -> écart < 0.5 pt
+            expect(Math.abs(avg(placedStations[0]) - avg(placedStations[1]))).toBeLessThan(0.5);
+            notifySpy.mockRestore();
+        });
+
+        it('place les élèves avec dispositifs/difficultés au 1er rang et espace les bavards en mode smart-journal', () => {
+            const cls = ClassManager.createClass('4e Smart');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.currentPeriod = 'T1';
+            const notifySpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+
+            // 1. Aucun signal -> garde propre, pas de mélange factice
+            appState.generatedResults = [
+                { id: 'n1', nom: 'ALPHA', prenom: 'A', classId: cls.id, studentData: { statuses: [] }, journal: [] },
+                { id: 'n2', nom: 'BETA', prenom: 'B', classId: cls.id, studentData: { statuses: [] }, journal: [] }
+            ];
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._applyLockState(false, { skipSmartFit: true });
+
+            SeatingChartManager._autoPlace('smart-journal');
+            expect(SeatingChartManager._getPlacedIds().size).toBe(0);
+            expect(notifySpy).toHaveBeenCalledWith(expect.stringContaining('Aucun signal'), 'info');
+
+            // 2. Cas nominal : 1 élève PAP, 1 élève en difficulté, 2 bavards, 4 neutres sur grille 5×6
+            appState.generatedResults = [
+                { id: 'pap', nom: 'AIDE', prenom: 'Léo', classId: cls.id, studentData: { statuses: ['PAP'] }, journal: [] },
+                { id: 'diff', nom: 'DIFF', prenom: 'Mia', classId: cls.id, studentData: { statuses: [] }, journal: [{ period: 'T1', tags: ['difficulte'], note: '' }] },
+                { id: 'bav1', nom: 'BAVARD', prenom: 'Tom', classId: cls.id, studentData: { statuses: [] }, journal: [{ period: 'T1', tags: ['bavardage'], note: '' }] },
+                { id: 'bav2', nom: 'CAUSE', prenom: 'Max', classId: cls.id, studentData: { statuses: [] }, journal: [{ period: 'T1', tags: ['bavardage'], note: '' }] },
+                { id: 'o1', nom: 'CALME1', prenom: 'Eva', classId: cls.id, studentData: { statuses: [] }, journal: [] },
+                { id: 'o2', nom: 'CALME2', prenom: 'Noa', classId: cls.id, studentData: { statuses: [] }, journal: [] },
+                { id: 'o3', nom: 'CALME3', prenom: 'Zoé', classId: cls.id, studentData: { statuses: [] }, journal: [] },
+                { id: 'o4', nom: 'CALME4', prenom: 'Luc', classId: cls.id, studentData: { statuses: [] }, journal: [] }
+            ];
+            SeatingChartManager.refreshStudents();
+            SeatingChartManager._autoPlace('smart-journal');
+
+            const findPos = (id) => {
+                for (let r = 0; r < SeatingChartManager._getRows(); r++) {
+                    for (let c = 0; c < SeatingChartManager._getCols(); c++) {
+                        if (SeatingChartManager._getCellStudentIds(r, c).includes(id)) return { r, c };
+                    }
+                }
+                return null;
+            };
+
+            const lastRow = SeatingChartManager._getRows() - 1;
+            expect(findPos('pap').r).toBe(lastRow);
+            expect(findPos('diff').r).toBe(lastRow);
+
+            const pBav1 = findPos('bav1');
+            const pBav2 = findPos('bav2');
+            expect(pBav1).not.toBeNull();
+            expect(pBav2).not.toBeNull();
+            const chebyshevDist = Math.max(Math.abs(pBav1.r - pBav2.r), Math.abs(pBav1.c - pBav2.c));
+            expect(chebyshevDist).toBeGreaterThanOrEqual(2);
+            notifySpy.mockRestore();
+        });
+
+        it('pilote la taille (1..4) en mode Activité (binômes équilibrés, îlots voisins, garde 1/poste) et maximise l’espacement en mode random-disperse', () => {
+            const cls = ClassManager.createClass('3e Popover');
+            appState.currentClassId = cls.id;
+            userSettings.academic.currentClassId = cls.id;
+            appState.currentPeriod = 'T1';
+
+            const grades = [19, 16, 15, 11, 9, 6];
+            appState.generatedResults = grades.map((g, i) => ({
+                id: `p${i}`,
+                nom: `NOM${i}`,
+                prenom: `Prenom${i}`,
+                classId: cls.id,
+                seatingPosition: { row: 0, col: i },
+                studentData: { periods: { T1: { grade: g } } }
+            }));
+
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._applyLockState(false, { skipSmartFit: true });
+            SeatingChartManager._openPlacementPopover();
+
+            const popover = document.getElementById('scPlacementPopover');
+            expect(popover).not.toBeNull();
+
+            // 1. Par défaut sur plan vide : taille 2 (Binômes) active -> Équilibré forme 3 binômes équilibrés
+            const activePill = popover.querySelector('.sc-placement-size-pill.active');
+            expect(activePill?.dataset.groupSize).toBe('2');
+
+            popover.querySelector('.sc-popover-item[data-mode="groups-balanced"]')?.click();
+            const collectOccupiedStations = () => {
+                const stations = [];
+                for (let r = 0; r < SeatingChartManager._getRows(); r++) {
+                    for (let c = 0; c < SeatingChartManager._getCols(); c++) {
+                        const ids = SeatingChartManager._getCellStudentIds(r, c);
+                        if (ids.length > 0) stations.push(ids);
+                    }
+                }
+                return stations;
+            };
+            const pairsStations = collectOccupiedStations();
+            expect(pairsStations.length).toBe(3);
+            expect(pairsStations.every(ids => ids.length === 2)).toBe(true);
+
+            // 2. Sélectionner taille 3 + Voisins du cours -> 2 îlots de 3 voisins
+            SeatingChartManager._openPlacementPopover();
+            popover.querySelector('.sc-placement-size-pill[data-group-size="3"]')?.click();
+            popover.querySelector('.sc-popover-item[data-mode="pairs-neighbors"]')?.click();
+            const neighborIslands = collectOccupiedStations();
+            expect(neighborIslands.length).toBe(2);
+            expect(neighborIslands[0]).toEqual(['p0', 'p1', 'p2']);
+            expect(neighborIslands[1]).toEqual(['p3', 'p4', 'p5']);
+
+            // 3. Sélectionner taille 1 (1/poste) -> Équilibré et Voisins sont grisés avec tooltip et bloqués au clic
+            SeatingChartManager._openPlacementPopover();
+            popover.querySelector('.sc-placement-size-pill[data-group-size="1"]')?.click();
+            const balancedBtn = popover.querySelector('.sc-popover-item[data-mode="groups-balanced"]');
+            const neighborsBtn = popover.querySelector('.sc-popover-item[data-mode="pairs-neighbors"]');
+            expect(balancedBtn?.classList.contains('sc-popover-item-disabled')).toBe(true);
+            expect(balancedBtn?.getAttribute('aria-disabled')).toBe('true');
+            expect(balancedBtn?.getAttribute('data-tooltip')).toContain('2 élèves');
+            expect(neighborsBtn?.classList.contains('sc-popover-item-disabled')).toBe(true);
+
+            // Un clic sur l'action grisée ne ferme pas le popover et ne modifie pas le plan
+            balancedBtn?.click();
+            expect(SeatingChartManager._placementPopoverOpen).toBe(true);
+            expect(collectOccupiedStations().length).toBe(2);
+
+            // Un clic sur Alphabétique en taille 1 répartit bien 1 élève par poste (6 postes)
+            popover.querySelector('.sc-popover-item[data-mode="alpha-asc"]')?.click();
+            const soloStations = collectOccupiedStations();
+            expect(soloStations.length).toBe(6);
+            expect(soloStations.every(ids => ids.length === 1)).toBe(true);
+
+            // 4. Mode Cours : random-disperse maximise la distance (aucune adjacence directe pour 4 élèves dans la salle)
+            SeatingChartManager.switchPlanMode('course', { animate: false });
+            SeatingChartManager._applyLockState(false, { skipSmartFit: true });
+            appState.generatedResults = appState.generatedResults.slice(0, 4);
+            SeatingChartManager.refreshStudents();
+            SeatingChartManager._autoPlace('random-disperse');
+
+            const coords = [];
+            for (let r = 0; r < SeatingChartManager._getRows(); r++) {
+                for (let c = 0; c < SeatingChartManager._getCols(); c++) {
+                    if (SeatingChartManager._getCellStudentIds(r, c).length > 0) {
+                        coords.push({ r, c });
+                    }
+                }
+            }
+            expect(coords.length).toBe(4);
+            for (let i = 0; i < coords.length; i++) {
+                for (let j = i + 1; j < coords.length; j++) {
+                    const manhattan = Math.abs(coords[i].r - coords[j].r) + Math.abs(coords[i].c - coords[j].c);
+                    expect(manhattan).toBeGreaterThanOrEqual(2);
+                }
+            }
+        });
     });
 });

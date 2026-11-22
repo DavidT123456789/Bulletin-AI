@@ -223,8 +223,37 @@ describe('ExportManager', () => {
 
             await new Promise(resolve => setTimeout(resolve, 10));
 
-            expect(button.innerHTML).toContain('ph:check');
+            expect(button.innerHTML).toContain('ph:check-bold');
             expect(button.classList.contains('copied')).toBe(true);
+        });
+
+        it('should restore original button icon even after rapid double-click', async () => {
+            vi.useFakeTimers();
+            try {
+                const button = document.createElement('button');
+                button.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon>';
+                const onAfterCopy = vi.fn();
+
+                await ExportManager.copyAppreciation('test-id-1', button, onAfterCopy);
+                expect(button.innerHTML).toContain('ph:check-bold');
+
+                // Second rapid click while confirmation flash is still active
+                vi.advanceTimersByTime(500);
+                await ExportManager.copyAppreciation('test-id-1', button, onAfterCopy);
+
+                // First timer would have fired at 1500ms, must be cancelled
+                vi.advanceTimersByTime(1000);
+                expect(onAfterCopy).not.toHaveBeenCalled();
+                expect(button.classList.contains('copy-success')).toBe(true);
+
+                // Second timer finishes at 2000ms total -> original icon restored
+                vi.advanceTimersByTime(500);
+                expect(button.innerHTML).toContain('solar:copy-linear');
+                expect(button.classList.contains('copy-success')).toBe(false);
+                expect(onAfterCopy).toHaveBeenCalledTimes(1);
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('should handle clipboard errors', async () => {
@@ -357,6 +386,65 @@ describe('ExportManager', () => {
             ExportManager.exportToCsv();
 
             expect(UI.showNotification).toHaveBeenCalledWith(expect.stringContaining('CSV exporté'), 'success');
+        });
+
+        it('should export configured iaConfig.discipline instead of internal MonStyle/Générique keys in CSV', () => {
+            appState.currentSubject = 'MonStyle';
+            appState.subjects = {
+                MonStyle: { iaConfig: { discipline: 'Histoire-Géographie' } }
+            };
+            appState.filteredResults = [{
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                appreciation: 'Test',
+                timestamp: '2025-01-01T12:00:00Z',
+                studentData: {
+                    currentPeriod: 'T1',
+                    subject: 'MonStyle',
+                    statuses: [],
+                    periods: { T1: { grade: 14, appreciation: 'Bon travail' }, T2: {}, T3: {} }
+                }
+            }];
+
+            ExportManager.exportToCsv();
+            const [content] = StorageManager._downloadFile.mock.calls[0];
+            expect(content).toContain('Histoire-Géographie');
+            expect(content).not.toContain('MonStyle');
+
+            // Sans discipline configurée et avec clé interne Générique -> cellule vide, jamais "Générique"
+            StorageManager._downloadFile.mockClear();
+            appState.subjects = { MonStyle: { iaConfig: { discipline: '' } } };
+            appState.currentSubject = 'Générique';
+            appState.filteredResults[0].studentData.subject = 'Générique';
+            ExportManager.exportToCsv();
+            const [contentEmpty] = StorageManager._downloadFile.mock.calls[0];
+            expect(contentEmpty).not.toContain('Générique');
+        });
+
+        it('should track copied status per period independently (T1 copied does not mark T2)', async () => {
+            const student = {
+                id: 'period-copy-1',
+                nom: 'DUPONT',
+                prenom: 'Alice',
+                appreciation: 'Très bien en T1',
+                generationPeriod: 'T1',
+                studentData: {
+                    periods: {
+                        T1: { appreciation: 'Très bien en T1' },
+                        T2: { appreciation: 'Poursuivre en T2' }
+                    }
+                }
+            };
+            appState.generatedResults = [student];
+            appState.currentPeriod = 'T1';
+
+            await ExportManager.copyAppreciation('period-copy-1', null);
+            expect(Utils.isAppreciationCopied(student, 'T1')).toBe(true);
+            expect(Utils.isAppreciationCopied(student, 'T2')).toBe(false);
+
+            appState.currentPeriod = 'T2';
+            await ExportManager.copyAppreciation('period-copy-1', null);
+            expect(Utils.isAppreciationCopied(student, 'T2')).toBe(true);
         });
     });
 
@@ -529,7 +617,7 @@ describe('ExportManager', () => {
                     atRisk: [{ fullName: 'PETIT Zoé', grade: 7.5, evolution: -1.6 }]
                 },
                 synthesisSections: [
-                    { title: 'Synthèse Globale', isIntro: true, text: 'Classe dynamique en progrès.' },
+                    { title: 'Appréciation de classe', isIntro: true, text: 'Classe dynamique en progrès.' },
                     { title: 'Points d appui', isIntro: false, items: ['Participation orale active'], tone: 'success' }
                 ]
             });
@@ -544,7 +632,7 @@ describe('ExportManager', () => {
             expect(capturedRootHtml).toContain('Classe dynamique en progrès.');
             expect(capturedRootHtml).toContain('Participation orale active');
             expect(capturedRootHtml).toContain('class="print-chart-svg"');
-            expect(document.title).toContain('Conseil-de-classe_3°B_T2');
+            expect(document.title).toContain('Bilan-de-classe_3°B_T2');
 
             window.onafterprint?.();
             expect(document.getElementById('print-report-root')).toBeNull();

@@ -6,6 +6,8 @@
 
 import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
+import { StorageManager } from '../StorageManager.js';
+import { SettingsUIManager } from '../SettingsUIManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { ListSelectionManager } from '../list/ListSelectionManager.js';
@@ -180,12 +182,23 @@ export const SeatingEvents = {
             this._togglePlacementPopover();
         });
         document.getElementById('scPlacementPopover')?.addEventListener('click', (e) => {
+            const sizeBtn = e.target.closest('.sc-placement-size-pill');
+            if (sizeBtn && sizeBtn.dataset.groupSize) {
+                e.stopPropagation();
+                this._setActivityGroupSize?.(parseInt(sizeBtn.dataset.groupSize, 10));
+                return;
+            }
             const item = e.target.closest('.sc-popover-item');
-            if (!item || item.classList.contains('sc-popover-item-disabled')) return;
+            if (!item) return;
+            if (item.classList.contains('sc-popover-item-disabled') || item.getAttribute('aria-disabled') === 'true') {
+                e.stopPropagation();
+                return;
+            }
             const mode = item.dataset.mode;
             if (mode) {
+                const customSize = this._isActivityMode?.() ? this._getSelectedActivityGroupSize?.() : null;
                 this._closePlacementPopover();
-                this._autoPlace(mode);
+                this._autoPlace(mode, customSize);
             }
         });
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
@@ -199,6 +212,8 @@ export const SeatingEvents = {
                 this._toggleLock();
             }
         });
+        const toolbarLabel = lockBtn?.parentElement?.querySelector('.sc-toolbar-label');
+        toolbarLabel?.addEventListener('click', () => this._toggleLock());
         const statusPill = document.getElementById('scStatusPill');
         statusPill?.addEventListener('click', () => {
             if (this._isLocked) {
@@ -215,6 +230,29 @@ export const SeatingEvents = {
         document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
+
+        const randomReadout = document.getElementById('scRandomReadout');
+        randomReadout?.addEventListener('mousedown', (e) => e.preventDefault());
+        randomReadout?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleRandomHistoryPopover?.();
+        });
+
+        const randomHistoryPopover = document.getElementById('scRandomHistoryPopover');
+        randomHistoryPopover?.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.sc-random-history-item')) {
+                e.preventDefault();
+            }
+        });
+        randomHistoryPopover?.addEventListener('click', (e) => {
+            const item = e.target.closest('.sc-random-history-item');
+            if (!item) return;
+            e.stopPropagation();
+            const idx = parseInt(item.dataset.historyIndex, 10);
+            if (!Number.isNaN(idx)) {
+                this._selectRandomHistoryIndex?.(idx, { closePopover: true });
+            }
+        });
 
         const randomBtn = document.getElementById('scFloatingRandomBtn');
         randomBtn?.addEventListener('mousedown', (e) => e.preventDefault());
@@ -440,6 +478,14 @@ export const SeatingEvents = {
                 e.stopPropagation();
                 this._stepGridDimension(stepBtn.dataset.dim, parseInt(stepBtn.dataset.delta, 10));
             }
+        });
+
+        document.getElementById('scConfigPopover')?.addEventListener('change', (e) => {
+            const cb = e.target?.closest?.('input[type="checkbox"][data-dot-category]');
+            if (!cb) return;
+            e.stopPropagation();
+            SettingsUIManager.syncSeatingStatusDotsFromDOM();
+            StorageManager.saveAppState();
         });
 
         let isSliding = false;
@@ -683,6 +729,9 @@ export const SeatingEvents = {
                 if (this._placementPopoverOpen && !e.target.closest('.sc-placement-wrapper')) {
                     this._closePlacementPopover();
                 }
+                if (this._randomHistoryPopoverOpen && !e.target.closest('#scRandomHistoryPopover') && !e.target.closest('#scRandomReadout')) {
+                    this._closeRandomHistoryPopover?.();
+                }
                 if (this._selectedChipIds.length > 0 &&
                     !e.target.closest('.sc-student-chip') &&
                     !e.target.closest('.sc-cell') &&
@@ -818,19 +867,28 @@ export const SeatingEvents = {
                 }
 
                 const isInsideModeSwitch = Boolean(activeEl?.closest?.('#scPlanModeSwitch'));
+                const hasBlockingOverlay = () => Boolean(
+                    ClassUIManager?._isDropdownOpen ||
+                    this._isSearchOpen() ||
+                    this._activeMobileSheet ||
+                    this._placementPopoverOpen ||
+                    this._configPopoverOpen ||
+                    document.querySelector('.custom-dropdown.open, #actionsDropdown.show, #headerGenWrapper.open, #headerMenuDropdown.open')
+                );
+
+                // Navigation dans l'historique du tirage au sort (← / →) prioritaire sur la navigation de vue
+                if (isHorizontalArrow && hasNoModifier && !e.repeat && !isTyping && this._isActive && this._isLocked && this._isRandomPickerActive?.() && !isInsideModeSwitch) {
+                    if (!hasBlockingOverlay()) {
+                        e.preventDefault();
+                        this._stepRandomHistory?.(e.key === 'ArrowLeft' ? -1 : 1);
+                        return;
+                    }
+                }
+
                 const canNavigateHorizontal = isHorizontalArrow && (hasCtrlOnly || (hasNoModifier && (isInsideModeSwitch || this._isFitted)));
                 const canNavigateVertical = isVerticalArrow && hasCtrlOnly;
                 if ((canNavigateHorizontal || canNavigateVertical) && !e.repeat && !isTyping) {
-                    const hasBlockingOverlay = Boolean(
-                        ClassUIManager?._isDropdownOpen ||
-                        this._isSearchOpen() ||
-                        this._activeMobileSheet ||
-                        this._placementPopoverOpen ||
-                        this._configPopoverOpen ||
-                        document.querySelector('.custom-dropdown.open, #actionsDropdown.show, #headerGenWrapper.open, #headerMenuDropdown.open')
-                    );
-
-                    if (!hasBlockingOverlay) {
+                    if (!hasBlockingOverlay()) {
                         if (e.key === 'ArrowRight') {
                             if (this._planMode === 'course' && this._canSwitchPlanMode('activity')) {
                                 blurNavControl();
@@ -878,15 +936,7 @@ export const SeatingEvents = {
                 }
 
                 if (e.key === ' ' && hasNoModifier && !e.repeat && !isTyping && this._isActive && this._isLocked && this._isRandomPickerActive?.()) {
-                    const hasBlockingOverlay = Boolean(
-                        ClassUIManager?._isDropdownOpen ||
-                        this._isSearchOpen() ||
-                        this._activeMobileSheet ||
-                        this._placementPopoverOpen ||
-                        this._configPopoverOpen ||
-                        document.querySelector('.custom-dropdown.open, #actionsDropdown.show, #headerGenWrapper.open, #headerMenuDropdown.open')
-                    );
-                    if (!hasBlockingOverlay && !activeEl?.closest?.('button, a, [role="button"], [role="tab"]')) {
+                    if (!hasBlockingOverlay() && !activeEl?.closest?.('button, a, [role="button"], [role="tab"]')) {
                         e.preventDefault();
                         this._drawNextRandomStudent?.();
                         return;
@@ -905,6 +955,11 @@ export const SeatingEvents = {
                     if (this._placementPopoverOpen) this._closePlacementPopover();
                     if (this._configPopoverOpen) this._closeConfigPopover();
                     if (this._selectedChipIds.length > 0) this._clearSelection();
+                    if (this._randomHistoryPopoverOpen) {
+                        e.preventDefault();
+                        this._closeRandomHistoryPopover?.({ restoreFocus: true });
+                        return;
+                    }
                     if (this._isRandomPickerActive?.()) {
                         e.preventDefault();
                         this._closeRandomPicker?.();

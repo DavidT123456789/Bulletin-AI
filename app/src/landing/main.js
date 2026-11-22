@@ -20,7 +20,7 @@ const CAROUSEL_ITEMS = [
 ];
 
 const MOCKUP_STUDENTS = {
-    matheo: {
+    antoine: {
         status: 'Dispositif · PAP',
         grade: '8,5',
         trend: '-2,0',
@@ -31,19 +31,19 @@ const MOCKUP_STUDENTS = {
         ],
         context: "« Bonnes capacités d'analyse, mais un travail personnel trop irrégulier. »",
         texts: {
-            bienveillant: "Des résultats fragiles ce trimestre, mais Mathéo montre de vraies capacités et participe bien à l'oral. Avec un travail plus régulier et moins de bavardages, il progressera vite.",
-            neutre: "Ensemble en baisse ce trimestre malgré une bonne participation orale. Entre bavardages répétés et travail personnel trop irrégulier, Mathéo doit se recentrer pour consolider ses acquis.",
+            bienveillant: "Des résultats fragiles ce trimestre, mais Antoine montre de vraies capacités et participe bien à l'oral. Avec un travail plus régulier et moins de bavardages, il progressera vite.",
+            neutre: "Ensemble en baisse ce trimestre malgré une bonne participation orale. Entre bavardages répétés et travail personnel trop irrégulier, Antoine doit se recentrer pour consolider ses acquis.",
             exigeant: "Trimestre insuffisant et en net recul. De bonnes capacités ne suffisent pas : les bavardages doivent cesser et le travail personnel gagner en régularité et en rigueur."
         },
         refinements: {
             concise: {
-                bienveillant: "Résultats fragiles, mais Mathéo participe bien à l'oral. Un travail plus régulier l'aidera vite à progresser.",
+                bienveillant: "Résultats fragiles, mais Antoine participe bien à l'oral. Un travail plus régulier l'aidera vite à progresser.",
                 neutre: "Trimestre en baisse malgré un oral volontaire. Moins de bavardages et plus de régularité sont nécessaires.",
                 exigeant: "Trimestre insuffisant et en recul. Les bavardages doivent cesser au profit d'un travail régulier."
             },
             polish: {
-                bienveillant: "Malgré des résultats encore fragiles, Mathéo fait preuve de finesse d'analyse et participe volontiers à l'oral. En régularisant son travail et son écoute, ses progrès seront rapides.",
-                neutre: "Les résultats fléchissent ce trimestre malgré de réelles capacités et un oral actif. En freinant ses bavardages et en travaillant plus régulièrement, Mathéo consolidera vite ses acquis.",
+                bienveillant: "Malgré des résultats encore fragiles, Antoine fait preuve de finesse d'analyse et participe volontiers à l'oral. En régularisant son travail et son écoute, ses progrès seront rapides.",
+                neutre: "Les résultats fléchissent ce trimestre malgré de réelles capacités et un oral actif. En freinant ses bavardages et en travaillant plus régulièrement, Antoine consolidera vite ses acquis.",
                 exigeant: "Ensemble insuffisant et en recul ce trimestre. Malgré de réelles capacités d'analyse, les bavardages et l'irrégularité du travail personnel freinent les progrès : rigueur et sérieux sont impératifs."
             }
         }
@@ -433,7 +433,7 @@ function initHeroMockup() {
     const mockupCopyBtn = document.getElementById('mockup-copy-btn');
     const mockupCopyLabel = mockupCopyBtn?.querySelector('.mockup-copy-label');
 
-    let currentStudentId = 'matheo';
+    let currentStudentId = 'antoine';
     let currentMockupTone = 'bienveillant';
     let currentMockupRefine = null;
     let toneCycleIndex = 0;
@@ -460,7 +460,7 @@ function initHeroMockup() {
     }
 
     function getActiveMockupText() {
-        const student = MOCKUP_STUDENTS[currentStudentId] || MOCKUP_STUDENTS.matheo;
+        const student = MOCKUP_STUDENTS[currentStudentId] || MOCKUP_STUDENTS.antoine;
         if (currentMockupRefine && student.refinements?.[currentMockupRefine]?.[currentMockupTone]) {
             return student.refinements[currentMockupRefine][currentMockupTone];
         }
@@ -495,7 +495,7 @@ function initHeroMockup() {
     }
 
     function renderMockupStudentMeta(studentId) {
-        const student = MOCKUP_STUDENTS[studentId] || MOCKUP_STUDENTS.matheo;
+        const student = MOCKUP_STUDENTS[studentId] || MOCKUP_STUDENTS.antoine;
         updateSegmentedGroup(mockupStudentTabsWrap, mockupStudentTabs, 'mockupStudent', studentId, 'aria-selected');
 
         if (mockupStudentBadge) {

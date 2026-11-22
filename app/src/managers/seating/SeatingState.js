@@ -1139,6 +1139,7 @@ export const SeatingState = {
             try { navigator.vibrate(pattern); } catch (_) {}
         }
     },
+
     _getCurrentClassStudents() {
         const classId = appState.currentClassId;
         return ClassManager.getStudentsForClass(classId)
@@ -1152,7 +1153,6 @@ export const SeatingState = {
                 studentPhoto: r.studentPhoto,
                 seatingPosition: r.seatingPosition,
                 seatingActivityPosition: r.seatingActivityPosition,
-                evolution: r.evolution,
                 studentData: r.studentData,
                 isDeparted: this._isStudentDeparted(r),
                 isNew: this._isStudentNew(r)

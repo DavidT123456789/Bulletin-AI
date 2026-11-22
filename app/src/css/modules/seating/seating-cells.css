@@ -215,7 +215,6 @@
 .sc-cell .sc-cell-status-badge,
 .sc-cell .sc-station-badge,
 .sc-cell .sc-stacked-group-tag,
-.sc-cell .sc-evolution-dot,
 .sc-student-chip .student-avatar,
 .sc-student-chip .sc-student-chip-name,
 .sc-student-chip .sc-chip-badge {
@@ -473,22 +472,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         background: var(--primary-hover);
     }
 }
-
-/* Evolution dot */
-.sc-evolution-dot {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    border: 1.5px solid var(--surface-color);
-    z-index: 3;
-}
-
-.sc-evolution-dot.progress { background: var(--success-color); }
-.sc-evolution-dot.stable { background: var(--warning-color); }
-.sc-evolution-dot.regression { background: var(--error-color); }
 
 /* Cell status dot on bottom-right corner of avatar (Nouveau / Départ — preserves full 54px avatar & name alignment) */
 .sc-cell-avatar-wrap {
@@ -1884,7 +1867,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         align-items: center;
         justify-content: center;
         width: fit-content;
-        background: var(--bg-secondary);
+        background: var(--tonal-bg);
         border-radius: var(--radius-pill);
         border-bottom: none;
         box-shadow: var(--shadow-sm);
@@ -1907,6 +1890,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     #seatingChartView .sc-sidebar-actions-group {
+        width: auto;
         padding: 0;
         gap: 4px;
         background: transparent;
@@ -2149,13 +2133,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         font-size: 9px;
     }
 
-    .sc-evolution-dot {
-        bottom: 3.5px;
-        right: 3.5px;
-        width: 6px;
-        height: 6px;
-    }
-
     /* ── Floating elements: aligned on mobile, never overlapping ── */
     .sc-top-left-bar,
     #seatingChartView[data-locked="false"] .sc-top-left-bar {
@@ -2230,7 +2207,13 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     #seatingChartView.sc-random-active .sc-floating-actions .sc-random-student-name {
-        max-width: calc(100vw - 156px);
+        max-width: calc(100vw - 168px);
+    }
+
+    .sc-random-history-popover {
+        top: calc(56px + 10px + 32px + 8px);
+        right: 12px;
+        max-width: calc(100vw - 24px);
     }
 
     .sc-floating-status .sc-toolbar-info {
@@ -2263,6 +2246,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     #seatingChartView :is(.sc-config-popover, .sc-placement-popover) {
         top: auto;
         bottom: calc(100% + 10px);
+        max-width: calc(100vw - 24px);
         transform: translateY(8px) scale(0.95);
         box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
         z-index: 300;
@@ -2518,6 +2502,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-board-carousel-ghost,
     .sc-action-btn.sc-orientation-btn.active iconify-icon,
     .sc-action-btn.sc-random-btn.rolling iconify-icon,
+    .sc-random-history-popover,
+    .sc-random-chevron,
     #seatingChartView.sc-random-revealed .sc-random-student-name,
     #seatingChartView.sc-random-revealed .sc-cell.sc-spotlight-match.sc-spotlight-single,
     #seatingChartView:is(.sc-search-active, .sc-random-active) .sc-cell.sc-spotlight-single,
@@ -2557,6 +2543,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
 }
 
 /* Sidebar Actions */
@@ -2571,10 +2559,12 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 .sc-sidebar-actions-group {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
     gap: 4px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-pill);
-    padding: 4px;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
 }
 
 /* Action Buttons */
@@ -2616,7 +2606,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 .sc-action-btn:disabled,
 .sc-action-btn.disabled {
-    opacity: 0.3;
+    opacity: 0.35;
     cursor: not-allowed;
 }
 

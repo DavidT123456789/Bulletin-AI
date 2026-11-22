@@ -61,10 +61,20 @@ export const FocusPanelGenerator = {
                         panel._renderAppreciationText(result);
                         panel._updateGenerateButton(result);
                         FocusPanelStatus.updateSourceIndicator(result);
+                        FocusPanelStatus.updateHistoryIndicator();
                     }
 
                     document.querySelectorAll('#focusRefinementOptions .is-generating').forEach(b => {
                         b.classList.remove('is-generating');
+                        if (b.dataset.baseTooltip !== undefined) {
+                            const baseTooltip = b.dataset.baseTooltip;
+                            delete b.dataset.baseTooltip;
+                            if (typeof UI?.updateTooltip === 'function') {
+                                UI.updateTooltip(b, baseTooltip);
+                            } else {
+                                b.setAttribute('data-tooltip', baseTooltip);
+                            }
+                        }
                     });
                 }
 
@@ -259,7 +269,8 @@ export const FocusPanelGenerator = {
                     appreciationEl.classList.remove('empty');
 
                     const targetWordCount = Utils.countWords(newResult.appreciation);
-                    FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
+                    const targetCharCount = Utils.countCharacters(newResult.appreciation);
+                    FocusPanelStatus.updateWordCount(true, 0, targetWordCount, targetCharCount);
 
                     if (typeof UI?.animateHtmlReveal === 'function') {
                         await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast', signal });
@@ -309,7 +320,8 @@ export const FocusPanelGenerator = {
 
                 FocusPanelHistory.push(newResult.appreciation, hasExistingVersions ? 'regenerate' : 'original', {
                     studentId: generatingForStudentId,
-                    period: generatingForPeriod
+                    period: generatingForPeriod,
+                    autoSeed: false
                 });
 
                 clearActiveGeneration();
@@ -369,6 +381,7 @@ export const FocusPanelGenerator = {
                 if (panel.currentStudentId === generatingForStudentId && generateBtn) {
                     UI?.hideInlineSpinner?.(generateBtn);
                     if (result) panel._updateGenerateButton(result);
+                    FocusPanelStatus.updateHistoryIndicator();
                 }
                 UI?.updateControlButtons?.();
             }
@@ -416,7 +429,8 @@ export const FocusPanelGenerator = {
             if (appreciationEl && animate) {
                 appreciationEl.classList.remove('empty');
                 const targetWordCount = Utils.countWords(effectiveApp);
-                FocusPanelStatus.updateWordCount(true, 0, targetWordCount);
+                const targetCharCount = Utils.countCharacters(effectiveApp);
+                FocusPanelStatus.updateWordCount(true, 0, targetWordCount, targetCharCount);
                 const htmlHtml = Utils.cleanMarkdown(effectiveApp);
                 await UI.animateHtmlReveal(appreciationEl, htmlHtml, { speed: 'fast' });
                 if (panel.currentStudentId !== studentId || appState.currentPeriod !== period) return;
@@ -459,7 +473,10 @@ export const FocusPanelGenerator = {
         appreciationEl.innerHTML = Utils.getSkeletonHTML(false, '', false, false);
 
         const wordCountEl = document.getElementById('focusWordCount');
-        if (wordCountEl) wordCountEl.innerHTML = '';
+        if (wordCountEl) {
+            wordCountEl.innerHTML = '';
+            wordCountEl.classList.remove('is-limit-near', 'is-limit-over');
+        }
 
         const sourceIndicator = document.getElementById('focusAiIndicator');
         if (sourceIndicator) sourceIndicator.style.display = 'none';
@@ -483,6 +500,9 @@ export const FocusPanelGenerator = {
 
         const micBtn = document.getElementById('focusAppreciationMicBtn');
         if (micBtn) micBtn.classList.add('disabled');
+
+        FocusPanelHistory.closePopover?.();
+        FocusPanelStatus.updateHistoryIndicator();
     },
 
     /**
@@ -533,6 +553,11 @@ export const FocusPanelGenerator = {
         try {
             const cleanText = Utils.stripMarkdown(Utils.decodeHtmlEntities(periodAppreciation));
             await navigator.clipboard.writeText(cleanText);
+            Utils.setAppreciationCopied(result, appState.currentPeriod, true);
+            StorageManager.saveAppState();
+            ListViewManager.updateStudentRow?.(result.id);
+            FocusPanelStatus.syncCopyButton({ isEmpty: false, isGenerating: false });
+            UI?.recordSupportMilestone?.('bulletin-export');
             try { navigator?.vibrate?.(10); } catch (_) { }
             panel._flashCopyFeedback('copied', 'Copié !');
         } catch (error) {

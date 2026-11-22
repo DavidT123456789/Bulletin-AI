@@ -8,6 +8,7 @@ import { DOM } from '../utils/DOM.js';
 import { appState, userSettings } from '../state/State.js';
 import { ClassManager } from './ClassManager.js';
 import { ClassUIManager } from './ClassUIManager.js';
+import { StorageManager } from './StorageManager.js';
 
 describe('ClassUIManager - Liste des classes et classes reconstituées', () => {
     beforeEach(() => {
@@ -1085,6 +1086,56 @@ describe('ClassUIManager - Cycle d\'ouverture/fermeture du dropdown et isolation
         btnRectSpy.mockReturnValue({ bottom: 0, left: 0, right: 0, top: 0, width: 0, height: 0 });
         ClassUIManager._positionNotePopover();
         expect(popover.style.top).toBe('64px');
+    });
+
+    it('propose « Nouvelle année scolaire… » avec sauvegarde JSON pré-cochée exécutée avant resetAllClasses()', async () => {
+        userSettings.academic.classes = [{ id: 'c-ny', name: '3e A', createdAt: 1 }];
+        appState.currentClassId = 'c-ny';
+        appState.generatedResults = [{ id: 'st-ny', nom: 'DUPONT', prenom: 'Léo', classId: 'c-ny' }];
+
+        const callOrder = [];
+        const exportSpy = vi.spyOn(StorageManager, 'exportToJson').mockImplementation(() => {
+            callOrder.push('export');
+        });
+        const resetSpy = vi.spyOn(ClassManager, 'resetAllClasses').mockImplementation(async () => {
+            callOrder.push('reset');
+            userSettings.academic.classes = [];
+            appState.generatedResults = [];
+        });
+        const showChoicesSpy = vi.fn(async (_title, _msg, choices, opts) => {
+            expect(choices[0].id).toBe('backupFirst');
+            expect(choices[0].checked).toBe(true);
+            expect(opts.allowEmpty).toBe(true);
+            return { confirmed: true, values: { backupFirst: true } };
+        });
+
+        ClassUIManager._ui = {
+            openModal: vi.fn(),
+            closeModal: vi.fn(),
+            showNotification: vi.fn(),
+            showChoicesModal: showChoicesSpy,
+            updateStats: vi.fn()
+        };
+
+        try {
+            ClassUIManager.showManageClassesModal();
+            const moreBtn = document.getElementById('classManageMoreBtn');
+            moreBtn?.click();
+
+            const resetBtn = document.getElementById('resetAllClassesBtn');
+            expect(resetBtn).not.toBeNull();
+            expect(resetBtn.textContent).toContain('Nouvelle année scolaire');
+
+            resetBtn.click();
+            await new Promise(r => setTimeout(r, 10));
+
+            expect(showChoicesSpy).toHaveBeenCalledTimes(1);
+            expect(callOrder).toEqual(['export', 'reset']);
+        } finally {
+            exportSpy.mockRestore();
+            resetSpy.mockRestore();
+            document.getElementById('classManagementModal')?.remove();
+        }
     });
 });
 

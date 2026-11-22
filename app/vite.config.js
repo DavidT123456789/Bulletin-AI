@@ -34,7 +34,7 @@ export default defineConfig({
         dontCacheBustURLsMatching: /^assets\/.*-[a-zA-Z0-9_-]{8}\./,
         ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
         globPatterns: ['**/*.{js,css,png,jpg,jpeg,webp,svg,ico,woff,woff2,webmanifest}', 'index.html', 'app.html'],
-        globIgnores: ['**/Image Source*', '**/sample-*', 'sw-rescue.js'],
+        globIgnores: ['**/Image Source*', '**/sample-*', '**/og-image*', 'sw-rescue.js'],
         navigateFallback: null, // Don't cache navigation requests
         runtimeCaching: [
           {

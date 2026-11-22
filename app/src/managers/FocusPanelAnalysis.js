@@ -431,7 +431,12 @@ export const FocusPanelAnalysis = {
         if (!badge) {
             badge = document.createElement('span');
             badge.className = 'analysis-status-badge';
-            header.appendChild(badge);
+            const addBtn = header.querySelector('.analysis-add-item-btn');
+            if (addBtn) {
+                header.insertBefore(badge, addBtn);
+            } else {
+                header.appendChild(badge);
+            }
         }
 
         badge.className = 'analysis-status-badge';

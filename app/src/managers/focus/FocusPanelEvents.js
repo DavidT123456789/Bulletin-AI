@@ -236,6 +236,7 @@ export const FocusPanelEvents = {
 
         bus.on(EVENTS.APP_SETTINGS_CHANGED, () => {
             if (panel.currentStudentId) {
+                FocusPanelStatus.updateWordCount();
                 FocusPanelStatus.refreshAppreciationStatus();
             }
         });
@@ -349,11 +350,6 @@ export const FocusPanelEvents = {
             }
 
             if (e.key === 'Escape') {
-                const popover = document.getElementById('historyPopover');
-                if (popover) {
-                    FocusPanelHistory.closePopover?.();
-                    return;
-                }
                 if (document.getElementById('journalThresholdControl')?.classList.contains('open')) {
                     FocusPanelJournal.closeThresholdPopover?.();
                     return;
@@ -429,6 +425,10 @@ export const FocusPanelEvents = {
                 const isGenerating = FocusPanelStatus._isGenerating(panel.currentStudentId);
 
                 if (result && !isGenerating) {
+                    // Ensure existing appreciation is seeded into history before live mutation
+                    if (result.studentData?.periods?.[appState.currentPeriod]?.appreciation?.trim()) {
+                        FocusPanelHistory._getState?.(true);
+                    }
                     Utils.markStudentModified(result, appState.currentPeriod);
                     const hasRealContent = FocusPanelStatus._hasRealContent(content);
 
@@ -445,11 +445,14 @@ export const FocusPanelEvents = {
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = content;
                         }
+                        FocusPanelHistory.scheduleEditCommit(content);
                     } else {
+                        FocusPanelHistory.endEditSession();
                         result.appreciation = '';
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = '';
                         }
+                        FocusPanelStatus.updateHistoryIndicator();
                     }
 
                     panel._updateGenerateButton(result);
@@ -471,7 +474,10 @@ export const FocusPanelEvents = {
             });
 
             appreciationText.addEventListener('blur', () => {
-                if (!panel._isAppreciationEdited) return;
+                if (!panel._isAppreciationEdited) {
+                    FocusPanelHistory.endEditSession();
+                    return;
+                }
 
                 const content = appreciationText.textContent?.trim() || '';
                 const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
@@ -480,7 +486,8 @@ export const FocusPanelEvents = {
                     const isRealContent = FocusPanelStatus._hasRealContent(content);
 
                     if (isRealContent) {
-                        FocusPanelHistory.push(content, 'edit');
+                        FocusPanelHistory.flushEditSession(content);
+                        FocusPanelHistory.endEditSession();
 
                         if (result.wasGenerated === false) {
                             result.errorMessage = null;
@@ -543,9 +550,20 @@ export const FocusPanelEvents = {
             });
 
             appreciationText.addEventListener('keydown', (e) => {
-                if (e.ctrlKey || e.metaKey) {
-                    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); FocusPanelHistory.undo(); }
-                    else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') { e.preventDefault(); FocusPanelHistory.redo(); }
+                if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+                    const key = e.key.toLowerCase();
+                    if (key === 'z' && !e.shiftKey) {
+                        const currentText = appreciationText.textContent || '';
+                        if (FocusPanelHistory.canUndoWithPending(currentText)) {
+                            e.preventDefault();
+                            FocusPanelHistory.undo();
+                        }
+                    } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+                        if (FocusPanelHistory.canRedo()) {
+                            e.preventDefault();
+                            FocusPanelHistory.redo();
+                        }
+                    }
                 }
             });
         }
@@ -554,6 +572,7 @@ export const FocusPanelEvents = {
         if (historyIndicator) {
             historyIndicator.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (historyIndicator.classList.contains('disabled')) return;
                 FocusPanelHistory.showPopover();
             });
         }
@@ -562,6 +581,7 @@ export const FocusPanelEvents = {
         if (historyPrevBtn) {
             historyPrevBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (historyPrevBtn.classList.contains('disabled')) return;
                 FocusPanelHistory.undo();
             });
         }
@@ -570,6 +590,7 @@ export const FocusPanelEvents = {
         if (historyNextBtn) {
             historyNextBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (historyNextBtn.classList.contains('disabled')) return;
                 FocusPanelHistory.redo();
             });
         }
@@ -617,7 +638,8 @@ export const FocusPanelEvents = {
         const wordCountBadge = document.getElementById('focusWordCount');
         if (wordCountBadge) {
             wordCountBadge.addEventListener('click', () => {
-                SettingsModalListeners.openPersonalization('iaLengthSlider');
+                const targetControl = PromptService.getActiveMaxChars?.() ? 'iaMaxCharsToggle' : 'iaLengthSlider';
+                SettingsModalListeners.openPersonalization(targetControl);
             });
         }
     },

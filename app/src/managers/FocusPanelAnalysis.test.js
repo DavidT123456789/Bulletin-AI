@@ -21,9 +21,9 @@ describe('FocusPanelAnalysis - État du bouton, isolation par période et éditi
                     <div id="focusAnalysisAvatarContainer"></div>
                     <h3 id="focusAnalysisTitle"></h3>
                     <button id="focusGenerateAnalysisBtn" class="btn btn-small btn-ai"></button>
-                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisForcesContent" class="analysis-card-body"></div></div>
-                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisWeaknessesContent" class="analysis-card-body"></div></div>
-                    <div class="analysis-card"><div class="analysis-card-header"></div><div id="analysisSuggestionsContent" class="analysis-card-body"></div></div>
+                    <div class="analysis-card"><div class="analysis-card-header"><h4>Points forts</h4><button type="button" class="analysis-add-item-btn"></button></div><div id="analysisForcesContent" class="analysis-card-body"></div></div>
+                    <div class="analysis-card"><div class="analysis-card-header"><h4>Points de vigilance</h4><button type="button" class="analysis-add-item-btn"></button></div><div id="analysisWeaknessesContent" class="analysis-card-body"></div></div>
+                    <div class="analysis-card"><div class="analysis-card-header"><h4>Pistes de progrès</h4><button type="button" class="analysis-add-item-btn"></button></div><div id="analysisSuggestionsContent" class="analysis-card-body"></div></div>
                 </div>
             </div>
         `;
@@ -324,9 +324,13 @@ describe('FocusPanelAnalysis - État du bouton, isolation par période et éditi
         FocusPanelAnalysis.commitEditableBlur(forceLi);
         expect(appState.generatedResults[1].analysisPerPeriod.T1.hasManualEdits).toBe(true);
 
-        // Régénération IA -> flash temporaire ✓ pendant 1.5s + toast Rétablir
+        // Régénération IA -> flash temporaire ✓ pendant 1.5s (inséré avant le bouton "+") + toast Rétablir
         await FocusPanelAnalysis.generate();
-        expect(document.querySelectorAll('.analysis-status-badge.done').length).toBe(3);
+        const doneBadges = document.querySelectorAll('.analysis-status-badge.done');
+        expect(doneBadges.length).toBe(3);
+        doneBadges.forEach(badge => {
+            expect(badge.nextElementSibling?.classList.contains('analysis-add-item-btn')).toBe(true);
+        });
 
         vi.advanceTimersByTime(1500);
         expect(document.querySelector('.analysis-status-badge.done')).toBeNull();

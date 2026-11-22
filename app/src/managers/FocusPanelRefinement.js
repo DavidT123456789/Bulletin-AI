@@ -247,7 +247,15 @@ export const FocusPanelRefinement = {
             b.classList.remove('is-generating');
             b.classList.toggle('disabled', b !== btn);
         });
-        btn?.classList.add('is-generating');
+        if (btn) {
+            btn.classList.add('is-generating');
+            btn.dataset.baseTooltip ??= btn.dataset.tooltip || '';
+            if (typeof UI?.updateTooltip === 'function') {
+                UI.updateTooltip(btn, 'Cliquer pour annuler');
+            } else {
+                btn.setAttribute('data-tooltip', 'Cliquer pour annuler');
+            }
+        }
         FocusPanelStatus.updateAppreciationStatus(null, { state: 'pending' });
 
         panel?._cancelGenerationForStudent?.(refineStudentId, { notify: false, restoreUI: false });
@@ -260,6 +268,8 @@ export const FocusPanelRefinement = {
         const abortController = new AbortController();
         panel?._activeGenerations?.set(refineStudentId, abortController);
         const signal = abortController.signal;
+        FocusPanelHistory.closePopover?.();
+        FocusPanelStatus.updateHistoryIndicator();
 
         const isStillOnSameContext = () =>
             panel?.currentStudentId === refineStudentId &&
@@ -296,8 +306,9 @@ export const FocusPanelRefinement = {
                 if (isStillOnSameContext() && appreciationText) {
                     const currentWordCount = Utils.countWords(appreciationText.textContent || '');
                     const targetWordCount = Utils.countWords(refined);
+                    const targetCharCount = Utils.countCharacters(refined);
 
-                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount);
+                    FocusPanelStatus.updateWordCount(true, currentWordCount, targetWordCount, targetCharCount);
 
                     if (typeof UI?.animateHtmlReveal === 'function') {
                         await UI.animateHtmlReveal(appreciationText, finalHtml, { speed: 'fast', signal });
@@ -311,7 +322,7 @@ export const FocusPanelRefinement = {
                 const priorSource = FocusPanelStatus._resolveSource(result);
                 const isProtectedSource = priorSource === 'manual' || priorSource === 'imported';
 
-                result.copied = false;
+                Utils.setAppreciationCopied(result, refinePeriod, false);
                 result.wasGenerated = !isProtectedSource;
                 result.appreciationSource = isProtectedSource ? priorSource : 'ai';
                 Utils.markStudentModified(result, refinePeriod);
@@ -337,7 +348,11 @@ export const FocusPanelRefinement = {
                     result.generationPeriod = refinePeriod;
                 }
 
-                FocusPanelHistory.push(refined, refineType, { studentId: refineStudentId, period: refinePeriod });
+                FocusPanelHistory.push(refined, refineType, {
+                    studentId: refineStudentId,
+                    period: refinePeriod,
+                    autoSeed: false
+                });
 
                 // Delete the active generation ONLY after animation finishes,
                 // so that _saveContext() triggered during animation does not save the span tags.
@@ -388,12 +403,22 @@ export const FocusPanelRefinement = {
             clearActiveGeneration();
             if (panel?.currentStudentId === refineStudentId && !panel?._activeGenerations?.has(refineStudentId)) {
                 btn?.classList.remove('is-generating');
+                if (btn?.dataset?.baseTooltip !== undefined) {
+                    const baseTooltip = btn.dataset.baseTooltip;
+                    delete btn.dataset.baseTooltip;
+                    if (typeof UI?.updateTooltip === 'function') {
+                        UI.updateTooltip(btn, baseTooltip);
+                    } else {
+                        btn.setAttribute('data-tooltip', baseTooltip);
+                    }
+                }
                 document.querySelectorAll('#focusRefinementOptions [data-refine-type]').forEach(b => {
                     b.classList.remove('disabled');
                 });
                 this._setSecondaryControlsDisabled(false);
                 if (generateBtn) UI?.hideInlineSpinner?.(generateBtn);
                 panel?._updateGenerateButton?.(result);
+                FocusPanelStatus.updateHistoryIndicator();
             }
         }
     }

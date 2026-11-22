@@ -14,7 +14,11 @@
     <meta property="og:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta property="og:description"
         content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. L'outil gratuit qui simplifie votre quotidien.">
-    <meta property="og:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
+    <meta property="og:image" content="https://bulletin-ai.pages.dev/assets/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Bulletin AI — Suivez votre classe, rédigez vos appréciations avec justesse.">
     <meta property="og:url" content="https://bulletin-ai.pages.dev">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="fr_FR">
@@ -23,9 +27,30 @@
     <meta name="twitter:title" content="Bulletin AI | L'assistant numérique des enseignants">
     <meta name="twitter:description"
         content="Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. L'outil gratuit qui simplifie votre quotidien.">
-    <meta name="twitter:image" content="https://bulletin-ai.pages.dev/assets/icon-512.png?v=2">
+    <meta name="twitter:image" content="https://bulletin-ai.pages.dev/assets/og-image.png">
+    <meta name="twitter:image:alt" content="Bulletin AI — Suivez votre classe, rédigez vos appréciations avec justesse.">
 
     <link rel="canonical" href="https://bulletin-ai.pages.dev">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Bulletin AI",
+        "url": "https://bulletin-ai.pages.dev",
+        "image": "https://bulletin-ai.pages.dev/assets/og-image.png",
+        "description": "Un outil simple pour organiser votre classe, suivre vos élèves au quotidien et rédiger vos appréciations. Compatible Albert (IA souveraine Gouv.fr), gratuit et respectueux du RGPD.",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "fr",
+        "isAccessibleForFree": true,
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+        }
+    }
+    </script>
     <!-- Favicon & Icons -->
     <link rel="icon" type="image/svg+xml" href="./assets/icon.svg?v=2">
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png?v=2">
@@ -170,9 +195,9 @@
                         <!-- Sélecteur segmenté d'élèves -->
                         <div class="mockup-seg-track mockup-seg-track--students" id="mockup-student-tabs" role="tablist" aria-label="Choisir un élève de démonstration">
                             <div class="mockup-seg-glider" aria-hidden="true"></div>
-                            <button type="button" class="mockup-seg-btn is-active" role="tab" aria-selected="true" tabindex="0" data-mockup-student="matheo">
-                                <img src="./images/sample-solo-1.png" alt="" class="mockup-tab-avatar" width="20" height="20">
-                                <span>Mathéo</span>
+                            <button type="button" class="mockup-seg-btn is-active" role="tab" aria-selected="true" tabindex="0" data-mockup-student="antoine">
+                                <img src="./images/Demo/robert.jpg" alt="" class="mockup-tab-avatar" width="20" height="20">
+                                <span>Antoine</span>
                             </button>
                             <button type="button" class="mockup-seg-btn" role="tab" aria-selected="false" tabindex="-1" data-mockup-student="sophie">
                                 <img src="./images/Demo/durand.jpg" alt="" class="mockup-tab-avatar" width="20" height="20">
@@ -434,7 +459,7 @@
                         <div class="accordion-content" id="acc-panel-3" role="region" aria-hidden="true">
                             <div class="overflow-hidden">
                                 <div class="pb-6 text-sm text-zinc-500 leading-relaxed pl-10">
-                                    L'application utilise des consignes calibrées pour garantir un ton professionnel et synthétise automatiquement vos observations du <strong>Journal de bord</strong> (avec seuil de signalement réglable) ainsi que l'historique des périodes (trimestres ou semestres). Trois retouches rapides (<em>Concise, Encourageante, Peaufiner</em>) ajustent l'appréciation à la volée.
+                                    L'application utilise des consignes calibrées pour garantir un ton professionnel et synthétise automatiquement vos observations du <strong>Journal de bord</strong> (avec seuil de signalement réglable) ainsi que l'historique des périodes (trimestres ou semestres). Quatre retouches rapides (<em>Concise, Encourageante, Exigeante, Peaufiner</em>) ajustent l'appréciation à la volée.
                                 </div>
                             </div>
                         </div>

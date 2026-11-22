@@ -959,7 +959,7 @@
         margin-right: 2px;
     }
 
-    :is(.class-dropdown-list, .pick-students-list, .move-class-list, .trombi-popover-list):is(.can-scroll-top, .can-scroll-bottom) {
+    :is(.class-dropdown-list, .pick-students-list, .move-class-list, .trombi-popover-list, .history-popover-list):is(.can-scroll-top, .can-scroll-bottom) {
         padding-right: 5px;
     }
 

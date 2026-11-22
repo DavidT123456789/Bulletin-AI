@@ -7,9 +7,14 @@ import { appState } from '../../state/State.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
+import { Utils } from '../../utils/Utils.js';
 
 const REST_TOOLTIP = 'Tirer un élève au sort';
 const ACTIVE_TOOLTIP = 'Tirer un autre élève (Espace)';
+const ROUND_COMPLETE_TOOLTIP = 'Tour complet · Nouveau tour (Espace)';
+const HISTORY_TOOLTIP = 'Élèves tirés (← / →)';
+const DICE_ICON = 'solar:dice-linear';
+const RESTART_ICON = 'solar:restart-linear';
 const HOP_DELAYS_MANY = [65, 65, 70, 75, 85, 95, 110, 125, 145, 170, 200, 240, 290, 355, 420];
 const HOP_DELAYS_THREE = [90, 100, 115, 135, 165, 205, 260, 340];
 const HOP_DELAYS_TWO = [140, 180, 240, 320];
@@ -21,6 +26,20 @@ export const SeatingRandomPicker = {
      */
     _isRandomPickerActive() {
         return Boolean(this._randomPickerState?.active);
+    },
+
+    /**
+     * Retourne l'indice 0-based actuellement affiché dans la liste des élèves déjà tirés.
+     * @param {Object|null} [state=this._randomPickerState]
+     * @returns {number}
+     */
+    _getRandomPickerCurrentIndex(state = this._randomPickerState) {
+        if (!state || !Array.isArray(state.drawnIds) || state.drawnIds.length === 0) return -1;
+        if (Number.isInteger(state.currentIndex) && state.currentIndex >= 0 && state.currentIndex < state.drawnIds.length) {
+            return state.currentIndex;
+        }
+        const byId = state.drawnIds.lastIndexOf(state.currentStudentId);
+        return byId >= 0 ? byId : state.drawnIds.length - 1;
     },
 
     /**
@@ -129,6 +148,7 @@ export const SeatingRandomPicker = {
         if (!this._isActive || !this._isLocked) return null;
 
         this._clearRandomTimers();
+        this._closeRandomHistoryPopover?.();
 
         if (this._isSearchOpen?.() || this._activeSearchTerm) {
             this._closeSearch?.();
@@ -173,6 +193,7 @@ export const SeatingRandomPicker = {
             active: true,
             sessionKey,
             currentStudentId: nextId,
+            currentIndex: drawnIds.length - 1,
             drawnIds,
             remainingIds
         };
@@ -198,8 +219,60 @@ export const SeatingRandomPicker = {
     },
 
     /**
+     * Revient sur un élève déjà tiré au sort par son indice dans le tour courant,
+     * sans relancer de tirage ni consommer d'élève.
+     * @param {number} index
+     * @param {{ closePopover?: boolean }} [options]
+     * @returns {Object|null}
+     */
+    _selectRandomHistoryIndex(index, { closePopover = false } = {}) {
+        if (!this._isRandomPickerActive() || !this._isActive || !this._isLocked) return null;
+
+        const state = this._randomPickerState;
+        if (!Number.isInteger(index) || index < 0 || index >= state.drawnIds.length) return null;
+
+        this._clearRandomTimers();
+
+        const targetId = state.drawnIds[index];
+        const pool = this._getRandomPickerPool();
+        const student = pool.find(s => s.id === targetId);
+        if (!student) {
+            this._syncRandomPickerAfterRefresh();
+            return null;
+        }
+
+        state.currentIndex = index;
+        state.currentStudentId = targetId;
+
+        if (closePopover) {
+            this._closeRandomHistoryPopover?.();
+        }
+
+        this._syncRandomPickerUI({ triggerReveal: false, skipScroll: false });
+        this._haptic?.(8);
+        return student;
+    },
+
+    /**
+     * Navigue pas à pas (-1 précédent, +1 suivant) dans les élèves déjà tirés du tour courant.
+     * @param {number} delta
+     * @returns {Object|null}
+     */
+    _stepRandomHistory(delta) {
+        if (!this._isRandomPickerActive() || !this._isActive || !this._isLocked) return null;
+        if (!Number.isInteger(delta) || delta === 0) return null;
+
+        const state = this._randomPickerState;
+        const currentIndex = this._getRandomPickerCurrentIndex(state);
+        const nextIndex = currentIndex + delta;
+        if (nextIndex < 0 || nextIndex >= state.drawnIds.length) return null;
+
+        return this._selectRandomHistoryIndex(nextIndex, { closePopover: false });
+    },
+
+    /**
      * Retourne les éléments DOM de la capsule flottante dédiés au tirage au sort.
-     * @returns {{ view: HTMLElement|null, actionsCapsule: HTMLElement|null, readout: HTMLElement|null, nameEl: HTMLElement|null, counterEl: HTMLElement|null, randomBtn: HTMLElement|null }}
+     * @returns {{ view: HTMLElement|null, actionsCapsule: HTMLElement|null, readout: HTMLElement|null, nameEl: HTMLElement|null, counterEl: HTMLElement|null, randomBtn: HTMLElement|null, historyPopover: HTMLElement|null }}
      */
     _getRandomPickerElements() {
         return {
@@ -208,20 +281,175 @@ export const SeatingRandomPicker = {
             readout: document.getElementById('scRandomReadout'),
             nameEl: document.getElementById('scRandomStudentName'),
             counterEl: document.getElementById('scRandomCounter'),
-            randomBtn: document.getElementById('scFloatingRandomBtn')
+            randomBtn: document.getElementById('scFloatingRandomBtn'),
+            historyPopover: document.getElementById('scRandomHistoryPopover')
         };
     },
 
     /**
-     * Synchronise l'infobulle et l'étiquette ARIA du bouton dé.
+     * Synchronise l'icône, l'infobulle et l'étiquette ARIA du bouton dé / nouveau tour.
      * @param {HTMLElement|null} randomBtn
      * @param {string} tooltip
+     * @param {boolean} [isRoundComplete=false]
      */
-    _setRandomBtnTooltip(randomBtn, tooltip) {
+    _setRandomBtnState(randomBtn, tooltip, isRoundComplete = false) {
         if (!randomBtn) return;
+        randomBtn.classList.toggle('round-complete', Boolean(isRoundComplete));
         randomBtn.setAttribute('aria-label', tooltip);
         randomBtn.setAttribute('data-tooltip', tooltip);
         TooltipsUI?.updateTooltip?.(randomBtn, tooltip);
+        const iconEl = randomBtn.querySelector('iconify-icon');
+        const nextIcon = isRoundComplete ? RESTART_ICON : DICE_ICON;
+        if (iconEl && iconEl.getAttribute('icon') !== nextIcon) {
+            iconEl.setAttribute('icon', nextIcon);
+        }
+    },
+
+    /**
+     * Synchronise l'état interactif du readout (`Nom · x/y`) pour l'ouverture de l'historique.
+     * @param {HTMLElement|null} readout
+     * @param {{ canOpenHistory?: boolean, isPopoverOpen?: boolean }} [options]
+     */
+    _syncReadoutInteractivity(readout, { canOpenHistory = false, isPopoverOpen = false } = {}) {
+        if (!readout) return;
+        const openState = Boolean(canOpenHistory && isPopoverOpen);
+
+        readout.classList.toggle('is-static', !canOpenHistory);
+        readout.classList.toggle('popover-open', openState);
+        readout.setAttribute('aria-disabled', String(!canOpenHistory));
+        readout.setAttribute('aria-expanded', String(openState));
+        readout.setAttribute('tabindex', canOpenHistory ? '0' : '-1');
+
+        if (canOpenHistory) {
+            readout.setAttribute('aria-label', 'Voir les élèves déjà tirés au sort');
+            readout.setAttribute('data-tooltip', HISTORY_TOOLTIP);
+            TooltipsUI?.updateTooltip?.(readout, HISTORY_TOOLTIP);
+            readout._tippy?.enable?.();
+            if (openState) {
+                readout._tippy?.hide?.();
+            }
+        } else {
+            readout.removeAttribute('aria-label');
+            readout.removeAttribute('data-tooltip');
+            readout._tippy?.hide?.();
+            readout._tippy?.disable?.();
+        }
+    },
+
+    /**
+     * Ouvre ou ferme la liste des élèves déjà tirés au sort sous la capsule flottante.
+     * @returns {boolean} True si ouvert, false sinon
+     */
+    _toggleRandomHistoryPopover() {
+        if (this._randomHistoryPopoverOpen) {
+            this._closeRandomHistoryPopover();
+            return false;
+        }
+        return this._openRandomHistoryPopover();
+    },
+
+    /**
+     * Ouvre le popover listant les élèves déjà tirés au sort dans le tour courant.
+     * @returns {boolean}
+     */
+    _openRandomHistoryPopover() {
+        const state = this._randomPickerState;
+        if (!state?.active || !this._isActive || !this._isLocked) return false;
+        if (this._randomSuspenseTimer || !Array.isArray(state.drawnIds) || state.drawnIds.length < 2) return false;
+
+        const { readout, historyPopover } = this._getRandomPickerElements();
+        if (!historyPopover) return false;
+
+        this._closeContextMenu?.();
+        this._closePlacementPopover?.();
+        this._closeConfigPopover?.();
+
+        this._randomHistoryPopoverOpen = true;
+        this._renderRandomHistoryPopover();
+        historyPopover.classList.add('open');
+        historyPopover.setAttribute('aria-hidden', 'false');
+        this._syncReadoutInteractivity(readout, { canOpenHistory: true, isPopoverOpen: true });
+
+        if (!HistoryManager.isOpen('scRandomHistoryPopover')) {
+            HistoryManager.pushState('scRandomHistoryPopover', () => {
+                this._closeRandomHistoryPopover({ fromHistory: true });
+            });
+        }
+
+        return true;
+    },
+
+    /**
+     * Ferme le popover d'historique du tirage au sort.
+     * @param {{ fromHistory?: boolean, restoreFocus?: boolean }} [options]
+     */
+    _closeRandomHistoryPopover({ fromHistory = false, restoreFocus = false } = {}) {
+        const wasOpen = Boolean(this._randomHistoryPopoverOpen);
+        this._randomHistoryPopoverOpen = false;
+
+        if (!fromHistory && HistoryManager.isOpen('scRandomHistoryPopover')) {
+            HistoryManager.handleManualClose('scRandomHistoryPopover');
+        }
+
+        const { readout, historyPopover } = this._getRandomPickerElements();
+        historyPopover?.classList.remove('open');
+        historyPopover?.setAttribute('aria-hidden', 'true');
+
+        if (this._isRandomPickerActive()) {
+            const canOpenHistory = !this._randomSuspenseTimer && (this._randomPickerState?.drawnIds?.length || 0) >= 2;
+            this._syncReadoutInteractivity(readout, { canOpenHistory, isPopoverOpen: false });
+        }
+
+        if (wasOpen && restoreFocus && readout && readout.getAttribute('tabindex') === '0') {
+            readout.focus?.();
+        }
+    },
+
+    /**
+     * Construit la liste ordonnée (du plus récent au plus ancien) des élèves tirés au sort.
+     */
+    _renderRandomHistoryPopover() {
+        const state = this._randomPickerState;
+        const { historyPopover } = this._getRandomPickerElements();
+        if (!historyPopover || !state?.active) return;
+
+        const pool = this._getRandomPickerPool();
+        const studentById = new Map(pool.map(s => [s.id, s]));
+        const drawnIds = state.drawnIds || [];
+        const currentIndex = this._getRandomPickerCurrentIndex(state);
+        const total = pool.length;
+
+        let itemsHtml = '';
+        for (let i = drawnIds.length - 1; i >= 0; i--) {
+            const student = studentById.get(drawnIds[i]);
+            if (!student) continue;
+            const isCurrent = i === currentIndex;
+            const displayName = Utils.escapeHtml(this._getRandomPickerDisplayName(student));
+            const checkHtml = isCurrent
+                ? '<iconify-icon class="sc-random-history-check" icon="ph:check-bold" aria-hidden="true"></iconify-icon>'
+                : '';
+
+            itemsHtml += `
+                <button type="button" class="sc-random-history-item${isCurrent ? ' active' : ''}" role="option" aria-selected="${isCurrent ? 'true' : 'false'}" data-history-index="${i}">
+                    <span class="sc-random-history-rank">#${i + 1}</span>
+                    <span class="sc-random-history-name">${displayName}</span>
+                    ${checkHtml}
+                </button>
+            `;
+        }
+
+        historyPopover.innerHTML = `
+            <div class="sc-random-history-header">
+                <span class="sc-random-history-title">
+                    <iconify-icon icon="solar:history-linear" aria-hidden="true"></iconify-icon>
+                    <span>Élèves tirés</span>
+                </span>
+                <span class="sc-random-history-count">${drawnIds.length}/${total}</span>
+            </div>
+            <div class="sc-random-history-list" role="listbox" aria-label="Élèves déjà tirés au sort">
+                ${itemsHtml}
+            </div>
+        `;
     },
 
     /**
@@ -250,9 +478,10 @@ export const SeatingRandomPicker = {
         view?.classList.add('sc-random-active', 'sc-random-rolling');
         actionsCapsule?.classList.add('random-open');
         readout?.setAttribute('aria-hidden', 'false');
+        this._syncReadoutInteractivity(readout, { canOpenHistory: false, isPopoverOpen: false });
         if (counterEl) counterEl.textContent = `${step}/${total}`;
 
-        this._setRandomBtnTooltip(randomBtn, ACTIVE_TOOLTIP);
+        this._setRandomBtnState(randomBtn, ACTIVE_TOOLTIP, false);
         if (randomBtn) {
             randomBtn.classList.remove('rolling');
             void randomBtn.offsetWidth;
@@ -261,6 +490,7 @@ export const SeatingRandomPicker = {
 
         let stepIdx = 0;
         const runStep = () => {
+            this._randomSuspenseTimer = null;
             if (!this._isRandomPickerActive() || !this._isActive || !this._isLocked) return;
 
             if (stepIdx >= hops.length) {
@@ -310,7 +540,9 @@ export const SeatingRandomPicker = {
 
         const displayName = this._getRandomPickerDisplayName(student);
         const total = pool.length;
-        const step = Math.min(state.drawnIds.length, total);
+        const currentIndex = this._getRandomPickerCurrentIndex(state);
+        const step = Math.min(currentIndex >= 0 ? currentIndex + 1 : state.drawnIds.length, total);
+        const canOpenHistory = state.drawnIds.length >= 2;
 
         view?.classList.remove('sc-random-rolling');
         view?.classList.add('sc-random-active');
@@ -319,8 +551,24 @@ export const SeatingRandomPicker = {
         if (counterEl) counterEl.textContent = `${step}/${total}`;
         readout?.setAttribute('aria-hidden', 'false');
 
+        if (!canOpenHistory && this._randomHistoryPopoverOpen) {
+            this._closeRandomHistoryPopover();
+        }
+        this._syncReadoutInteractivity(readout, {
+            canOpenHistory,
+            isPopoverOpen: this._randomHistoryPopoverOpen
+        });
+        if (this._randomHistoryPopoverOpen) {
+            this._renderRandomHistoryPopover();
+        }
+
+        const isRoundComplete = state.remainingIds.length === 0 && total > 1;
         randomBtn?.classList.remove('rolling');
-        this._setRandomBtnTooltip(randomBtn, ACTIVE_TOOLTIP);
+        this._setRandomBtnState(
+            randomBtn,
+            isRoundComplete ? ROUND_COMPLETE_TOOLTIP : ACTIVE_TOOLTIP,
+            isRoundComplete
+        );
 
         this._renderSpotlight?.(new Set([student.id]), {
             activeClass: 'sc-random-active',
@@ -368,6 +616,10 @@ export const SeatingRandomPicker = {
         const validIds = new Set(pool.map(s => s.id));
         this._randomPickerState.drawnIds = this._randomPickerState.drawnIds.filter(id => validIds.has(id));
         this._randomPickerState.remainingIds = this._randomPickerState.remainingIds.filter(id => validIds.has(id));
+        const syncedIndex = this._randomPickerState.drawnIds.lastIndexOf(currentId);
+        this._randomPickerState.currentIndex = syncedIndex >= 0
+            ? syncedIndex
+            : Math.max(0, this._randomPickerState.drawnIds.length - 1);
         this._syncRandomPickerUI({ triggerReveal: false, skipScroll: true });
     },
 
@@ -377,6 +629,7 @@ export const SeatingRandomPicker = {
      */
     _closeRandomPicker({ fromHistory = false } = {}) {
         this._clearRandomTimers();
+        this._closeRandomHistoryPopover?.({ fromHistory });
 
         const wasOpen = Boolean(this._randomPickerState?.active);
         this._randomPickerState = null;
@@ -385,16 +638,18 @@ export const SeatingRandomPicker = {
             HistoryManager.handleManualClose('scRandomPicker');
         }
 
-        const { view, actionsCapsule, readout, nameEl, counterEl, randomBtn } = this._getRandomPickerElements();
+        const { view, actionsCapsule, readout, nameEl, counterEl, randomBtn, historyPopover } = this._getRandomPickerElements();
         view?.classList.remove('sc-random-active', 'sc-random-rolling', 'sc-random-revealed');
         actionsCapsule?.classList.remove('random-open');
 
         readout?.setAttribute('aria-hidden', 'true');
+        this._syncReadoutInteractivity(readout, { canOpenHistory: false, isPopoverOpen: false });
         if (nameEl) nameEl.textContent = '';
         if (counterEl) counterEl.textContent = '';
+        if (historyPopover) historyPopover.innerHTML = '';
 
         randomBtn?.classList.remove('rolling');
-        this._setRandomBtnTooltip(randomBtn, REST_TOOLTIP);
+        this._setRandomBtnState(randomBtn, REST_TOOLTIP, false);
 
         if (wasOpen) {
             this._clearSpotlight?.('sc-random-active');

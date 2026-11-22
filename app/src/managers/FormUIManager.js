@@ -11,6 +11,7 @@
 import { appState } from '../state/State.js';
 import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
+import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { ThemeManager } from './ThemeManager.js';
 
@@ -52,6 +53,10 @@ export const FormUI = {
         }
 
         if (DOM.iaLengthSlider) DOM.iaLengthSlider.value = iaConfig.length;
+        const normalizedMaxChars = Utils.normalizeMaxChars?.(iaConfig.maxChars) ?? null;
+        if (DOM.iaMaxCharsInput) {
+            DOM.iaMaxCharsInput.value = normalizedMaxChars ? String(normalizedMaxChars) : '';
+        }
         if (DOM.iaToneSlider) DOM.iaToneSlider.value = iaConfig.tone ?? 3;
         if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.value = iaConfig.styleInstructions ?? '';
         if (DOM.iaDiscipline) DOM.iaDiscipline.value = iaConfig.discipline ?? '';
@@ -106,12 +111,33 @@ export const FormUI = {
         const config = appState.subjects?.['MonStyle']?.iaConfig || DEFAULT_IA_CONFIG;
         const toneEnabled = config.enableTone ?? (config.tone !== undefined && config.tone !== 3);
         const instructionsEnabled = config.enableStyleInstructions !== false;
+        const maxChars = Utils.normalizeMaxChars?.(config.maxChars) ?? null;
+        const maxCharsEnabled = maxChars !== null;
 
         if (DOM.iaLengthSlider && DOM.iaLengthSliderValue) {
             const words = parseInt(DOM.iaLengthSlider.value, 10);
             const approxChars = Math.round((words * APPROX_CHARS_PER_WORD) / 10) * 10;
-            DOM.iaLengthSliderValue.textContent = `~${words} mots • ~${approxChars} car.`;
+            DOM.iaLengthSliderValue.textContent = (maxCharsEnabled && approxChars > maxChars)
+                ? `~${words} mots • plafonné à ${maxChars} car.`
+                : `~${words} mots • ~${approxChars} car.`;
         }
+
+        if (DOM.iaMaxCharsToggle) DOM.iaMaxCharsToggle.checked = maxCharsEnabled;
+        if (DOM.iaMaxCharsInput) {
+            DOM.iaMaxCharsInput.disabled = !maxCharsEnabled;
+            if (maxCharsEnabled && !DOM.iaMaxCharsInput.value) {
+                DOM.iaMaxCharsInput.value = String(maxChars);
+            }
+        }
+        DOM.iaMaxCharsCollapsible?.classList?.toggle('open', maxCharsEnabled);
+        if (DOM.iaMaxCharsValue) {
+            DOM.iaMaxCharsValue.textContent = maxCharsEnabled ? `Max ${maxChars} car.` : 'Désactivée';
+        }
+        DOM.iaMaxCharsPresets?.querySelectorAll?.('[data-max-chars]')?.forEach(btn => {
+            const isActive = maxCharsEnabled && Number(btn.dataset.maxChars) === maxChars;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', String(isActive));
+        });
 
         if (DOM.iaToneToggle) DOM.iaToneToggle.checked = toneEnabled;
         if (DOM.iaToneSlider) DOM.iaToneSlider.disabled = !toneEnabled;

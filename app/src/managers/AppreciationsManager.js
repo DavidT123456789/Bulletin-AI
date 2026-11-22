@@ -52,122 +52,14 @@ export const AppreciationsManager = {
     },
 
     /**
-     * Get per-period history state for a result (mirrors FocusPanelHistory._getState logic)
-     * @param {Object} result - The result object
-     * @returns {Object} The history state for the current period
-     * @private
+     * Enregistre une version d'appréciation dans l'historique par période (délégué à HistoryUtils SSOT)
+     * @param {Object} result - L'objet résultat
+     * @param {string} [source='edit'] - Source de la modification
+     * @param {string} [period=appState.currentPeriod] - Période cible
      */
-    _getPerPeriodState(result, createIfMissing = false) {
-        const currentPeriod = appState.currentPeriod;
-
-        // Migrate legacy historyState → historyPerPeriod
-        // CRITICAL: Only use generationPeriod (immutable) — never studentData.currentPeriod
-        // because currentPeriod changes as the user navigates, causing S1 history
-        // to be incorrectly assigned to S2.
-        if (result.historyState?.versions?.length > 0) {
-            if (!result.historyPerPeriod) result.historyPerPeriod = {};
-            const legacyPeriod = result.generationPeriod;
-            if (legacyPeriod && !result.historyPerPeriod[legacyPeriod]) {
-                result.historyPerPeriod[legacyPeriod] = result.historyState;
-            }
-            result.historyState = null;
-        }
-
-        // 2. Return existing period history, or create empty state only if requested
-        if (!result.historyPerPeriod?.[currentPeriod]) {
-            if (createIfMissing) {
-                if (!result.historyPerPeriod) result.historyPerPeriod = {};
-                result.historyPerPeriod[currentPeriod] = { versions: [], currentIndex: -1 };
-                HistoryUtils.seedInitialVersion(result.historyPerPeriod[currentPeriod], result, currentPeriod);
-                return result.historyPerPeriod[currentPeriod];
-            }
-            return { versions: [], currentIndex: -1 };
-        }
-
-        HistoryUtils.seedInitialVersion(result.historyPerPeriod[currentPeriod], result, currentPeriod);
-        return result.historyPerPeriod[currentPeriod];
-    },
-
-    /**
-     * Sauvegarde la version actuelle dans l'historique avant modification
-     * @param {Object} result - L'objet résultat à sauvegarder
-     * @param {string} source - Source de la modification (edit, concise, encouraging, polish, regenerate)
-     */
-    pushToHistory(result, source = 'edit') {
+    pushToHistory(result, source = 'edit', period = appState.currentPeriod) {
         if (!result || !result.appreciation) return;
-        const state = this._getPerPeriodState(result, true);
-        const appreciationSource = result.appreciationSource ?? null;
-        const aiModel = result.studentData?.currentAIModel ?? null;
-        const tokenUsage = result.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
-
-        HistoryUtils.pushToState(state, result.appreciation, source, appreciationSource, aiModel, tokenUsage);
-    },
-
-    /**
-     * Bascule entre versions (toggle)
-     * @param {string} id - ID du résultat
-     * @returns {boolean}
-     */
-    toggleVersion(id) {
-        const result = appState.generatedResults.find(r => r.id === id);
-        if (!result) return false;
-
-        const state = this._getPerPeriodState(result, true);
-
-        // Sauvegarder texte actuel s'il diffère
-        if (result.appreciation) {
-            const appreciationSource = result.appreciationSource ?? null;
-            const aiModel = result.studentData?.currentAIModel ?? null;
-            const tokenUsage = result.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
-
-            HistoryUtils.pushToState(state, result.appreciation, 'edit', appreciationSource, aiModel, tokenUsage);
-        }
-
-        if (!HistoryUtils.hasMultipleVersions(state)) {
-            UI.showNotification('Aucune version alternative disponible.', 'warning');
-            return false;
-        }
-
-        // Naviguer (cycle)
-        if (state.currentIndex > 0) {
-            state.currentIndex--;
-        } else {
-            state.currentIndex = state.versions.length - 1;
-        }
-
-        const currentVersion = HistoryUtils.normalizeVersion(state.versions[state.currentIndex]);
-        result.appreciation = currentVersion.content;
-        const currentPeriod = appState.currentPeriod;
-        if (result.studentData?.periods) {
-            Utils.markStudentModified(result, currentPeriod);
-            result.studentData.periods[currentPeriod].appreciation = currentVersion.content;
-        }
-        const isShowingOlder = state.currentIndex < state.versions.length - 1;
-
-        // Mettre à jour la carte UI
-        const card = document.querySelector(`.appreciation-result[data-id="${id}"]`);
-        if (card) {
-            const appreciationEl = card.querySelector('[data-template="appreciation"]');
-            if (appreciationEl) {
-                appreciationEl.innerHTML = Utils.decodeHtmlEntities(Utils.cleanMarkdown(result.appreciation));
-            }
-
-            const toggleBtn = card.querySelector('[data-action="toggle-version"]');
-            if (toggleBtn) {
-                toggleBtn.dataset.tooltip = isShowingOlder ? 'Revenir à la version récente' : 'Voir version précédente';
-                toggleBtn.classList.toggle('showing-original', isShowingOlder);
-            }
-
-            const wordCountEl = card.querySelector('[data-template="wordCount"]');
-            if (wordCountEl) {
-                const wordCount = Utils.countWords(result.appreciation);
-                wordCountEl.textContent = `${wordCount} mot${wordCount > 1 ? 's' : ''}`;
-                wordCountEl.dataset.tooltip = `${Utils.countCharacters(result.appreciation)} caractères`;
-            }
-        }
-
-        StorageManager.saveAppState();
-        return true;
+        HistoryUtils.recordStudentVersion(result, period, result.appreciation, source, { autoSeed: false });
     },
 
     analyserEvolution(periodsData) {
@@ -178,11 +70,11 @@ export const AppreciationsManager = {
         return StatsService.getRelevantEvolution(evolutions, currentPeriod);
     },
 
-    getAllPrompts(studentData, overrideConfig = null) {
-        return PromptService.getAllPrompts(studentData, overrideConfig);
+    getAllPrompts(studentData, overrideConfig = null, runtimeOptions = null) {
+        return PromptService.getAllPrompts(studentData, overrideConfig, false, runtimeOptions);
     },
 
-    async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null) {
+    async generateAppreciation(studentData, isPreview = false, overrideConfig = null, signal = null, context = null, runtimeOptions = null) {
         let appreciation = '', prompts = {}, tokenUsage = { appreciation: null, analysis: null };
         const targetClassId = studentData?.classId ?? appState.currentClassId;
         const targetPeriod = studentData?.currentPeriod || appState.currentPeriod;
@@ -203,14 +95,21 @@ export const AppreciationsManager = {
             currentPeriod: targetPeriod
         };
 
-        prompts = this.getAllPrompts({ ...normalizedStudentData, generatedAppreciation: '' }, overrideConfig);
+        prompts = this.getAllPrompts({ ...normalizedStudentData, generatedAppreciation: '' }, overrideConfig, runtimeOptions);
         const userPrompt = prompts.appreciationUser || prompts.appreciation;
         const systemPrompt = prompts.appreciationSystem || null;
         const aiResp = await AIService.callAIWithFallback(userPrompt, { signal, context, studentName: studentData.prenom, systemPrompt });
 
         // Nettoyage léger (préfixe parasite, guillemets englobants) puis désanonymisation locale
+        const sanitizedOutput = PromptService.sanitizeAppreciationOutput(aiResp.text);
+        if (!isPreview && Array.isArray(runtimeOptions?.recentOpenings)) {
+            const openingSnippet = PromptService.extractOpeningSnippet?.(sanitizedOutput, studentData.prenom);
+            if (openingSnippet) {
+                PromptService.pushOpeningSnippet?.(runtimeOptions.recentOpenings, openingSnippet);
+            }
+        }
         appreciation = PromptService.deanonymizeText(
-            PromptService.sanitizeAppreciationOutput(aiResp.text),
+            sanitizedOutput,
             studentData.prenom
         );
 
@@ -226,7 +125,7 @@ export const AppreciationsManager = {
         const result = this.createResultObject(studentData.nom, studentData.prenom, appreciation, evolutions, normalizedStudentData, prompts, tokenUsage, null, modelUsed);
         result.classId = targetClassId;
         result.generationPeriod = targetPeriod;
-        result.copied = false; // Ensure initialized as false
+        Utils.setAppreciationCopied(result, targetPeriod, false);
         UI?.recordSupportMilestone?.('generation', 1);
         return result;
     },
@@ -414,7 +313,7 @@ export const AppreciationsManager = {
         FocusPanelManager?.handleExternalGenerationStart?.(id);
 
         const originalResult = appState.generatedResults[resultIndex];
-        originalResult.copied = false;
+        Utils.setAppreciationCopied(originalResult, targetPeriod, false);
 
         try {
             // Mise à jour de certaines données si nécessaire
@@ -427,6 +326,13 @@ export const AppreciationsManager = {
 
             const newResult = await this.generateAppreciation(updatedStudentData, false, null, null, 'single-student');
 
+            // Préserver l'appréciation précédente dans l'historique AVANT l'écrasement par updateResult
+            const priorState = HistoryUtils.getStudentPeriodState(appState.generatedResults[resultIndex], targetPeriod, {
+                createIfMissing: true,
+                autoSeed: true
+            });
+            const hadPriorVersions = (priorState?.versions?.length || 0) > 0;
+
             // Use centralized updateResult to preserve user data (photo, journal, history)
             const updatedResult = StudentDataManager.updateResult(
                 appState.generatedResults[resultIndex],
@@ -434,7 +340,7 @@ export const AppreciationsManager = {
             );
 
             // Enregistrer la nouvelle génération dans l'historique
-            this.pushToHistory(updatedResult, 'regenerate');
+            this.pushToHistory(updatedResult, hadPriorVersions ? 'regenerate' : 'original', targetPeriod);
 
             // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
             const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);

@@ -86,6 +86,8 @@ const normalizeTokenUsage = (tokenUsage) => {
 
 export const StorageManager = {
     TAB_SYNC_CHANNEL_NAME: 'bulletin_ai_state_sync',
+    LOCAL_BACKUP_REMINDER_DAYS: 14,
+    LOCAL_BACKUP_REMINDER_MS: 14 * 24 * 60 * 60 * 1000,
     _tabId: `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     _broadcastChannel: null,
     _boundOnStorageEvent: null,
@@ -304,6 +306,7 @@ export const StorageManager = {
 
         // Journal threshold
         if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
+        if (settings.journalIncludeInAI !== undefined) userSettings.academic.journalIncludeInAI = settings.journalIncludeInAI !== false;
 
         if (settings.currentAIModel !== undefined) {
             userSettings.api.currentAIModel = migrateLegacyModelId(settings.currentAIModel);
@@ -833,6 +836,7 @@ export const StorageManager = {
             deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
 
             journalThreshold: userSettings.academic.journalThreshold,
+            journalIncludeInAI: userSettings.academic.journalIncludeInAI,
         };
     },
 
@@ -882,12 +886,35 @@ export const StorageManager = {
         const dataSettings = { ...settings };
         DATA_HASH_IGNORED_KEYS.forEach(k => delete dataSettings[k]);
 
-        // Exclure les horodatages transitoires des classes
+        // Exclure les horodatages transitoires et l'historique de versions des classes
+        const stripAnalysisHistory = (analysesMap) => {
+            if (!analysesMap || typeof analysesMap !== 'object') return analysesMap;
+            const cleaned = {};
+            for (const [period, entry] of Object.entries(analysesMap)) {
+                if (entry && typeof entry === 'object') {
+                    const { introHistory, ...entryRest } = entry;
+                    cleaned[period] = entryRest;
+                } else {
+                    cleaned[period] = entry;
+                }
+            }
+            return cleaned;
+        };
         if (Array.isArray(dataSettings.classes)) {
             dataSettings.classes = dataSettings.classes.map(c => {
                 const { seatingUpdatedAt, seatingValidatedAt, seatingActivityUpdatedAt, seatingActivityValidatedAt, classNoteUpdatedAt, updatedAt, ...rest } = c;
+                if (rest.analyses) {
+                    rest.analyses = stripAnalysisHistory(rest.analyses);
+                }
                 return rest;
             });
+        }
+        if (dataSettings.virtualClassAnalyses && typeof dataSettings.virtualClassAnalyses === 'object') {
+            const cleanVirtual = {};
+            for (const [vId, periodsMap] of Object.entries(dataSettings.virtualClassAnalyses)) {
+                cleanVirtual[vId] = stripAnalysisHistory(periodsMap);
+            }
+            dataSettings.virtualClassAnalyses = cleanVirtual;
         }
 
         // Exclure le verrouillage transitoire de seatingGrid (géré individuellement par classe via seatingLocked)
@@ -929,7 +956,7 @@ export const StorageManager = {
                 const cleanPeriods = {};
                 for (const [p, pData] of Object.entries(clean.studentData.periods)) {
                     if (pData) {
-                        const { _lastModified, ...pRest } = pData;
+                        const { _lastModified, copied, ...pRest } = pData;
                         cleanPeriods[p] = pRest;
                     }
                 }
@@ -1022,6 +1049,7 @@ export const StorageManager = {
                 SafeStorage.set(STORAGE_KEYS.LAST_MODIFIED, Date.now().toString());
             }
             this._lastDataHash = currentDataHash;
+            this._trackLocalBackupDirtyState(currentDataHash, hasChangedSinceLastSave);
             if (hasChangedSinceLastSave || (lastSyncHash && currentDataHash === lastSyncHash)) {
                 window.SyncService?.refreshLocalIndicator?.();
             }
@@ -1360,7 +1388,143 @@ export const StorageManager = {
         };
         const count = Utils.countUniqueStudents(dataToExport.generatedResults, dataToExport.classes);
         this._downloadFile(JSON.stringify(dataToExport, null, 2), `bulletin-ai_backup_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+        this.markLocalBackupCompleted();
         UI.showNotification(`Sauvegarde exportée (${count} élève${count > 1 ? 's' : ''}).`, 'success');
+    },
+
+    /**
+     * Indique si l'utilisateur dispose de données réelles (au moins une classe ou un élève hors « Classe exemple »).
+     * @returns {boolean}
+     */
+    hasRealUserData() {
+        const classes = Array.isArray(userSettings.academic?.classes) ? userSettings.academic.classes : [];
+        const demoClassIds = new Set();
+        let hasRealClass = false;
+
+        for (const cls of classes) {
+            if (!cls) continue;
+            const isDemo = typeof Utils.isDemoClassObject === 'function'
+                ? Utils.isDemoClassObject(cls)
+                : Boolean(ClassManager.isDemoClass?.(cls.id));
+            if (isDemo) {
+                if (cls.id) demoClassIds.add(cls.id);
+            } else {
+                hasRealClass = true;
+            }
+        }
+        if (hasRealClass) return true;
+
+        const results = Array.isArray(runtimeState.data?.generatedResults) ? runtimeState.data.generatedResults : [];
+        return results.some(r => r && (!r.classId || !demoClassIds.has(r.classId)));
+    },
+
+    /**
+     * Retourne l'horodatage (ms) de la dernière sauvegarde JSON complète locale, ou null si aucune.
+     * @returns {number|null}
+     */
+    getLastLocalBackupTime() {
+        const raw = SafeStorage.get(STORAGE_KEYS.LAST_LOCAL_BACKUP);
+        const ts = raw ? parseInt(raw, 10) : NaN;
+        return Number.isFinite(ts) && ts > 0 ? ts : null;
+    },
+
+    /**
+     * Enregistre l'état courant comme sauvegardé localement (appelé après export JSON complet ou import manuel).
+     * @param {number} [now=Date.now()]
+     * @param {Object} [options={}]
+     * @param {boolean} [options.recordTimestamp=true] - Met à jour la date de dernier export JSON
+     */
+    markLocalBackupCompleted(now = Date.now(), { recordTimestamp = true } = {}) {
+        if (recordTimestamp) {
+            SafeStorage.set(STORAGE_KEYS.LAST_LOCAL_BACKUP, String(now));
+        }
+        SafeStorage.set(STORAGE_KEYS.LAST_LOCAL_BACKUP_HASH, this.computeCurrentDataHash());
+        SafeStorage.remove(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE);
+        bus.emit(EVENTS.LOCAL_BACKUP_UPDATED, {
+            timestamp: recordTimestamp ? now : this.getLastLocalBackupTime()
+        });
+    },
+
+    /**
+     * Suit la date de première modification réelle non sauvegardée en JSON local.
+     * @param {string} currentDataHash
+     * @param {boolean} hasChangedSinceLastSave
+     * @param {number} [now=Date.now()]
+     * @private
+     */
+    _trackLocalBackupDirtyState(currentDataHash, hasChangedSinceLastSave, now = Date.now()) {
+        if (!this.hasRealUserData()) {
+            SafeStorage.remove(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE);
+            return;
+        }
+        const lastBackupHash = SafeStorage.get(STORAGE_KEYS.LAST_LOCAL_BACKUP_HASH);
+        if (lastBackupHash && currentDataHash === lastBackupHash) {
+            SafeStorage.remove(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE);
+        } else if (hasChangedSinceLastSave && !SafeStorage.get(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE)) {
+            SafeStorage.set(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE, String(now));
+        }
+    },
+
+    /**
+     * Évalue s'il convient d'afficher le rappel discret de sauvegarde JSON locale
+     * (uniquement sans fournisseur Cloud, avec données réelles modifiées depuis ≥ 14 jours et cooldown de 14 jours).
+     * @param {number} [now=Date.now()]
+     * @returns {{ shouldRemind: boolean, reason: string, daysSince: number, hasPreviousBackup: boolean }}
+     */
+    evaluateLocalBackupReminder(now = Date.now()) {
+        const lastBackupAt = this.getLastLocalBackupTime();
+        const hasPreviousBackup = Boolean(lastBackupAt);
+
+        if (SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER)) {
+            return { shouldRemind: false, reason: 'cloud-configured', daysSince: 0, hasPreviousBackup };
+        }
+        if (!this.hasRealUserData()) {
+            return { shouldRemind: false, reason: 'no-real-data', daysSince: 0, hasPreviousBackup };
+        }
+
+        const currentHash = this.computeCurrentDataHash();
+        const lastBackupHash = SafeStorage.get(STORAGE_KEYS.LAST_LOCAL_BACKUP_HASH);
+        if (lastBackupHash && currentHash === lastBackupHash) {
+            SafeStorage.remove(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE);
+            return { shouldRemind: false, reason: 'up-to-date', daysSince: 0, hasPreviousBackup };
+        }
+
+        const lastReminderAt = parseInt(SafeStorage.get(STORAGE_KEYS.LOCAL_BACKUP_REMINDER_AT, '0') || '0', 10) || 0;
+        if (lastReminderAt > 0 && (now - lastReminderAt) < this.LOCAL_BACKUP_REMINDER_MS) {
+            return { shouldRemind: false, reason: 'cooldown', daysSince: 0, hasPreviousBackup };
+        }
+
+        let dirtySince = parseInt(SafeStorage.get(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE, '0') || '0', 10) || 0;
+        if (!dirtySince) {
+            const lastMod = parseInt(SafeStorage.get(STORAGE_KEYS.LAST_MODIFIED, '0') || '0', 10) || 0;
+            dirtySince = (lastMod > 0 && lastMod <= now) ? lastMod : now;
+            SafeStorage.set(STORAGE_KEYS.LOCAL_BACKUP_DIRTY_SINCE, String(dirtySince));
+        }
+
+        const elapsed = Math.max(0, now - dirtySince);
+        if (elapsed < this.LOCAL_BACKUP_REMINDER_MS) {
+            return {
+                shouldRemind: false,
+                reason: 'too-recent',
+                daysSince: Math.floor(elapsed / 86400000),
+                hasPreviousBackup
+            };
+        }
+
+        const referenceSince = (lastBackupAt && lastBackupAt <= dirtySince) ? lastBackupAt : dirtySince;
+        const daysSince = Math.max(
+            this.LOCAL_BACKUP_REMINDER_DAYS,
+            Math.floor(Math.max(0, now - referenceSince) / 86400000)
+        );
+        return { shouldRemind: true, reason: 'overdue', daysSince, hasPreviousBackup };
+    },
+
+    /**
+     * Mémorise l'affichage du rappel de sauvegarde locale pour appliquer le délai de grâce (14 jours).
+     * @param {number} [now=Date.now()]
+     */
+    recordLocalBackupReminderShown(now = Date.now()) {
+        SafeStorage.set(STORAGE_KEYS.LOCAL_BACKUP_REMINDER_AT, String(now));
     },
 
     /**
@@ -1899,6 +2063,7 @@ export const StorageManager = {
                         seatingGrid: isMerge ? (settings.seatingGrid || appState.seatingGrid) : (settings.seatingGrid ?? null),
                         seatingActivityGrid: isMerge ? (settings.seatingActivityGrid || appState.seatingActivityGrid) : (settings.seatingActivityGrid ?? null),
                         journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
+                        journalIncludeInAI: settings.journalIncludeInAI ?? appState.journalIncludeInAI,
                         activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
                     });
                     userSettings.api.currentAIModel = appState.currentAIModel;
@@ -2035,6 +2200,9 @@ export const StorageManager = {
             this._ensureConfigUpgrades();
             this._lastSaveHash = null;
             await this.saveAppState();
+            if (!options.silent && !options.skipSnapshot && this.hasRealUserData()) {
+                this.markLocalBackupCompleted(Date.now(), { recordTimestamp: false });
+            }
             if (App && App.updateUIOnLoad) App.updateUIOnLoad();
 
             if (!options.silent) {

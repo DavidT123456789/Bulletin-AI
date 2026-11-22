@@ -654,4 +654,67 @@ describe('SettingsUIManager', () => {
             }
         });
     });
+
+    describe('Accordéon moteurs avancés & garde-fou souveraineté du Relais automatique', () => {
+        it('garde les moteurs avancés repliés si aucun n\'est configuré et les déplie automatiquement dès qu\'un moteur avancé ou Ollama est actif', () => {
+            document.body.innerHTML = `
+                <div class="advanced-providers-accordion" id="advancedProvidersAccordion">
+                    <button type="button" id="advancedProvidersToggleBtn" aria-expanded="false"></button>
+                    <span id="advancedProvidersCountBadge" hidden></span>
+                    <div id="advancedProvidersBody" hidden></div>
+                </div>
+            `;
+            SettingsUIManager._advancedProvidersManuallyToggled = false;
+            appState.anthropicApiKey = '';
+            appState.mistralApiKey = '';
+            appState.openaiApiKey = '';
+            appState.openrouterApiKey = '';
+            appState.ollamaEnabled = false;
+            DOM.openaiApiKey.value = '';
+            DOM.openrouterApiKey.value = '';
+            DOM.anthropicApiKey.value = '';
+            DOM.mistralApiKey.value = '';
+
+            SettingsUIManager.syncAdvancedProvidersAccordion({ autoExpandIfConfigured: true });
+            expect(document.getElementById('advancedProvidersBody').hidden).toBe(true);
+            expect(document.getElementById('advancedProvidersCountBadge').hidden).toBe(true);
+
+            // Activation d'Ollama -> badge "1 configuré" et dépliage auto
+            appState.ollamaEnabled = true;
+            SettingsUIManager.syncAdvancedProvidersAccordion({ autoExpandIfConfigured: true });
+            expect(document.getElementById('advancedProvidersBody').hidden).toBe(false);
+            expect(document.getElementById('advancedProvidersToggleBtn').getAttribute('aria-expanded')).toBe('true');
+            expect(document.getElementById('advancedProvidersCountBadge').hidden).toBe(false);
+            expect(document.getElementById('advancedProvidersCountBadge').textContent).toBe('1 configuré');
+            document.body.innerHTML = '';
+        });
+
+        it('affiche le garde-fou souveraineté uniquement quand Albert/Ollama est actif, Relais activé et un cloud hors UE est disponible en secours', () => {
+            document.body.innerHTML = `
+                <span id="fallbackOrderText"></span>
+                <span id="fallbackOrderMore" style="display:none;"></span>
+                <small id="fallbackSovereigntyHint" hidden></small>
+            `;
+            appState.currentAIModel = 'albert-small';
+            appState.albertApiKey = 'sk-albert-valid-key-123456';
+            appState.googleApiKey = 'AIzaSyValidGoogleApiKey1234567890';
+            appState.enableApiFallback = true;
+
+            SettingsUIManager.updateFallbackOrderHint();
+            expect(document.getElementById('fallbackSovereigntyHint').hidden).toBe(false);
+            expect(document.getElementById('fallbackSovereigntyHint').textContent).toContain('cloud hors UE');
+
+            // Si Relais désactivé -> hint masqué
+            appState.enableApiFallback = false;
+            SettingsUIManager.updateFallbackOrderHint();
+            expect(document.getElementById('fallbackSovereigntyHint').hidden).toBe(true);
+
+            // Si modèle actif déjà cloud hors UE (Google) -> hint masqué même si Relais actif
+            appState.enableApiFallback = true;
+            appState.currentAIModel = 'gemini-3.8-flash';
+            SettingsUIManager.updateFallbackOrderHint();
+            expect(document.getElementById('fallbackSovereigntyHint').hidden).toBe(true);
+            document.body.innerHTML = '';
+        });
+    });
 });

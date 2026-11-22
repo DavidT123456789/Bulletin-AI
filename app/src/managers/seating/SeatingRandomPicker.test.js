@@ -289,4 +289,193 @@ describe('SeatingRandomPicker — Tirage au sort sur le plan', () => {
         SeatingChartManager._applyLockState(false, { skipSmartFit: true });
         expect(SeatingChartManager._isRandomPickerActive()).toBe(false);
     });
+
+    it('permet de revenir sur un élève précédent au clavier (← / →) sans quitter la vue Plan ni casser la suite du tirage', () => {
+        setupPlanDOM([
+            { id: 's1', nom: 'DUPONT', prenom: 'Clara', studentData: {} },
+            { id: 's2', nom: 'MARTIN', prenom: 'Léo', studentData: {} },
+            { id: 's3', nom: 'BERNARD', prenom: 'Maël', studentData: {} },
+            { id: 's4', nom: 'DURAND', prenom: 'Inès', studentData: {} }
+        ], (grid) => {
+            grid[0][0] = 's1';
+            grid[0][1] = 's2';
+            grid[0][2] = 's3';
+            grid[1][0] = 's4';
+        });
+
+        const readout = document.getElementById('scRandomReadout');
+        const nameEl = document.getElementById('scRandomStudentName');
+        const counterEl = document.getElementById('scRandomCounter');
+        const switchToViewSpy = vi.spyOn(SeatingChartManager, 'switchToView');
+
+        // 1er tirage : readout statique (pas encore d'historique)
+        const first = SeatingChartManager._drawNextRandomStudent({ animate: false });
+        expect(readout.classList.contains('is-static')).toBe(true);
+        expect(readout.getAttribute('aria-disabled')).toBe('true');
+        expect(SeatingChartManager._openRandomHistoryPopover()).toBe(false);
+        expect(counterEl.textContent).toBe('1/4');
+
+        // 2e et 3e tirages : readout interactif
+        const second = SeatingChartManager._drawNextRandomStudent({ animate: false });
+        const third = SeatingChartManager._drawNextRandomStudent({ animate: false });
+        expect(readout.classList.contains('is-static')).toBe(false);
+        expect(readout.getAttribute('aria-disabled')).toBe('false');
+        expect(counterEl.textContent).toBe('3/4');
+
+        // Flèche Gauche -> revient sur le 2e puis sur le 1er
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(second.id);
+        expect(nameEl.textContent).toBe(second.prenom);
+        expect(counterEl.textContent).toBe('2/4');
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(first.id);
+        expect(counterEl.textContent).toBe('1/4');
+
+        // Borne basse : un ArrowLeft supplémentaire ne quitte PAS la vue Plan
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(first.id);
+        expect(SeatingChartManager._isActive).toBe(true);
+        expect(switchToViewSpy).not.toHaveBeenCalled();
+
+        // Flèche Droite -> ré-avance sur le 2e
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(second.id);
+        expect(counterEl.textContent).toBe('2/4');
+
+        // Nouveau tirage (Espace) depuis un élève antérieur -> tire le 4e élève inédit et revient en tête
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+        vi.runAllTimers();
+        const fourthId = SeatingChartManager._randomPickerState.currentStudentId;
+        expect([first.id, second.id, third.id]).not.toContain(fourthId);
+        expect(SeatingChartManager._randomPickerState.drawnIds).toEqual([first.id, second.id, third.id, fourthId]);
+        expect(SeatingChartManager._randomPickerState.currentIndex).toBe(3);
+        expect(counterEl.textContent).toBe('4/4');
+    });
+
+    it('ouvre la liste des élèves tirés au clic sur la capsule, permet d’en re-sélectionner un et gère Échap en 2 temps', () => {
+        setupPlanDOM([
+            { id: 's1', nom: 'DUPONT', prenom: 'Clara', studentData: {} },
+            { id: 's2', nom: 'MARTIN', prenom: 'Léo', studentData: {} },
+            { id: 's3', nom: 'BERNARD', prenom: 'Maël', studentData: {} }
+        ], (grid) => {
+            grid[0][0] = 's1';
+            grid[0][1] = 's2';
+            grid[0][2] = 's3';
+        });
+
+        const first = SeatingChartManager._drawNextRandomStudent({ animate: false });
+        const second = SeatingChartManager._drawNextRandomStudent({ animate: false });
+        const third = SeatingChartManager._drawNextRandomStudent({ animate: false });
+
+        const readout = document.getElementById('scRandomReadout');
+        const popover = document.getElementById('scRandomHistoryPopover');
+
+        // Ouverture par clic sur le readout
+        readout.click();
+        expect(SeatingChartManager._randomHistoryPopoverOpen).toBe(true);
+        expect(popover.classList.contains('open')).toBe(true);
+        expect(readout.getAttribute('aria-expanded')).toBe('true');
+
+        // Liste ordonnée du plus récent (#3) au plus ancien (#1)
+        const items = [...popover.querySelectorAll('.sc-random-history-item')];
+        expect(items.length).toBe(3);
+        expect(items[0].querySelector('.sc-random-history-rank').textContent).toBe('#3');
+        expect(items[0].querySelector('.sc-random-history-name').textContent).toBe(third.prenom);
+        expect(items[0].classList.contains('active')).toBe(true);
+        expect(items[2].querySelector('.sc-random-history-rank').textContent).toBe('#1');
+        expect(items[2].querySelector('.sc-random-history-name').textContent).toBe(first.prenom);
+
+        // Clic sur #1 -> revient sur le 1er élève et ferme le popover
+        items[2].click();
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(first.id);
+        expect(SeatingChartManager._randomPickerState.currentIndex).toBe(0);
+        expect(document.getElementById('scRandomCounter').textContent).toBe('1/3');
+        expect(SeatingChartManager._randomHistoryPopoverOpen).toBe(false);
+        expect(popover.classList.contains('open')).toBe(false);
+
+        // Ré-ouverture puis 1er Échap -> ferme uniquement le popover (tirage reste actif)
+        readout.click();
+        expect(SeatingChartManager._randomHistoryPopoverOpen).toBe(true);
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(SeatingChartManager._randomHistoryPopoverOpen).toBe(false);
+        expect(SeatingChartManager._isRandomPickerActive()).toBe(true);
+
+        // Ré-ouverture puis refresh retirant un autre élève -> conserve l'indice et met à jour la liste
+        SeatingChartManager._selectRandomHistoryIndex(1);
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(second.id);
+        readout.click();
+        appState.generatedResults = appState.generatedResults.filter(s => s.id !== first.id);
+        SeatingChartManager.refreshStudents();
+        expect(SeatingChartManager._randomPickerState.currentStudentId).toBe(second.id);
+        expect(SeatingChartManager._randomPickerState.currentIndex).toBe(0);
+        expect(popover.querySelectorAll('.sc-random-history-item').length).toBe(2);
+
+        // 2e séquence Échap -> ferme popover puis ferme le tirage et vide le DOM du popover
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(SeatingChartManager._randomHistoryPopoverOpen).toBe(false);
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(SeatingChartManager._isRandomPickerActive()).toBe(false);
+        expect(popover.innerHTML).toBe('');
+    });
+
+    it('bascule l’icône du dé en nouveau tour (↻) en fin de tour complet uniquement après révélation et jamais pour 1 seul élève', () => {
+        setupPlanDOM([
+            { id: 's1', nom: 'DUPONT', prenom: 'Clara', studentData: {} },
+            { id: 's2', nom: 'MARTIN', prenom: 'Léo', studentData: {} }
+        ], (grid) => {
+            grid[0][0] = 's1';
+            grid[0][1] = 's2';
+        });
+
+        const randomBtn = document.getElementById('scFloatingRandomBtn');
+        const iconEl = randomBtn.querySelector('iconify-icon');
+
+        // 1/2 -> icône dé classique
+        SeatingChartManager._drawNextRandomStudent({ animate: false });
+        expect(iconEl.getAttribute('icon')).toBe('solar:dice-linear');
+        expect(randomBtn.classList.contains('round-complete')).toBe(false);
+
+        // 2/2 en cours de suspense -> garde l'icône dé pendant le roulement
+        SeatingChartManager._drawNextRandomStudent({ animate: true });
+        expect(document.getElementById('seatingChartView').classList.contains('sc-random-rolling')).toBe(true);
+        expect(iconEl.getAttribute('icon')).toBe('solar:dice-linear');
+        expect(randomBtn.classList.contains('round-complete')).toBe(false);
+
+        // 2/2 révélé -> bascule sur ↻ + tooltip Tour complet
+        vi.runAllTimers();
+        expect(iconEl.getAttribute('icon')).toBe('solar:restart-linear');
+        expect(randomBtn.classList.contains('round-complete')).toBe(true);
+        expect(randomBtn.getAttribute('data-tooltip')).toBe('Tour complet · Nouveau tour (Espace)');
+
+        // Recul dans l'historique (1/2) -> la pioche reste vide, icône ↻ conservée
+        SeatingChartManager._stepRandomHistory(-1);
+        expect(iconEl.getAttribute('icon')).toBe('solar:restart-linear');
+
+        // Lancement du nouveau tour (1/2 du tour 2) -> retour à l'icône dé
+        SeatingChartManager._drawNextRandomStudent({ animate: false });
+        expect(document.getElementById('scRandomCounter').textContent).toBe('1/2');
+        expect(iconEl.getAttribute('icon')).toBe('solar:dice-linear');
+        expect(randomBtn.classList.contains('round-complete')).toBe(false);
+
+        // Fermeture -> retour à l'état repos
+        SeatingChartManager._drawNextRandomStudent({ animate: false });
+        expect(iconEl.getAttribute('icon')).toBe('solar:restart-linear');
+        SeatingChartManager._closeRandomPicker();
+        expect(iconEl.getAttribute('icon')).toBe('solar:dice-linear');
+        expect(randomBtn.classList.contains('round-complete')).toBe(false);
+        expect(randomBtn.getAttribute('data-tooltip')).toBe('Tirer un élève au sort');
+
+        // Garde 1 seul élève (1/1) -> jamais en mode Nouveau tour
+        setupPlanDOM([
+            { id: 'only', nom: 'UNIQUE', prenom: 'Sam', studentData: {} }
+        ], (grid) => {
+            grid[0][0] = 'only';
+        });
+        const soloBtn = document.getElementById('scFloatingRandomBtn');
+        const soloIcon = soloBtn.querySelector('iconify-icon');
+        SeatingChartManager._drawNextRandomStudent({ animate: false });
+        expect(soloIcon.getAttribute('icon')).toBe('solar:dice-linear');
+        expect(soloBtn.classList.contains('round-complete')).toBe(false);
+    });
 });

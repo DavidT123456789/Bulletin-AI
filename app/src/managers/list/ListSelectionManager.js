@@ -526,6 +526,7 @@ export const ListSelectionManager = {
         let errorCount = 0;
         let wasAborted = false;
         let stoppedIndex = 0;
+        const recentOpenings = [];
         const total = ids.length;
 
         // 3. Set visual state "Pending Skeleton" for all selected rows
@@ -562,8 +563,8 @@ export const ListSelectionManager = {
                 updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                 updatedStudentData.currentAIModel = appState.currentAIModel;
 
-                // Call AI Service directly (passing signal for cancellation)
-                const newResult = await AppreciationsManager.generateAppreciation(updatedStudentData, false, null, signal, 'single-student');
+                // Call AI Service directly (passing signal for cancellation + anti-repetition window)
+                const newResult = await AppreciationsManager.generateAppreciation(updatedStudentData, false, null, signal, 'single-student', { recentOpenings });
                 newResult.classId = originalResult.classId ?? batchClassId;
                 newResult.generationPeriod = batchPeriod;
 
@@ -659,22 +660,23 @@ export const ListSelectionManager = {
     async bulkCopy(ids) {
         const count = await ExportManager.copyBulkAppreciations(ids);
         if (count > 0) {
+            ids.forEach(id => this.callbacks.updateStudentRow(id));
             this.clearSelections();
             UI?.showNotification(`${count} appréciation${count > 1 ? 's' : ''} copiée${count > 1 ? 's' : ''}.`, 'success');
         }
     },
 
     /**
-     * Copie l'appréciation d'un seul élève dans le presse-papier
+     * Copie l'appréciation d'un seul élève (texte propre sans nom) dans le presse-papier
      * @param {string} studentId
      * @private
      */
     async copySingleAppreciation(studentId) {
-        const count = await ExportManager.copyBulkAppreciations([studentId]);
-        if (count > 0) {
+        const ok = await ExportManager.copyAppreciation(studentId, null, () => {
+            this.callbacks.updateStudentRow(studentId);
+        });
+        if (ok) {
             UI?.showNotification('Appréciation copiée.', 'success');
-        } else {
-            UI?.showNotification('Aucune appréciation à copier.', 'info');
         }
     },
 
@@ -783,6 +785,7 @@ export const ListSelectionManager = {
                 appreciation: student.appreciation,
                 periodAppreciation: student.studentData?.periods?.[currentPeriod]?.appreciation,
                 periodLastModified: student.studentData?.periods?.[currentPeriod]?._lastModified,
+                periodCopied: student.studentData?.periods?.[currentPeriod]?.copied,
                 lastModified: student._lastModified,
                 copied: student.copied,
                 promptHash: student.promptHash,
@@ -790,6 +793,9 @@ export const ListSelectionManager = {
                 generationPeriod: student.generationPeriod,
                 wasGenerated: student.wasGenerated,
                 historyState: student.historyState,
+                periodHistory: student.historyPerPeriod?.[currentPeriod]
+                    ? Utils.deepClone(student.historyPerPeriod[currentPeriod])
+                    : null,
                 appreciationSource: student.appreciationSource,
                 journal: student.journal ? [...student.journal] : [],
                 context: student.studentData?.periods?.[currentPeriod]?.context,
@@ -821,6 +827,7 @@ export const ListSelectionManager = {
                     }
                     if (student.studentData?.periods?.[currentPeriod]) {
                         student.studentData.periods[currentPeriod].appreciation = '';
+                        student.studentData.periods[currentPeriod].copied = false;
                         student.studentData.periods[currentPeriod]._lastModified = now;
                     }
                     student._lastModified = now;
@@ -854,6 +861,7 @@ export const ListSelectionManager = {
                     filteredStudent.appreciation = '';
                     if (filteredStudent.studentData?.periods?.[currentPeriod]) {
                         filteredStudent.studentData.periods[currentPeriod].appreciation = '';
+                        filteredStudent.studentData.periods[currentPeriod].copied = false;
                         filteredStudent.studentData.periods[currentPeriod]._lastModified = now;
                     }
                     filteredStudent._lastModified = now;
@@ -929,6 +937,7 @@ export const ListSelectionManager = {
                                 target.appreciation = snap.appreciation;
                                 if (target.studentData?.periods?.[currentPeriod]) {
                                     target.studentData.periods[currentPeriod].appreciation = snap.periodAppreciation;
+                                    target.studentData.periods[currentPeriod].copied = snap.periodCopied;
                                     target.studentData.periods[currentPeriod]._lastModified = snap.periodLastModified;
                                 }
                                 target._lastModified = snap.lastModified;
@@ -938,6 +947,10 @@ export const ListSelectionManager = {
                                 target.generationPeriod = snap.generationPeriod;
                                 target.wasGenerated = snap.wasGenerated;
                                 target.historyState = snap.historyState;
+                                if (snap.periodHistory) {
+                                    if (!target.historyPerPeriod) target.historyPerPeriod = {};
+                                    target.historyPerPeriod[currentPeriod] = Utils.deepClone(snap.periodHistory);
+                                }
                                 target.appreciationSource = snap.appreciationSource;
                             }
 

@@ -9,6 +9,7 @@ import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
 import { StatsUI } from './StatsUIManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
+import * as HistoryPopoverUI from '../utils/HistoryPopoverUI.js';
 import { JournalManager } from './JournalManager.js';
 import { PromptService } from '../services/PromptService.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
@@ -134,12 +135,14 @@ export const FocusPanelStatus = {
 
         if (currentContext !== snapshotContext) return true;
 
-        // 3. Compare Journal (Only tags/notes that meet threshold matter for AI)
+        // 3. Compare Journal (Hors IA ignores all; otherwise tags >= threshold + all written notes)
         const currentJournal = current.journal || [];
+        const currentIncludedInAI = JournalManager.isIncludedInAI?.() !== false;
         const currentThreshold = JournalManager.getThreshold();
 
         // Helper to get tags that meet threshold
-        const getActiveTags = (entries, thresh) => {
+        const getActiveTags = (entries, thresh, included = true) => {
+            if (!included) return [];
             const counts = {};
             entries.forEach(e => {
                 if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
@@ -147,33 +150,30 @@ export const FocusPanelStatus = {
             return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
         };
 
-        // Helper to get relevant notes (only from entries with active tags)
-        const getRelevantNotes = (entries, thresh) => {
-            const tagCounts = {};
-            entries.forEach(e => {
-                if (e.tags) e.tags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1);
-            });
-            const activeTags = new Set(Object.keys(tagCounts).filter(t => tagCounts[t] >= thresh));
+        // Helper to get relevant written notes (all written notes are transmitted when AI inclusion is active)
+        const getRelevantNotes = (entries, included = true) => {
+            if (!included) return '';
             return entries
-                .filter(e => e.note && e.note.trim() && e.tags && e.tags.some(t => activeTags.has(t)))
+                .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
                 .map(e => e.note.trim())
                 .sort()
                 .join('||');
         };
 
         // Get what the AI would see NOW (current journal + current threshold)
-        const currentActiveTags = getActiveTags(currentJournal, currentThreshold);
-        const currentNotes = getRelevantNotes(currentJournal, currentThreshold);
+        const currentActiveTags = getActiveTags(currentJournal, currentThreshold, currentIncludedInAI);
+        const currentNotes = getRelevantNotes(currentJournal, currentIncludedInAI);
 
         if (snapshot.journal) {
             // Full snapshot available
             const snapshotJournal = snapshot.journal;
             // Use snapshot's threshold (what the AI saw at generation time)
             const snapshotThreshold = snapshot.threshold ?? currentThreshold;
+            const snapshotIncluded = snapshot.journalIncludeInAI !== false;
 
             // Get what the AI SAW at generation time
-            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold);
-            const snapshotNotes = getRelevantNotes(snapshotJournal, snapshotThreshold);
+            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold, snapshotIncluded);
+            const snapshotNotes = getRelevantNotes(snapshotJournal, snapshotIncluded);
 
 
 
@@ -497,12 +497,13 @@ export const FocusPanelStatus = {
     },
 
     /**
-     * Update word count display
+     * Update word/character count display and character limit guardrails
      * @param {boolean} [animate=false] - Whether to animate the number change
-     * @param {number|null} [fromCount=null] - Optional starting value for animation
-     * @param {number|null} [targetCount=null] - Optional target value (use when DOM not ready yet)
+     * @param {number|null} [fromCount=null] - Optional starting word count for animation
+     * @param {number|null} [targetCount=null] - Optional target word count (use when DOM not ready yet)
+     * @param {number|null} [targetCharCount=null] - Optional target character count (use when DOM not ready yet)
      */
-    updateWordCount(animate = false, fromCount = null, targetCount = null) {
+    updateWordCount(animate = false, fromCount = null, targetCount = null, targetCharCount = null) {
         // Cancel speech synthesis on any content change if it is currently playing
         if (SpeechSynthesisManager.isPlaying()) {
             SpeechSynthesisManager.cancel();
@@ -513,13 +514,13 @@ export const FocusPanelStatus = {
 
         if (!wordCountEl) return;
 
-        // Determine word count: use targetCount if provided, else read from DOM
+        // Determine word & char counts: use explicit targets if provided, else read from DOM
         let words, charCount, isEmpty;
 
         if (targetCount !== null) {
             // Target provided explicitly (DOM not ready yet, e.g. during typewriter)
             words = targetCount;
-            charCount = null; // Can't compute char count without actual text
+            charCount = targetCharCount !== null ? targetCharCount : null;
             isEmpty = words === 0;
         } else if (appreciationText) {
             const hasSkeleton = Boolean(appreciationText.querySelector('.appreciation-skeleton'));
@@ -572,18 +573,34 @@ export const FocusPanelStatus = {
             }
         }
 
+        const activeMaxChars = PromptService.getActiveMaxChars?.() ?? null;
+
         if (isEmpty) {
             wordCountEl.textContent = '';
+            wordCountEl.classList.remove('is-limit-near', 'is-limit-over');
             if (wordCountEl._tippy) {
                 wordCountEl._tippy.destroy();
             }
             wordCountEl.removeAttribute('data-tooltip');
+            this._syncConciseLimitHint('none', null);
         } else {
-            const templateFn = (val) => `${val} mot${val !== 1 ? 's' : ''}`;
+            const limitInfo = (activeMaxChars && charCount !== null && typeof Utils.getCharLimitState === 'function')
+                ? Utils.getCharLimitState(charCount, activeMaxChars)
+                : { limit: null, state: 'none', overBy: 0 };
+
+            const useCharLimitDisplay = Boolean(limitInfo.limit && charCount !== null);
+            const displayValue = useCharLimitDisplay ? charCount : words;
+            const templateFn = useCharLimitDisplay
+                ? (val) => `${val}/${limitInfo.limit}<span class="word-count-unit"> car.</span>`
+                : (val) => `${val} mot${val !== 1 ? 's' : ''}`;
+
+            wordCountEl.classList.toggle('is-limit-near', limitInfo.state === 'near');
+            wordCountEl.classList.toggle('is-limit-over', limitInfo.state === 'over');
+            this._syncConciseLimitHint(limitInfo.state, limitInfo.limit);
 
             if (animate) {
                 let startVal = 0;
-                if (fromCount !== null) {
+                if (!useCharLimitDisplay && fromCount !== null) {
                     startVal = fromCount;
                 } else {
                     const prevText = wordCountEl.textContent || '';
@@ -591,19 +608,57 @@ export const FocusPanelStatus = {
                     startVal = prevMatch ? parseInt(prevMatch[1], 10) : 0;
                 }
 
-                if (startVal !== words) {
-                    StatsUI.animateNumberWithMarkup(wordCountEl, startVal, words, 600, templateFn);
+                if (startVal !== displayValue) {
+                    StatsUI.animateNumberWithMarkup(wordCountEl, startVal, displayValue, 600, templateFn);
                 } else {
-                    wordCountEl.innerHTML = templateFn(words);
+                    wordCountEl.innerHTML = templateFn(displayValue);
                 }
             } else {
-                wordCountEl.innerHTML = templateFn(words);
+                wordCountEl.innerHTML = templateFn(displayValue);
             }
 
             // Update tooltip (only if we have char count)
             if (charCount !== null) {
-                UI.updateTooltip(wordCountEl, `${words} mot${words !== 1 ? 's' : ''} • ${charCount} car. • Cliquer pour ajuster la longueur`);
+                const wordLabel = `${words} mot${words !== 1 ? 's' : ''}`;
+                let tooltipText;
+                if (limitInfo.limit) {
+                    const overSuffix = limitInfo.overBy > 0 ? ` (+${limitInfo.overBy} au-dessus)` : '';
+                    tooltipText = `${wordLabel} • ${charCount}/${limitInfo.limit} car.${overSuffix} • Cliquer pour ajuster`;
+                } else {
+                    tooltipText = `${wordLabel} • ${charCount} car. • Cliquer pour ajuster la longueur`;
+                }
+                if (typeof UI?.updateTooltip === 'function') {
+                    UI.updateTooltip(wordCountEl, tooltipText);
+                } else {
+                    wordCountEl.setAttribute('data-tooltip', tooltipText);
+                }
             }
+        }
+    },
+
+    /**
+     * Met discrètement en avant le bouton « Concise » lorsque la limite de caractères est dépassée.
+     * @param {'none'|'ok'|'near'|'over'} limitState
+     * @param {number|null} maxChars
+     * @private
+     */
+    _syncConciseLimitHint(limitState, maxChars) {
+        const conciseBtn = document.querySelector('#focusRefinementOptions [data-refine-type="concise"]');
+        if (!conciseBtn) return;
+
+        const isOver = limitState === 'over' && Boolean(maxChars);
+        conciseBtn.classList.toggle('is-limit-recommended', isOver);
+        const tooltipText = isOver
+            ? `Raccourcir sous la limite (${maxChars} car.) · Clic droit : aperçu`
+            : "Raccourcir et aller à l'essentiel · Clic droit : aperçu";
+        if (conciseBtn.classList.contains('is-generating')) {
+            conciseBtn.dataset.baseTooltip = tooltipText;
+            return;
+        }
+        if (typeof UI?.updateTooltip === 'function') {
+            UI.updateTooltip(conciseBtn, tooltipText);
+        } else {
+            conciseBtn.setAttribute('data-tooltip', tooltipText);
         }
     },
 
@@ -629,17 +684,29 @@ export const FocusPanelStatus = {
 
         const mode = isEmpty ? 'prompt' : 'appreciation';
         const config = COPY_BUTTON_MODES[mode];
+        const currentId = this._getCurrentStudentId();
+        const currentResult = currentId
+            ? appState.generatedResults?.find(r => r.id === currentId)
+            : null;
+        const isAlreadyCopied = mode === 'appreciation'
+            && Boolean(currentResult && Utils.isAppreciationCopied?.(currentResult, appState.currentPeriod));
+        const tooltip = isAlreadyCopied
+            ? `Déjà copiée · ${config.tooltip}`
+            : config.tooltip;
+        const ariaLabel = isAlreadyCopied
+            ? 'Copier à nouveau (déjà copiée)'
+            : config.ariaLabel;
 
         copyBtn.dataset.copyMode = mode;
         copyBtn.disabled = false;
         copyBtn.classList.toggle('disabled', isGenerating);
         copyBtn.setAttribute('aria-disabled', String(isGenerating));
-        copyBtn.setAttribute('aria-label', config.ariaLabel);
+        copyBtn.setAttribute('aria-label', ariaLabel);
 
         if (typeof UI?.updateTooltip === 'function') {
-            UI.updateTooltip(copyBtn, config.tooltip);
+            UI.updateTooltip(copyBtn, tooltip);
         } else {
-            copyBtn.setAttribute('data-tooltip', config.tooltip);
+            copyBtn.setAttribute('data-tooltip', tooltip);
         }
 
         if (!copyBtn.classList.contains('copied') && !copyBtn.classList.contains('copied-prompt')) {
@@ -734,7 +801,7 @@ export const FocusPanelStatus = {
         const result = appState.generatedResults.find(r => r.id === currentStudentId);
         if (result) {
             result.appreciation = content;
-            result.copied = false;
+            Utils.setAppreciationCopied(result, appState.currentPeriod, false);
             if (result.studentData?.periods?.[appState.currentPeriod]) {
                 result.studentData.periods[appState.currentPeriod].appreciation = content;
             }
@@ -742,7 +809,7 @@ export const FocusPanelStatus = {
     },
 
     /**
-     * Update the history indicator UI
+     * Update the history indicator UI (shared stepper logic via HistoryPopoverUI)
      */
     updateHistoryIndicator() {
         const group = document.getElementById('historyNavigationGroup');
@@ -752,34 +819,22 @@ export const FocusPanelStatus = {
 
         if (!group || !indicator) return;
 
-        const { current, total } = FocusPanelHistory.getCurrentVersionInfo();
+        const state = FocusPanelHistory._getState?.() ?? null;
+        const textEl = document.getElementById('focusAppreciationText');
+        const hasSkeleton = Boolean(textEl?.querySelector('.appreciation-skeleton'));
+        const isCurrentlyEmpty = !hasSkeleton && Boolean(textEl?.classList.contains('empty') || !textEl?.textContent?.trim());
+        const isBusy = this._isGenerating(this._getCurrentStudentId());
 
-        if (total > 1) {
-            group.style.display = 'inline-flex';
-
-            // Update counter to "Current/Total"
-            const countEl = indicator.querySelector('.history-count');
-            if (countEl) {
-                countEl.textContent = `${current}/${total}`;
-            }
-            const tooltipText = `Version ${current} sur ${total} • Cliquez pour l'historique`;
-            indicator.setAttribute('data-tooltip', tooltipText);
-            if (indicator._tippy) {
-                indicator._tippy.setContent(tooltipText);
-            }
-
-            // Update navigation buttons
-            const textEl = document.getElementById('focusAppreciationText');
-            const isCurrentlyEmpty = textEl?.classList.contains('empty') || !textEl?.textContent?.trim();
-            if (prevBtn) prevBtn.disabled = !FocusPanelHistory.canUndo() && !isCurrentlyEmpty;
-            if (nextBtn) nextBtn.disabled = !FocusPanelHistory.canRedo();
-
-        } else {
-            group.style.display = 'none';
-            indicator.classList.remove('active');
-            const popover = document.getElementById('historyPopover');
-            if (popover) popover.remove();
-        }
+        HistoryPopoverUI.syncStepperUI({
+            groupEl: group,
+            prevBtn,
+            indicatorBtn: indicator,
+            nextBtn,
+            state,
+            isCurrentlyEmpty,
+            isBusy,
+            onHide: () => FocusPanelHistory.closePopover?.()
+        });
     },
 
     /**

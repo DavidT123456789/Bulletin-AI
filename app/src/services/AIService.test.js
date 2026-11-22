@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AIService, parseRetryDelay, sleep } from './AIService.js';
 import { AI_MODELS, PROVIDER_DEFAULT_MODELS } from '../config/aiRegistry.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 // Mock state module
 vi.mock('../state/State.js', () => ({
@@ -277,7 +278,7 @@ describe('AIService', () => {
             expect(groqAppreciation.payload.temperature).toBe(0.65);
 
             const groqAnalysis = AIService._getApiConfig('Test', { modelOverride: 'groq-gpt-oss-20b', taskType: 'class-synthesis' });
-            expect(groqAnalysis.payload.max_tokens).toBe(2048);
+            expect(groqAnalysis.payload.max_tokens).toBe(4096);
             expect(groqAnalysis.payload.temperature).toBe(0.2);
 
             // DeepSeek R1 & Anthropic Opus : supportsTemperature: false + 2048 tokens
@@ -1155,6 +1156,81 @@ describe('AIService', () => {
 
             await expect(AIService.callAIWithFallback('Test prompt'))
                 .rejects.toThrow('Délai dépassé (3 modèles testés). Le serveur IA met trop de temps à répondre, réessayez.');
+        });
+
+        it('should reject truncated JSON responses on class-synthesis and automatically fallback to the next model', async () => {
+            const { appState } = await import('../state/State.js');
+            resetAllProviderKeys(appState);
+            appState.currentAIModel = 'albert-openweight-large';
+            appState.albertApiKey = 'sk-albert-valid-key';
+            appState.googleApiKey = 'AIzaSy-valid-google-key';
+
+            const truncatedJson = '{ "synthesis": "Au terme de l\'année scolaire, la classe affiche une dynamique positive. La majorité des élèves témoigne d';
+            const validJson = JSON.stringify({
+                synthesis: 'Classe dynamique en progrès constants.',
+                strengths: ['Participation active'],
+                vigilances: [],
+                recommendations: ['Poursuivre les ateliers méthodologiques']
+            });
+
+            global.fetch = vi.fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        choices: [{
+                            finish_reason: 'length',
+                            message: { content: truncatedJson }
+                        }]
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        choices: [{
+                            finish_reason: 'stop',
+                            message: { content: validJson }
+                        }]
+                    })
+                });
+
+            const res = await AIService.callAIWithFallback('Prompt classe', { taskType: 'class-synthesis' });
+            expect(res.text).toBe(validJson);
+            expect(res.modelUsed).toBe('albert-openweight-medium');
+            expect(global.fetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('should emit AI_GENERATION_END with aborted/hasError flags matching outcome', async () => {
+            const { appState } = await import('../state/State.js');
+            resetAllProviderKeys(appState);
+            appState.currentAIModel = 'gemini-3.6-flash';
+            appState.googleApiKey = 'AIzaSy-valid-google-key';
+            appState.enableApiFallback = false;
+
+            const events = [];
+            const off = bus.on(EVENTS.AI_GENERATION_END, (detail) => events.push(detail));
+
+            try {
+                // 1. Aborted
+                const ctrl = new AbortController();
+                ctrl.abort();
+                await expect(AIService.callAIWithFallback('Test', { signal: ctrl.signal })).rejects.toThrow();
+
+                // 2. Failed (truncated JSON without fallback)
+                vi.spyOn(AIService, 'callAI').mockRejectedValueOnce(Object.assign(new Error('Réponse IA tronquée'), { name: 'TruncatedResponseError' }));
+                await expect(AIService.callAIWithFallback('Test', { taskType: 'class-synthesis' })).rejects.toThrow(/tronquée/i);
+
+                // 3. Success
+                vi.spyOn(AIService, 'callAI').mockResolvedValueOnce({ text: 'OK', usage: null });
+                await AIService.callAIWithFallback('Test');
+
+                expect(events).toHaveLength(3);
+                expect(events[0]).toMatchObject({ aborted: true, hasError: false });
+                expect(events[1]).toMatchObject({ aborted: false, hasError: true });
+                expect(events[2]).toMatchObject({ aborted: false, hasError: false });
+            } finally {
+                off();
+                appState.enableApiFallback = true;
+            }
         });
     });
 });

@@ -10,6 +10,7 @@
 import { appState, userSettings } from '../../state/State.js';
 import { ClassManager } from '../ClassManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
+import { StorageManager } from '../StorageManager.js';
 import { sortClassesByLevel } from '../../utils/LevelDetector.js';
 import { StatsService } from '../../services/StatsService.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
@@ -673,8 +674,8 @@ export const ClassManageModal = {
                 }
                 menuHtml += `
                     <button type="button" class="action-dropdown-item danger" id="resetAllClassesBtn">
-                        <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
-                        <span>Supprimer toutes les classes...</span>
+                        <iconify-icon icon="solar:calendar-linear"></iconify-icon>
+                        <span>Nouvelle année scolaire…</span>
                     </button>
                 `;
             }
@@ -736,26 +737,62 @@ export const ClassManageModal = {
                 const studentPart = totalStudents > 0
                     ? ` ainsi que les <strong>${totalStudents} élève${totalStudents > 1 ? 's' : ''}</strong> associés`
                     : '';
-                const confirmed = await this._ui?.showCustomConfirm?.(
-                    `Cette action est irréversible et supprimera vos <strong>${classLabel}</strong>${studentPart}. Vos clés API, prompts et réglages resteront intacts.`,
-                    null,
-                    null,
-                    {
-                        title: 'Supprimer toutes les classes ?',
-                        confirmText: 'Tout supprimer',
-                        cancelText: 'Annuler',
-                        isDanger: true
-                    }
-                );
+                const message = `Supprime vos <strong>${classLabel}</strong>${studentPart} pour repartir sur une année vierge. Vos <strong>clés API, style de rédaction, paramètres et disposition de la salle</strong> restent intacts.`;
+
+                let confirmed = false;
+                let shouldBackup = false;
+
+                if (typeof this._ui?.showChoicesModal === 'function') {
+                    const result = await this._ui.showChoicesModal(
+                        'Préparer une nouvelle année scolaire ?',
+                        message,
+                        [
+                            {
+                                id: 'backupFirst',
+                                label: 'Télécharger d\'abord une archive JSON de sauvegarde',
+                                sublabel: 'Recommandé : conserve une copie complète de l\'année écoulée sur votre appareil.',
+                                checked: true
+                            }
+                        ],
+                        {
+                            confirmText: 'Réinitialiser pour la rentrée',
+                            cancelText: 'Annuler',
+                            isDanger: true,
+                            allowEmpty: true
+                        }
+                    );
+                    confirmed = Boolean(result?.confirmed);
+                    shouldBackup = Boolean(result?.values?.backupFirst);
+                } else {
+                    confirmed = Boolean(await this._ui?.showCustomConfirm?.(
+                        message,
+                        null,
+                        null,
+                        {
+                            title: 'Préparer une nouvelle année scolaire ?',
+                            confirmText: 'Réinitialiser pour la rentrée',
+                            cancelText: 'Annuler',
+                            isDanger: true
+                        }
+                    ));
+                }
 
                 if (confirmed) {
+                    if (shouldBackup) {
+                        StorageManager.exportToJson?.();
+                    }
                     await ClassManager.resetAllClasses();
                     this.renderClassList();
                     this.updateHeaderDisplay();
                     AppreciationsManager.renderResults();
                     this._ui?.updateStats?.();
                     refreshList();
-                    this._ui?.showNotification?.('Toutes les classes ont été réinitialisées', 'info');
+                    this._ui?.showNotification?.(
+                        shouldBackup
+                            ? 'Sauvegarde téléchargée — prêt pour la nouvelle année scolaire !'
+                            : 'Classes réinitialisées — prêt pour la nouvelle année scolaire !',
+                        'success'
+                    );
                 }
             });
         };

@@ -27,64 +27,131 @@ export const SeatingRoomLayout = {
     // CONFIG & PLACEMENT POPOVERS
     // ========================================================================
 
+    _getMaxActivityGroupSizeOnGrid() {
+        let detectedSize = 0;
+        const rows = this._gridState?.length || 0;
+        for (let r = 0; r < rows; r++) {
+            const cols = this._gridState[r]?.length || 0;
+            for (let c = 0; c < cols; c++) {
+                const len = this._getCellStudentIds?.(r, c)?.length || 0;
+                if (len > detectedSize) detectedSize = len;
+            }
+        }
+        return detectedSize;
+    },
+
+    _detectActivityGroupSize() {
+        const detectedSize = this._getMaxActivityGroupSizeOnGrid();
+        return (detectedSize >= 1 && detectedSize <= MAX_ACTIVITY_GROUP_SIZE) ? detectedSize : 2;
+    },
+
+    _getSelectedActivityGroupSize() {
+        const popover = document.getElementById('scPlacementPopover');
+        const activeBtn = popover?.querySelector('.sc-placement-size-pill.active');
+        const domSize = activeBtn ? parseInt(activeBtn.dataset.groupSize, 10) : NaN;
+        if (Number.isInteger(domSize) && domSize >= 1 && domSize <= MAX_ACTIVITY_GROUP_SIZE) {
+            return domSize;
+        }
+        if (Number.isInteger(this._activityGroupSize) && this._activityGroupSize >= 1 && this._activityGroupSize <= MAX_ACTIVITY_GROUP_SIZE) {
+            return this._activityGroupSize;
+        }
+        return this._detectActivityGroupSize();
+    },
+
+    _setActivityGroupSize(size) {
+        const normalized = Math.max(1, Math.min(MAX_ACTIVITY_GROUP_SIZE, parseInt(size, 10) || 2));
+        this._activityGroupSize = normalized;
+        const popover = document.getElementById('scPlacementPopover');
+        if (!popover) return;
+
+        popover.querySelectorAll('.sc-placement-size-pill').forEach(btn => {
+            const isMatch = parseInt(btn.dataset.groupSize, 10) === normalized;
+            btn.classList.toggle('active', isMatch);
+            btn.setAttribute('aria-pressed', isMatch ? 'true' : 'false');
+        });
+
+        const isSolo = normalized === 1;
+        const soloTooltip = 'Disponible à partir de 2 élèves par poste';
+        popover.querySelectorAll('.sc-popover-item[data-requires-group="true"]').forEach(btn => {
+            btn.classList.toggle('sc-popover-item-disabled', isSolo);
+            if (isSolo) {
+                btn.setAttribute('aria-disabled', 'true');
+                btn.setAttribute('data-tooltip', soloTooltip);
+                TooltipsUI?.updateTooltip?.(btn, soloTooltip);
+            } else {
+                btn.removeAttribute('aria-disabled');
+                TooltipsUI?.cleanupTooltipsIn?.(btn);
+                btn.removeAttribute('data-tooltip');
+            }
+        });
+    },
+
     _getPlacementPopoverHTML(mode = this._planMode) {
         if (mode === 'activity') {
+            const activeSize = this._detectActivityGroupSize();
+            this._activityGroupSize = activeSize;
+            const isSolo = activeSize === 1;
+            const soloDisabledAttrs = isSolo
+                ? ' aria-disabled="true" data-tooltip="Disponible à partir de 2 élèves par poste"'
+                : '';
             return `
-                <button class="sc-popover-item" data-mode="pairs-random" type="button">
-                    <iconify-icon icon="solar:users-group-two-rounded-linear"></iconify-icon>
-                    <span>Binômes aléatoires (par 2)</span>
-                </button>
-                <button class="sc-popover-item" data-mode="pairs-neighbors" type="button">
-                    <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
-                    <span>Binômes voisins du cours</span>
-                </button>
-                <button class="sc-popover-item" data-mode="pairs-alpha" type="button">
-                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
-                    <span>Binômes (A → Z)</span>
-                </button>
-                <div class="sc-popover-divider"></div>
-                <button class="sc-popover-item" data-mode="groups-3" type="button">
-                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                    <span>Groupes de 3 (Îlots)</span>
-                </button>
-                <button class="sc-popover-item" data-mode="groups-4" type="button">
-                    <iconify-icon icon="solar:widget-4-linear"></iconify-icon>
-                    <span>Groupes de 4 / Terrains</span>
-                </button>
-                <div class="sc-popover-divider"></div>
-                <button class="sc-popover-item" data-mode="random" type="button">
-                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                    <span>Individuel aléatoire (1/poste)</span>
-                </button>
-                <button class="sc-popover-item" data-mode="alpha-asc" type="button">
-                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
-                    <span>Individuel (A → Z)</span>
-                </button>
+                <div class="sc-placement-size-section">
+                    <div class="sc-config-section-title">Élèves par poste</div>
+                    <div class="sc-placement-size-pills" role="group" aria-label="Élèves par poste">
+                        ${[1, 2, 3, 4].map(sz => `
+                            <button type="button" class="sc-placement-size-pill${activeSize === sz ? ' active' : ''}" data-group-size="${sz}" aria-pressed="${activeSize === sz ? 'true' : 'false'}" aria-label="${sz} élève${sz > 1 ? 's' : ''} par poste">${sz}</button>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="sc-placement-actions-section">
+                    <div class="sc-config-section-title">Répartition</div>
+                    <button class="sc-popover-item" data-mode="random" type="button">
+                        <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                        <span class="sc-popover-item-label">Aléatoire</span>
+                    </button>
+                    <button class="sc-popover-item${isSolo ? ' sc-popover-item-disabled' : ''}" data-mode="groups-balanced" data-requires-group="true" type="button"${soloDisabledAttrs}>
+                        <iconify-icon icon="ph:scales"></iconify-icon>
+                        <span class="sc-popover-item-label">Équilibré <small>Par niveau</small></span>
+                    </button>
+                    <button class="sc-popover-item${isSolo ? ' sc-popover-item-disabled' : ''}" data-mode="pairs-neighbors" data-requires-group="true" type="button"${soloDisabledAttrs}>
+                        <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
+                        <span class="sc-popover-item-label">Voisins du cours</span>
+                    </button>
+                    <button class="sc-popover-item" data-mode="alpha-asc" type="button">
+                        <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                        <span class="sc-popover-item-label">Alphabétique <small>A → Z</small></span>
+                    </button>
+                </div>
             `;
         }
 
         return `
-            <button class="sc-popover-item" data-mode="alpha-asc" type="button">
-                <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
-                <span>Alphabétique (A → Z)</span>
-            </button>
-            <button class="sc-popover-item" data-mode="alpha-desc" type="button">
-                <iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>
-                <span>Inversé (Z → A)</span>
-            </button>
-            <button class="sc-popover-item" data-mode="random" type="button">
-                <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                <span>Mélanger (regroupé)</span>
-            </button>
-            <button class="sc-popover-item" data-mode="random-disperse" type="button">
-                <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
-                <span>Disperser (toute la salle)</span>
-            </button>
-            <div class="sc-popover-divider"></div>
-            <div class="sc-popover-item sc-popover-item-disabled" title="Disponible prochainement">
-                <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>
-                <span>Intelligent (Journal)</span>
-                <span class="sc-popover-badge">Bientôt</span>
+            <div class="sc-placement-actions-section">
+                <div class="sc-config-section-title">Agencement</div>
+                <button class="sc-popover-item" data-mode="alpha-asc" type="button">
+                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                    <span class="sc-popover-item-label">Alphabétique <small>A → Z</small></span>
+                </button>
+                <button class="sc-popover-item" data-mode="alpha-desc" type="button">
+                    <iconify-icon icon="solar:sort-from-bottom-to-top-linear"></iconify-icon>
+                    <span class="sc-popover-item-label">Inversé <small>Z → A</small></span>
+                </button>
+                <button class="sc-popover-item" data-mode="random" type="button">
+                    <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
+                    <span class="sc-popover-item-label">Aléatoire <small>Vers l'avant</small></span>
+                </button>
+                <button class="sc-popover-item" data-mode="random-disperse" type="button">
+                    <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
+                    <span class="sc-popover-item-label">Disperser <small>Espacement max.</small></span>
+                </button>
+                <div class="sc-popover-divider"></div>
+                <button class="sc-popover-item" data-mode="smart-journal" type="button">
+                    <iconify-icon icon="solar:stars-minimalistic-linear"></iconify-icon>
+                    <span class="sc-popover-item-texts">
+                        <span class="sc-popover-item-label">Placement intelligent</span>
+                        <span class="sc-popover-item-sublabel">Dispositifs devant · Bavards espacés</span>
+                    </span>
+                </button>
             </div>
         `;
     },
@@ -92,7 +159,12 @@ export const SeatingRoomLayout = {
     _syncPlacementPopover() {
         const popover = document.getElementById('scPlacementPopover');
         if (popover) {
+            if (this._planMode === 'activity') {
+                this._activityGroupSize = this._detectActivityGroupSize();
+            }
+            TooltipsUI?.cleanupTooltipsIn?.(popover);
             popover.innerHTML = this._getPlacementPopoverHTML(this._planMode);
+            TooltipsUI?.initTooltips?.(popover);
         }
     },
 
@@ -453,6 +525,23 @@ export const SeatingRoomLayout = {
             const capInfo = this._getRoomCapacityInfo();
             capEl.className = `sc-config-capacity ${capInfo.isShortForCurrent || capInfo.isShortForMax ? 'is-warning' : 'is-ok'}`;
             capEl.innerHTML = this._getCapacityBadgeInnerHTML(capInfo);
+        }
+
+        const dotsSelector = popover.querySelector('#seatingStatusDotsSelector');
+        if (dotsSelector) {
+            const dots = {
+                movements: true,
+                devices: false,
+                delegates: false,
+                ...(appState.seatingStatusDots || {})
+            };
+            dotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
+                const cat = cb.getAttribute('data-dot-category');
+                if (!cat) return;
+                const isChecked = Boolean(dots[cat]);
+                cb.checked = isChecked;
+                cb.closest('.seating-dot-option')?.classList.toggle('active', isChecked);
+            });
         }
     },
 

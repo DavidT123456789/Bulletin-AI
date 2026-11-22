@@ -17,7 +17,7 @@ import { EventHandlersManager } from '../EventHandlersManager.js';
 import { AppreciationsManager } from '../AppreciationsManager.js';
 import { FormUI } from '../FormUIManager.js';
 
-import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG } from '../../config/Config.js';
+import { DEMO_STUDENT_PROFILES, DEFAULT_IA_CONFIG, MAX_CHARS_CONFIG } from '../../config/Config.js';
 import { MODEL_SHORT_NAMES, OLLAMA_CONFIG } from '../../config/models.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
 
@@ -40,8 +40,13 @@ export const SettingsModalListeners = {
      * @private
      */
     _getCurrentSettings() {
+        const defaultLimit = MAX_CHARS_CONFIG?.defaultValue ?? 400;
+        const maxChars = DOM.iaMaxCharsToggle?.checked
+            ? (Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value) ?? defaultLimit)
+            : null;
         return {
             length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length, 10),
+            maxChars,
             tone: parseInt(DOM.iaToneSlider?.value || 3, 10),
             enableTone: DOM.iaToneToggle ? DOM.iaToneToggle.checked : false,
             styleInstructions: DOM.iaStyleInstructions?.value || '',
@@ -124,10 +129,11 @@ export const SettingsModalListeners = {
         DOM.settingsEvolutionThresholdPositive?.addEventListener('change', syncEvolutionThresholds);
         DOM.settingsEvolutionThresholdNegative?.addEventListener('change', syncEvolutionThresholds);
 
-        document.getElementById('seatingStatusDotsSelector')?.addEventListener('change', (e) => {
-            if (!e.target?.closest?.('input[type="checkbox"][data-dot-category]')) return;
-            SettingsUIManager.syncSeatingStatusDotsFromDOM();
-            StorageManager.saveAppState();
+        // Accordéon des moteurs IA avancés & locaux (Anthropic, Mistral, OpenAI, OpenRouter, Ollama)
+        document.getElementById('advancedProvidersToggleBtn')?.addEventListener('click', () => {
+            const btn = document.getElementById('advancedProvidersToggleBtn');
+            const isOpen = btn?.getAttribute('aria-expanded') === 'true';
+            SettingsUIManager.setAdvancedProvidersExpanded(!isOpen, { manual: true });
         });
 
         // API validation - delegated to ApiValidationManager
@@ -322,9 +328,11 @@ export const SettingsModalListeners = {
         Object.assign(SettingsUIManager.getPersonalStyleConfig(), patch);
         FormUI.syncStyleControls();
         this._markPreviewCacheStale();
-        if (this.previewCache?.[DOM.previewStudentSelect?.value]) {
+        const cachedEntry = this.previewCache?.[DOM.previewStudentSelect?.value];
+        if (cachedEntry) {
             this._setGenerateButtonState('dirty');
             SettingsUIManager.showPreviewRefreshHint();
+            UI.updateWordCount('settingsPreviewWordCount', cachedEntry.appreciation, this._getCurrentSettings().maxChars);
         }
         if (refreshPrompt) {
             this._refreshPromptPreview();
@@ -335,6 +343,49 @@ export const SettingsModalListeners = {
         DOM.iaLengthSlider?.addEventListener('input', () => {
             this._applyStyleChange({ length: parseInt(DOM.iaLengthSlider.value, 10) });
         });
+
+        const defaultMaxChars = MAX_CHARS_CONFIG?.defaultValue ?? 400;
+        const minMaxChars = MAX_CHARS_CONFIG?.min ?? 50;
+        const maxMaxChars = MAX_CHARS_CONFIG?.max ?? 2000;
+
+        DOM.iaMaxCharsToggle?.addEventListener('change', () => {
+            if (DOM.iaMaxCharsToggle.checked) {
+                const resolved = Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value) ?? defaultMaxChars;
+                if (DOM.iaMaxCharsInput) DOM.iaMaxCharsInput.value = String(resolved);
+                this._applyStyleChange({ maxChars: resolved });
+            } else {
+                this._applyStyleChange({ maxChars: null });
+            }
+        });
+
+        DOM.iaMaxCharsPresets?.addEventListener('click', (e) => {
+            const btn = e.target?.closest?.('[data-max-chars]');
+            if (!btn) return;
+            const preset = Utils.normalizeMaxChars?.(btn.dataset.maxChars);
+            if (!preset) return;
+            if (DOM.iaMaxCharsToggle) DOM.iaMaxCharsToggle.checked = true;
+            if (DOM.iaMaxCharsInput) DOM.iaMaxCharsInput.value = String(preset);
+            this._applyStyleChange({ maxChars: preset });
+        });
+
+        if (DOM.iaMaxCharsInput) {
+            DOM.iaMaxCharsInput.addEventListener('input', () => {
+                const parsed = parseInt(DOM.iaMaxCharsInput.value, 10);
+                if (Number.isFinite(parsed) && parsed >= minMaxChars && parsed <= maxMaxChars) {
+                    if (DOM.iaMaxCharsToggle) DOM.iaMaxCharsToggle.checked = true;
+                    this._applyStyleChange({ maxChars: parsed });
+                }
+            });
+
+            const commitCustomMaxChars = () => {
+                if (!DOM.iaMaxCharsToggle?.checked) return;
+                const normalized = Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput.value) ?? defaultMaxChars;
+                DOM.iaMaxCharsInput.value = String(normalized);
+                this._applyStyleChange({ maxChars: normalized });
+            };
+            DOM.iaMaxCharsInput.addEventListener('change', commitCustomMaxChars);
+            DOM.iaMaxCharsInput.addEventListener('blur', commitCustomMaxChars);
+        }
 
         if (DOM.iaToneSlider) {
             // Manipuler le curseur active implicitement le ton imposé
@@ -350,7 +401,10 @@ export const SettingsModalListeners = {
         const leftPane = document.getElementById('settings-controls-panel');
         if (leftPane) {
             leftPane.addEventListener('scroll', () => this._syncLeftPaneScrollHint(), { passive: true });
-            document.getElementById('iaToneCollapsible')?.addEventListener('transitionend', () => {
+            (DOM.iaToneCollapsible || document.getElementById('iaToneCollapsible'))?.addEventListener('transitionend', () => {
+                this._syncLeftPaneScrollHint();
+            });
+            (DOM.iaMaxCharsCollapsible || document.getElementById('iaMaxCharsCollapsible'))?.addEventListener('transitionend', () => {
                 this._syncLeftPaneScrollHint();
             });
             window.addEventListener('resize', () => {
@@ -627,7 +681,7 @@ export const SettingsModalListeners = {
             previewResult.innerHTML = cleanText;
         }
 
-        UI.updateWordCount('settingsPreviewWordCount', entry.appreciation);
+        UI.updateWordCount('settingsPreviewWordCount', entry.appreciation, this._getCurrentSettings().maxChars);
 
         if (DOM.previewModelBadge) {
             const { tooltip } = Utils.getGenerationModeInfo({
@@ -1169,10 +1223,12 @@ export const SettingsModalListeners = {
         const refreshDataTab = () => {
             updatePreRestoreCard();
             this.updateCloudSyncUI();
+            this.updateLocalBackupUI();
         };
 
         bus.on(EVENTS.MODAL_SETTINGS_OPEN, refreshDataTab);
         bus.on(EVENTS.APP_DATA_RESTORED, refreshDataTab);
+        bus.on(EVENTS.LOCAL_BACKUP_UPDATED, () => this.updateLocalBackupUI());
         bus.on(EVENTS.SYNC_CONNECTED, () => this.updateCloudSyncUI());
 
         document.querySelector('.api-keys-container')?.addEventListener('submit', (e) => {
@@ -1291,9 +1347,7 @@ export const SettingsModalListeners = {
                 if (cloudActionsBar) cloudActionsBar.style.display = 'flex';
 
                 if (lastSaveEl && SyncService.lastSyncTime) {
-                    const date = new Date(SyncService.lastSyncTime);
-                    const formatted = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                    lastSaveEl.textContent = `Dernière sauvegarde : ${formatted}`;
+                    lastSaveEl.textContent = `Dernière sauvegarde : ${this._formatBackupTimestamp(SyncService.lastSyncTime)}`;
                 } else if (lastSaveEl && !lastSaveEl.textContent) {
                     lastSaveEl.textContent = 'Prêt à synchroniser';
                 }
@@ -1323,6 +1377,36 @@ export const SettingsModalListeners = {
             }
         } catch (e) {
             console.warn('[SettingsModal] Error updating cloud sync UI:', e);
+        }
+    },
+
+    /**
+     * Formate un horodatage de sauvegarde (Cloud ou locale) au format français JJ/MM/AAAA à HH:MM.
+     * @param {number} timestamp
+     * @returns {string}
+     * @private
+     */
+    _formatBackupTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            + ' à '
+            + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    },
+
+    /**
+     * Met à jour la date de la dernière sauvegarde JSON locale dans Paramètres > Données.
+     */
+    updateLocalBackupUI() {
+        const el = DOM.localLastBackup || document.getElementById('localLastBackup');
+        if (!el) return;
+
+        const lastBackup = StorageManager.getLastLocalBackupTime?.();
+        if (lastBackup) {
+            el.textContent = `Dernière sauvegarde : ${this._formatBackupTimestamp(lastBackup)}`;
+        } else if (StorageManager.hasRealUserData?.()) {
+            el.textContent = 'Aucune sauvegarde locale enregistrée';
+        } else {
+            el.textContent = '';
         }
     }
 };

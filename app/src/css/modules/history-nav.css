@@ -1,23 +1,25 @@
 /* ==========================================================================
-   History Navigation — iOS 2026 / macOS Stepper Capsule
-   Harmonized with Journal de bord header capsules
+   History Navigation — iOS 2026 / macOS Ghost Inline Stepper (SSOT)
+   Shared between Focus Panel Appreciation Card & Class Dashboard Global Intro
    ========================================================================== */
 
 .history-navigation-group {
     display: inline-flex;
     align-items: center;
-    background: var(--tonal-bg);
-    border: 1px solid transparent;
-    border-radius: var(--radius-pill);
-    padding: 1px 2px;
+    background: transparent;
+    padding: 0;
     height: 26px;
-    box-sizing: border-box;
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    transition: opacity var(--transition-fast);
     flex-shrink: 0;
+}
+
+.history-navigation-group.is-busy {
+    opacity: 0.5;
 }
 
 /* Arrows: Left & Right */
 .history-nav-btn {
+    position: relative;
     width: 22px;
     height: 22px;
     display: inline-flex;
@@ -39,25 +41,37 @@
 }
 
 @media (hover: hover) {
-    .history-nav-btn:hover:not(:disabled) {
+    .history-nav-btn:hover:not(:disabled):not(.disabled) {
         background: var(--item-hover-bg);
         color: var(--text-primary);
         transform: scale(1.08);
     }
 }
 
-.history-nav-btn:active:not(:disabled) {
+.history-nav-btn:active:not(:disabled):not(.disabled) {
     transform: scale(0.92);
 }
 
+.history-nav-btn:focus-visible,
+.history-indicator-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Soft-disabled preserves pointer-events so Tippy tooltips remain hoverable */
+.history-nav-btn.disabled,
 .history-nav-btn:disabled {
-    opacity: 0.22;
-    pointer-events: none;
+    opacity: 0.24;
     cursor: default;
+}
+
+.history-nav-btn:disabled {
+    pointer-events: none;
 }
 
 /* Central Indicator: "Current/Total" version counter */
 .history-indicator-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -68,27 +82,23 @@
     padding: 0 6px;
     height: 22px;
     border-radius: var(--radius-pill);
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
     transition: background-color var(--transition-fast), color var(--transition-fast);
     user-select: none;
 }
 
-.history-indicator-btn .history-count {
-    color: var(--text-secondary);
-    font-weight: 600;
-    transition: color var(--transition-fast);
+.history-indicator-btn.disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
 @media (hover: hover) {
-    .history-indicator-btn:hover {
+    .history-indicator-btn:hover:not(.disabled) {
         background: var(--item-hover-bg);
-        color: var(--text-primary);
-    }
-
-    .history-indicator-btn:hover .history-count {
         color: var(--text-primary);
     }
 }
@@ -99,6 +109,12 @@
     color: var(--text-primary);
 }
 
-.history-indicator-btn.active .history-count {
-    color: var(--text-primary);
+/* Touch ergonomics: ensure 44px minimum target on mobile/coarse pointers */
+@media (max-width: 768px), (pointer: coarse) {
+    .history-nav-btn::after,
+    .history-indicator-btn::after {
+        content: '';
+        position: absolute;
+        inset: -11px -4px;
+    }
 }

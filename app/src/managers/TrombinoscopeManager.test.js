@@ -2181,7 +2181,7 @@ describe('TrombinoscopeManager Auto-Grid Detection & Calibration', () => {
         it('should provide 8 fallback sample students when testing sample-trombinoscope.png in an empty class', () => {
             appState.filteredResults = [];
             appState.generatedResults = [];
-            TrombinoscopeManager._imageSrc = '/images/sample-trombinoscope.png';
+            TrombinoscopeManager._imageSrc = './images/sample-trombinoscope.png';
 
             const targetInfo = TrombinoscopeManager._getTargetClassInfo();
             expect(targetInfo.existingClassStudents).toHaveLength(8);

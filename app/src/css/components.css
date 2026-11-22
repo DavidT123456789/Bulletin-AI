@@ -1393,10 +1393,10 @@ textarea {
     color: var(--section-accent);
 }
 
-/* Mutualized with .journal-header-btn.icon-only; subtle offset after card title */
+/* Mutualized with .journal-header-btn.icon-only; right-aligned in card header */
 .analysis-add-item-btn {
     position: relative;
-    margin-left: -2px;
+    margin-left: auto;
     flex-shrink: 0;
 }
 

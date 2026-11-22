@@ -39,11 +39,13 @@ export const ExportManager = {
     /**
      * Copie une appréciation dans le presse-papiers.
      * @param {string} id - Identifiant de l'appréciation
-     * @param {HTMLElement} buttonEl - Bouton qui a déclenché l'action
+     * @param {HTMLElement|null} [buttonEl=null] - Bouton qui a déclenché l'action
+     * @param {Function|null} [onAfterCopy=null] - Callback appelé après copie (ou fin du flash bouton)
+     * @returns {Promise<boolean>}
      */
-    copyAppreciation(id, buttonEl) {
+    copyAppreciation(id, buttonEl = null, onAfterCopy = null) {
         const resultIndex = appState.generatedResults.findIndex(r => r.id === id);
-        if (resultIndex === -1) return;
+        if (resultIndex === -1) return Promise.resolve(false);
 
         const result = appState.generatedResults[resultIndex];
         const currentPeriod = appState.currentPeriod;
@@ -51,38 +53,47 @@ export const ExportManager = {
 
         if (!appreciationToCopy?.trim()) {
             UI.showNotification('Appréciation vide.', 'error');
-            return;
+            return Promise.resolve(false);
         }
 
-        navigator.clipboard.writeText(Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciationToCopy))).then(() => {
-            appState.generatedResults[resultIndex].copied = true;
+        return navigator.clipboard.writeText(Utils.stripMarkdown(Utils.decodeHtmlEntities(appreciationToCopy))).then(() => {
+            Utils.setAppreciationCopied(appState.generatedResults[resultIndex], currentPeriod, true);
             StorageManager.saveAppState();
             UI?.recordSupportMilestone?.('bulletin-export');
 
             if (buttonEl) {
-                const originalIcon = buttonEl.innerHTML;
-                const hasText = buttonEl.textContent.trim().length > 0;
+                if (buttonEl._copyResetTimer) {
+                    clearTimeout(buttonEl._copyResetTimer);
+                }
+                const originalIcon = buttonEl._copyOriginalHtml ?? buttonEl.innerHTML;
+                const hasText = buttonEl._copyHasText ?? (buttonEl.textContent.trim().length > 0);
+                buttonEl._copyOriginalHtml = originalIcon;
+                buttonEl._copyHasText = hasText;
 
                 // Si le bouton contient du texte (ex: menu contextuel), on affiche "Copié !"
                 // Sinon (ex: icône seule), on change juste l'icône
                 buttonEl.innerHTML = hasText
-                    ? '<iconify-icon icon="ph:check"></iconify-icon> Copié !'
-                    : '<iconify-icon icon="ph:check"></iconify-icon>';
+                    ? '<iconify-icon icon="ph:check-bold"></iconify-icon> Copié !'
+                    : '<iconify-icon icon="ph:check-bold"></iconify-icon>';
 
                 buttonEl.classList.add('copied', 'copy-success');
-                setTimeout(() => {
+                buttonEl._copyResetTimer = setTimeout(() => {
                     buttonEl.classList.remove('copied', 'copy-success');
-                    if (appState.generatedResults[resultIndex]?.copied) {
-                        buttonEl.classList.add('was-copied');
-                    }
                     // Restore original content
                     buttonEl.innerHTML = originalIcon;
+                    delete buttonEl._copyOriginalHtml;
+                    delete buttonEl._copyHasText;
+                    delete buttonEl._copyResetTimer;
+                    onAfterCopy?.(id);
                 }, 1500);
+            } else {
+                onAfterCopy?.(id);
             }
-
+            return true;
         }).catch(err => {
             UI.showNotification('Échec copie.', 'error');
             console.error('Erreur :', err);
+            return false;
         });
     },
 
@@ -241,8 +252,19 @@ export const ExportManager = {
                 ].filter(Boolean).join(' | ')
                 : '';
 
+            const configuredDiscipline = (
+                appState.subjects?.[appState.currentSubject]?.iaConfig?.discipline ||
+                appState.subjects?.MonStyle?.iaConfig?.discipline ||
+                ''
+            ).trim();
+            const sanitizeSubject = (raw) => {
+                const val = String(raw || '').trim();
+                return val && val !== 'MonStyle' && val !== 'Générique' ? val : '';
+            };
+            const csvSubject = configuredDiscipline || sanitizeSubject(sd.subject) || sanitizeSubject(appState.currentSubject);
+
             row.push(
-                sd.subject || appState.currentSubject || '',
+                csvSubject,
                 sd.periods?.[currentPeriod]?.context || '',
                 forcesAndWeaknessesStr,
                 periodAnalysis?.nextSteps?.join('; ') ?? '',
@@ -397,7 +419,7 @@ export const ExportManager = {
 
             if (introTextEl) {
                 const body = introTextEl.textContent.trim();
-                if (body) sections.push({ title: title || 'Synthèse globale', isIntro: true, text: body });
+                if (body) sections.push({ title: title || 'Appréciation de classe', isIntro: true, text: body });
             } else if (listItems.length > 0) {
                 const items = Array.from(listItems).map(li => li.textContent.trim()).filter(Boolean);
                 if (items.length > 0) sections.push({ title, isIntro: false, items, tone });
@@ -513,7 +535,7 @@ export const ExportManager = {
             return;
         }
 
-        UI.showNotification("Préparation de la synthèse Conseil de classe...", 'info');
+        UI.showNotification("Préparation du bilan de classe...", 'info');
 
         const { classLabel, subjectLabel: defaultSubject, periodLabel, dateStr } = this._getReportContextMeta();
         const subjectLabel = dashboardData?.subject || defaultSubject;
@@ -543,7 +565,7 @@ export const ExportManager = {
             `
             : `
                 <div class="pr-card">
-                    <h2 class="pr-section-title">Dynamique de la cohorte</h2>
+                    <h2 class="pr-section-title">Dynamique de la classe</h2>
                     ${stats.hasEvolutionData
                         ? `
                             <div class="pr-dynamics-grid">
@@ -564,8 +586,8 @@ export const ExportManager = {
             if (introSec || gridSecs.length > 0) {
                 synthesisHtml = `
                     <section class="pr-section">
-                        <h2 class="pr-section-title">Synthèse du bilan de classe</h2>
-                        ${introSec ? `<div class="pr-intro-box"><strong>${Utils.escapeHtml(String(introSec.title || 'Synthèse globale'))}</strong><p>${Utils.escapeHtml(String(introSec.text || ''))}</p></div>` : ''}
+                        <h2 class="pr-section-title">Bilan</h2>
+                        ${introSec ? `<div class="pr-intro-box"><strong>${Utils.escapeHtml(String(introSec.title || 'Appréciation de classe'))}</strong><p>${Utils.escapeHtml(String(introSec.text || ''))}</p></div>` : ''}
                         ${gridSecs.length > 0 ? `
                             <div class="pr-grid-3">
                                 ${gridSecs.map(sec => `
@@ -610,7 +632,7 @@ export const ExportManager = {
             <article class="pr-document">
                 <header class="pr-header">
                     <div>
-                        <p class="pr-eyebrow">Synthèse de Conseil de Classe</p>
+                        <p class="pr-eyebrow">Bilan de classe</p>
                         <h1 class="pr-title">${Utils.escapeHtml(classLabel || 'Classe')} — ${Utils.escapeHtml(periodLabel)}</h1>
                         <p class="pr-subtitle">
                             ${subjectLabel ? `<span>${Utils.escapeHtml(subjectLabel)}</span> · ` : ''}
@@ -657,18 +679,18 @@ export const ExportManager = {
 
                 <section class="pr-grid-2 pr-keep-together">
                     <div class="pr-card">
-                        <h2 class="pr-section-title">Top Progressions</h2>
+                        <h2 class="pr-section-title">Progressions</h2>
                         ${renderStudentMetricList(stats.topProgressions, 'Aucune progression marquante relevée.', true)}
                     </div>
                     <div class="pr-card">
-                        <h2 class="pr-section-title">Élèves à surveiller</h2>
-                        ${renderStudentMetricList(stats.atRisk, 'Aucun élève signalé à ce stade.', false)}
+                        <h2 class="pr-section-title">Élèves en vigilance</h2>
+                        ${renderStudentMetricList(stats.atRisk, 'Aucun élève en vigilance à ce stade.', false)}
                     </div>
                 </section>
             </article>
         `;
 
-        const title = `Conseil-de-classe${classLabel ? `_${classLabel}` : ''}_${appState.currentPeriod}`;
+        const title = `Bilan-de-classe${classLabel ? `_${classLabel}` : ''}_${appState.currentPeriod}`;
         this._printHtmlReport({ title, htmlContent });
         UI?.recordSupportMilestone?.('bulletin-export');
     },
@@ -805,7 +827,7 @@ export const ExportManager = {
                     <div class="pr-student-identity">
                         ${avatarHtml}
                         <div>
-                            <p class="pr-eyebrow">Fiche Bilan Élève — Entretien Parents / PP</p>
+                            <p class="pr-eyebrow">Fiche bilan élève — Entretien parents / PP</p>
                             <h1 class="pr-title">${Utils.escapeHtml(fullName)}</h1>
                             <p class="pr-subtitle">
                                 ${defaultClass ? `<span>${Utils.escapeHtml(defaultClass)}</span> · ` : ''}
@@ -912,9 +934,9 @@ export const ExportManager = {
         try {
             await navigator.clipboard.writeText(text);
 
-            // Marquer comme copiés
+            // Marquer comme copiés pour la période active
             activeResults.forEach(r => {
-                r.copied = true;
+                Utils.setAppreciationCopied(r, currentPeriod, true);
             });
 
             StorageManager.saveAppState();

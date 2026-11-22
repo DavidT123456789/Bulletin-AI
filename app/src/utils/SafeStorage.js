@@ -38,6 +38,12 @@ export const STORAGE_KEYS = Object.freeze({
     GOOGLE_TOKEN: 'bulletin_google_token',
     GOOGLE_USER: 'bulletin_google_user',
 
+    // Sauvegarde JSON locale (utilisateurs sans Cloud)
+    LAST_LOCAL_BACKUP: 'bulletin_last_local_backup',
+    LAST_LOCAL_BACKUP_HASH: 'bulletin_last_local_backup_hash',
+    LOCAL_BACKUP_DIRTY_SINCE: 'bulletin_local_backup_dirty_since',
+    LOCAL_BACKUP_REMINDER_AT: 'bulletin_local_backup_reminder_at',
+
     // Préférences UI locales
     SHOW_VIRTUAL_CLASSES: 'bulletin_show_virtual_classes',
     SEATING_ORIENTATION: 'bulletin_seating_orientation',

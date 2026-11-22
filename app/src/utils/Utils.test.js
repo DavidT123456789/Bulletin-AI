@@ -1328,5 +1328,29 @@ describe('Utils', () => {
             expect(fallbackEmpty.tooltip).toBe('Généré par IA');
         });
     });
+
+    describe('normalizeMaxChars & getCharLimitState', () => {
+        it('normalise, borne et filtre les limites de caractères invalides', () => {
+            expect(Utils.normalizeMaxChars(null)).toBeNull();
+            expect(Utils.normalizeMaxChars(undefined)).toBeNull();
+            expect(Utils.normalizeMaxChars('')).toBeNull();
+            expect(Utils.normalizeMaxChars(0)).toBeNull();
+            expect(Utils.normalizeMaxChars(-50)).toBeNull();
+            expect(Utils.normalizeMaxChars('abc')).toBeNull();
+            expect(Utils.normalizeMaxChars(20)).toBe(50);
+            expect(Utils.normalizeMaxChars(5000)).toBe(2000);
+            expect(Utils.normalizeMaxChars('255')).toBe(255);
+            expect(Utils.normalizeMaxChars(400.4)).toBe(400);
+        });
+
+        it('calcule correctement les états none / ok / near / over et le dépassement exact', () => {
+            expect(Utils.getCharLimitState(300, null)).toEqual({ limit: null, state: 'none', overBy: 0 });
+            expect(Utils.getCharLimitState(180, 255)).toEqual({ limit: 255, state: 'ok', overBy: 0 });
+            expect(Utils.getCharLimitState(235, 255)).toEqual({ limit: 255, state: 'near', overBy: 0 });
+            expect(Utils.getCharLimitState(255, 255)).toEqual({ limit: 255, state: 'near', overBy: 0 });
+            expect(Utils.getCharLimitState(256, 255)).toEqual({ limit: 255, state: 'over', overBy: 1 });
+            expect(Utils.getCharLimitState(310, '255')).toEqual({ limit: 255, state: 'over', overBy: 55 });
+        });
+    });
 });
 

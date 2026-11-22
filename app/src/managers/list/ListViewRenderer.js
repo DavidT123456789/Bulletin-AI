@@ -8,8 +8,10 @@ import { Utils } from '../../utils/Utils.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { ListSelectionManager } from './ListSelectionManager.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
+import { PromptService } from '../../services/PromptService.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
+import { TooltipsUI } from '../TooltipsManager.js';
 
 export const ListViewRenderer = {
 
@@ -204,11 +206,13 @@ export const ListViewRenderer = {
     },
 
     updateRowContent(row, result) {
-        // Update appreciation cell
+        // Update appreciation cell (cleanup Tippy instances before replacing DOM)
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (appreciationCell) {
             this.clearCellCollapseTimers(appreciationCell);
+            TooltipsUI.cleanupTooltipsIn?.(appreciationCell);
             appreciationCell.innerHTML = this.getAppreciationCell(result);
+            TooltipsUI.initTooltips?.(appreciationCell);
         }
 
         // Update status cell
@@ -460,7 +464,7 @@ export const ListViewRenderer = {
                             
                             <!-- SECTION VUE -->
                             <button type="button" class="action-dropdown-item action-analyze-class" id="analyzeClassBtn-shortcut">
-                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyser la classe
+                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyse de la classe
                             </button>
 
                             <!-- SECTION COPIER -->
@@ -890,9 +894,31 @@ export const ListViewRenderer = {
                 indicatorBadge = `<span class="dirty-indicator tooltip" data-tooltip="${Utils.escapeHtml(status.tooltip)}"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
             }
 
+            let overflowBadge = '';
+            const maxChars = PromptService.getActiveMaxChars?.() ?? null;
+            if (maxChars) {
+                const plainText = Utils.stripMarkdown(Utils.decodeHtmlEntities(status.appreciation));
+                const charCount = Utils.countCharacters(plainText);
+                const limitInfo = Utils.getCharLimitState?.(charCount, maxChars);
+                if (limitInfo?.state === 'over') {
+                    const overTooltip = `Dépasse la limite de ${maxChars} car. (+${limitInfo.overBy} car.)`;
+                    overflowBadge = `<span class="char-limit-overflow-badge tooltip" data-tooltip="${Utils.escapeHtml(overTooltip)}">${charCount}/${maxChars}</span>`;
+                }
+            }
+
+            const isCopied = Utils.isAppreciationCopied?.(result, appState.currentPeriod) ?? false;
+            const copiedBadge = isCopied
+                ? `<span class="copied-indicator tooltip" data-tooltip="Copiée pour cette période" aria-label="Copiée pour cette période"><iconify-icon icon="ph:check-bold" aria-hidden="true"></iconify-icon></span>`
+                : '';
+            const quickCopyLabel = isCopied ? "Copier à nouveau (déjà copiée)" : "Copier l'appréciation";
+            const quickCopyBtn = `<button type="button" class="btn-row-quick-copy tooltip" data-action="quick-copy-appreciation" data-tooltip="${quickCopyLabel}" aria-label="${quickCopyLabel}"><iconify-icon icon="solar:copy-linear" aria-hidden="true"></iconify-icon></button>`;
+
             return `<div class="appreciation-preview-wrapper">
                 ${indicatorBadge}
                 <div class="appreciation-preview">${Utils.cleanMarkdown(status.appreciation)}</div>
+                ${overflowBadge}
+                ${copiedBadge}
+                ${quickCopyBtn}
             </div>`;
         }
 

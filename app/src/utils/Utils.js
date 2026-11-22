@@ -1,7 +1,9 @@
 
 import { appState, userSettings } from '../state/State.js';
 import { MODEL_SHORT_NAMES } from '../config/models.js';
+import { MAX_CHARS_CONFIG } from '../config/defaults.js';
 import { DOMHelper } from './DOMHelper.js';
+import { mergeHistoryPerPeriod } from './HistoryUtils.js';
 import { resolveStudentStatus, getPeriodsForSystem, getGradeCssClass } from '../config/academicConstants.js';
 import {
     EPICENE_FIRST_NAMES,
@@ -197,6 +199,44 @@ export const Utils = {
     },
 
     /**
+     * Indique si l'appréciation d'un élève a déjà été copiée pour la période donnée.
+     * Priorité à `studentData.periods[period].copied` (isolé par période), avec repli
+     * rétro-compatible sur `result.copied` uniquement pour la période générée.
+     * @param {Object} result - Résultat élève
+     * @param {string} [period=appState.currentPeriod] - Période
+     * @returns {boolean}
+     */
+    isAppreciationCopied(result, period = appState.currentPeriod) {
+        if (!result || !period) return false;
+        const periodData = result.studentData?.periods?.[period];
+        if (periodData && typeof periodData.copied === 'boolean') {
+            return periodData.copied;
+        }
+        return Boolean(result.copied) && (!result.generationPeriod || result.generationPeriod === period);
+    },
+
+    /**
+     * Met à jour l'état « copié » pour une période donnée tout en synchronisant
+     * le champ racine `result.copied` pour la rétro-compatibilité.
+     * @param {Object} result - Résultat élève
+     * @param {string} [period=appState.currentPeriod] - Période ciblée
+     * @param {boolean} [copied=false] - Nouvel état copié
+     */
+    setAppreciationCopied(result, period = appState.currentPeriod, copied = false) {
+        if (!result) return;
+        const boolVal = Boolean(copied);
+        if (period) {
+            if (!result.studentData) result.studentData = { periods: {} };
+            if (!result.studentData.periods) result.studentData.periods = {};
+            if (!result.studentData.periods[period]) result.studentData.periods[period] = {};
+            result.studentData.periods[period].copied = boolVal;
+        }
+        if (!period || period === appState.currentPeriod || !result.generationPeriod || result.generationPeriod === period) {
+            result.copied = boolVal;
+        }
+    },
+
+    /**
      * Indique si un élève attend une génération d'appréciation sur la période.
      * Exclut : erreur bloquante sur la période, élève parti avant la période,
      * élève parti sur la période sans note ni contexte (rien à évaluer).
@@ -266,6 +306,39 @@ export const Utils = {
      * @returns {number} Nombre de caractères
      */
     countCharacters(text) { return typeof text !== 'string' ? 0 : text.trim().length; },
+
+    /**
+     * Normalise une limite maximale de caractères (Pronote / ÉcoleDirecte / LSU).
+     * Retourne un entier borné dans [min, max] ou null si la limite est désactivée/invalide.
+     * @param {number|string|null|undefined} value
+     * @returns {number|null}
+     */
+    normalizeMaxChars(value) {
+        if (value === null || value === undefined || value === '' || value === false) return null;
+        const parsed = typeof value === 'number' ? value : parseInt(String(value).trim(), 10);
+        if (!Number.isFinite(parsed) || parsed <= 0) return null;
+        return Math.min(MAX_CHARS_CONFIG.max, Math.max(MAX_CHARS_CONFIG.min, Math.round(parsed)));
+    },
+
+    /**
+     * Évalue l'état d'une appréciation vis-à-vis de la limite de caractères active.
+     * Source unique de vérité partagée (Focus Panel, Vue Liste, Laboratoire de style).
+     * @param {number} charCount - Nombre de caractères mesurés
+     * @param {number|string|null|undefined} maxChars - Limite configurée
+     * @returns {{ limit: number|null, state: 'none'|'ok'|'near'|'over', overBy: number }}
+     */
+    getCharLimitState(charCount, maxChars) {
+        const limit = this.normalizeMaxChars(maxChars);
+        if (!limit) return { limit: null, state: 'none', overBy: 0 };
+        const count = Math.max(0, Number(charCount) || 0);
+        if (count > limit) {
+            return { limit, state: 'over', overBy: count - limit };
+        }
+        if (count >= Math.ceil(limit * MAX_CHARS_CONFIG.nearRatio)) {
+            return { limit, state: 'near', overBy: 0 };
+        }
+        return { limit, state: 'ok', overBy: 0 };
+    },
 
     /**
      * Vérifie si une valeur est une note valide (0-20)
@@ -1094,9 +1167,12 @@ export const Utils = {
                     existing.studentPhoto = result.studentPhoto;
                 }
 
-                // Fusionner l'historique d'appréciations
+                // Fusionner l'historique d'appréciations (legacy + historyPerPeriod)
                 if (result.history && Array.isArray(result.history) && result.history.length > 0) {
                     existing.history = result.history;
+                }
+                if (result.historyPerPeriod && typeof result.historyPerPeriod === 'object') {
+                    existing.historyPerPeriod = mergeHistoryPerPeriod(existing.historyPerPeriod, result.historyPerPeriod);
                 }
 
                 // Fusionner le statut d'édition manuelle

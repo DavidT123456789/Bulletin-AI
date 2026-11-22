@@ -76,26 +76,34 @@ export const GlobalListeners = {
             }
         });
 
-        bus.on(EVENTS.JOURNAL_THRESHOLD_CHANGED, async () => {
-            try {
-
-                if (!ListViewManager?.updateStudentRow) return;
-
-                // Update all rows with appreciations that have a hash (can be dirty)
-                const results = appState.generatedResults || [];
-                for (const result of results) {
-                    if (result.promptHash || result.generationSnapshot) {
-                        ListViewManager.updateStudentRow(result.id);
-                    }
-                }
-
-                // Update the "Actualiser" button to reflect new dirty counts
-                if (ResultsUIManager?.updateGenerateButtonState) {
-                    ResultsUIManager.updateGenerateButtonState();
-                }
-            } catch (err) {
-                console.warn('[GlobalListeners] Failed to update rows on threshold change:', err);
+        let thresholdRefreshTimer = null;
+        bus.on(EVENTS.JOURNAL_THRESHOLD_CHANGED, (payload) => {
+            if (thresholdRefreshTimer) {
+                clearTimeout(thresholdRefreshTimer);
             }
+            const targetClassId = payload?.classId ?? appState.currentClassId ?? null;
+            thresholdRefreshTimer = setTimeout(() => {
+                thresholdRefreshTimer = null;
+                try {
+                    if (!ListViewManager?.updateStudentRow) return;
+
+                    // Update rows with appreciations that have a hash (scoped to affected class when specified)
+                    const results = appState.generatedResults || [];
+                    for (const result of results) {
+                        if (targetClassId && result.classId && result.classId !== targetClassId) continue;
+                        if (result.promptHash || result.generationSnapshot) {
+                            ListViewManager.updateStudentRow(result.id);
+                        }
+                    }
+
+                    // Update the "Actualiser" button to reflect new dirty counts
+                    if (ResultsUIManager?.updateGenerateButtonState) {
+                        ResultsUIManager.updateGenerateButtonState();
+                    }
+                } catch (err) {
+                    console.warn('[GlobalListeners] Failed to update rows on threshold change:', err);
+                }
+            }, 0);
         });
     },
 
@@ -397,7 +405,7 @@ export const GlobalListeners = {
 
         // Unified end handler: hide progress only when ALL generations are complete
         // AND no mass import/regeneration is in progress (those manage their own progress)
-        bus.on(EVENTS.AI_GENERATION_END, async () => {
+        bus.on(EVENTS.AI_GENERATION_END, async (detail) => {
             this._activeGenerationsCount = Math.max(0, this._activeGenerationsCount - 1);
 
             // Only hide when all concurrent generations are done
@@ -408,7 +416,7 @@ export const GlobalListeners = {
                     return;
                 }
 
-                UI.hideHeaderProgress();
+                UI.hideHeaderProgress(Boolean(detail?.aborted || detail?.hasError));
             }
         });
     },

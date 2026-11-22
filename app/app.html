@@ -650,8 +650,8 @@
                 <!-- Utility Actions: Analyze & Print -->
                 <div class="focus-header-tools">
                     <!-- Analyze button (navigates to analysis page) -->
-                    <button type="button" id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyser l'élève"
-                        aria-label="Analyser l'élève">
+                    <button type="button" id="focusAnalyzeBtn" class="focus-nav-btn focus-analyze-btn tooltip" data-tooltip="Analyse de l'élève"
+                        aria-label="Analyse de l'élève">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em">
                             <path d="M18 20V10M12 20V4M6 20V14"></path>
@@ -759,7 +759,7 @@
                         <div class="focus-context-header">
                             <div class="focus-context-label">
                                 <span class="tooltip focus-context-info-trigger"
-                                    data-tooltip="Un contexte relatif au travail, comportement et implication dans les projets de l'élève, permet d'obtenir des appréciations plus précises.">
+                                    data-tooltip="Synthèse libre ou consigne ponctuelle directement transmise à l'IA pour ce bulletin.">
                                     Contexte
                                 </span>
                                 <!-- Voice Dictation Button -->
@@ -789,7 +789,7 @@
                             </div>
                         </div>
                         <textarea id="focusContextInput" class="focus-context-textarea"
-                            placeholder="Bavardages, travail sérieux, compréhension fragile, bonne participation, etc."></textarea>
+                            placeholder="Synthèse libre ou consigne pour l'IA (ex. Valoriser l'oral, insister sur la méthode, encourager l'autonomie…)"></textarea>
                     </div>
 
                     <!-- 3. JOURNAL DE BORD - Observation notes -->
@@ -808,24 +808,43 @@
                             <div class="journal-header-right">
                                 <span class="journal-count-badge is-hidden" id="focusJournalCount">0</span>
 
-                                <!-- Threshold quick control -->
+                                <!-- Threshold & AI inclusion quick control -->
                                 <div class="journal-threshold-control" id="journalThresholdControl">
                                     <button type="button" class="journal-threshold-btn journal-header-btn tooltip"
-                                        id="journalThresholdBtn" data-tooltip="Cliquez pour régler le seuil">
-                                        <iconify-icon icon="solar:filter-linear"></iconify-icon>
-                                        <span id="journalThresholdValue">≥2</span>
+                                        id="journalThresholdBtn" data-tooltip="Réglage de transmission du journal à l'IA">
+                                        <iconify-icon id="journalThresholdIcon" icon="solar:stars-minimalistic-linear"></iconify-icon>
+                                        <span id="journalThresholdValue">IA · ≥2</span>
                                     </button>
                                     <div class="journal-threshold-popover" id="journalThresholdPopover">
-                                        <div class="threshold-popover-header">Seuil de signalement</div>
-                                        <div class="threshold-popover-desc">Observations répétées transmises à l'IA
+                                        <div class="threshold-popover-toggle-row">
+                                            <div class="threshold-toggle-text">
+                                                <label class="threshold-toggle-label" for="journalIncludeAIToggle">Transmettre à l'IA</label>
+                                                <span class="threshold-scope-label" id="journalThresholdScope">Réglage de la classe</span>
+                                            </div>
+                                            <label class="toggle-switch small">
+                                                <input type="checkbox" id="journalIncludeAIToggle" checked>
+                                                <span class="slider"></span>
+                                            </label>
                                         </div>
-                                        <div class="threshold-popover-controls">
-                                            <button type="button" class="threshold-adjust-btn" data-delta="-1">−</button>
-                                            <span class="threshold-current" id="thresholdCurrentValue">2</span>
-                                            <button type="button" class="threshold-adjust-btn" data-delta="+1">+</button>
+                                        <div class="threshold-stepper-block" id="journalThresholdStepperBlock">
+                                            <div class="threshold-popover-header">Seuil des tags rapides</div>
+                                            <div class="ui-segmented-control css-driven journal-threshold-segmented"
+                                                id="journalThresholdSegmented" role="radiogroup"
+                                                aria-label="Seuil des tags rapides" data-active-index="1">
+                                                <div class="ui-glider" aria-hidden="true"></div>
+                                                <button type="button" class="ui-segment journal-threshold-option" role="radio"
+                                                    aria-checked="false" data-threshold="1">Dès 1</button>
+                                                <button type="button" class="ui-segment journal-threshold-option active" role="radio"
+                                                    aria-checked="true" data-threshold="2">Dès 2</button>
+                                                <button type="button" class="ui-segment journal-threshold-option" role="radio"
+                                                    aria-checked="false" data-threshold="3">Dès 3</button>
+                                            </div>
+                                            <div class="threshold-popover-hint">
+                                                <span id="thresholdHintText">Tags répétés (≥2) et toutes les notes écrites transmis.</span>
+                                            </div>
                                         </div>
-                                        <div class="threshold-popover-hint">
-                                            <span id="thresholdHintText">1 = tout compte • 3 = plus tolérant</span>
+                                        <div class="threshold-popover-hint threshold-ai-off-hint is-hidden" id="journalAiOffHint">
+                                            Mode bloc-notes personnel : rien n'est transmis à l'IA.
                                         </div>
                                     </div>
                                 </div>
@@ -868,19 +887,19 @@
                                 <!-- History Navigation Group (Segmented Stepper Pill) -->
                                 <div class="history-navigation-group" id="historyNavigationGroup"
                                     style="display: none;">
-                                    <button type="button" id="focusHistoryPrevBtn" class="history-nav-btn tooltip"
-                                        data-tooltip="Version précédente (Ctrl+Z)" disabled>
+                                    <button type="button" id="focusHistoryPrevBtn" class="history-nav-btn disabled tooltip"
+                                        data-tooltip="Version précédente (Ctrl+Z)" aria-label="Version précédente" aria-disabled="true">
                                         <iconify-icon icon="solar:alt-arrow-left-linear"></iconify-icon>
                                     </button>
 
                                     <!-- Central Indicator -->
                                     <button type="button" id="focusHistoryIndicator" class="history-indicator-btn tooltip"
-                                        data-tooltip="Historique des modifications">
+                                        data-tooltip="Historique des versions" aria-label="Historique des versions">
                                         <span class="history-count">0</span>
                                     </button>
 
-                                    <button type="button" id="focusHistoryNextBtn" class="history-nav-btn tooltip"
-                                        data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" disabled>
+                                    <button type="button" id="focusHistoryNextBtn" class="history-nav-btn disabled tooltip"
+                                        data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" aria-label="Version suivante" aria-disabled="true">
                                         <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                                     </button>
                                 </div>
@@ -900,15 +919,19 @@
                         <!-- Refinement style buttons -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
-                                data-tooltip="Raccourcir et aller à l'essentiel">
+                                data-tooltip="Raccourcir et aller à l'essentiel · Clic droit : aperçu">
                                 <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
                             </button>
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
-                                data-tooltip="Ton plus bienveillant et valorisant">
+                                data-tooltip="Ton plus bienveillant et valorisant · Clic droit : aperçu">
                                 <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                             </button>
+                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="demanding"
+                                data-tooltip="Ton plus ferme et exigeant · Clic droit : aperçu">
+                                <iconify-icon icon="solar:target-linear"></iconify-icon> Exigeante
+                            </button>
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
-                                data-tooltip="Corriger et fluidifier la rédaction">
+                                data-tooltip="Corriger et fluidifier la rédaction · Clic droit : aperçu">
                                 <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
                             </button>
                         </div>
@@ -941,7 +964,7 @@
                             <!-- Populated dynamically via JS -->
                         </div>
                         <div class="focus-analysis-title-group">
-                            <h3 class="focus-analysis-title" id="focusAnalysisTitle">Analyse IA</h3>
+                            <h3 class="focus-analysis-title" id="focusAnalysisTitle">Analyse de l'élève</h3>
                         </div>
                     </div>
 
@@ -1640,6 +1663,39 @@
                                         <span>90 mots</span>
                                     </div>
                                 </div>
+
+                                <div class="settings-row settings-row-field">
+                                    <div class="settings-row-head">
+                                        <div class="settings-row-info">
+                                            <div class="settings-row-title-wrap">
+                                                <label for="iaMaxCharsToggle" class="settings-row-title">Limite de caractères</label>
+                                                <output id="iaMaxCharsValue" class="settings-row-value"
+                                                    for="iaMaxCharsInput">Désactivée</output>
+                                            </div>
+                                            <span class="settings-row-desc">Plafond strict pour Pronote, ÉcoleDirecte ou LSU.</span>
+                                        </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" id="iaMaxCharsToggle">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-collapsible-control" id="iaMaxCharsCollapsible">
+                                        <div class="settings-collapsible-inner">
+                                            <div class="max-chars-controls" id="iaMaxCharsPresets" role="group"
+                                                aria-label="Préréglages de limite de caractères">
+                                                <button type="button" class="max-chars-preset-btn" data-max-chars="255">255</button>
+                                                <button type="button" class="max-chars-preset-btn" data-max-chars="400">400</button>
+                                                <button type="button" class="max-chars-preset-btn" data-max-chars="500">500</button>
+                                                <div class="max-chars-custom-wrap">
+                                                    <input type="number" id="iaMaxCharsInput" min="50" max="2000" step="5"
+                                                        inputmode="numeric" placeholder="Autre"
+                                                        aria-label="Limite maximale personnalisée en caractères">
+                                                    <span class="max-chars-custom-unit" aria-hidden="true">car.</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1902,6 +1958,7 @@
                                                     <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
                                                         style="display: none;"></span>
                                                 </small>
+                                                <small id="fallbackSovereigntyHint" class="fallback-sovereignty-hint" hidden></small>
                                             </span>
                                         </div>
                                         <div class="settings-row-control">
@@ -2062,8 +2119,25 @@
                                         </div>
                                     </div>
 
-                                    <!-- CATÉGORIE 3: SPÉCIALISÉS & PAY-AS-YOU-GO -->
-                                    <div class="settings-group">
+                                    <!-- MOTEURS AVANCÉS & IA LOCALE (repliés par défaut si non configurés) -->
+                                    <div class="advanced-providers-accordion" id="advancedProvidersAccordion">
+                                        <button type="button" class="advanced-providers-toggle" id="advancedProvidersToggleBtn"
+                                            aria-expanded="false" aria-controls="advancedProvidersBody">
+                                            <span class="advanced-providers-toggle-label">
+                                                <iconify-icon icon="solar:tuning-2-linear" aria-hidden="true"></iconify-icon>
+                                                <span class="advanced-providers-toggle-texts">
+                                                    <span class="advanced-providers-toggle-title">Autres moteurs &amp; IA locale</span>
+                                                    <span class="advanced-providers-subtitle">Anthropic, Mistral, OpenAI, OpenRouter, Ollama</span>
+                                                </span>
+                                            </span>
+                                            <span class="advanced-providers-toggle-right">
+                                                <span class="advanced-providers-count-badge" id="advancedProvidersCountBadge" hidden></span>
+                                                <iconify-icon icon="solar:alt-arrow-down-linear" class="advanced-providers-chevron" aria-hidden="true"></iconify-icon>
+                                            </span>
+                                        </button>
+                                        <div class="advanced-providers-body" id="advancedProvidersBody" hidden>
+                                            <!-- CATÉGORIE 3: SPÉCIALISÉS & PAY-AS-YOU-GO -->
+                                            <div class="settings-group">
                                         <div class="settings-group-header">
                                             <h4 class="settings-group-title">Spécialisés & Pay-as-you-go</h4>
                                         </div>
@@ -2287,6 +2361,8 @@
                                             </div>
                                         </div>
                                     </div>
+                                        </div> <!-- /advancedProvidersBody -->
+                                    </div> <!-- /advancedProvidersAccordion -->
                                 </form>
                             </div> <!-- /apiKeysSection -->
                         </div> <!-- /settings-engine -->
@@ -2384,33 +2460,6 @@
                                                     </button>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="settings-row settings-row-stacked">
-                                        <div class="settings-row-info">
-                                            <span class="settings-row-title">Pastilles de statut sur le plan</span>
-                                            <span class="settings-row-desc">Choisissez les catégories signalées par un point coloré sur les photos du plan de classe.</span>
-                                        </div>
-                                        <div class="seating-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Pastilles de statut sur le plan">
-                                            <label class="seating-dot-option active">
-                                                <input type="checkbox" data-dot-category="movements" checked>
-                                                <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
-                                                <span class="seating-dot-label">Mouvements <small>(Nouveau, Départ)</small></span>
-                                                <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
-                                            </label>
-                                            <label class="seating-dot-option">
-                                                <input type="checkbox" data-dot-category="devices">
-                                                <span class="seating-dot-preview seating-dot-preview--devices" aria-hidden="true"></span>
-                                                <span class="seating-dot-label">Dispositifs <small>(ULIS, PAP, PPRE)</small></span>
-                                                <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
-                                            </label>
-                                            <label class="seating-dot-option">
-                                                <input type="checkbox" data-dot-category="delegates">
-                                                <span class="seating-dot-preview seating-dot-preview--delegates" aria-hidden="true"></span>
-                                                <span class="seating-dot-label">Délégués</span>
-                                                <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
-                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -2590,6 +2639,7 @@
                                         <div class="data-action-info">
                                             <strong class="data-action-title">Données complètes</strong>
                                             <span class="data-action-desc">Sauvegarde intégrale (classes, élèves, appréciations, historiques).</span>
+                                            <span class="data-action-meta" id="localLastBackup"></span>
                                         </div>
                                         <div class="data-action-buttons">
                                             <button type="button" class="btn btn-secondary btn-small" id="exportFullBackupBtn">
@@ -2857,13 +2907,16 @@
                                     </button>
                                 </div>
 
-                                <!-- Les 3 vrais boutons .btn-ai-outline[data-refine-type] -->
+                                <!-- Les 4 vrais boutons .btn-ai-outline[data-refine-type] -->
                                 <div class="focus-refinement-options help-native-refine-bar" role="group" aria-label="Outils de retouche IA">
                                     <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="concise" aria-pressed="false">
                                         <iconify-icon class="iconify-inline" icon="solar:minimize-square-linear"></iconify-icon> Concise
                                     </button>
                                     <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="encouraging" aria-pressed="false">
                                         <iconify-icon class="iconify-inline" icon="solar:heart-linear"></iconify-icon> Encourageante
+                                    </button>
+                                    <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="demanding" aria-pressed="false">
+                                        <iconify-icon class="iconify-inline" icon="solar:target-linear"></iconify-icon> Exigeante
                                     </button>
                                     <button type="button" class="btn btn-ai-outline btn-tiny" data-refine-type="polish" aria-pressed="false">
                                         <iconify-icon class="iconify-inline" icon="solar:stars-line-linear"></iconify-icon> Peaufiner
@@ -2946,8 +2999,8 @@
                                 <div class="help-pillar-card">
                                     <div class="help-pillar-icon is-emerald"><iconify-icon icon="solar:chart-square-bold"></iconify-icon></div>
                                     <div class="help-pillar-body">
-                                        <h4>Synthèse du conseil</h4>
-                                        <p>Menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> → <em>Analyser la classe</em> pour générer le bilan global.</p>
+                                        <h4>Analyse de la classe</h4>
+                                        <p>Menu <span class="help-ui-pill"><iconify-icon icon="ph:dots-three-vertical-bold"></iconify-icon></span> → <em>Analyse de la classe</em> pour consulter les statistiques et générer le bilan.</p>
                                     </div>
                                 </div>
                             </div>
@@ -3990,20 +4043,24 @@
             <div class="modal-header">
                 <div class="dashboard-header-left">
                     <h2 class="modal-title" id="classDashboardModalTitle">
-                        <iconify-icon class="iconify-inline" icon="solar:chart-square-linear"></iconify-icon> Analyse de la classe
+                        <iconify-icon class="iconify-inline" icon="solar:chart-square-linear"></iconify-icon>
+                        <span id="dashboardTitlePrefix">Analyse de la classe</span>
+                        <span class="dashboard-title-sep" id="dashboardTitleSep" hidden aria-hidden="true">·</span>
+                        <span id="dashboardClassBadge" class="dashboard-title-class" hidden></span>
                     </h2>
                     <div class="dashboard-context-line" id="dashboardContextLine">
-                        <span id="dashboardClassBadge" class="context-item context-item--primary" style="display: none;">--</span>
-                        <span id="dashboardSubjectBadge" class="context-item" style="display: none;">--</span>
-                        <span id="dashboardPeriodBadge" class="context-item">--</span>
-                        <span id="dashboardStudentCount" class="context-item">--</span>
+                        <span id="dashboardSubjectBadge" class="context-meta-item" hidden style="display: none;">--</span>
+                        <span id="dashboardPeriodBadge" class="context-meta-item">--</span>
+                        <span id="dashboardStudentCount" class="context-meta-item">--</span>
                     </div>
                 </div>
-                <div class="dashboard-header-actions">
+                <div class="modal-header-actions dashboard-header-actions">
                     <button type="button" class="btn btn-neutral btn-small tooltip" id="exportClassDashboardPdfBtn"
-                        data-tooltip="Imprimer ou exporter en PDF (Synthèse conseil de classe)">
-                        <iconify-icon icon="solar:printer-linear"></iconify-icon> Imprimer / PDF
+                        data-tooltip="Imprimer ou exporter en PDF (Bilan de classe)"
+                        aria-label="Imprimer ou exporter en PDF">
+                        <iconify-icon icon="solar:printer-linear"></iconify-icon> <span class="dashboard-export-label">Imprimer / PDF</span>
                     </button>
+                    <div class="modal-header-actions-divider" aria-hidden="true"></div>
                     <button type="button" class="close-button" id="closeDashboardModalBtn" aria-label="Fermer le tableau de bord">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
@@ -4015,14 +4072,12 @@
                     <!-- LEFT COLUMN: AI SYNTHESIS -->
                     <div class="dashboard-panel panel-left">
                         <div class="panel-header">
-                            <h3 class="panel-title">
-                                <iconify-icon icon="solar:stars-line-duotone"></iconify-icon> Synthèse qualitative
-                            </h3>
+                            <h3 class="panel-title">Bilan</h3>
                             <div class="panel-header-actions">
                                 <button type="button" class="btn btn-neutral btn-small tooltip" id="copyDashboardSynthesisBtn" data-tooltip="Copier le bilan complet (4 sections)" style="display: none;">
-                                    <iconify-icon icon="solar:copy-linear"></iconify-icon> Copier
+                                    <iconify-icon icon="solar:copy-linear"></iconify-icon> Tout copier
                                 </button>
-                                <button type="button" class="btn btn-ai btn-small" id="generateSynthesisBtn" style="display: none;">
+                                <button type="button" class="btn btn-ai btn-small tooltip" id="generateSynthesisBtn" data-tooltip="Clic droit : prévisualiser le prompt" style="display: none;">
                                     <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                                 </button>
                             </div>
@@ -4030,35 +4085,52 @@
                         <div class="panel-content" id="aiSynthesisContent">
                             <div class="ai-placeholder">
                                 <div class="ai-placeholder-glow"></div>
-                                <h4 class="ai-placeholder-title">Analyse qualitative de la classe</h4>
-                                <p class="ai-placeholder-text">Obtenez une analyse globale qualitative de votre classe en un instant. L'IA étudie les notes, les tendances d'évolution et les appréciations individuelles pour proposer des points forts, des points de vigilance et des recommandations pédagogiques actionnables.</p>
-                                <button type="button" class="btn btn-ai" id="generateSynthesisPlaceholderBtn">
-                                    <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Démarrer l'analyse
+                                <h4 class="ai-placeholder-title">Bilan de la classe</h4>
+                                <p class="ai-placeholder-text">Générez le bilan complet de votre classe en un instant. L'IA croise les notes, les évolutions et les appréciations individuelles pour rédiger l'appréciation de classe, les points forts, les points de vigilance et des pistes pédagogiques.</p>
+                                <button type="button" class="btn btn-ai tooltip" id="generateSynthesisPlaceholderBtn" data-tooltip="Clic droit : prévisualiser le prompt">
+                                    <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer le bilan
                                 </button>
                             </div>
                         </div>
-                        <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;">
-                            <span class="refinement-label"><iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Affiner la synthèse</span>
+                        <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;" role="group" aria-label="Retouches rapides de l'appréciation de classe">
                             <div class="refinement-pills-group">
-                                <button type="button" class="btn-refinement" data-refine-type="summarize">
-                                    <iconify-icon icon="solar:minimize-square-minimalistic-linear"></iconify-icon> Plus concis
+                                <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="concise"
+                                    data-tooltip="Condenser en 1 à 2 phrases · Clic droit : aperçu">
+                                    <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
                                 </button>
-                                <button type="button" class="btn-refinement" data-refine-type="positive">
-                                    <iconify-icon icon="solar:heart-angle-linear"></iconify-icon> Tonalité positive
+                                <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="encouraging"
+                                    data-tooltip="Ton plus bienveillant et valorisant · Clic droit : aperçu">
+                                    <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
+                                </button>
+                                <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="demanding"
+                                    data-tooltip="Ton plus ferme et exigeant · Clic droit : aperçu">
+                                    <iconify-icon icon="solar:target-linear"></iconify-icon> Exigeante
+                                </button>
+                                <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="polish"
+                                    data-tooltip="Corriger et fluidifier la rédaction · Clic droit : aperçu">
+                                    <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
                                 </button>
                             </div>
-                            <button type="button" class="btn-refinement btn-refinement--revert" id="revertSynthesisBtn" style="display: none;" title="Revenir à la synthèse d'origine">
-                                <iconify-icon icon="solar:restart-linear"></iconify-icon> Rétablir
-                            </button>
+                        </div>
+                        <div class="dashboard-synthesis-footer" id="aiSynthesisMeta" style="display: none;">
+                            <span class="synthesis-meta-source" id="aiSynthesisSourceInfo"></span>
+                            <div class="synthesis-meta-right">
+                                <span class="synthesis-meta-hint">
+                                    <iconify-icon icon="solar:pen-2-linear" aria-hidden="true"></iconify-icon>
+                                    Clic sur un texte pour retoucher
+                                </span>
+                                <button type="button" class="synthesis-revert-btn tooltip" id="revertSynthesisBtn" style="display: none;"
+                                    data-tooltip="Revenir au bilan d'origine (toutes les sections)">
+                                    <iconify-icon icon="solar:restart-linear" aria-hidden="true"></iconify-icon> Rétablir le bilan
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- RIGHT COLUMN: COHORT INSIGHTS -->
                     <div class="dashboard-panel panel-right">
                         <div class="panel-header">
-                            <h3 class="panel-title">
-                                <iconify-icon icon="solar:chart-square-linear"></iconify-icon> Analyse de la cohorte
-                            </h3>
+                            <h3 class="panel-title">Résultats &amp; suivi</h3>
                             <span class="cohort-header-metric tooltip" id="cohortHeaderMetric">--</span>
                         </div>
                         <div class="panel-content">
@@ -4067,40 +4139,53 @@
                                 <div class="cohort-stat-item has-tooltip" id="cohortStatAverageItem">
                                     <span class="stat-label">Moyenne</span>
                                     <span class="stat-value" id="cohortStatAverage">--</span>
+                                    <span class="stat-sub" id="cohortStatAverageDelta" hidden></span>
                                 </div>
                                 <div class="cohort-stat-divider"></div>
                                 <div class="cohort-stat-item has-tooltip" id="cohortStatMedianItem">
                                     <span class="stat-label">Médiane</span>
                                     <span class="stat-value" id="cohortStatMedian">--</span>
+                                    <span class="stat-sub" id="cohortStatMedianSub" hidden></span>
                                 </div>
                                 <div class="cohort-stat-divider"></div>
                                 <div class="cohort-stat-item has-tooltip" id="cohortStatMinItem">
-                                    <span class="stat-label">Note Min</span>
+                                    <span class="stat-label">Min</span>
                                     <span class="stat-value" id="cohortStatMin">--</span>
                                 </div>
                                 <div class="cohort-stat-divider"></div>
                                 <div class="cohort-stat-item has-tooltip" id="cohortStatMaxItem">
-                                    <span class="stat-label">Note Max</span>
+                                    <span class="stat-label">Max</span>
                                     <span class="stat-value" id="cohortStatMax">--</span>
                                 </div>
                             </div>
+
+                            <!-- Micro-bar grade distribution -->
+                            <div class="cohort-distribution" id="cohortDistributionSection" hidden>
+                                <div class="cohort-distribution-header">
+                                    <span class="cohort-sub-label">Répartition des notes</span>
+                                    <span class="cohort-distribution-summary" id="cohortDistributionSummary"></span>
+                                </div>
+                                <div class="cohort-distribution-bar" id="cohortDistributionBar" role="img" aria-label="Répartition des notes par tranche"></div>
+                            </div>
+
+                            <!-- Conditional Journal trends -->
+                            <div class="cohort-journal-trends" id="cohortJournalTrends" hidden>
+                                <span class="cohort-sub-label">Tendances du journal</span>
+                                <div class="cohort-journal-chips" id="cohortJournalChips"></div>
+                            </div>
+
                             <!-- Highlights Sections -->
                             <div class="cohort-highlights">
                                 <div class="highlight-group" id="highlightProgressGroup">
                                     <div class="highlight-group-header">
                                         <div class="highlight-group-title">
                                             <iconify-icon icon="solar:graph-up-linear" class="icon-success"></iconify-icon>
-                                            <span>Top Progressions</span>
+                                            <span>Progressions</span>
                                         </div>
                                         <span class="highlight-count-badge positive" id="highlightProgressCount">0</span>
                                     </div>
-                                    <div class="highlight-list-wrapper">
-                                        <div class="highlight-list" id="highlightProgressList">
-                                            <!-- Generated by JS -->
-                                        </div>
-                                        <button type="button" class="scroll-top-btn" data-target="highlightProgressList" style="opacity: 0; pointer-events: none;" title="Remonter">
-                                            <iconify-icon icon="solar:arrow-up-linear"></iconify-icon>
-                                        </button>
+                                    <div class="highlight-list" id="highlightProgressList">
+                                        <!-- Generated by JS -->
                                     </div>
                                 </div>
 
@@ -4108,17 +4193,12 @@
                                     <div class="highlight-group-header">
                                         <div class="highlight-group-title">
                                             <iconify-icon icon="solar:danger-circle-linear" class="icon-warning"></iconify-icon>
-                                            <span>Élèves à surveiller</span>
+                                            <span>Élèves en vigilance</span>
                                         </div>
                                         <span class="highlight-count-badge negative" id="highlightRiskCount">0</span>
                                     </div>
-                                    <div class="highlight-list-wrapper">
-                                        <div class="highlight-list" id="highlightRiskList">
-                                            <!-- Generated by JS -->
-                                        </div>
-                                        <button type="button" class="scroll-top-btn" data-target="highlightRiskList" style="opacity: 0; pointer-events: none;" title="Remonter">
-                                            <iconify-icon icon="solar:arrow-up-linear"></iconify-icon>
-                                        </button>
+                                    <div class="highlight-list" id="highlightRiskList">
+                                        <!-- Generated by JS -->
                                     </div>
                                 </div>
                             </div>

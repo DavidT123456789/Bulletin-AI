@@ -105,6 +105,7 @@ export function sleep(ms, signal = null) {
 
 const MAX_RESPONSE_TOKENS = 1024;
 const MAX_REASONING_RESPONSE_TOKENS = 2048;
+const MAX_CLASS_SYNTHESIS_REASONING_TOKENS = 4096;
 const TASK_TEMPERATURES = Object.freeze({
     appreciation: 0.65,
     refinement: 0.65,
@@ -125,7 +126,9 @@ export const AIService = {
     _resolveSamplingParams(model, { isValidation = false, taskType = 'appreciation' } = {}) {
         const meta = getModelMeta(model);
         const isReasoning = Boolean(meta?.isReasoning);
-        const maxTokens = isReasoning ? MAX_REASONING_RESPONSE_TOKENS : MAX_RESPONSE_TOKENS;
+        const maxTokens = isReasoning
+            ? (taskType === 'class-synthesis' ? MAX_CLASS_SYNTHESIS_REASONING_TOKENS : MAX_REASONING_RESPONSE_TOKENS)
+            : MAX_RESPONSE_TOKENS;
         if (isValidation || meta?.supportsTemperature === false) {
             return { maxTokens, temperature: undefined, isReasoning };
         }
@@ -396,6 +399,35 @@ export const AIService = {
     },
 
     /**
+     * Inspecte si une réponse IA ressemble à un objet JSON et s'il est complet/valide.
+     * Utilisé pour détecter un JSON tronqué (ex. `{ "synthesis": "Au terme...`) avant tout rendu/sauvegarde.
+     * @param {string} text
+     * @returns {{ looksLikeJson: boolean, isValidObject: boolean }}
+     */
+    _inspectJsonResponse(text) {
+        if (typeof text !== 'string') return { looksLikeJson: false, isValidObject: false };
+        const trimmed = text.trim();
+        if (!trimmed) return { looksLikeJson: false, isValidObject: false };
+
+        const hasJsonFence = /^```json\b/i.test(trimmed);
+        const unfenced = trimmed.startsWith('```')
+            ? trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+            : trimmed;
+        const looksLikeJson = hasJsonFence || unfenced.startsWith('{');
+        if (!looksLikeJson) {
+            return { looksLikeJson: false, isValidObject: false };
+        }
+
+        try {
+            const parsed = JSON.parse(unfenced);
+            const isValidObject = Boolean(parsed && typeof parsed === 'object' && !Array.isArray(parsed));
+            return { looksLikeJson: true, isValidObject };
+        } catch {
+            return { looksLikeJson: true, isValidObject: false };
+        }
+    },
+
+    /**
      * Calcule le timeout approprié selon le type de modèle
      * @param {string} model - Nom du modèle
      * @returns {number} Timeout en ms
@@ -514,6 +546,26 @@ export const AIService = {
 
                 if (!text || text.trim().length === 0) {
                     throw new Error("Réponse vide de l'API. Le modèle n'a pas généré de texte.");
+                }
+
+                // Détection d'une troncature API (MAX_TOKENS / length) ou d'un JSON incomplet sur les tâches structurées
+                const isTruncated =
+                    res.candidates?.[0]?.finishReason === 'MAX_TOKENS' ||
+                    res.choices?.[0]?.finish_reason === 'length' ||
+                    res.stop_reason === 'max_tokens' ||
+                    res.done_reason === 'length';
+                const expectsStructuredJson = options.taskType === 'class-synthesis' || options.taskType === 'analysis';
+                if (expectsStructuredJson) {
+                    const { looksLikeJson, isValidObject } = this._inspectJsonResponse(text);
+                    if ((looksLikeJson && !isValidObject) || (isTruncated && !isValidObject)) {
+                        const truncErr = new Error(
+                            isTruncated
+                                ? "Réponse IA tronquée (limite de tokens atteinte). Réessayez ou utilisez un autre modèle."
+                                : "Réponse IA incomplète (format JSON invalide). Réessayez ou utilisez un autre modèle."
+                        );
+                        truncErr.name = 'TruncatedResponseError';
+                        throw truncErr;
+                    }
                 }
 
                 let inTokens = 0, outTokens = 0;
@@ -789,6 +841,8 @@ export const AIService = {
         const invalidAuthProviders = new Set();
         const availableFallbackCount = fallbackModels.filter(m => this._hasApiKeyForModel(m)).length;
         const hasFallbackAlternative = availableFallbackCount > 1;
+        let outcomeAborted = false;
+        let outcomeFailed = false;
 
         try {
 
@@ -837,13 +891,15 @@ export const AIService = {
                     lastError = error;
 
                     // Erreurs non réessayables : annulation utilisateur ou clé manquante
-                    const isNonRetryable = error?.name === 'AbortError' ||
+                    const isAborted = error?.name === 'AbortError' ||
                         errMsg.includes('annulé') ||
                         errMsg.includes('abort') ||
-                        errLower.includes('clé api manquante') ||
-                        options.signal?.aborted;
+                        Boolean(options.signal?.aborted);
+                    const isNonRetryable = isAborted || errLower.includes('clé api manquante');
 
                     if (isNonRetryable) {
+                        outcomeAborted = isAborted;
+                        outcomeFailed = !isAborted;
                         throw error;
                     }
 
@@ -858,12 +914,14 @@ export const AIService = {
                         exhaustedPaidProviders.add(modelProvider);
                     }
 
-                    // Pour TOUTES les autres erreurs (timeout, quota, 429, 404, etc.)
+                    // Pour TOUTES les autres erreurs (timeout, quota, 429, 404, troncature JSON, etc.)
                     // → Continuer avec le modèle suivant
                     // Le fallback doit toujours essayer les alternatives disponibles
                     continue;
                 }
             }
+
+            outcomeFailed = true;
 
             // Tous les modèles ont échoué
             if (invalidAuthProviders.size > 0 && attemptedModels.length > 0 && (lastError?.status === 401 || String(lastError?.message || '').includes('401'))) {
@@ -883,6 +941,7 @@ export const AIService = {
             const isQuotaError = lastMsg.includes('429') || lastMsg.toLowerCase().includes('quota');
             const is404Error = lastMsg.includes('404');
             const isTimeoutError = lastError?.name === 'TimeoutError' || /timeout|expir[ée]/i.test(lastMsg);
+            const isTruncatedError = lastError?.name === 'TruncatedResponseError' || /tronqu[ée]|json invalide/i.test(lastMsg);
 
             let errorMessage = '';
 
@@ -897,6 +956,8 @@ export const AIService = {
                 }
             } else if (isTimeoutError) {
                 errorMessage = `Délai dépassé (${attemptedCount} modèle${attemptedCount > 1 ? 's' : ''} testé${attemptedCount > 1 ? 's' : ''}). Le serveur IA met trop de temps à répondre, réessayez.`;
+            } else if (isTruncatedError) {
+                errorMessage = `Réponse IA tronquée (${attemptedCount} modèle${attemptedCount > 1 ? 's' : ''} testé${attemptedCount > 1 ? 's' : ''}). Réessayez ou choisissez un autre modèle.`;
             } else if (is404Error) {
                 errorMessage = `Modèle indisponible. ${attemptedCount} modèle${attemptedCount > 1 ? 's' : ''} testé${attemptedCount > 1 ? 's' : ''}.`;
             } else {
@@ -905,7 +966,7 @@ export const AIService = {
             }
 
             // Ajouter l'info sur les modèles ignorés (seulement si pertinent)
-            if (missingKeysCount > 0 && !isQuotaError && !isTimeoutError) {
+            if (missingKeysCount > 0 && !isQuotaError && !isTimeoutError && !isTruncatedError) {
                 errorMessage += ` ${missingKeysCount} ignoré${missingKeysCount > 1 ? 's' : ''} (clés manquantes).`;
             }
 
@@ -914,7 +975,9 @@ export const AIService = {
             // Émettre l'événement de fin de génération (pour arrêter l'animation)
             bus.emit(EVENTS.AI_GENERATION_END, {
                 context: options.context || null,
-                studentName: options.studentName || ''
+                studentName: options.studentName || '',
+                aborted: outcomeAborted,
+                hasError: outcomeFailed
             });
         }
     },

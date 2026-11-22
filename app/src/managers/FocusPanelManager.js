@@ -93,7 +93,7 @@ export const FocusPanelManager = {
 
         FocusPanelRefinement.init(this, UI);
 
-        FocusPanelHistory.init({
+        FocusPanelHistory.init(this, {
             onContentChange: (content) => {
                 FocusPanelStatus.updateWordCount();
                 FocusPanelStatus.syncAppreciationToResult(content);
@@ -796,13 +796,15 @@ export const FocusPanelManager = {
                 if (periodAlreadyHasContent || resultBelongsToCurrentPeriod) {
                     if (rawHtml !== this._initialAppreciationHtml) {
                         result.appreciation = normalizedText;
-                        result.copied = false;
+                        Utils.setAppreciationCopied(result, currentPeriod, false);
                         result.errorMessage = null;
                         result.errorPeriod = null;
                         Utils.markStudentModified(result, currentPeriod);
                         result.studentData.periods[currentPeriod].appreciation = normalizedText;
                         result.isPending = false;
                         this._initialAppreciationHtml = rawHtml;
+                        FocusPanelHistory.flushEditSession(normalizedText, { studentId: this.currentStudentId, period: currentPeriod });
+                        FocusPanelHistory.endEditSession();
                         hasChanged = true;
                     }
                 }

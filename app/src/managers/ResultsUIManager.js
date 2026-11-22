@@ -10,6 +10,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { StatsService } from '../services/StatsService.js';
+import { remapHistoryPeriods } from '../utils/HistoryUtils.js';
 import { loadImportWizard, loadTrombinoscope, prefetchOnHover, withLazyManager } from '../utils/LazyManagers.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
@@ -170,6 +171,9 @@ export const ResultsUIManager = {
                 r.history.forEach(entry => {
                     if (entry?.period) entry.period = mapPeriodCode(entry.period);
                 });
+            }
+            if (r.historyPerPeriod && typeof r.historyPerPeriod === 'object') {
+                r.historyPerPeriod = remapHistoryPeriods(r.historyPerPeriod, mapPeriodCode);
             }
             if (Array.isArray(r.journal)) {
                 r.journal.forEach(entry => {
@@ -946,6 +950,7 @@ export const ResultsUIManager = {
             let successCount = 0;
             let newErrorCount = 0;
             let wasAborted = false;
+            const recentOpenings = [];
             const total = toRegen.length;
 
             // Afficher "En file" sur toutes les lignes concernées
@@ -976,7 +981,7 @@ export const ResultsUIManager = {
                     updatedStudentData.subject = appState.useSubjectPersonalization ? appState.currentSubject : 'Générique';
                     updatedStudentData.currentAIModel = appState.currentAIModel;
 
-                    nextResult = await Am.generateAppreciation(updatedStudentData, false, null, signal);
+                    nextResult = await Am.generateAppreciation(updatedStudentData, false, null, signal, null, { recentOpenings });
                     nextResult.classId = resultToRegen.classId ?? currentClassId;
                     nextResult.generationPeriod = currentPeriod;
                     isSuccess = true;

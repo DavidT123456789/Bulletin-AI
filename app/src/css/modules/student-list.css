@@ -1080,6 +1080,147 @@
     padding-left: 24px;
 }
 
+/* Discreet trailing metadata badges (char-limit overflow, copied checkmark) */
+.appreciation-preview-wrapper:has(.char-limit-overflow-badge, .copied-indicator) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.student-list-table.appreciation-full-view .appreciation-preview-wrapper:has(.char-limit-overflow-badge, .copied-indicator) {
+    align-items: flex-start;
+}
+
+.appreciation-preview-wrapper:has(.char-limit-overflow-badge, .copied-indicator) .appreciation-preview {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.copied-indicator {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--success-light);
+    color: var(--success-text);
+    font-size: 11px;
+    line-height: 1;
+    transition: opacity 0.2s ease;
+}
+
+.student-list-table.appreciation-full-view .copied-indicator {
+    margin-top: 2px;
+}
+
+/* Desktop hover 1-click quick copy button (shares exact trailing slot with .copied-indicator) */
+.btn-row-quick-copy {
+    position: absolute;
+    right: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), opacity 0.2s ease;
+}
+
+.btn-row-quick-copy iconify-icon {
+    pointer-events: none;
+}
+
+.btn-row-quick-copy:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.btn-row-quick-copy:active {
+    transform: translateY(-50%) scale(0.92);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    /* Reserve dedicated trailing slot so text and overflow badge never sit beneath quick-copy / copied badge */
+    .appreciation-preview-wrapper:has(.btn-row-quick-copy) {
+        padding-right: 36px;
+    }
+
+    /* Center .copied-indicator on the exact same (right: 18px) axis as .btn-row-quick-copy */
+    .appreciation-preview-wrapper:has(.btn-row-quick-copy) .copied-indicator {
+        position: absolute;
+        right: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-top: 0;
+        z-index: 3;
+    }
+
+    /* Swap passive copied checkmark for quick-copy button on hover, keyboard focus, or copy confirmation */
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .copied-indicator,
+    .appreciation-preview-wrapper:has(.btn-row-quick-copy:is(:focus-visible, .copy-success)) .copied-indicator {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .student-list-table tbody tr:not(:has(.action-dropdown-menu.open)):hover .btn-row-quick-copy,
+    .btn-row-quick-copy:focus-visible,
+    .btn-row-quick-copy.copy-success {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .btn-row-quick-copy:hover {
+        background: var(--item-hover-bg);
+        color: var(--icon-btn-hover);
+    }
+
+    .btn-row-quick-copy.copy-success,
+    .btn-row-quick-copy.copy-success:hover {
+        background: transparent;
+        color: var(--success-text);
+        animation: none;
+    }
+
+    .btn-row-quick-copy.copy-success iconify-icon {
+        animation: icon-pop 0.35s var(--ease-bounce) forwards;
+    }
+}
+
+@media (hover: none), (pointer: coarse) {
+    .btn-row-quick-copy {
+        display: none;
+    }
+}
+
+.char-limit-overflow-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 7px;
+    border-radius: var(--radius-pill);
+    background: var(--error-light);
+    color: var(--error-text);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
 /* Expanded state during generation - smooth transition */
 .appreciation-preview.expanded {
     white-space: pre-wrap;

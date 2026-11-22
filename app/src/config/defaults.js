@@ -5,8 +5,16 @@
 
 export { DEMO_STUDENT_PROFILES } from '../data/SampleData.js';
 
+export const MAX_CHARS_CONFIG = Object.freeze({
+    min: 50,
+    max: 2000,
+    defaultValue: 400,
+    nearRatio: 0.92
+});
+
 export const DEFAULT_IA_CONFIG = {
     length: 40,
+    maxChars: null,
     tone: 3,
     enableTone: false,
     voice: 'default',

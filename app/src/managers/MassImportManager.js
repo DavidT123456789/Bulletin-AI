@@ -11,6 +11,7 @@ import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
 import { PromptService } from '../services/PromptService.js';
+import * as HistoryUtils from '../utils/HistoryUtils.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
 let Am;
@@ -42,6 +43,7 @@ export const MassImportManager = {
         const pendingCards = this._createPendingCards(studentsToProcess, batchClassId);
 
         const failedImports = [];
+        const recentOpenings = [];
         let successCount = 0;
         let wasAborted = false;
 
@@ -78,7 +80,7 @@ export const MassImportManager = {
                 };
 
                 try {
-                    newResultObject = await Am.generateAppreciation(studentDataForGeneration, false, null, signal);
+                    newResultObject = await Am.generateAppreciation(studentDataForGeneration, false, null, signal, null, { recentOpenings });
                     successCount++;
 
                 } catch (e) {
@@ -139,6 +141,12 @@ export const MassImportManager = {
 
                 if (existingResultIndex > -1) {
                     const existingResult = appState.generatedResults[existingResultIndex];
+                    // Seed prior appreciation into history BEFORE overwriting period data
+                    const priorState = (!hasError && newResultObject.appreciation)
+                        ? HistoryUtils.getStudentPeriodState(existingResult, batchPeriod, { createIfMissing: true, autoSeed: true })
+                        : null;
+                    const hadPriorVersions = (priorState?.versions?.length || 0) > 0;
+
                     // Keep the ID and classId from the batch state to ensure we update the correct row
                     newResultObject.id = existingResult.id;
                     existingResult.classId = batchClassId;
@@ -176,6 +184,20 @@ export const MassImportManager = {
                     StudentDataManager.transferGenerationMetadata(existingResult, newResultObject);
                     // Reset pending flag
                     existingResult.isPending = false;
+
+                    if (!hasError && newResultObject.appreciation) {
+                        HistoryUtils.recordStudentVersion(
+                            existingResult,
+                            batchPeriod,
+                            newResultObject.appreciation,
+                            hadPriorVersions ? 'regenerate' : 'original',
+                            {
+                                appreciationSource: 'ai',
+                                aiModel: existingResult.studentData?.currentAIModel ?? null,
+                                tokenUsage: existingResult.tokenUsage
+                            }
+                        );
+                    }
 
                 } else {
                     newResultObject.isPending = false;
@@ -287,6 +309,10 @@ export const MassImportManager = {
                 for (const [periodKey, importedPData] of Object.entries(studentData.periods || {})) {
                     if (!importedPData) continue;
                     const existingPData = existingResult.studentData.periods[periodKey] || {};
+                    const incomingApp = typeof importedPData.appreciation === 'string' ? importedPData.appreciation.trim() : '';
+                    if (incomingApp && existingPData.appreciation?.trim()) {
+                        HistoryUtils.getStudentPeriodState(existingResult, periodKey, { createIfMissing: true, autoSeed: true });
+                    }
                     const hasImportedGrade = importedPData.grade !== null && importedPData.grade !== undefined;
                     const hasImportedEval = importedPData.evaluationCount !== null && importedPData.evaluationCount !== undefined;
                     existingResult.studentData.periods[periodKey] = {
@@ -296,6 +322,13 @@ export const MassImportManager = {
                         appreciation: importedPData.appreciation || existingPData.appreciation || '',
                         context: importedPData.context || existingPData.context || ''
                     };
+                    if (incomingApp) {
+                        HistoryUtils.recordStudentVersion(existingResult, periodKey, incomingApp, 'imported', {
+                            appreciationSource: 'imported',
+                            aiModel: null,
+                            tokenUsage: null
+                        });
+                    }
                 }
 
                 const importedAppreciation = studentData.periods?.[currentPeriod]?.appreciation ?? '';

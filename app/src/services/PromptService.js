@@ -573,7 +573,7 @@ export const PromptService = {
         let cleaned = text.trim();
 
         cleaned = cleaned.replace(
-            /^(?:\*\*)?(?:voici\s+(?:l['’]appr[eé]ciation(?:\s+(?:scolaire|propos[eé]e|r[eé]vis[eé]e|sugg[eé]r[eé]e|finale))?|une\s+proposition(?:\s+d['’]appr[eé]ciation)?)|appr[eé]ciation(?:\s+(?:scolaire|propos[eé]e|r[eé]vis[eé]e|finale))?|proposition(?:\s+d['’]appr[eé]ciation)?)(?:\*\*)?\s*:\s*/i,
+            /^(?:\*\*)?(?:voici\s+(?:(?:l['’]appr[eé]ciation|la\s+synth[eè]se)(?:\s+(?:scolaire|globale|propos[eé]e|r[eé]vis[eé]e|sugg[eé]r[eé]e|finale)){0,2}|une\s+proposition(?:\s+(?:d['’]appr[eé]ciation|de\s+synth[eè]se))?)|(?:appr[eé]ciation|synth[eè]se)(?:\s+(?:scolaire|globale|propos[eé]e|r[eé]vis[eé]e|sugg[eé]r[eé]e|finale)){0,2}|proposition(?:\s+(?:d['’]appr[eé]ciation|de\s+synth[eè]se))?)(?:\*\*)?\s*:\s*/i,
             ''
         ).trim();
 
@@ -627,7 +627,16 @@ export const PromptService = {
      * @private
      */
     _extractJournalSynthesis(studentData, currentPeriod) {
-        const fromManager = studentData ? JournalManager.synthesizeForPrompt(studentData, currentPeriod) : '';
+        if (!studentData) return '';
+
+        const resolvedClassId = studentData.classId
+            || (studentData.id ? appState.generatedResults?.find(s => s.id === studentData.id)?.classId : null)
+            || null;
+        if (JournalManager.isIncludedInAI?.(resolvedClassId) === false) {
+            return '';
+        }
+
+        const fromManager = JournalManager.synthesizeForPrompt(studentData, currentPeriod);
         if (fromManager) return fromManager;
 
         if (!Array.isArray(studentData?.journal) || studentData.journal.length === 0) {
@@ -675,20 +684,64 @@ export const PromptService = {
     },
 
     /**
+     * Retourne la limite maximale de caractères active (Pronote / ÉcoleDirecte / LSU), ou null si désactivée.
+     * Source unique de vérité pour l'ensemble de l'interface et des prompts.
+     * @param {Object|null} [overrideConfig=null]
+     * @returns {number|null}
+     */
+    getActiveMaxChars(overrideConfig = null) {
+        const iaConfig = this._resolveIaConfig(overrideConfig);
+        return typeof Utils.normalizeMaxChars === 'function'
+            ? Utils.normalizeMaxChars(iaConfig?.maxChars)
+            : null;
+    },
+
+    /**
+     * Calcule le budget effectif en caractères envoyé au LLM en tenant compte d'un éventuel prénom plus long
+     * que le placeholder `[PRÉNOM]` lors de la désanonymisation locale.
+     * @param {number} maxChars
+     * @param {{ prenom?: string, isAnonymous?: boolean }} [options={}]
+     * @returns {number}
+     * @private
+     */
+    _computeEffectiveCharBudget(maxChars, { prenom = '', isAnonymous = false } = {}) {
+        const cleanPrenom = typeof prenom === 'string' ? prenom.trim() : '';
+        const prenomDelta = (isAnonymous && cleanPrenom)
+            ? Math.max(0, cleanPrenom.length - this.PRENOM_PLACEHOLDER.length)
+            : 0;
+        return Math.max(40, maxChars - prenomDelta);
+    },
+
+    /**
+     * Traduit un budget de caractères en plafond indicatif de mots avec marge de sécurité (~14 %)
+     * afin d'éviter les consignes contradictoires sur les modèles 7B–24B.
+     * @param {number} charBudget
+     * @returns {number}
+     * @private
+     */
+    _computeSafeWordCap(charBudget) {
+        return Math.max(8, Math.floor((charBudget * 0.86) / 6.5));
+    },
+
+    /**
      * Extrait les réglages de style qui modifient réellement le prompt
      * (ton désactivé et consignes personnalisées désactivées ou vides exclus).
      * Source unique des réglages de style injectés dans le prompt.
      * @param {Object} [iaConfig={}] - Configuration IA effective
-     * @returns {{tone: number|null, voice: string, length: number|null, styleInstructions: string, discipline: string}}
+     * @returns {{tone: number|null, voice: string, length: number|null, maxChars: number|null, styleInstructions: string, discipline: string}}
      * @private
      */
     _getEffectiveStyle(iaConfig = {}) {
         const isToneActive = iaConfig.enableTone ?? (iaConfig.tone !== 3 && iaConfig.tone !== undefined);
         const hasStyleInstructions = !!iaConfig.styleInstructions && iaConfig.enableStyleInstructions !== false;
+        const maxChars = typeof Utils.normalizeMaxChars === 'function'
+            ? Utils.normalizeMaxChars(iaConfig.maxChars)
+            : null;
         return {
             tone: isToneActive ? (iaConfig.tone ?? 3) : null,
             voice: iaConfig.voice || '',
             length: iaConfig.length || null,
+            maxChars,
             styleInstructions: hasStyleInstructions ? iaConfig.styleInstructions : '',
             discipline: iaConfig.discipline || ''
         };
@@ -704,7 +757,54 @@ export const PromptService = {
         return StatsService.parseGrade(raw);
     },
 
-    getAllPrompts(studentData, overrideConfig = null, excludeClassStats = false) {
+    /**
+     * Extrait une amorce courte (3–5 mots) d'une appréciation brute AVANT désanonymisation,
+     * en remplaçant aussi le prénom réel par [PRÉNOM] par sécurité RGPD (même si anonymisation désactivée).
+     * @param {string} rawText - Sortie nettoyée du LLM
+     * @param {string} [prenom=''] - Prénom réel de l'élève à masquer si présent
+     * @param {number} [maxWords=5] - Nombre maximal de mots conservés
+     * @returns {string} Amorce normalisée ou chaîne vide si trop courte
+     */
+    extractOpeningSnippet(rawText, prenom = '', maxWords = 5) {
+        if (typeof rawText !== 'string') return '';
+        let cleaned = rawText.replace(/\s+/g, ' ').trim();
+        if (!cleaned) return '';
+
+        const cleanPrenom = typeof prenom === 'string' ? prenom.trim() : '';
+        if (cleanPrenom.length >= 2) {
+            const escapedPrenom = cleanPrenom.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const boundaryRegex = new RegExp(`(?<![\\p{L}\\p{N}_])${escapedPrenom}(?![\\p{L}\\p{N}_])`, 'giu');
+            cleaned = cleaned.replace(boundaryRegex, this.PRENOM_PLACEHOLDER);
+        }
+
+        // Prendre le début de la première phrase uniquement
+        const firstSentence = cleaned.split(/[.!?](?:\s|$)/)[0].trim();
+        const words = firstSentence.split(/\s+/).filter(Boolean).slice(0, maxWords);
+        if (words.length < 2) return '';
+
+        return words.join(' ').replace(/[,;:«»"']+$/g, '').trim();
+    },
+
+    /**
+     * Ajoute une amorce récente dans une fenêtre glissante dédupliquée (utilisée en génération par lot).
+     * @param {string[]} recentOpenings - Fenêtre mutable des amorces récentes
+     * @param {string} snippet - Amorce extraite
+     * @param {number} [maxSize=5] - Taille maximale de la fenêtre
+     */
+    pushOpeningSnippet(recentOpenings, snippet, maxSize = 5) {
+        if (!Array.isArray(recentOpenings) || typeof snippet !== 'string') return;
+        const normalized = snippet.trim();
+        if (!normalized) return;
+        const lower = normalized.toLowerCase();
+        const existingIdx = recentOpenings.findIndex(s => s.toLowerCase() === lower);
+        if (existingIdx !== -1) recentOpenings.splice(existingIdx, 1);
+        recentOpenings.push(normalized);
+        while (recentOpenings.length > maxSize) {
+            recentOpenings.shift();
+        }
+    },
+
+    getAllPrompts(studentData, overrideConfig = null, excludeClassStats = false, runtimeOptions = null) {
         const { nom, prenom, statuses, periods, currentPeriod } = studentData;
         const allPeriods = Utils.getPeriods();
         const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
@@ -897,8 +997,22 @@ export const PromptService = {
             styleParts.push(`Ne t'adresse pas directement à l'élève (ni « tu » ni « vous ») et cite son prénom une fois au maximum.`);
         }
 
-        if (effectiveStyle.length && !hasNoData) {
-            styleParts.push(`Longueur visée : ${this._formatLengthInstruction(effectiveStyle.length)}. Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`);
+        const effectiveCharBudget = effectiveStyle.maxChars
+            ? this._computeEffectiveCharBudget(effectiveStyle.maxChars, { prenom, isAnonymous })
+            : null;
+
+        if (!hasNoData) {
+            if (effectiveCharBudget) {
+                const safeWordCap = this._computeSafeWordCap(effectiveCharBudget);
+                const effectiveWordTarget = effectiveStyle.length
+                    ? Math.min(effectiveStyle.length, safeWordCap)
+                    : safeWordCap;
+                styleParts.push(
+                    `Longueur visée : ${this._formatLengthInstruction(effectiveWordTarget)}, sans jamais dépasser ${effectiveCharBudget} caractères (espaces compris). Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`
+                );
+            } else if (effectiveStyle.length) {
+                styleParts.push(`Longueur visée : ${this._formatLengthInstruction(effectiveStyle.length)}. Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`);
+            }
         }
         if (!hasNoData && hasGrades) {
             if (hasAnyClassStats) {
@@ -914,10 +1028,23 @@ export const PromptService = {
             styleParts.push(`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`);
         }
 
+        const recentOpenings = Array.isArray(runtimeOptions?.recentOpenings)
+            ? runtimeOptions.recentOpenings.filter(s => typeof s === 'string' && s.trim().length > 0).slice(-5)
+            : [];
+        if (!hasNoData && recentOpenings.length > 0) {
+            const formattedOpenings = recentOpenings.map(s => `« ${s.trim()} »`).join(', ');
+            styleParts.push(
+                `Varie l'amorce de ta première phrase : évite de commencer comme les appréciations récentes de la classe (${formattedOpenings}).`
+            );
+        }
+
         if (hasNoData) {
             styleParts.push(
                 `Attention : Cet élève n'a aucune donnée d'évaluation (note, appréciation passée ou observation). Rédige uniquement un constat factuel, bienveillant et très court d'absence de données (pour cette période, ou pour l'année si les périodes précédentes indiquent également une absence totale de données), en une seule phrase simple (maximum 25 mots), sans inventer de travail ou de réussite, et sans projection sur l'avenir.`
             );
+            if (effectiveCharBudget) {
+                styleParts.push(`Respecte impérativement un plafond maximal de ${effectiveCharBudget} caractères (espaces compris).`);
+            }
         }
 
         systemParts.push('--- INSTRUCTIONS DE STYLE ---\n' + styleParts.map(s => '- ' + s).join('\n'));
@@ -1057,7 +1184,7 @@ RÈGLES STRICTES DE FIABILITÉ :
     /**
      * Génère les prompts structurés (`systemPrompt`, `userPrompt` et concaténation `prompt`)
      * pour le raffinement d'une appréciation existante.
-     * @param {string} type - Type de raffinement (`concise`, `encouraging`, `polish`, `default`)
+     * @param {string} type - Type de raffinement (`concise`, `encouraging`, `demanding`, `polish`, `default`)
      * @param {string} original - Texte d'origine à retravailler
      * @param {Object} [options={}] - Identité locale pour le scrubbing RGPD et l'accord de genre
      * @returns {{ systemPrompt: string, userPrompt: string, prompt: string }}
@@ -1084,6 +1211,10 @@ RÈGLES STRICTES DE FIABILITÉ :
 
         const gender = explicitPrenom ? Utils.detectGender(explicitPrenom) : null;
         const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
+        const maxChars = effectiveStyle.maxChars;
+        const charBudget = maxChars
+            ? this._computeEffectiveCharBudget(maxChars, { prenom: explicitPrenom, isAnonymous })
+            : null;
 
         const rules = [
             ...(gender === 'féminin' || gender === 'masculin'
@@ -1093,6 +1224,9 @@ RÈGLES STRICTES DE FIABILITÉ :
             `N'invente aucun fait, résultat ou compétence absents du texte.`,
             `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »).`,
             `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
+            ...(charBudget
+                ? [`Respecte impérativement un plafond maximal de ${charBudget} caractères (espaces compris).`]
+                : []),
             ...(effectiveStyle.styleInstructions
                 ? [`Consigne de l'enseignant : ${effectiveStyle.styleInstructions}`]
                 : []),
@@ -1104,15 +1238,24 @@ RÈGLES STRICTES DE FIABILITÉ :
         let taskInstruction = '';
         switch (type) {
             case 'concise': {
-                const wordCount = Utils.countWords(sanitizedOriginal);
-                const targetClause = wordCount >= 16
-                    ? `vise environ ${Math.max(12, Math.round(wordCount * 0.75))} mots, soit environ 25 % plus courte`
-                    : 'environ 25 % plus courte';
-                taskInstruction = `Rends cette appréciation scolaire plus concise (${targetClause}) : supprime les redondances et allège les tournures tout en conservant l'ensemble des idées (bilan, attitude, conseil).`;
+                const originalChars = Utils.countCharacters(original || '');
+                if (maxChars && charBudget && originalChars > maxChars) {
+                    const targetWords = this._computeSafeWordCap(charBudget);
+                    taskInstruction = `Raccourcis cette appréciation scolaire pour qu'elle reste impérativement sous ${charBudget} caractères espaces compris (vise environ ${targetWords} mots maximum) : supprime les redondances et allège les tournures tout en conservant l'ensemble des idées (bilan, attitude, conseil).`;
+                } else {
+                    const wordCount = Utils.countWords(sanitizedOriginal);
+                    const targetClause = wordCount >= 16
+                        ? `vise environ ${Math.max(12, Math.round(wordCount * 0.75))} mots, soit environ 25 % plus courte`
+                        : 'environ 25 % plus courte';
+                    taskInstruction = `Rends cette appréciation scolaire plus concise (${targetClause}) : supprime les redondances et allège les tournures tout en conservant l'ensemble des idées (bilan, attitude, conseil).`;
+                }
                 break;
             }
             case 'encouraging':
                 taskInstruction = `Reformule cette appréciation scolaire avec un ton plus bienveillant, valorisant et constructif : mets en valeur les acquis ou les efforts et formule les points à travailler comme des leviers de progression, sans masquer les difficultés réelles ni tomber dans l'éloge excessif. Garde une longueur similaire.`;
+                break;
+            case 'demanding':
+                taskInstruction = `Reformule cette appréciation scolaire avec un ton plus ferme, direct et exigeant : souligne clairement les attentes, les manques ou les points de rigueur à renforcer, sans complaisance ni détour, tout en restant factuel, professionnel et constructif. Garde une longueur similaire.`;
                 break;
             case 'polish':
                 taskInstruction = `Peaufine cette appréciation scolaire : corrige les éventuelles fautes, maladresses ou répétitions et fluidifie la syntaxe dans un style de bulletin naturel et professionnel, en restant fidèle au sens et à la longueur du texte d'origine (si le texte est sous forme de notes brèves, rédige-le en phrases complètes).`;
@@ -1132,13 +1275,91 @@ RÈGLES STRICTES DE FIABILITÉ :
 
     /**
      * Generates a refinement prompt for appreciation modifications (concaténation aperçu/copie).
-     * @param {string} type - Type of refinement (concise, encouraging, polish)
+     * @param {string} type - Type of refinement (concise, encouraging, demanding, polish)
      * @param {string} original - The original text to refine
      * @param {Object} [options={}] - Optional local identity for GDPR scrubbing & gender agreement ({ prenom, nom, studentData })
      * @returns {string} The formatted prompt for AI
      */
     getRefinementPrompt(type, original, options = {}) {
         return this.getRefinementPrompts(type, original, options).prompt;
+    },
+
+    /**
+     * Génère les prompts structurés (`systemPrompt`, `userPrompt` et `prompt`) pour l'affinage
+     * de la synthèse globale de classe (Bilan qualitatif).
+     * Mutualise le scrubbing RGPD, la discipline et les consignes de style de l'enseignant.
+     * @param {'concise'|'encouraging'|'demanding'|'polish'} type - Type de retouche
+     * @param {string} original - Texte de synthèse globale à ajuster
+     * @param {Object} [options={}] - Options RGPD (`{ classmates, anonymizeData }`)
+     * @returns {{ systemPrompt: string, userPrompt: string, prompt: string }|null}
+     */
+    getClassSynthesisRefinementPrompts(type, original, options = {}) {
+        const isAnonymous = options.anonymizeData ?? appState.anonymizeData ?? true;
+        const sanitizedOriginal = this.scrubStudentIdentity(
+            original || '',
+            {},
+            {
+                anonymizePrenom: isAnonymous,
+                ...(Array.isArray(options.classmates) ? { classmates: options.classmates } : {}),
+                classmatePlaceholder: '[ÉLÈVE]',
+                scrubSensitive: true
+            }
+        );
+
+        let taskInstruction = null;
+        switch (type) {
+            case 'concise': {
+                const wordCount = Utils.countWords(sanitizedOriginal);
+                if (wordCount > 45) {
+                    taskInstruction = "Condense cette synthèse globale pour le bulletin de classe en 1 à 2 phrases directes et percutantes (max 35 mots), en conservant l'essentiel de la dynamique collective.";
+                } else if (wordCount >= 20) {
+                    const targetWords = Math.max(15, Math.round(wordCount * 0.75));
+                    taskInstruction = `Condense davantage cette synthèse globale pour le bulletin de classe (vise environ ${targetWords} mots maximum, soit environ 25 % plus courte) : va droit à l'essentiel en conservant la dynamique collective.`;
+                } else {
+                    taskInstruction = "Rends cette synthèse globale encore plus concise (1 phrase directe et percutante) tout en conservant l'idée principale.";
+                }
+                break;
+            }
+            case 'encouraging':
+                taskInstruction = "Reformule cette synthèse globale avec un ton plus bienveillant, valorisant et constructif : mets en lumière les progrès, les points d'appui et le potentiel du groupe sans masquer les axes d'amélioration. Garde une longueur similaire.";
+                break;
+            case 'demanding':
+                taskInstruction = "Reformule cette synthèse globale avec un ton plus ferme, direct et exigeant : pointe clairement les attentes collectives, le manque d'engagement ou la rigueur attendue, sans complaisance, tout en restant factuel, professionnel et constructif. Garde une longueur similaire.";
+                break;
+            case 'polish':
+                taskInstruction = "Peaufine cette synthèse globale : corrige les éventuelles fautes, maladresses ou répétitions et fluidifie la syntaxe dans un style naturel et professionnel de conseil de classe, en restant fidèle au sens et à la longueur d'origine.";
+                break;
+            default:
+                return null;
+        }
+
+        const hasAnonymizationMarkers = /\[(?:ÉLÈVE|AMÉNAGEMENT|CAMARADE)\]/i.test(sanitizedOriginal);
+        const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
+        const discipline = effectiveStyle.discipline || (appState.currentSubject !== 'Générique' && appState.currentSubject !== 'MonStyle' ? appState.currentSubject : null);
+        const rolePrefix = discipline
+            ? `Tu es un enseignant de ${discipline} qui retravaille la synthèse globale de classe pour le bulletin.`
+            : `Tu es un conseiller pédagogique expert qui retravaille la synthèse globale de classe pour le bulletin.`;
+
+        const rules = [
+            `N'invente aucun fait, résultat ou comportement absents du texte d'origine.`,
+            `Ne cite aucun prénom d'élève.`,
+            ...(hasAnonymizationMarkers
+                ? [`Si le texte contient un marqueur entre crochets ([ÉLÈVE], [AMÉNAGEMENT]), reformule de manière collective et impersonnelle sans jamais conserver de crochets dans ta réponse.`]
+                : []),
+            `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
+            ...(effectiveStyle.styleInstructions
+                ? [`Consigne de l'enseignant : ${effectiveStyle.styleInstructions}`]
+                : []),
+            `Réponds uniquement avec le paragraphe révisé en texte brut, sans titre, introduction, commentaire, JSON ni guillemets.`
+        ];
+
+        const systemPrompt = `${rolePrefix}\n\n--- RÈGLES ---\n${rules.map(r => `- ${r}`).join('\n')}`;
+        const userPrompt = `${taskInstruction}\n\n---\n${sanitizedOriginal}\n---`;
+        return {
+            systemPrompt,
+            userPrompt,
+            prompt: `${systemPrompt}\n\n${userPrompt}`
+        };
     },
 
     /**

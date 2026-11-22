@@ -302,6 +302,21 @@ export const ListViewEvents = {
                 return;
             }
 
+            // Quick 1-click hover copy appreciation action (clean text only for Pronote/ENT paste)
+            const quickCopyBtn = target.closest('[data-action="quick-copy-appreciation"]');
+            if (quickCopyBtn) {
+                e.stopPropagation();
+                closeAllMenus();
+                const row = target.closest('.student-row');
+                const studentId = row?.dataset.studentId;
+                if (studentId) {
+                    ExportManager.copyAppreciation(studentId, quickCopyBtn, () => {
+                        ListViewRenderer.updateStudentRow(studentId);
+                    });
+                }
+                return;
+            }
+
             // Copy Appreciation action
             const copyAppBtn = target.closest('[data-action="copy-appreciation"]');
             if (copyAppBtn) {

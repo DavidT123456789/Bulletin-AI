@@ -57,6 +57,7 @@ export const SeatingChartManager = {
     _lastTouchDragEndTime: 0,
     _configPopoverOpen: false,
     _placementPopoverOpen: false,
+    _activityGroupSize: null,
     _prevPlacedCount: 0,
     _selectedChipIds: [],
     _lastSelectedGridPos: null,
@@ -90,6 +91,7 @@ export const SeatingChartManager = {
     _searchQueryAtPlanEnter: '',
     _searchMatchIndex: 0,
     _randomPickerState: null,
+    _randomHistoryPopoverOpen: false,
     _randomSuspenseTimer: null,
     _randomRevealTimer: null,
     _randomRollAnimTimer: null,
@@ -224,7 +226,7 @@ export const SeatingChartManager = {
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
-                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Configuration grille" data-tooltip="Grille">
+                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Grille et affichage" data-tooltip="Grille &amp; Affichage">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
@@ -274,6 +276,29 @@ export const SeatingChartManager = {
                                             <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
                                         </div>
                                         <div class="sc-config-capacity" id="scConfigCapacity"></div>
+                                        <div class="sc-config-dots-section">
+                                            <div class="sc-config-section-title">Pastilles de statut</div>
+                                            <div class="seating-dots-selector sc-config-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Pastilles de statut sur le plan">
+                                                <label class="seating-dot-option active" data-tooltip="Nouveau (bleu) • Départ (ambre)">
+                                                    <input type="checkbox" data-dot-category="movements" checked>
+                                                    <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
+                                                    <span class="seating-dot-label">Mouvements <small>Nouveau, Départ</small></span>
+                                                    <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                                                </label>
+                                                <label class="seating-dot-option" data-tooltip="ULIS, AESH (violet) • PAP, PPRE, PAI (rose)">
+                                                    <input type="checkbox" data-dot-category="devices">
+                                                    <span class="seating-dot-preview seating-dot-preview--devices" aria-hidden="true"></span>
+                                                    <span class="seating-dot-label">Dispositifs <small>ULIS, PAP, PPRE</small></span>
+                                                    <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                                                </label>
+                                                <label class="seating-dot-option" data-tooltip="Délégué de classe (vert)">
+                                                    <input type="checkbox" data-dot-category="delegates">
+                                                    <span class="seating-dot-preview seating-dot-preview--delegates" aria-hidden="true"></span>
+                                                    <span class="seating-dot-label">Délégués</span>
+                                                    <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <button type="button" class="sc-action-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
@@ -318,11 +343,12 @@ export const SeatingChartManager = {
 
                 <!-- Floating Actions Capsule (Top-Right) -->
                 <div class="sc-floating-actions ui-floating-capsule" id="scFloatingActions">
-                    <div class="sc-random-readout" id="scRandomReadout" aria-live="polite" aria-hidden="true">
+                    <button type="button" class="sc-random-readout is-static" id="scRandomReadout" aria-live="polite" aria-hidden="true" aria-haspopup="listbox" aria-expanded="false" aria-disabled="true" tabindex="-1">
                         <span class="sc-random-student-name" id="scRandomStudentName"></span>
                         <span class="sc-random-sep" aria-hidden="true">·</span>
                         <span class="sc-random-counter" id="scRandomCounter"></span>
-                    </div>
+                        <iconify-icon class="sc-random-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
+                    </button>
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
@@ -339,6 +365,7 @@ export const SeatingChartManager = {
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>
+                <div class="sc-random-history-popover" id="scRandomHistoryPopover" role="dialog" aria-label="Élèves tirés au sort" aria-hidden="true"></div>
             </div>
         `;
 
@@ -475,6 +502,7 @@ export const SeatingChartManager = {
             if (HistoryManager.isOpen('scContextMenu')) HistoryManager.handleManualClose('scContextMenu');
             if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');
             if (HistoryManager.isOpen('scPlacementPopover')) HistoryManager.handleManualClose('scPlacementPopover');
+            if (HistoryManager.isOpen('scRandomHistoryPopover')) HistoryManager.handleManualClose('scRandomHistoryPopover');
             if (HistoryManager.isOpen('scRandomPicker')) HistoryManager.handleManualClose('scRandomPicker');
 
             const finishList = (animateEnter = false) => {
@@ -658,6 +686,7 @@ export const SeatingChartManager = {
         }
 
         this._onboardingStep = null;
+        this._activityGroupSize = null;
         document.querySelector('.sc-onboarding-hint')?.remove();
         this._prevPlacedCount = 0;
         this._students = this._getCurrentClassStudents();

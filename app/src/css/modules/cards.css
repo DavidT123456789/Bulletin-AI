@@ -380,30 +380,6 @@
 }
 
 
-/* Bouton toggle-version - Bascule entre versions */
-.toggle-version-btn {
-    color: var(--text-tertiary);
-}
-
-.toggle-version-btn:hover:not(:disabled) {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-}
-
-/* État actif : affiche la version originale */
-.toggle-version-btn.showing-original {
-    background: rgba(var(--color-orange-rgb), 0.12);
-    color: var(--color-orange-deep);
-}
-
-[data-theme="dark"] .toggle-version-btn.showing-original {
-    color: var(--color-orange);
-}
-
-.toggle-version-btn.showing-original:hover:not(:disabled) {
-    background: rgba(var(--color-orange-rgb), 0.2);
-}
-
 /* ====================================================================
    Responsive
    ==================================================================== */

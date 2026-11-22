@@ -220,6 +220,7 @@ export const SeatingContextMenu = {
 
         void menu.offsetWidth;
         menu.classList.add('open');
+        TooltipsUI?.initTooltips?.(menu);
 
         if (context.openedViaKeyboard || (!context.clientX && !context.clientY)) {
             menu.querySelector('[role="menuitem"]:not(:disabled)')?.focus({ preventScroll: true });
@@ -464,6 +465,7 @@ export const SeatingContextMenu = {
         if (e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation?.();
             this._closeContextMenu({ restoreFocus: true });
             return true;
         }
@@ -481,6 +483,7 @@ export const SeatingContextMenu = {
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation?.();
             const nextIdx = currentIdx < 0 ? 0 : (currentIdx + 1) % items.length;
             items[nextIdx]?.focus({ preventScroll: true });
             return true;
@@ -489,6 +492,7 @@ export const SeatingContextMenu = {
         if (e.key === 'ArrowUp') {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation?.();
             const prevIdx = currentIdx <= 0 ? items.length - 1 : currentIdx - 1;
             items[prevIdx]?.focus({ preventScroll: true });
             return true;
@@ -497,6 +501,7 @@ export const SeatingContextMenu = {
         if (e.key === 'Home') {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation?.();
             items[0]?.focus({ preventScroll: true });
             return true;
         }
@@ -504,6 +509,7 @@ export const SeatingContextMenu = {
         if (e.key === 'End') {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation?.();
             items[items.length - 1]?.focus({ preventScroll: true });
             return true;
         }
@@ -531,6 +537,7 @@ export const SeatingContextMenu = {
         triggerEl?.classList?.remove('sc-context-target');
         parentCell?.classList?.remove('sc-context-target-parent');
         cleanupListeners?.();
+        TooltipsUI?.cleanupTooltipsIn?.(menu);
         menu?.remove();
 
         if (!causedByHistory && !silentHistory && HistoryManager.isOpen('scContextMenu')) {

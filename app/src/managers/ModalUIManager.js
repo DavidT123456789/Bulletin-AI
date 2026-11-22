@@ -840,7 +840,8 @@ export const ModalUI = {
             const {
                 confirmText = 'Confirmer',
                 cancelText = 'Annuler',
-                isDanger = true
+                isDanger = true,
+                allowEmpty = false
             } = options;
 
             const modalId = 'customChoicesModal';
@@ -900,6 +901,10 @@ export const ModalUI = {
             // Add change listener to toggle checked class for styling and guard confirm state
             const inputs = modal.querySelectorAll('input[type="checkbox"]');
             const syncOkState = () => {
+                if (allowEmpty) {
+                    if (okBtn) okBtn.disabled = false;
+                    return;
+                }
                 const hasChecked = Array.from(inputs).some(el => !el.disabled && el.checked);
                 if (okBtn) okBtn.disabled = !hasChecked;
             };

@@ -54,7 +54,7 @@
     }
 }
 
-button[data-refine-type="encouraging"]:hover iconify-icon,
+button[data-refine-type="encouraging"]:not(.disabled):hover iconify-icon,
 button[data-refine-type="encouraging"].is-generating iconify-icon {
     animation: heart-beat-soft 1.4s ease-in-out infinite;
     display: inline-flex;
@@ -77,9 +77,36 @@ button[data-refine-type="encouraging"].is-generating iconify-icon {
     }
 }
 
-button[data-refine-type="concise"]:hover iconify-icon,
+button[data-refine-type="concise"]:not(.disabled):hover iconify-icon,
 button[data-refine-type="concise"].is-generating iconify-icon {
     animation: compress-pulse 1.2s ease-in-out infinite;
+}
+
+/* 3. Exigeante (Target) - Focalisation précise */
+@keyframes target-focus {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(1.16);
+    }
+
+    70% {
+        transform: scale(0.92);
+    }
+}
+
+button[data-refine-type="demanding"]:hover iconify-icon,
+button[data-refine-type="demanding"].is-generating iconify-icon {
+    animation: target-focus 1.25s ease-in-out infinite;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transform-origin: center center;
 }
 
 /* Rotation partagée (boutons Régénérer / Mettre à jour) */

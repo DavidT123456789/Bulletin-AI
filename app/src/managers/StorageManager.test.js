@@ -1890,4 +1890,103 @@ describe('StorageManager', () => {
             expect(res.stats.updatedStudents).toBe(1);
         });
     });
+
+    describe('Rappel discret de sauvegarde JSON locale (sans Cloud)', () => {
+        const DAY_MS = 24 * 60 * 60 * 1000;
+
+        it('reste silencieux sur une base vide ou contenant uniquement la Classe exemple', () => {
+            expect(StorageManager.hasRealUserData()).toBe(false);
+            expect(StorageManager.evaluateLocalBackupReminder(100 * DAY_MS).shouldRemind).toBe(false);
+
+            userSettings.academic.classes = [{ id: 'demo_1', name: 'Classe exemple', isDemo: true }];
+            runtimeState.data.generatedResults = [
+                { id: 'd1', nom: 'Demo', prenom: 'Alice', classId: 'demo_1', studentData: { periods: {} } }
+            ];
+            expect(StorageManager.hasRealUserData()).toBe(false);
+            expect(StorageManager.evaluateLocalBackupReminder(100 * DAY_MS).reason).toBe('no-real-data');
+        });
+
+        it('reste silencieux lorsque Google Drive est configuré', () => {
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }];
+            localStorage.setItem('bulletin_sync_provider', 'google');
+            localStorage.setItem('bulletin_local_backup_dirty_since', String(1000));
+
+            const res = StorageManager.evaluateLocalBackupReminder(1000 + 30 * DAY_MS);
+            expect(res.shouldRemind).toBe(false);
+            expect(res.reason).toBe('cloud-configured');
+        });
+
+        it('déclenche après 14 jours de modifications locales non sauvegardées puis applique un cooldown de 14 jours', () => {
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }];
+            const t0 = 1_700_000_000_000;
+            localStorage.setItem('bulletin_local_backup_dirty_since', String(t0));
+
+            // J+10 : trop récent
+            expect(StorageManager.evaluateLocalBackupReminder(t0 + 10 * DAY_MS)).toMatchObject({
+                shouldRemind: false,
+                reason: 'too-recent'
+            });
+
+            // J+15 : déclenche
+            const overdue = StorageManager.evaluateLocalBackupReminder(t0 + 15 * DAY_MS);
+            expect(overdue).toMatchObject({
+                shouldRemind: true,
+                reason: 'overdue',
+                daysSince: 15,
+                hasPreviousBackup: false
+            });
+
+            // Cooldown 14 jours après affichage
+            StorageManager.recordLocalBackupReminderShown(t0 + 15 * DAY_MS);
+            expect(StorageManager.evaluateLocalBackupReminder(t0 + 20 * DAY_MS)).toMatchObject({
+                shouldRemind: false,
+                reason: 'cooldown'
+            });
+            expect(StorageManager.evaluateLocalBackupReminder(t0 + 29 * DAY_MS).shouldRemind).toBe(true);
+        });
+
+        it('enregistre la sauvegarde sur exportToJson (jamais sur exportSettings) et reste silencieux tant que les données ne changent pas', async () => {
+            const downloadSpy = vi.spyOn(StorageManager, '_downloadFile').mockImplementation(() => {});
+            userSettings.academic.classes = [{ id: 'c1', name: '3A' }];
+            runtimeState.data.generatedResults = [
+                { id: 's1', nom: 'Dupont', prenom: 'Léo', classId: 'c1', studentData: { periods: { T1: { grade: 14 } } } }
+            ];
+
+            // exportSettings ne valide PAS la sauvegarde complète
+            StorageManager.exportSettings();
+            expect(StorageManager.getLastLocalBackupTime()).toBeNull();
+
+            // exportToJson valide la date et le hash
+            StorageManager.exportToJson();
+            const exportedAt = StorageManager.getLastLocalBackupTime();
+            expect(exportedAt).toBeGreaterThan(0);
+
+            // Même 30 jours plus tard (ex. vacances scolaires), aucune alerte si rien n'a changé
+            expect(StorageManager.evaluateLocalBackupReminder(exportedAt + 30 * DAY_MS)).toMatchObject({
+                shouldRemind: false,
+                reason: 'up-to-date',
+                hasPreviousBackup: true
+            });
+
+            // Nouvelle modification puis 15 jours écoulés -> rappel avec hasPreviousBackup: true
+            const editAt = exportedAt + 2 * DAY_MS;
+            runtimeState.data.generatedResults[0].studentData.periods.T1.grade = 16;
+            StorageManager._trackLocalBackupDirtyState(StorageManager.computeCurrentDataHash(), true, editAt);
+
+            const afterEdit = StorageManager.evaluateLocalBackupReminder(editAt + 14 * DAY_MS);
+            expect(afterEdit).toMatchObject({
+                shouldRemind: true,
+                reason: 'overdue',
+                daysSince: 16,
+                hasPreviousBackup: true
+            });
+
+            // Retour à l'état exact sauvegardé -> efface l'état dirty sans fausse alerte
+            runtimeState.data.generatedResults[0].studentData.periods.T1.grade = 14;
+            StorageManager._trackLocalBackupDirtyState(StorageManager.computeCurrentDataHash(), true, editAt + 15 * DAY_MS);
+            expect(StorageManager.evaluateLocalBackupReminder(editAt + 15 * DAY_MS).shouldRemind).toBe(false);
+
+            downloadSpy.mockRestore();
+        });
+    });
 });

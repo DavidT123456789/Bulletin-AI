@@ -8,7 +8,7 @@
  */
 
 import { appState, UIState } from '../state/State.js';
-import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS, MAX_CHARS_CONFIG } from '../config/Config.js';
 import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, PROVIDER_SHOWCASE_MODELS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
@@ -120,6 +120,12 @@ export const SettingsUIManager = {
         const iaConfig = this.getPersonalStyleConfig();
 
         if (DOM.iaLengthSlider) iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
+        if (DOM.iaMaxCharsToggle) {
+            const defaultLimit = MAX_CHARS_CONFIG?.defaultValue ?? 400;
+            iaConfig.maxChars = DOM.iaMaxCharsToggle.checked
+                ? (Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value) ?? defaultLimit)
+                : null;
+        }
         if (DOM.iaToneSlider) iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
         if (DOM.iaToneToggle) iaConfig.enableTone = DOM.iaToneToggle.checked;
 
@@ -288,10 +294,6 @@ export const SettingsUIManager = {
             subjects: JSON.parse(JSON.stringify(appState.subjects)),
             theme: appState.theme,
             accentColor: appState.accentColor || 'anthracite',
-            seatingStatusDots: {
-                ...DEFAULT_SEATING_STATUS_DOTS,
-                ...(appState.seatingStatusDots || {})
-            },
             periodSystem: appState.periodSystem,
             currentPeriod: appState.currentPeriod,
             currentAIModel: appState.currentAIModel,
@@ -324,9 +326,6 @@ export const SettingsUIManager = {
             }
             if (UIState.settingsBeforeEdit.accentColor !== undefined) {
                 appState.accentColor = UIState.settingsBeforeEdit.accentColor;
-            }
-            if (UIState.settingsBeforeEdit.seatingStatusDots !== undefined) {
-                appState.seatingStatusDots = { ...UIState.settingsBeforeEdit.seatingStatusDots };
             }
             if (UIState.settingsBeforeEdit.periodSystem !== undefined) {
                 appState.periodSystem = UIState.settingsBeforeEdit.periodSystem;
@@ -506,6 +505,59 @@ export const SettingsUIManager = {
 
         // Mettre à jour les puces de modèles inclus
         this.renderProviderModelChips();
+
+        // Synchroniser l'accordéon des moteurs avancés / IA locale
+        this.syncAdvancedProvidersAccordion({ autoExpandIfConfigured: true });
+    },
+
+    /**
+     * Déplie ou replie la section des moteurs avancés (Anthropic, Mistral, OpenAI, OpenRouter, Ollama).
+     * @param {boolean} expanded
+     * @param {{ manual?: boolean }} [options={}]
+     */
+    setAdvancedProvidersExpanded(expanded, { manual = false } = {}) {
+        const accordion = document.getElementById('advancedProvidersAccordion');
+        const toggleBtn = document.getElementById('advancedProvidersToggleBtn');
+        const body = document.getElementById('advancedProvidersBody');
+        if (!accordion || !toggleBtn || !body) return;
+
+        const isOpen = Boolean(expanded);
+        accordion.classList.toggle('is-open', isOpen);
+        toggleBtn.setAttribute('aria-expanded', String(isOpen));
+        body.hidden = !isOpen;
+        if (manual) {
+            this._advancedProvidersManuallyToggled = true;
+        }
+    },
+
+    /**
+     * Met à jour le badge de comptage et l'ouverture automatique de l'accordéon des moteurs avancés.
+     * S'ouvre automatiquement si au moins un moteur avancé ou Ollama est configuré (sauf repli manuel).
+     * @param {{ autoExpandIfConfigured?: boolean }} [options={}]
+     */
+    syncAdvancedProvidersAccordion({ autoExpandIfConfigured = false } = {}) {
+        const accordion = document.getElementById('advancedProvidersAccordion');
+        if (!accordion) return;
+
+        const advancedKeyProviders = ['anthropic', 'mistral', 'openai', 'openrouter'];
+        let configuredCount = 0;
+        advancedKeyProviders.forEach(id => {
+            const key = getProviderApiKey(id, { state: appState, dom: DOM });
+            if (isValidKeyFormat(key)) configuredCount++;
+        });
+        if (appState.ollamaEnabled) configuredCount++;
+
+        const badge = document.getElementById('advancedProvidersCountBadge');
+        if (badge) {
+            badge.hidden = configuredCount === 0;
+            if (configuredCount > 0) {
+                badge.textContent = `${configuredCount} configuré${configuredCount > 1 ? 's' : ''}`;
+            }
+        }
+
+        if (autoExpandIfConfigured && configuredCount > 0 && !this._advancedProvidersManuallyToggled) {
+            this.setAdvancedProvidersExpanded(true, { manual: false });
+        }
     },
 
     /**
@@ -695,10 +747,27 @@ export const SettingsUIManager = {
         if (!fallbackOrderText) return;
 
         const moreBadge = document.getElementById('fallbackOrderMore');
+        const sovereigntyHint = document.getElementById('fallbackSovereigntyHint');
         const model = appState.currentAIModel;
 
         // Construire la file ordonnée et ne garder que les modèles disponibles
         const queue = buildFallbackQueue(model).filter(m => this._isModelAvailable(m));
+
+        // Garde-fou souveraineté : avertir uniquement si le moteur actif est souverain/local (Albert/Ollama),
+        // le relais est actif ET la file de secours contient au moins un fournisseur cloud hors UE
+        if (sovereigntyHint) {
+            const activeProvider = this._getProviderIdForModel(model);
+            const isSovereignOrLocal = activeProvider === 'albert' || activeProvider === 'ollama';
+            const nonEuProviders = new Set(['google', 'groq', 'openai', 'anthropic', 'openrouter']);
+            const hasNonEuRelay = Boolean(appState.enableApiFallback) && isSovereignOrLocal && queue.slice(1).some(m => nonEuProviders.has(this._getProviderIdForModel(m)));
+            if (hasNonEuRelay) {
+                sovereigntyHint.hidden = false;
+                sovereigntyHint.innerHTML = '<iconify-icon icon="solar:info-circle-linear" aria-hidden="true"></iconify-icon><span>Le relais actif peut basculer vers un cloud hors UE en cas d\'indisponibilité.</span>';
+            } else {
+                sovereigntyHint.hidden = true;
+                sovereigntyHint.textContent = '';
+            }
+        }
 
         if (queue.length === 0) {
             fallbackOrderText.innerHTML = '<span style="opacity:0.6; font-style:italic;">Aucun modèle disponible</span>';

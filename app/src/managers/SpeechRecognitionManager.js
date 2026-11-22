@@ -166,6 +166,9 @@ export const SpeechRecognitionManager = {
     /** @type {string|null} - Élève concerné au démarrage de la dictée */
     _studentId: null,
 
+    /** @type {string|null} - Période concernée au démarrage de la dictée */
+    _period: null,
+
     /** @type {string} - Contenu initial de l'appréciation avant le début de la dictée */
     _initialAppreciationContent: '',
 
@@ -358,6 +361,10 @@ export const SpeechRecognitionManager = {
             this._interimRaw = '';
             this._silentRestarts = 0;
             this._studentId = FocusPanelManager.currentStudentId ?? null;
+            this._period = appState.currentPeriod ?? null;
+            if (target === 'appreciation' && this._studentId && this._initialAppreciationContent.trim()) {
+                FocusPanelHistory._getState?.(true, this._period, this._studentId, true);
+            }
 
             // Pour un champ richText (contenteditable) vide : éliminer les <br> ou espaces résiduels
             if (TARGETS[target]?.isRichText && field && !this._baseText.trim()) {
@@ -668,7 +675,11 @@ export const SpeechRecognitionManager = {
             if (this._gotResult) {
                 // Si le contenu a effectivement changé, on n'ajoute qu'une SEULE entrée propre dans l'historique
                 if (this._baseText && this._baseText !== this._initialAppreciationContent) {
-                    FocusPanelHistory.push(this._baseText, 'dictation');
+                    FocusPanelHistory.push(this._baseText, 'dictation', {
+                        studentId: this._studentId,
+                        period: this._period,
+                        autoSeed: false
+                    });
                 }
                 this._setAppreciationBadge('saved');
             } else {
@@ -691,6 +702,7 @@ export const SpeechRecognitionManager = {
         this._lastWritten = '';
         this._initialAppreciationContent = '';
         this._studentId = null;
+        this._period = null;
         this._gotResult = false;
         this._pendingStart = null;
 

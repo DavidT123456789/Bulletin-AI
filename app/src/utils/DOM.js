@@ -151,6 +151,7 @@ export function initDOM() {
     DOM.exportFullBackupBtn = document.getElementById('exportFullBackupBtn');
     DOM.importFullBackupBtn = document.getElementById('importFullBackupBtn');
     DOM.importBackupInput = document.getElementById('importBackupInput');
+    DOM.localLastBackup = document.getElementById('localLastBackup');
     // Cloud sync elements
     DOM.cloudSeparator = document.getElementById('cloudSeparator');
     DOM.connectGoogleBtn = document.getElementById('connectGoogleBtn');
@@ -181,6 +182,11 @@ export function initDOM() {
     DOM.iaDiscipline = document.getElementById('iaDiscipline');
     DOM.iaLengthSlider = document.getElementById('iaLengthSlider');
     DOM.iaLengthSliderValue = document.getElementById('iaLengthSliderValue');
+    DOM.iaMaxCharsToggle = document.getElementById('iaMaxCharsToggle');
+    DOM.iaMaxCharsValue = document.getElementById('iaMaxCharsValue');
+    DOM.iaMaxCharsCollapsible = document.getElementById('iaMaxCharsCollapsible');
+    DOM.iaMaxCharsPresets = document.getElementById('iaMaxCharsPresets');
+    DOM.iaMaxCharsInput = document.getElementById('iaMaxCharsInput');
     DOM.iaToneSlider = document.getElementById('iaToneSlider');
     DOM.iaToneToggle = document.getElementById('iaToneToggle');
     DOM.iaToneSliderValue = document.getElementById('iaToneSliderValue');

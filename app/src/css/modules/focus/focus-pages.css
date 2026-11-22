@@ -251,6 +251,10 @@
     flex-shrink: 0;
 }
 
+.analysis-status-badge + .analysis-add-item-btn {
+    margin-left: 0;
+}
+
 .analysis-status-badge.loading {
     background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);

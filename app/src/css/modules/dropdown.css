@@ -91,9 +91,9 @@
 .global-actions-dropdown-menu,
 .sc-placement-popover,
 .sc-config-popover,
+.sc-random-history-popover,
 .sc-floating-search-suggestions,
 .journal-threshold-popover,
-.journal-pill-menu,
 .trombi-student-popover,
 .history-popover {
     background: var(--dropdown-bg);
@@ -121,9 +121,7 @@
 .header-dropdown-menu,
 .action-dropdown-menu,
 .global-actions-dropdown-menu,
-.sc-placement-popover,
-.sc-floating-search-suggestions,
-.journal-pill-menu {
+.sc-floating-search-suggestions {
     padding: 6px;
 }
 

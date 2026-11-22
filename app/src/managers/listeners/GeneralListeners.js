@@ -10,6 +10,7 @@ import { SettingsUIManager } from '../SettingsUIManager.js';
 import { FormUI } from '../FormUIManager.js';
 import { FileImportManager } from '../FileImportManager.js';
 import { CloudActionsManager } from '../CloudActionsManager.js';
+import { StorageManager } from '../StorageManager.js';
 import { EventHandlersManager } from '../EventHandlersManager.js';
 import { SettingsModalListeners } from './SettingsModalListeners.js';
 import { MassImportManager } from '../MassImportManager.js';
@@ -328,6 +329,11 @@ export const GeneralListeners = {
                     FocusPanelAnalysis.cancelGenerationForStudent?.(studentId);
                 }
             }
+
+            // 3. Cancel Class Dashboard active generations (synthesis & refinement) if lazy-loaded
+            if (typeof window !== 'undefined' && typeof window.ClassDashboardManager?.cancelAllGenerations === 'function') {
+                window.ClassDashboardManager.cancelAllGenerations();
+            }
         });
 
 
@@ -473,11 +479,59 @@ export const GeneralListeners = {
     },
 
     /**
-     * Initialize the cloud reminder on app startup.
-     * Called once after SyncService.init() to set the menu button dot.
+     * Initialize the cloud reminder on app startup, or schedule the discreet local JSON backup reminder
+     * when no Cloud provider is configured.
      */
     initCloudReminder() {
-        if (!SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER)) return;
-        this._updateCloudReminder();
+        if (SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER)) {
+            this._updateCloudReminder();
+            return;
+        }
+        this._scheduleLocalBackupReminder();
+    },
+
+    /**
+     * Planifie un rappel discret (toast actionnable non bloquant, max 1 fois / 14 jours)
+     * pour les utilisateurs sans Google Drive disposant de modifications locales non sauvegardées.
+     * @param {number} [delayMs=2500]
+     * @private
+     */
+    _scheduleLocalBackupReminder(delayMs = 2500) {
+        if (this._localBackupReminderTimer) {
+            clearTimeout(this._localBackupReminderTimer);
+            this._localBackupReminderTimer = null;
+        }
+
+        const evaluation = StorageManager.evaluateLocalBackupReminder?.();
+        if (!evaluation?.shouldRemind) return;
+
+        const showReminder = () => {
+            this._localBackupReminderTimer = null;
+            if (SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER)) return;
+            if (typeof document !== 'undefined' && document.hidden) return;
+            if (UI?.isAnyModalOpen?.()) return;
+
+            StorageManager.recordLocalBackupReminderShown?.();
+
+            const message = evaluation.hasPreviousBackup
+                ? `Aucune sauvegarde JSON depuis ${evaluation.daysSince} jours. Vos données restent uniquement dans ce navigateur.`
+                : 'Vos classes ne sont enregistrées que dans ce navigateur. Pensez à exporter une sauvegarde JSON.';
+
+            UI?.showNotification?.(message, 'info', 9000, {
+                title: 'Sauvegarde locale',
+                icon: 'solar:shield-check-linear',
+                group: 'local-backup-reminder',
+                action: {
+                    label: 'Exporter (.json)',
+                    onClick: () => StorageManager.exportToJson()
+                }
+            });
+        };
+
+        if (delayMs <= 0) {
+            showReminder();
+        } else {
+            this._localBackupReminderTimer = setTimeout(showReminder, delayMs);
+        }
     }
 };

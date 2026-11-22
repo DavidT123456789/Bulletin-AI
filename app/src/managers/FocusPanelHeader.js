@@ -615,14 +615,14 @@ export const FocusPanelHeader = {
                 appState.filteredResults.push(result);
             }
 
-            if (result.appreciation) {
-                FocusPanelHistory.load(newId);
-                FocusPanelHistory.push(result.appreciation, 'edit');
-            }
-
-            // Update tracking via callbacks
+            // Update tracking via callbacks before loading history so FocusPanelHistory always resolves the new student
             this.callbacks.setCurrentStudentId(newId);
             this.callbacks.setIsCreationMode(false);
+
+            FocusPanelHistory.load(newId);
+            if (result.appreciation) {
+                FocusPanelHistory.push(result.appreciation, 'edit', { studentId: newId, period: currentPeriod, autoSeed: false });
+            }
         } else {
             // === EDIT MODE ===
             if (nomInput) result.nom = newNom;
