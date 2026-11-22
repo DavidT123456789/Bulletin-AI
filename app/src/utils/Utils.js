@@ -321,6 +321,19 @@ export const Utils = {
     },
 
     /**
+     * Traduit un budget de caractères en plafond indicatif de mots avec marge de sécurité (~14 %)
+     * afin d'éviter les consignes contradictoires sur les modèles 7B–24B.
+     * Source unique de vérité partagée entre PromptService et FormUIManager.
+     * @param {number} charBudget
+     * @returns {number}
+     */
+    computeSafeWordCap(charBudget) {
+        const budget = Number(charBudget);
+        if (!Number.isFinite(budget) || budget <= 0) return 8;
+        return Math.max(8, Math.floor((budget * 0.86) / 6.5));
+    },
+
+    /**
      * Évalue l'état d'une appréciation vis-à-vis de la limite de caractères active.
      * Source unique de vérité partagée (Focus Panel, Vue Liste, Laboratoire de style).
      * @param {number} charCount - Nombre de caractères mesurés

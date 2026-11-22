@@ -502,8 +502,8 @@ export const GeneralListeners = {
             this._localBackupReminderTimer = null;
         }
 
-        const evaluation = StorageManager.evaluateLocalBackupReminder?.();
-        if (!evaluation?.shouldRemind) return;
+        const initialEvaluation = StorageManager.evaluateLocalBackupReminder?.();
+        if (!initialEvaluation?.shouldRemind) return;
 
         const showReminder = () => {
             this._localBackupReminderTimer = null;
@@ -511,18 +511,21 @@ export const GeneralListeners = {
             if (typeof document !== 'undefined' && document.hidden) return;
             if (UI?.isAnyModalOpen?.()) return;
 
+            const evaluation = StorageManager.evaluateLocalBackupReminder?.();
+            if (!evaluation?.shouldRemind) return;
+
             StorageManager.recordLocalBackupReminderShown?.();
 
             const message = evaluation.hasPreviousBackup
-                ? `Aucune sauvegarde JSON depuis ${evaluation.daysSince} jours. Vos données restent uniquement dans ce navigateur.`
-                : 'Vos classes ne sont enregistrées que dans ce navigateur. Pensez à exporter une sauvegarde JSON.';
+                ? `Aucune sauvegarde depuis ${evaluation.daysSince} jours sur ce navigateur.`
+                : 'Données enregistrées uniquement dans ce navigateur.';
 
             UI?.showNotification?.(message, 'info', 9000, {
                 title: 'Sauvegarde locale',
                 icon: 'solar:shield-check-linear',
                 group: 'local-backup-reminder',
                 action: {
-                    label: 'Exporter (.json)',
+                    label: 'Exporter',
                     onClick: () => StorageManager.exportToJson()
                 }
             });

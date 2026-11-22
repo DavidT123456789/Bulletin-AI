@@ -654,9 +654,9 @@ body.is-cloud-syncing label {
     align-items: center;
     width: 100%;
     padding: 7.5px 11px 7.5px 8px;
-    font-size: 0.84rem;
-    font-weight: 450;
-    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dropdown-item-text);
     white-space: nowrap;
     background: transparent;
     border: none;
@@ -675,6 +675,7 @@ body.is-cloud-syncing label {
 
 /* Hover effects for clickable items */
 .menu-item:hover,
+.menu-item:focus-visible,
 .menu-item-row:hover {
     color: var(--text-primary);
     background-color: var(--item-hover-bg);
@@ -684,7 +685,7 @@ body.is-cloud-syncing label {
 .menu-item > iconify-icon {
     font-size: 17.5px;
     line-height: 1;
-    color: currentColor;
+    color: var(--dropdown-item-icon);
     min-width: 20px;
     width: 20px;
     height: 20px;
@@ -694,6 +695,10 @@ body.is-cloud-syncing label {
     align-items: center;
     transform-origin: center center;
     transition: color var(--transition-fast);
+}
+
+.menu-item:is(:hover, :focus-visible, .update-item) > :is(i, iconify-icon) {
+    color: currentColor;
 }
 
 /* Cloud button hints — state variants */
@@ -731,7 +736,7 @@ body.is-cloud-syncing label {
 }
 
 .cloud-save-menu-item .cloud-save-label {
-    font-weight: 450;
+    font-weight: 500;
     color: currentColor;
     line-height: 1.2;
     transition: color var(--transition-fast);

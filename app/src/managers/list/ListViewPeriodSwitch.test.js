@@ -302,4 +302,82 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         expect(row2S2Empty.classList.contains('current-period-grade')).toBe(true);
         expect(row2S2Empty.textContent).toBe('--');
     });
+
+    it('should perform full row content update when appreciation text or overflow badge changes while clearing dirty state', () => {
+        const longText = 'A'.repeat(420);
+        const shortText = 'Appréciation raccourcie sous la limite.';
+        const student = {
+            id: 's-overflow',
+            nom: 'DUPONT',
+            prenom: 'Léa',
+            appreciation: longText,
+            generationPeriod: 'S1',
+            promptHash: 'v3:stale_hash',
+            studentData: {
+                prenom: 'Léa',
+                periods: {
+                    S1: { grade: 14.0, appreciation: longText }
+                }
+            }
+        };
+
+        appState.currentPeriod = 'S1';
+        appState.useSubjectPersonalization = true;
+        appState.subjects = { MonStyle: { iaConfig: { maxChars: 400 } } };
+        appState.generatedResults = [student];
+
+        ListViewRenderer.renderFresh(container, [student], ['S1', 'S2'], 0);
+        const row = container.querySelector('.student-row[data-student-id="s-overflow"]');
+        expect(row.querySelector('.dirty-indicator')).not.toBeNull();
+        expect(row.querySelector('.char-limit-overflow-badge')?.textContent).toBe('420/400');
+
+        // Teacher manually shortens appreciation in Focus Panel (clears dirty + removes overflow)
+        student.appreciation = shortText;
+        student.studentData.periods.S1.appreciation = shortText;
+        student.promptHash = null;
+
+        ListViewRenderer.updateStudentRow('s-overflow');
+
+        expect(row.querySelector('.appreciation-preview')?.textContent).toBe(shortText);
+        expect(row.querySelector('.char-limit-overflow-badge')).toBeNull();
+        expect(row.querySelector('.dirty-indicator')).toBeNull();
+    });
+
+    it('should preserve updateDirtyIndicatorOnly fast path when appreciation contains French apostrophes and only dirty state changes', () => {
+        const frenchText = "L'élève s'est investi d'un bout à l'autre du trimestre.";
+        const student = {
+            id: 's-apostrophe',
+            nom: 'MARTIN',
+            prenom: 'Lucas',
+            appreciation: frenchText,
+            generationPeriod: 'S1',
+            promptHash: null,
+            studentData: {
+                prenom: 'Lucas',
+                periods: {
+                    S1: { grade: 14.0, appreciation: frenchText }
+                }
+            }
+        };
+
+        appState.currentPeriod = 'S1';
+        appState.useSubjectPersonalization = false;
+        appState.generatedResults = [student];
+
+        ListViewRenderer.renderFresh(container, [student], ['S1', 'S2'], 0);
+        const row = container.querySelector('.student-row[data-student-id="s-apostrophe"]');
+        const dirtyOnlySpy = vi.spyOn(ListViewRenderer, 'updateDirtyIndicatorOnly');
+        const fullUpdateSpy = vi.spyOn(ListViewRenderer, 'updateRowContent');
+
+        // Become dirty without changing appreciation text (e.g. context/journal modification)
+        student.promptHash = 'v3:stale_hash';
+        ListViewRenderer.updateStudentRow('s-apostrophe');
+
+        expect(dirtyOnlySpy).toHaveBeenCalledTimes(1);
+        expect(fullUpdateSpy).not.toHaveBeenCalled();
+        expect(row.querySelector('.dirty-indicator')).not.toBeNull();
+
+        dirtyOnlySpy.mockRestore();
+        fullUpdateSpy.mockRestore();
+    });
 });

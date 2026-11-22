@@ -1526,9 +1526,9 @@
     padding: 6.5px 10px 6.5px 7px;
     border: none;
     background: transparent;
-    font-size: 0.84rem;
-    font-weight: 450;
-    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--dropdown-item-text);
     white-space: nowrap;
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -1549,7 +1549,7 @@
     height: 18px;
     flex-shrink: 0;
     text-align: center;
-    color: currentColor;
+    color: var(--dropdown-item-icon);
     font-size: 17px;
     line-height: 1;
     display: inline-flex;
@@ -1559,17 +1559,13 @@
     transition: color var(--transition-fast);
 }
 
-.action-dropdown-item.danger:hover,
-.action-dropdown-item.danger:focus-visible,
-.action-dropdown-item.danger:hover i,
-.action-dropdown-item.danger:focus-visible i,
-.action-dropdown-item.danger:hover iconify-icon,
-.action-dropdown-item.danger:focus-visible iconify-icon {
-    color: var(--error-text);
+.action-dropdown-item:is(:hover, :focus-visible) :is(i, iconify-icon) {
+    color: currentColor;
 }
 
 .action-dropdown-item.danger:hover,
 .action-dropdown-item.danger:focus-visible {
+    color: var(--error-text);
     background: var(--error-light);
 }
 

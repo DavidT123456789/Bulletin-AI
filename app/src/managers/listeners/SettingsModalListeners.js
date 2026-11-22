@@ -40,13 +40,9 @@ export const SettingsModalListeners = {
      * @private
      */
     _getCurrentSettings() {
-        const defaultLimit = MAX_CHARS_CONFIG?.defaultValue ?? 400;
-        const maxChars = DOM.iaMaxCharsToggle?.checked
-            ? (Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value) ?? defaultLimit)
-            : null;
         return {
             length: parseInt(DOM.iaLengthSlider?.value || DEFAULT_IA_CONFIG.length, 10),
-            maxChars,
+            maxChars: FormUI.resolveMaxCharsFromDOM(),
             tone: parseInt(DOM.iaToneSlider?.value || 3, 10),
             enableTone: DOM.iaToneToggle ? DOM.iaToneToggle.checked : false,
             styleInstructions: DOM.iaStyleInstructions?.value || '',
@@ -347,11 +343,14 @@ export const SettingsModalListeners = {
         const defaultMaxChars = MAX_CHARS_CONFIG?.defaultValue ?? 400;
         const minMaxChars = MAX_CHARS_CONFIG?.min ?? 50;
         const maxMaxChars = MAX_CHARS_CONFIG?.max ?? 2000;
+        const isPresetValue = (val) => Boolean(MAX_CHARS_CONFIG?.presets?.includes(val));
 
         DOM.iaMaxCharsToggle?.addEventListener('change', () => {
             if (DOM.iaMaxCharsToggle.checked) {
                 const resolved = Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value) ?? defaultMaxChars;
-                if (DOM.iaMaxCharsInput) DOM.iaMaxCharsInput.value = String(resolved);
+                if (DOM.iaMaxCharsInput) {
+                    DOM.iaMaxCharsInput.value = isPresetValue(resolved) ? '' : String(resolved);
+                }
                 this._applyStyleChange({ maxChars: resolved });
             } else {
                 this._applyStyleChange({ maxChars: null });
@@ -364,7 +363,7 @@ export const SettingsModalListeners = {
             const preset = Utils.normalizeMaxChars?.(btn.dataset.maxChars);
             if (!preset) return;
             if (DOM.iaMaxCharsToggle) DOM.iaMaxCharsToggle.checked = true;
-            if (DOM.iaMaxCharsInput) DOM.iaMaxCharsInput.value = String(preset);
+            if (DOM.iaMaxCharsInput) DOM.iaMaxCharsInput.value = '';
             this._applyStyleChange({ maxChars: preset });
         });
 
@@ -379,9 +378,19 @@ export const SettingsModalListeners = {
 
             const commitCustomMaxChars = () => {
                 if (!DOM.iaMaxCharsToggle?.checked) return;
-                const normalized = Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput.value) ?? defaultMaxChars;
-                DOM.iaMaxCharsInput.value = String(normalized);
-                this._applyStyleChange({ maxChars: normalized });
+                const currentMax = Utils.normalizeMaxChars?.(SettingsUIManager.getPersonalStyleConfig().maxChars) ?? defaultMaxChars;
+                const rawVal = DOM.iaMaxCharsInput.value?.trim?.() ?? '';
+                if (!rawVal) {
+                    DOM.iaMaxCharsInput.value = isPresetValue(currentMax) ? '' : String(currentMax);
+                    return;
+                }
+                const normalized = Utils.normalizeMaxChars?.(rawVal) ?? defaultMaxChars;
+                DOM.iaMaxCharsInput.value = isPresetValue(normalized) ? '' : String(normalized);
+                if (normalized !== currentMax) {
+                    this._applyStyleChange({ maxChars: normalized });
+                } else {
+                    FormUI.syncStyleControls();
+                }
             };
             DOM.iaMaxCharsInput.addEventListener('change', commitCustomMaxChars);
             DOM.iaMaxCharsInput.addEventListener('blur', commitCustomMaxChars);
@@ -1147,6 +1156,7 @@ export const SettingsModalListeners = {
 
                     if (connected) {
                         await this.updateCloudSyncUI();
+                        this.updateLocalBackupUI();
                         UI.showNotification('Google Drive connecté ! Utilisez les boutons Sauvegarder/Charger.', 'success');
                     } else {
                         await this.updateCloudSyncUI();
@@ -1229,7 +1239,14 @@ export const SettingsModalListeners = {
         bus.on(EVENTS.MODAL_SETTINGS_OPEN, refreshDataTab);
         bus.on(EVENTS.APP_DATA_RESTORED, refreshDataTab);
         bus.on(EVENTS.LOCAL_BACKUP_UPDATED, () => this.updateLocalBackupUI());
-        bus.on(EVENTS.SYNC_CONNECTED, () => this.updateCloudSyncUI());
+        bus.on(EVENTS.SYNC_CONNECTED, () => {
+            this.updateCloudSyncUI();
+            this.updateLocalBackupUI();
+        });
+        bus.on(EVENTS.SYNC_DISCONNECTED, () => {
+            this.updateCloudSyncUI();
+            this.updateLocalBackupUI();
+        });
 
         document.querySelector('.api-keys-container')?.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -1284,6 +1301,7 @@ export const SettingsModalListeners = {
                     await SyncService.disconnect();
 
                     await this.updateCloudSyncUI();
+                    this.updateLocalBackupUI();
                     UI.showNotification('Déconnecté de Google Drive.', 'info');
                 } catch (error) {
                     console.error('Google sync disconnection error:', error);
@@ -1403,7 +1421,7 @@ export const SettingsModalListeners = {
         const lastBackup = StorageManager.getLastLocalBackupTime?.();
         if (lastBackup) {
             el.textContent = `Dernière sauvegarde : ${this._formatBackupTimestamp(lastBackup)}`;
-        } else if (StorageManager.hasRealUserData?.()) {
+        } else if (!SafeStorage.get(STORAGE_KEYS.SYNC_PROVIDER) && StorageManager.hasRealUserData?.()) {
             el.textContent = 'Aucune sauvegarde locale enregistrée';
         } else {
             el.textContent = '';

@@ -1351,6 +1351,18 @@ describe('Utils', () => {
             expect(Utils.getCharLimitState(256, 255)).toEqual({ limit: 255, state: 'over', overBy: 1 });
             expect(Utils.getCharLimitState(310, '255')).toEqual({ limit: 255, state: 'over', overBy: 55 });
         });
+
+        it('computeSafeWordCap applique la marge de sécurité (~14 %) avec un plancher à 8 mots', () => {
+            expect(Utils.computeSafeWordCap(400)).toBe(52);
+            expect(Utils.computeSafeWordCap(255)).toBe(33);
+            expect(Utils.computeSafeWordCap(500)).toBe(66);
+            expect(Utils.computeSafeWordCap(40)).toBe(8);
+            expect(Utils.computeSafeWordCap(0)).toBe(8);
+            expect(Utils.computeSafeWordCap(-100)).toBe(8);
+            expect(Utils.computeSafeWordCap(null)).toBe(8);
+            expect(Utils.computeSafeWordCap(undefined)).toBe(8);
+            expect(Utils.computeSafeWordCap('abc')).toBe(8);
+        });
     });
 });
 

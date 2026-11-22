@@ -720,7 +720,7 @@ export const PromptService = {
      * @private
      */
     _computeSafeWordCap(charBudget) {
-        return Math.max(8, Math.floor((charBudget * 0.86) / 6.5));
+        return Utils.computeSafeWordCap(charBudget);
     },
 
     /**

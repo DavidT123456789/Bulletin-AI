@@ -294,13 +294,31 @@ export const ListViewRenderer = {
             if (hasSkeleton) {
                 this.updateRowContent(row, result);
             } else {
-                // Optimization: Only skip full update when ADDING a simple dirty indicator (no error)
-                const existingIndicator = appreciationCell?.querySelector('.dirty-indicator');
+                // Optimization: Only skip full update when toggling a simple dirty indicator
+                // while appreciation content, overflow badge and copied state are unchanged.
+                const existingIndicator = appreciationCell?.querySelector('.dirty-indicator:not(.dirty-indicator-leave)');
                 const status = FocusPanelStatus.getAppreciationStatus(result, appState.currentPeriod);
                 const shouldBeOnlyDirty = status.isDirty && !status.hasError;
 
                 const isErrorIndicator = existingIndicator?.classList.contains('error-indicator');
-                if (appreciationCell && !status.hasError && !isErrorIndicator && Boolean(existingIndicator) !== shouldBeOnlyDirty) {
+                const hasOverflowBadge = Boolean(appreciationCell?.querySelector('.char-limit-overflow-badge'));
+                const previewEl = appreciationCell?.querySelector('.appreciation-preview');
+                const expectedPreviewHtml = status.hasContent
+                    ? Utils.cleanMarkdown(status.appreciation).replace(/&#0?39;/g, "'").replace(/&quot;/g, '"')
+                    : null;
+                const isPreviewUnchanged = Boolean(previewEl) && previewEl.innerHTML === expectedPreviewHtml;
+                const isCopiedUnchanged = Boolean(appreciationCell?.querySelector('.copied-indicator'))
+                    === (Utils.isAppreciationCopied?.(result, appState.currentPeriod) ?? false);
+
+                if (
+                    appreciationCell
+                    && !status.hasError
+                    && !isErrorIndicator
+                    && !hasOverflowBadge
+                    && isPreviewUnchanged
+                    && isCopiedUnchanged
+                    && Boolean(existingIndicator) !== shouldBeOnlyDirty
+                ) {
                     this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
                 } else {
                     this.updateRowContent(row, result);
@@ -322,9 +340,10 @@ export const ListViewRenderer = {
      * @private
      */
     updateDirtyIndicatorOnly(cell, shouldBeDirty, tooltip = 'Données modifiées depuis la génération.\nActualisation recommandée.') {
-        const existingIndicator = cell.querySelector('.dirty-indicator');
+        const existingIndicator = cell.querySelector('.dirty-indicator:not(.dirty-indicator-leave)');
 
         if (shouldBeDirty && !existingIndicator) {
+            cell.querySelectorAll('.dirty-indicator-leave').forEach(el => el.remove());
             // ADD dirty indicator with fade-in animation
             const indicator = document.createElement('span');
             indicator.className = 'dirty-indicator tooltip dirty-indicator-enter';

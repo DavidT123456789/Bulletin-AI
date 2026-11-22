@@ -32,6 +32,7 @@ vi.mock('../state/State.js', () => ({
 vi.mock('../config/Config.js', () => ({
     CONFIG: {},
     DEFAULT_IA_CONFIG: { length: 50, tone: 3, styleInstructions: '', voice: 'default', discipline: '' },
+    MAX_CHARS_CONFIG: { min: 50, max: 2000, defaultValue: 400, nearRatio: 0.92, presets: [255, 400, 500] },
     IA_TONE_LABELS: {
         1: 'Très encourageant',
         2: 'Bienveillant',
@@ -85,7 +86,8 @@ vi.mock('../utils/Utils.js', () => ({
             if (v === null || v === undefined || v === '') return null;
             const n = parseInt(String(v), 10);
             return Number.isFinite(n) && n > 0 ? Math.min(2000, Math.max(50, n)) : null;
-        })
+        }),
+        computeSafeWordCap: vi.fn((b) => Math.max(8, Math.floor((Number(b) * 0.86) / 6.5)))
     }
 }));
 
@@ -273,7 +275,7 @@ describe('FormUIManager', () => {
             expect(DOM.iaToneCollapsible.classList.toggle).toHaveBeenCalledWith('open', true);
         });
 
-        it('should sync maxChars controls and indicate capped length when word slider exceeds maxChars', () => {
+        it('should sync maxChars controls and indicate capped length when word slider exceeds safeWordCap', () => {
             DOM.iaLengthSlider.value = '60';
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 255 } };
 
@@ -281,15 +283,43 @@ describe('FormUIManager', () => {
 
             expect(DOM.iaMaxCharsToggle.checked).toBe(true);
             expect(DOM.iaMaxCharsInput.disabled).toBe(false);
+            expect(DOM.iaMaxCharsInput.value).toBe(''); // Preset 255 leaves custom field empty
             expect(DOM.iaMaxCharsValue.textContent).toBe('Max 255 car.');
-            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • plafonné à 255 car.');
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • plafonné à ~33 mots / 255 car.');
+
+            // At 60 words with 400 maxChars, safeWordCap is 52 words (< 60) even though 60*6.5=390 <= 400
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 400 } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaMaxCharsInput.value).toBe('');
+            expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • plafonné à ~52 mots / 400 car.');
+
+            // Custom non-preset value fills the custom input
+            appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: 350 } };
+            FormUI.syncStyleControls();
+            expect(DOM.iaMaxCharsInput.value).toBe('350');
+            expect(DOM.iaMaxCharsValue.textContent).toBe('Max 350 car.');
 
             appState.subjects['MonStyle'] = { iaConfig: { tone: 3, enableTone: false, maxChars: null } };
             FormUI.syncStyleControls();
             expect(DOM.iaMaxCharsToggle.checked).toBe(false);
             expect(DOM.iaMaxCharsInput.disabled).toBe(true);
+            expect(DOM.iaMaxCharsInput.value).toBe('');
             expect(DOM.iaMaxCharsValue.textContent).toBe('Désactivée');
             expect(DOM.iaLengthSliderValue.textContent).toBe('~60 mots • ~390 car.');
+        });
+
+        it('should resolve active maxChars from custom input, preset or stored fallback via resolveMaxCharsFromDOM', () => {
+            DOM.iaMaxCharsToggle.checked = false;
+            expect(FormUI.resolveMaxCharsFromDOM(255)).toBeNull();
+
+            DOM.iaMaxCharsToggle.checked = true;
+            DOM.iaMaxCharsInput.value = '';
+            appState.subjects['MonStyle'] = { iaConfig: { maxChars: 255 } };
+            expect(FormUI.resolveMaxCharsFromDOM()).toBe(255);
+
+            DOM.iaMaxCharsInput.value = '350';
+            expect(FormUI.resolveMaxCharsFromDOM()).toBe(350);
+            DOM.iaMaxCharsInput.value = '';
         });
     });
 

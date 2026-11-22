@@ -914,7 +914,7 @@ textarea {
 
 /* --- Dropdowns --- */
 .btn-dropdown-item {
-    color: var(--text-secondary);
+    color: var(--dropdown-item-text);
     padding: 6.5px 10px 6.5px 7px;
     border-radius: var(--dropdown-item-radius);
     display: flex;
@@ -925,13 +925,14 @@ textarea {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.84rem;
-    font-weight: 450;
+    font-size: 0.8125rem;
+    font-weight: 500;
     white-space: nowrap;
     transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.btn-dropdown-item:hover {
+.btn-dropdown-item:hover,
+.btn-dropdown-item:focus-visible {
     background-color: var(--item-hover-bg);
     color: var(--text-primary);
 }
@@ -947,9 +948,13 @@ textarea {
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: currentColor;
+    color: var(--dropdown-item-icon);
     transform-origin: center center;
     transition: color var(--transition-fast);
+}
+
+.btn-dropdown-item:is(:hover, :focus-visible, .danger) :is(i, iconify-icon) {
+    color: currentColor;
 }
 
 .btn-dropdown-item.danger {
@@ -977,14 +982,14 @@ textarea {
 }
 
 .dropdown-header {
-    margin: 3px 0 0 0;
-    padding: 5.5px 10px 1.5px 8px;
-    font-size: 0.72rem;
+    margin: 4px 8px 0;
+    padding: 7px 2px 3px 0;
+    font-size: 0.7rem;
     font-weight: 600;
     line-height: 1.2;
     color: var(--text-tertiary);
-    text-transform: none;
-    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     white-space: nowrap;
     position: relative;
     border-radius: 0;
@@ -998,7 +1003,7 @@ textarea {
 
 .dropdown-header:first-child {
     margin-top: 0;
-    padding-top: 3px;
+    padding-top: 4px;
     border-top: none;
 }
 

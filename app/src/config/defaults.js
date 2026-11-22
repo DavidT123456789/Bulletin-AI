@@ -9,7 +9,8 @@ export const MAX_CHARS_CONFIG = Object.freeze({
     min: 50,
     max: 2000,
     defaultValue: 400,
-    nearRatio: 0.92
+    nearRatio: 0.92,
+    presets: Object.freeze([255, 400, 500])
 });
 
 export const DEFAULT_IA_CONFIG = {

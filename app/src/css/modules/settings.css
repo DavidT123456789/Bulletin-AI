@@ -319,6 +319,11 @@
     color: var(--text-tertiary);
     pointer-events: none;
     user-select: none;
+    transition: opacity var(--transition-fast);
+}
+
+#iaMaxCharsInput:placeholder-shown + .max-chars-custom-unit {
+    opacity: 0;
 }
 
 @media (pointer: coarse) {

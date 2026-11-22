@@ -191,10 +191,11 @@
     flex-shrink: 0;
     text-align: center;
     font-size: 1.15em;
-    color: currentColor;
+    color: var(--text-tertiary);
     transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
+.ui-tabs-btn:hover:not(.active) iconify-icon,
 .ui-tabs-btn.active iconify-icon,
 .ui-tabs-btn.active i {
     color: currentColor !important;
@@ -239,9 +240,13 @@
     width: 20px;
     height: 20px;
     font-size: 1.15em;
-    color: currentColor;
+    color: var(--text-tertiary);
     flex-shrink: 0;
     transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.ui-tabs-action-btn:hover iconify-icon {
+    color: currentColor;
 }
 
 .ui-tabs-action-btn:hover {

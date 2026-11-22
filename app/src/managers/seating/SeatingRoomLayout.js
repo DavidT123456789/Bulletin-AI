@@ -115,7 +115,7 @@ export const SeatingRoomLayout = {
                     </button>
                     <button class="sc-popover-item${isSolo ? ' sc-popover-item-disabled' : ''}" data-mode="pairs-neighbors" data-requires-group="true" type="button"${soloDisabledAttrs}>
                         <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
-                        <span class="sc-popover-item-label">Voisins du cours</span>
+                        <span class="sc-popover-item-label">Voisins <small>Plan de cours</small></span>
                     </button>
                     <button class="sc-popover-item" data-mode="alpha-asc" type="button">
                         <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>

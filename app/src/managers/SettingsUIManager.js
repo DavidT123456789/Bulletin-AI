@@ -8,7 +8,7 @@
  */
 
 import { appState, UIState } from '../state/State.js';
-import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS, MAX_CHARS_CONFIG } from '../config/Config.js';
+import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
 import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, PROVIDER_SHOWCASE_MODELS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
@@ -121,10 +121,7 @@ export const SettingsUIManager = {
 
         if (DOM.iaLengthSlider) iaConfig.length = parseInt(DOM.iaLengthSlider.value, 10);
         if (DOM.iaMaxCharsToggle) {
-            const defaultLimit = MAX_CHARS_CONFIG?.defaultValue ?? 400;
-            iaConfig.maxChars = DOM.iaMaxCharsToggle.checked
-                ? (Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value) ?? defaultLimit)
-                : null;
+            iaConfig.maxChars = FormUI.resolveMaxCharsFromDOM(iaConfig.maxChars);
         }
         if (DOM.iaToneSlider) iaConfig.tone = parseInt(DOM.iaToneSlider.value, 10);
         if (DOM.iaToneToggle) iaConfig.enableTone = DOM.iaToneToggle.checked;

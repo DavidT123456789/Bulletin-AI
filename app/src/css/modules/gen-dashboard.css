@@ -469,7 +469,7 @@
     cursor: pointer;
     text-align: left;
     font-size: 0.84rem;
-    color: var(--text-primary);
+    color: var(--dropdown-item-text);
     transition: all 0.15s ease;
     margin-bottom: 2px;
 }
@@ -480,10 +480,12 @@
 
 .model-dropdown-item:hover {
     background: var(--item-hover-bg);
+    color: var(--text-primary);
 }
 
 .model-dropdown-item.active {
     background: var(--item-active-bg);
+    color: var(--text-primary);
     font-weight: 500;
 }
 

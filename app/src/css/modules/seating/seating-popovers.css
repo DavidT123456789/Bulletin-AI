@@ -169,6 +169,16 @@
     }
 }
 
+.sc-popover-item:not(.sc-popover-item-disabled):focus-visible {
+    background-color: var(--item-hover-bg);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.sc-popover-item:not(.sc-popover-item-disabled):focus-visible iconify-icon {
+    color: var(--text-primary);
+}
+
 .sc-popover-item:not(.sc-popover-item-disabled):active {
     transform: scale(0.985);
 }

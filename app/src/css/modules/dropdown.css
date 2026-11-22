@@ -165,14 +165,18 @@
 }
 
 .custom-dropdown-group:not(.group-all-disabled) ~ .custom-dropdown-group:not(.group-all-disabled) {
+    margin-top: 2px;
+}
+
+.custom-dropdown-group:not(.group-all-disabled) ~ .custom-dropdown-group:not(.group-all-disabled) > .custom-dropdown-group-label {
     border-top: 1px solid var(--border-color);
-    margin-top: 4px;
-    padding-top: 6px;
+    padding-top: 8px;
 }
 
 .custom-dropdown-group-label {
-    padding: 6px 10px 4px;
-    font-size: 0.74rem;
+    margin: 0 8px;
+    padding: 6px 2px 4px 0;
+    font-size: 0.72rem;
     font-weight: 600;
     line-height: 1.2;
     text-transform: none;
@@ -252,7 +256,7 @@
     cursor: pointer;
     font-size: 0.84rem;
     font-weight: 450;
-    color: var(--text-primary);
+    color: var(--dropdown-item-text);
     transition: all var(--transition-fast);
     margin-bottom: 2px;
     background: transparent;
@@ -286,6 +290,7 @@
 /* Focus clavier subtil - sans outline voyant */
 .custom-dropdown-option.focused {
     background-color: var(--item-hover-bg);
+    color: var(--text-primary);
     outline: none;
 }
 

@@ -9,7 +9,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, IA_TONE_LABELS, DEFAULT_SEATING_STATUS_DOTS, MAX_CHARS_CONFIG } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
@@ -55,7 +55,8 @@ export const FormUI = {
         if (DOM.iaLengthSlider) DOM.iaLengthSlider.value = iaConfig.length;
         const normalizedMaxChars = Utils.normalizeMaxChars?.(iaConfig.maxChars) ?? null;
         if (DOM.iaMaxCharsInput) {
-            DOM.iaMaxCharsInput.value = normalizedMaxChars ? String(normalizedMaxChars) : '';
+            const isPreset = normalizedMaxChars !== null && Boolean(MAX_CHARS_CONFIG?.presets?.includes(normalizedMaxChars));
+            DOM.iaMaxCharsInput.value = (normalizedMaxChars && !isPreset) ? String(normalizedMaxChars) : '';
         }
         if (DOM.iaToneSlider) DOM.iaToneSlider.value = iaConfig.tone ?? 3;
         if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.value = iaConfig.styleInstructions ?? '';
@@ -117,15 +118,23 @@ export const FormUI = {
         if (DOM.iaLengthSlider && DOM.iaLengthSliderValue) {
             const words = parseInt(DOM.iaLengthSlider.value, 10);
             const approxChars = Math.round((words * APPROX_CHARS_PER_WORD) / 10) * 10;
-            DOM.iaLengthSliderValue.textContent = (maxCharsEnabled && approxChars > maxChars)
-                ? `~${words} mots • plafonné à ${maxChars} car.`
+            const safeWordCap = maxCharsEnabled
+                ? (Utils.computeSafeWordCap?.(maxChars) ?? Math.max(8, Math.floor((maxChars * 0.86) / APPROX_CHARS_PER_WORD)))
+                : null;
+            DOM.iaLengthSliderValue.textContent = (maxCharsEnabled && words > safeWordCap)
+                ? `~${words} mots • plafonné à ~${safeWordCap} mots / ${maxChars} car.`
                 : `~${words} mots • ~${approxChars} car.`;
         }
 
+        const isPresetMaxChars = maxCharsEnabled && Boolean(MAX_CHARS_CONFIG?.presets?.includes(maxChars));
         if (DOM.iaMaxCharsToggle) DOM.iaMaxCharsToggle.checked = maxCharsEnabled;
         if (DOM.iaMaxCharsInput) {
             DOM.iaMaxCharsInput.disabled = !maxCharsEnabled;
-            if (maxCharsEnabled && !DOM.iaMaxCharsInput.value) {
+            if (!maxCharsEnabled || isPresetMaxChars) {
+                if (typeof document === 'undefined' || document.activeElement !== DOM.iaMaxCharsInput) {
+                    DOM.iaMaxCharsInput.value = '';
+                }
+            } else if (!DOM.iaMaxCharsInput.value) {
                 DOM.iaMaxCharsInput.value = String(maxChars);
             }
         }
@@ -152,6 +161,23 @@ export const FormUI = {
 
         if (DOM.iaStyleInstructionsToggle) DOM.iaStyleInstructionsToggle.checked = instructionsEnabled;
         if (DOM.iaStyleInstructions) DOM.iaStyleInstructions.disabled = !instructionsEnabled;
+    },
+
+    /**
+     * Résout la limite de caractères active depuis les contrôles DOM (toggle, champ libre, preset actif)
+     * avec repli sur la configuration stockée ou la valeur par défaut.
+     * @param {number|string|null} [fallbackMaxChars=null]
+     * @returns {number|null}
+     */
+    resolveMaxCharsFromDOM(fallbackMaxChars = null) {
+        if (!DOM.iaMaxCharsToggle?.checked) return null;
+        const defaultLimit = MAX_CHARS_CONFIG?.defaultValue ?? 400;
+        const activePresetVal = DOM.iaMaxCharsPresets?.querySelector?.('.max-chars-preset-btn.active')?.dataset?.maxChars;
+        const storedMaxChars = fallbackMaxChars ?? appState.subjects?.['MonStyle']?.iaConfig?.maxChars;
+        return Utils.normalizeMaxChars?.(DOM.iaMaxCharsInput?.value)
+            ?? Utils.normalizeMaxChars?.(activePresetVal)
+            ?? Utils.normalizeMaxChars?.(storedMaxChars)
+            ?? defaultLimit;
     },
 
     // État pour les transitions d'onglets des paramètres
