@@ -6,6 +6,7 @@
  */
 
 import { DOM } from '../utils/DOM.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 import { appState } from '../state/State.js';
 import { MODEL_SELECTOR_CONFIG, MODEL_SHORT_NAMES } from '../config/aiRegistry.js';
 import { SettingsUIManager } from './SettingsUIManager.js';
@@ -257,6 +258,7 @@ export const ModelSelectionManager = {
         `;
 
         dropdown.innerHTML = html;
+        FocusPanelManager.bindScrollAffordances?.(dropdown.querySelector('.model-dropdown-list'));
 
         // Clic sur un modèle -> Sélection instantanée en 1 clic
         dropdown.querySelectorAll('.model-dropdown-item').forEach(btn => {

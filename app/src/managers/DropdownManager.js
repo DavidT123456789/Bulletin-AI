@@ -5,6 +5,7 @@
  */
 
 import { PROVIDER_CONFIG } from '../config/providers.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
 import { HistoryManager } from './HistoryManager.js';
 
@@ -343,6 +344,7 @@ export const DropdownManager = {
         if (!isOpen) {
             wrapper.classList.add('open');
             wrapper.querySelector('.custom-dropdown-trigger').setAttribute('aria-expanded', 'true');
+            FocusPanelManager.bindScrollAffordances?.(wrapper.querySelector('.custom-dropdown-menu'));
 
             // Focus sur l'option sélectionnée
             const selected = wrapper.querySelector('.custom-dropdown-option.selected');

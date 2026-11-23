@@ -187,6 +187,9 @@ export const SeatingMobileSheet = {
     },
 
     _bindSheetDismissGesture(sheet, backdrop) {
+        sheet.querySelectorAll('.sc-sheet-content, .sc-sheet-picker-list').forEach(el => {
+            FocusPanelManager.bindScrollAffordances?.(el);
+        });
         return attachSheetPullToDismiss(sheet, {
             backdropEl: backdrop,
             scrollContainer: '.sc-sheet-content',
@@ -678,6 +681,7 @@ export const SeatingMobileSheet = {
                     const name = item.querySelector('.sc-sheet-picker-name')?.textContent?.toLowerCase() || '';
                     item.style.display = name.includes(q) ? 'flex' : 'none';
                 });
+                FocusPanelManager.updateScrollAffordances?.(pickerList);
             });
         }
 

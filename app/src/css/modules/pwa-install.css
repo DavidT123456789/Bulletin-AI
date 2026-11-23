@@ -447,28 +447,17 @@
    MENU BUTTON STYLES
    ============================================ */
 
-#installPwaBtn {
-    position: relative;
+#installPwaBtn:is(:hover, :focus-visible) .pwa-install-arrow {
+    animation: pwa-install-arrow-float 1.1s ease-in-out infinite;
 }
 
-#installPwaBtn::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-
-    width: 3px;
-    height: 0;
-
-    background: var(--primary-color);
-    border-radius: var(--radius-full);
-
-    transition: height 0.3s ease;
-}
-
-#installPwaBtn:hover::before {
-    height: 60%;
+@keyframes pwa-install-arrow-float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(2px);
+    }
 }
 
 

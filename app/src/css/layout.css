@@ -682,7 +682,8 @@ body.is-cloud-syncing label {
 }
 
 .menu-item > i,
-.menu-item > iconify-icon {
+.menu-item > iconify-icon,
+.menu-item > svg {
     font-size: 17.5px;
     line-height: 1;
     color: var(--dropdown-item-icon);
@@ -697,7 +698,13 @@ body.is-cloud-syncing label {
     transition: color var(--transition-fast);
 }
 
-.menu-item:is(:hover, :focus-visible, .update-item) > :is(i, iconify-icon) {
+.menu-item > svg {
+    padding: 1.25px;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.menu-item:is(:hover, :focus-visible, .update-item) > :is(i, iconify-icon, svg) {
     color: currentColor;
 }
 

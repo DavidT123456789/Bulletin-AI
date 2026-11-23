@@ -353,11 +353,22 @@ describe('TouchGestures', () => {
             expect(panel.style.transform).toBe('');
             dispatchTouch(panel, 'touchend', 20, 200, { timeStamp: 400 });
 
-            // 3. Touch at relX = 10 moving VERTICALLY -> yields cleanly
+            // 3. Touch at relX = 10 moving VERTICALLY -> yields cleanly and marks isEdgeCandidate false until touchend
             dispatchTouch(panel, 'touchstart', 50, 200, { timeStamp: 500 });
             dispatchTouch(panel, 'touchmove', 54, 280, { timeStamp: 560 });
             expect(panel.style.transform).toBe('');
+            expect(ctrl.isEdgeCandidate(50)).toBe(false);
             dispatchTouch(panel, 'touchend', 54, 280, { timeStamp: 600 });
+            expect(ctrl.isEdgeCandidate(50)).toBe(true);
+
+            // 3b. Multi-touch during active drag -> resets transform immediately
+            dispatchTouch(panel, 'touchstart', 50, 200, { timeStamp: 700 });
+            dispatchTouch(panel, 'touchmove', 90, 200, { timeStamp: 740 });
+            expect(panel.style.transform).toBe('translate3d(40px, 0, 0)');
+            const multiTouchMove = new Event('touchmove', { bubbles: true, cancelable: true });
+            multiTouchMove.touches = [{ clientX: 90, clientY: 200 }, { clientX: 120, clientY: 220 }];
+            panel.dispatchEvent(multiTouchMove);
+            expect(panel.style.transform).toBe('');
 
             // 4. Small slow rightward drag -> snaps back AND absorbs trailing click
             dispatchTouch(edgeBtn, 'touchstart', 50, 200, { timeStamp: 1000 });
@@ -365,6 +376,10 @@ describe('TouchGestures', () => {
             dispatchTouch(edgeBtn, 'touchend', 80, 200, { timeStamp: 1350 });
             edgeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
             expect(btnClickSpy).not.toHaveBeenCalled();
+            // Interrupting snap-back mid-animation via isEdgeCandidate settles styles immediately
+            expect(panel.style.transform).toBe('translate3d(0, 0, 0)');
+            expect(ctrl.isEdgeCandidate(50)).toBe(true);
+            expect(panel.style.transform).toBe('');
             vi.advanceTimersByTime(300);
             expect(onDismiss).not.toHaveBeenCalled();
             expect(panel.style.transform).toBe('');

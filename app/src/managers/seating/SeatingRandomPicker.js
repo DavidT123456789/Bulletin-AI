@@ -4,6 +4,7 @@
  */
 
 import { appState } from '../../state/State.js';
+import { FocusPanelManager } from '../FocusPanelManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
@@ -450,6 +451,7 @@ export const SeatingRandomPicker = {
                 ${itemsHtml}
             </div>
         `;
+        FocusPanelManager.bindScrollAffordances?.(historyPopover.querySelector('.sc-random-history-list'));
     },
 
     /**

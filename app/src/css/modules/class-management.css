@@ -285,21 +285,24 @@
 .pick-students-list::-webkit-scrollbar-track,
 .move-class-list::-webkit-scrollbar-track,
 .trombi-popover-list::-webkit-scrollbar-track,
-.history-popover-list::-webkit-scrollbar-track {
+.history-popover-list::-webkit-scrollbar-track,
+.sc-random-history-list::-webkit-scrollbar-track,
+.model-dropdown-list::-webkit-scrollbar-track,
+.custom-dropdown-menu::-webkit-scrollbar-track {
     margin-block: 6px 10px;
 }
 
 /* Brume dynamique verticale aux extrémités (Edge Scrims mutualisés Menu, Modale Mes classes, Paramètres, Guide, Piocher/Déplacer, Trombinoscope, Focus & Plan) */
-:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area):is(.can-scroll-top, .can-scroll-bottom) {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list, .sc-sheet-content, .sc-sheet-picker-list, .journal-content:not(:has(.journal-draft-preview.visible)), .sc-random-history-list, .model-dropdown-list, .custom-dropdown-menu):is(.can-scroll-top, .can-scroll-bottom) {
     -webkit-mask-image: linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%));
     mask-image: linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%));
 }
 
-:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-top {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list, .sc-sheet-content, .sc-sheet-picker-list, .journal-content:not(:has(.journal-draft-preview.visible)), .sc-random-history-list, .model-dropdown-list, .custom-dropdown-menu).can-scroll-top {
     --scrim-top: transparent 0px, rgba(0, 0, 0, 0.18) 6px, rgba(0, 0, 0, 0.5) 13px, rgba(0, 0, 0, 0.82) 20px, #000 28px;
 }
 
-:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-bottom {
+:is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list, .sc-sheet-content, .sc-sheet-picker-list, .journal-content:not(:has(.journal-draft-preview.visible)), .sc-random-history-list, .model-dropdown-list, .custom-dropdown-menu).can-scroll-bottom {
     --scrim-bottom: #000 calc(100% - 28px), rgba(0, 0, 0, 0.82) calc(100% - 20px), rgba(0, 0, 0, 0.5) calc(100% - 13px), rgba(0, 0, 0, 0.18) calc(100% - 6px), transparent 100%;
 }
 
@@ -946,7 +949,7 @@
    garde une vraie marge entre la carte et le curseur sans sur-élargir la droite,
    et préserve le curseur de défilement de l'estompage vertical du mask-image */
 @media (min-width: 769px) {
-    :is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list):is(.can-scroll-top, .can-scroll-bottom) {
+    :is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list, .sc-sheet-content, .sc-sheet-picker-list, .journal-content:not(:has(.journal-draft-preview.visible)), .sc-random-history-list, .model-dropdown-list, .custom-dropdown-menu):is(.can-scroll-top, .can-scroll-bottom) {
         -webkit-mask-image:
             linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%)),
             linear-gradient(to left, #000 var(--scrollbar-width), transparent var(--scrollbar-width));
@@ -981,7 +984,13 @@
     .class-dropdown-list,
     #classManagementModal .modal-body,
     .pick-students-list,
-    .move-class-list {
+    .move-class-list,
+    .sc-sheet-content,
+    .sc-sheet-picker-list,
+    .journal-content,
+    .sc-random-history-list,
+    .model-dropdown-list,
+    .custom-dropdown-menu {
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -989,7 +998,13 @@
     .class-dropdown-list::-webkit-scrollbar,
     #classManagementModal .modal-body::-webkit-scrollbar,
     .pick-students-list::-webkit-scrollbar,
-    .move-class-list::-webkit-scrollbar {
+    .move-class-list::-webkit-scrollbar,
+    .sc-sheet-content::-webkit-scrollbar,
+    .sc-sheet-picker-list::-webkit-scrollbar,
+    .journal-content::-webkit-scrollbar,
+    .sc-random-history-list::-webkit-scrollbar,
+    .model-dropdown-list::-webkit-scrollbar,
+    .custom-dropdown-menu::-webkit-scrollbar {
         display: none;
         width: 0;
         height: 0;

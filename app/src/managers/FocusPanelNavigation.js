@@ -166,7 +166,7 @@ export const FocusPanelNavigation = {
             if (!isSwiping) {
                 // Determine swipe intent: horizontal vs vertical
                 if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
-                    if (startedOnCloseEdge && diffX > 0) {
+                    if (startedOnCloseEdge && diffX > 0 && this.callbacks?.isLeftEdgeCloseCandidate?.(touchStartX)) {
                         clearSwipeStyles(swipeContent);
                         resetGestureVars(); // Yield cleanly to left-edge panel dismiss
                         return;

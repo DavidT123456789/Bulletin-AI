@@ -1,5 +1,5 @@
 /**
- * @fileoverview Shared touch gesture primitives for mobile navigation and sheet dismissal.
+ * @fileoverview Shared touch gesture primitives for mobile navigation and sheet/panel dismissal.
  * @module utils/TouchGestures
  */
 
@@ -69,48 +69,58 @@ export function shouldIgnoreHorizontalSwipeTarget(target) {
     return false;
 }
 
+const isFocusedInputTarget = (target) => {
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+    if (!active || !target) return false;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) && (active === target || active.contains(target))) {
+        return true;
+    }
+    const editable = target.closest?.('[contenteditable="true"]');
+    return Boolean(editable && (editable === active || editable.contains(active)));
+};
+
 /**
- * Attaches iOS-style vertical pull-to-dismiss behavior to a bottom-sheet or upward-sliding page.
- * Enforces strict vertical downward axis lock (`>= 8px` with `dy > 0` and `|dy| > |dx|`),
- * respects internal scroll position (`scrollTop <= 1`), syncs backdrop/background scale,
- * and cleans up cleanly on cancel or destroy.
+ * Shared directional drag-to-dismiss state machine for vertical bottom-sheets (`direction: 'y'`)
+ * and horizontal left-edge panel dismiss (`direction: 'x'`).
  *
- * @param {HTMLElement|null} sheetEl
- * @param {Object} [options={}]
- * @param {HTMLElement|null} [options.backdropEl=null]
- * @param {HTMLElement|string|null} [options.scrollContainer=null]
- * @param {Function} [options.isEnabled]
- * @param {Function} [options.onDismiss]
- * @param {HTMLElement|null} [options.scaleTargetEl=null]
- * @param {number} [options.dismissThreshold=110]
- * @param {number} [options.velocityThreshold=0.55]
- * @returns {{ destroy: Function, reset: Function }}
+ * @private
+ * @param {HTMLElement|null} targetEl
+ * @param {Object} config
+ * @returns {{ destroy: Function, reset: Function, isEdgeCandidate: Function }}
  */
-export function attachSheetPullToDismiss(sheetEl, options = {}) {
-    if (!sheetEl || typeof sheetEl.addEventListener !== 'function') {
-        return { destroy() {}, reset() {} };
+function attachDirectionalDismiss(targetEl, config) {
+    if (!targetEl || typeof targetEl.addEventListener !== 'function') {
+        return { destroy() {}, reset() {}, isEdgeCandidate: () => false };
     }
 
     const {
+        direction,
         backdropEl = null,
-        scrollContainer = null,
-        isEnabled = () => true,
-        onDismiss = () => {},
         scaleTargetEl = null,
-        dismissThreshold = 110,
-        velocityThreshold = 0.55
-    } = options;
+        scrollContainer = null,
+        edgeWidth = 20,
+        dismissThreshold = 130,
+        dismissRatio = 0.28,
+        velocityThreshold = 0.5,
+        exitDurationMs = 250,
+        snapDurationMs = 300,
+        isEnabled = () => true,
+        onDismiss = () => {}
+    } = config;
+
+    const isHorizontal = direction === 'x';
 
     let startX = null;
     let startY = null;
-    let lastY = 0;
+    let lastPos = 0;
     let lastMoveTime = 0;
-    let velocityY = 0;
-    let currentDy = 0;
+    let velocity = 0;
+    let currentDelta = 0;
     let axis = null;
     let aborted = false;
     let activeScrollEl = null;
     let animTimer = null;
+    let isDismissing = false;
     let suppressNextClickUntil = 0;
 
     const clearAnimTimer = () => {
@@ -118,12 +128,13 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
             clearTimeout(animTimer);
             animTimer = null;
         }
+        isDismissing = false;
     };
 
     const clearInlineStyles = () => {
-        sheetEl.style.transition = '';
-        sheetEl.style.transform = '';
-        sheetEl.style.willChange = '';
+        targetEl.style.transition = '';
+        targetEl.style.transform = '';
+        targetEl.style.willChange = '';
         if (backdropEl) {
             backdropEl.style.transition = '';
             backdropEl.style.opacity = '';
@@ -138,10 +149,10 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
     const resetVars = () => {
         startX = null;
         startY = null;
-        lastY = 0;
+        lastPos = 0;
         lastMoveTime = 0;
-        velocityY = 0;
-        currentDy = 0;
+        velocity = 0;
+        currentDelta = 0;
         axis = null;
         aborted = false;
         activeScrollEl = null;
@@ -153,21 +164,28 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
         clearInlineStyles();
     };
 
+    const settlePendingSnapBack = () => {
+        if (animTimer !== null && !isDismissing) {
+            clearAnimTimer();
+            clearInlineStyles();
+        }
+    };
+
+    const isEdgeCandidate = (clientX) => {
+        if (!isHorizontal || typeof clientX !== 'number' || !isEnabled() || isDismissing || aborted) {
+            return false;
+        }
+        settlePendingSnapBack();
+        const left = targetEl.getBoundingClientRect?.().left ?? 0;
+        const relX = clientX - left;
+        return relX >= -4 && relX <= edgeWidth;
+    };
+
     const resolveScrollContainer = () => {
         if (!scrollContainer) return null;
         return typeof scrollContainer === 'string'
-            ? sheetEl.querySelector(scrollContainer)
+            ? targetEl.querySelector(scrollContainer)
             : scrollContainer;
-    };
-
-    const isFocusedInputTarget = (target) => {
-        const active = typeof document !== 'undefined' ? document.activeElement : null;
-        if (!active || !target) return false;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) && (active === target || active.contains(target))) {
-            return true;
-        }
-        const editable = target.closest?.('[contenteditable="true"]');
-        return Boolean(editable && (editable === active || editable.contains(active)));
     };
 
     const onClickCapture = (e) => {
@@ -180,33 +198,40 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
 
     const onTouchStart = (e) => {
         suppressNextClickUntil = 0;
-        if (e.touches.length !== 1 || !isEnabled()) return;
-        if (e.target?.closest?.('select, input[type="range"]')) return;
-        if (isFocusedInputTarget(e.target)) return;
+        resetVars();
 
-        const scrollEl = resolveScrollContainer();
-        const startedInScroll = Boolean(scrollEl && (scrollEl === e.target || scrollEl.contains(e.target)));
-        if (startedInScroll && (scrollEl.scrollTop || 0) > 1) {
+        if (!e.touches || e.touches.length !== 1 || !isEnabled() || isDismissing) {
             return;
         }
 
-        const hadPendingAnim = animTimer !== null;
-        clearAnimTimer();
-        resetVars();
-        if (hadPendingAnim) {
-            clearInlineStyles();
+        settlePendingSnapBack();
+
+        const touch = e.touches[0];
+        if (isHorizontal) {
+            if (!isEdgeCandidate(touch.clientX) || shouldIgnoreHorizontalSwipeTarget(e.target)) {
+                return;
+            }
+        } else {
+            if (e.target?.closest?.('select, input[type="range"]') || isFocusedInputTarget(e.target)) {
+                return;
+            }
+            const scrollEl = resolveScrollContainer();
+            const startedInScroll = Boolean(scrollEl && (scrollEl === e.target || scrollEl.contains(e.target)));
+            if (startedInScroll && (scrollEl.scrollTop || 0) > 1) {
+                return;
+            }
+            activeScrollEl = startedInScroll ? scrollEl : null;
         }
 
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        lastY = startY;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        lastPos = isHorizontal ? startX : startY;
         lastMoveTime = e.timeStamp || Date.now();
-        activeScrollEl = startedInScroll ? scrollEl : null;
     };
 
     const onTouchMove = (e) => {
-        if (startY === null || aborted) return;
-        if ((e.touches && e.touches.length > 1) || !isEnabled()) {
+        if (startX === null || startY === null || aborted) return;
+        if (!e.touches || e.touches.length !== 1 || !isEnabled()) {
             reset();
             return;
         }
@@ -214,41 +239,59 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
         const touch = e.touches[0];
         const dx = touch.clientX - startX;
         const dy = touch.clientY - startY;
+        const primaryDelta = isHorizontal ? dx : dy;
+        const crossDelta = isHorizontal ? dy : dx;
 
         if (!axis) {
             if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
 
-            if (dy <= 0 || Math.abs(dx) >= Math.abs(dy) || (activeScrollEl && (activeScrollEl.scrollTop || 0) > 1)) {
+            const invalidDirection = primaryDelta <= 0 ||
+                Math.abs(crossDelta) >= Math.abs(primaryDelta) ||
+                (!isHorizontal && activeScrollEl && (activeScrollEl.scrollTop || 0) > 1);
+
+            if (invalidDirection) {
                 aborted = true;
-                resetVars();
-                clearInlineStyles();
+                startX = null;
+                startY = null;
                 return;
             }
 
-            axis = 'y';
-            sheetEl.style.transition = 'none';
-            sheetEl.style.willChange = 'transform';
+            axis = direction;
+            targetEl.style.transition = 'none';
+            targetEl.style.willChange = 'transform';
             if (backdropEl) backdropEl.style.transition = 'none';
             if (scaleTargetEl) scaleTargetEl.style.transition = 'none';
+
+            if (isHorizontal) {
+                const active = typeof document !== 'undefined' ? document.activeElement : null;
+                if (active && targetEl.contains(active) && active.matches?.('input, textarea, [contenteditable="true"]')) {
+                    active.blur?.();
+                }
+            }
         }
 
         if (e.cancelable) e.preventDefault();
 
-        const clampedDy = Math.max(0, dy);
+        const clampedDelta = Math.max(0, primaryDelta);
+        const currentPos = isHorizontal ? touch.clientX : touch.clientY;
         const now = e.timeStamp || Date.now();
         const dt = now - lastMoveTime;
         if (dt >= 4) {
-            const instVy = (touch.clientY - lastY) / dt;
-            velocityY = velocityY === 0 ? instVy : (velocityY * 0.4 + instVy * 0.6);
-            lastY = touch.clientY;
+            const instV = (currentPos - lastPos) / dt;
+            velocity = velocity === 0 ? instV : (velocity * 0.4 + instV * 0.6);
+            lastPos = currentPos;
             lastMoveTime = now;
         }
 
-        currentDy = clampedDy;
-        sheetEl.style.transform = `translate3d(0, ${clampedDy}px, 0)`;
+        currentDelta = clampedDelta;
+        targetEl.style.transform = isHorizontal
+            ? `translate3d(${clampedDelta}px, 0, 0)`
+            : `translate3d(0, ${clampedDelta}px, 0)`;
 
-        const sheetHeight = sheetEl.offsetHeight || window.innerHeight || 500;
-        const progress = Math.min(1, clampedDy / sheetHeight);
+        const span = (isHorizontal ? targetEl.offsetWidth : targetEl.offsetHeight) ||
+            (typeof window !== 'undefined' ? (isHorizontal ? window.innerWidth : window.innerHeight) : 450) || 450;
+        const progress = Math.min(1, clampedDelta / span);
+
         if (backdropEl) {
             backdropEl.style.opacity = String(Math.max(0, 1 - progress));
         }
@@ -260,72 +303,76 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
         }
     };
 
-    const finalizeGesture = (shouldEvaluateDismiss, eventTimeStamp) => {
-        if (startY === null) return;
-
-        const wasDragging = axis === 'y';
-        const dy = currentDy;
-        const vy = velocityY;
+    const finalizeGesture = (shouldEvaluateDismiss, e) => {
+        const wasDragging = axis === direction;
+        const delta = currentDelta;
+        const v = velocity;
         const lastMove = lastMoveTime;
+        const eventTimeStamp = e?.timeStamp || Date.now();
         resetVars();
 
         if (!wasDragging) {
-            clearInlineStyles();
             return;
         }
 
         suppressNextClickUntil = Date.now() + 350;
+        if (shouldEvaluateDismiss && e?.cancelable) e.preventDefault();
 
-        const sheetHeight = sheetEl.offsetHeight || window.innerHeight || 500;
-        const effectiveThreshold = Math.min(dismissThreshold, Math.max(72, Math.round(sheetHeight * 0.28)));
-        const isFastFlick = (eventTimeStamp - lastMove) <= 100 && dy >= 32 && vy >= velocityThreshold;
+        const span = (isHorizontal ? targetEl.offsetWidth : targetEl.offsetHeight) ||
+            (typeof window !== 'undefined' ? (isHorizontal ? window.innerWidth : window.innerHeight) : 450) || 450;
+        const effectiveThreshold = Math.min(dismissThreshold, Math.max(72, Math.round(span * dismissRatio)));
+        const isFastFlick = (eventTimeStamp - lastMove) <= 100 && delta >= 32 && v >= velocityThreshold;
         const reducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 
-        if (shouldEvaluateDismiss && (dy >= effectiveThreshold || isFastFlick)) {
+        if (shouldEvaluateDismiss && (delta >= effectiveThreshold || isFastFlick)) {
             if (reducedMotion) {
                 onDismiss();
                 clearInlineStyles();
                 return;
             }
 
-            sheetEl.style.transition = 'transform 0.26s cubic-bezier(0.32, 0.72, 0, 1)';
-            sheetEl.style.transform = 'translate3d(0, 100%, 0)';
+            const exitSec = (exitDurationMs / 1000).toFixed(2);
+            const fadeSec = (Math.max(180, exitDurationMs - 20) / 1000).toFixed(2);
+            targetEl.style.transition = `transform ${exitSec}s cubic-bezier(0.32, 0.72, 0, 1)`;
+            targetEl.style.transform = isHorizontal ? 'translate3d(100%, 0, 0)' : 'translate3d(0, 100%, 0)';
             if (backdropEl) {
-                backdropEl.style.transition = 'opacity 0.24s ease';
+                backdropEl.style.transition = `opacity ${fadeSec}s ease`;
                 backdropEl.style.opacity = '0';
             }
             if (scaleTargetEl) {
-                scaleTargetEl.style.transition = 'transform 0.26s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.24s ease';
+                scaleTargetEl.style.transition = `transform ${exitSec}s cubic-bezier(0.32, 0.72, 0, 1), opacity ${fadeSec}s ease`;
                 scaleTargetEl.style.transform = 'scale(1)';
                 scaleTargetEl.style.opacity = '1';
             }
 
             clearAnimTimer();
+            isDismissing = true;
             animTimer = setTimeout(() => {
                 animTimer = null;
+                isDismissing = false;
                 if (!isEnabled()) {
                     clearInlineStyles();
                     return;
                 }
-                sheetEl.style.transition = 'none';
+                targetEl.style.transition = 'none';
                 if (scaleTargetEl) scaleTargetEl.style.transition = 'none';
                 onDismiss();
-                if (sheetEl.isConnected) {
-                    sheetEl.style.transform = '';
-                    sheetEl.style.willChange = '';
+                if (targetEl.isConnected) {
+                    targetEl.style.transform = '';
+                    targetEl.style.willChange = '';
                     if (scaleTargetEl) {
                         scaleTargetEl.style.transform = '';
                         scaleTargetEl.style.opacity = '';
                     }
-                    void sheetEl.offsetWidth;
-                    sheetEl.style.transition = '';
+                    void targetEl.offsetWidth;
+                    targetEl.style.transition = '';
                     if (scaleTargetEl) scaleTargetEl.style.transition = '';
                 }
                 if (backdropEl?.isConnected) {
                     backdropEl.style.transition = '';
                     backdropEl.style.opacity = '';
                 }
-            }, 260);
+            }, exitDurationMs);
             return;
         }
 
@@ -334,14 +381,16 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
             return;
         }
 
-        sheetEl.style.transition = 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)';
-        sheetEl.style.transform = 'translate3d(0, 0, 0)';
+        const snapSec = (snapDurationMs / 1000).toFixed(2);
+        const snapFadeSec = (Math.max(200, snapDurationMs - 40) / 1000).toFixed(2);
+        targetEl.style.transition = `transform ${snapSec}s cubic-bezier(0.32, 0.72, 0, 1)`;
+        targetEl.style.transform = 'translate3d(0, 0, 0)';
         if (backdropEl) {
-            backdropEl.style.transition = 'opacity 0.28s ease';
+            backdropEl.style.transition = `opacity ${snapFadeSec}s ease`;
             backdropEl.style.opacity = '1';
         }
         if (scaleTargetEl) {
-            scaleTargetEl.style.transition = 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.28s ease';
+            scaleTargetEl.style.transition = `transform ${snapSec}s cubic-bezier(0.32, 0.72, 0, 1), opacity ${snapFadeSec}s ease`;
             scaleTargetEl.style.transform = '';
             scaleTargetEl.style.opacity = '';
         }
@@ -350,280 +399,17 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
         animTimer = setTimeout(() => {
             animTimer = null;
             clearInlineStyles();
-        }, 330);
-    };
-
-    const onTouchEnd = (e) => finalizeGesture(true, e?.timeStamp || Date.now());
-    const onTouchCancel = (e) => finalizeGesture(false, e?.timeStamp || Date.now());
-
-    sheetEl.addEventListener('click', onClickCapture, true);
-    sheetEl.addEventListener('touchstart', onTouchStart, { passive: true });
-    sheetEl.addEventListener('touchmove', onTouchMove, { passive: false });
-    sheetEl.addEventListener('touchend', onTouchEnd, { passive: true });
-    sheetEl.addEventListener('touchcancel', onTouchCancel, { passive: true });
-
-    return {
-        reset,
-        destroy() {
-            reset();
-            suppressNextClickUntil = 0;
-            sheetEl.removeEventListener('click', onClickCapture, true);
-            sheetEl.removeEventListener('touchstart', onTouchStart);
-            sheetEl.removeEventListener('touchmove', onTouchMove);
-            sheetEl.removeEventListener('touchend', onTouchEnd);
-            sheetEl.removeEventListener('touchcancel', onTouchCancel);
-        }
-    };
-}
-
-/**
- * Attaches iOS-style interactive left-edge swipe-to-dismiss to a right-anchored panel.
- * Activates ONLY when touch starts within `edgeWidth` px of the panel's left edge
- * AND moves horizontally to the right (`dx > 0`), yielding immediately on leftward
- * or vertical drags so full-width sibling gestures (e.g. inter-student swipe) stay conflict-free.
- *
- * @param {HTMLElement|null} panelEl
- * @param {Object} [options={}]
- * @param {HTMLElement|null} [options.backdropEl=null]
- * @param {number} [options.edgeWidth=20]
- * @param {number} [options.dismissRatio=0.28]
- * @param {number} [options.velocityThreshold=0.45]
- * @param {Function} [options.isEnabled]
- * @param {Function} [options.onDismiss]
- * @returns {{ destroy: Function, reset: Function, isEdgeCandidate: Function }}
- */
-export function attachLeftEdgeDismiss(panelEl, options = {}) {
-    if (!panelEl || typeof panelEl.addEventListener !== 'function') {
-        return { destroy() {}, reset() {}, isEdgeCandidate: () => false };
-    }
-
-    const {
-        backdropEl = null,
-        edgeWidth = 20,
-        dismissRatio = 0.28,
-        velocityThreshold = 0.45,
-        isEnabled = () => true,
-        onDismiss = () => {}
-    } = options;
-
-    let startX = null;
-    let startY = null;
-    let lastX = 0;
-    let lastMoveTime = 0;
-    let velocityX = 0;
-    let currentDx = 0;
-    let axis = null;
-    let aborted = false;
-    let animTimer = null;
-    let suppressNextClickUntil = 0;
-
-    const clearAnimTimer = () => {
-        if (animTimer !== null) {
-            clearTimeout(animTimer);
-            animTimer = null;
-        }
-    };
-
-    const clearInlineStyles = () => {
-        panelEl.style.transition = '';
-        panelEl.style.transform = '';
-        panelEl.style.willChange = '';
-        if (backdropEl) {
-            backdropEl.style.transition = '';
-            backdropEl.style.opacity = '';
-        }
-    };
-
-    const resetVars = () => {
-        startX = null;
-        startY = null;
-        lastX = 0;
-        lastMoveTime = 0;
-        velocityX = 0;
-        currentDx = 0;
-        axis = null;
-        aborted = false;
-    };
-
-    const reset = () => {
-        clearAnimTimer();
-        resetVars();
-        clearInlineStyles();
-    };
-
-    const isEdgeCandidate = (clientX) => {
-        if (typeof clientX !== 'number' || !isEnabled()) return false;
-        const left = panelEl.getBoundingClientRect?.().left ?? 0;
-        const relX = clientX - left;
-        return relX >= -4 && relX <= edgeWidth;
-    };
-
-    const onClickCapture = (e) => {
-        if (Date.now() < suppressNextClickUntil) {
-            e.preventDefault();
-            e.stopPropagation();
-            suppressNextClickUntil = 0;
-        }
-    };
-
-    const onTouchStart = (e) => {
-        suppressNextClickUntil = 0;
-        if (!e.touches || e.touches.length !== 1 || !isEnabled()) {
-            resetVars();
-            return;
-        }
-
-        const clientX = e.touches[0].clientX;
-        if (!isEdgeCandidate(clientX) || shouldIgnoreHorizontalSwipeTarget(e.target)) {
-            resetVars();
-            return;
-        }
-
-        clearAnimTimer();
-        startX = clientX;
-        startY = e.touches[0].clientY;
-        lastX = startX;
-        lastMoveTime = e.timeStamp || Date.now();
-        velocityX = 0;
-        currentDx = 0;
-        axis = null;
-        aborted = false;
-    };
-
-    const onTouchMove = (e) => {
-        if (startX === null || aborted || !e.touches || e.touches.length !== 1) return;
-
-        const x = e.touches[0].clientX;
-        const y = e.touches[0].clientY;
-        const rawDx = x - startX;
-        const dy = y - startY;
-
-        if (!axis) {
-            if (Math.abs(rawDx) < 8 && Math.abs(dy) < 8) return;
-            if (rawDx > 8 && Math.abs(rawDx) > Math.abs(dy)) {
-                axis = 'x';
-                panelEl.style.transition = 'none';
-                panelEl.style.willChange = 'transform';
-                if (backdropEl) {
-                    backdropEl.style.transition = 'none';
-                }
-                const active = typeof document !== 'undefined' ? document.activeElement : null;
-                if (active && panelEl.contains(active) && active.matches?.('input, textarea, [contenteditable="true"]')) {
-                    active.blur?.();
-                }
-            } else {
-                aborted = true;
-                startX = null;
-                return;
-            }
-        }
-
-        if (axis !== 'x') return;
-
-        if (e.cancelable) e.preventDefault();
-
-        const dx = Math.max(0, rawDx);
-        const now = e.timeStamp || Date.now();
-        const dt = now - lastMoveTime;
-        if (dt >= 4) {
-            const instVx = (x - lastX) / dt;
-            velocityX = velocityX === 0 ? instVx : (velocityX * 0.4 + instVx * 0.6);
-            lastX = x;
-            lastMoveTime = now;
-        }
-        currentDx = dx;
-
-        const panelWidth = panelEl.offsetWidth || (typeof window !== 'undefined' ? window.innerWidth : 400) || 400;
-        const progress = Math.min(1, dx / panelWidth);
-
-        panelEl.style.transform = `translate3d(${dx}px, 0, 0)`;
-        if (backdropEl) {
-            backdropEl.style.opacity = String(Math.max(0, 1 - progress));
-        }
-    };
-
-    const finalizeGesture = (shouldEvaluateDismiss, e) => {
-        const wasHorizontal = axis === 'x';
-        const dx = currentDx;
-        const vx = velocityX;
-        const lastMove = lastMoveTime;
-        const eventTimeStamp = e?.timeStamp || Date.now();
-        resetVars();
-
-        if (!wasHorizontal) return;
-
-        suppressNextClickUntil = Date.now() + 350;
-        if (shouldEvaluateDismiss && e?.cancelable) e.preventDefault();
-
-        const panelWidth = panelEl.offsetWidth || (typeof window !== 'undefined' ? window.innerWidth : 400) || 400;
-        const effectiveThreshold = Math.min(130, Math.max(72, Math.round(panelWidth * dismissRatio)));
-        const isFastFlick = (eventTimeStamp - lastMove) <= 100 && dx >= 32 && vx >= velocityThreshold;
-        const reducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
-
-        if (shouldEvaluateDismiss && (dx >= effectiveThreshold || isFastFlick)) {
-            if (reducedMotion) {
-                onDismiss();
-                clearInlineStyles();
-                return;
-            }
-
-            panelEl.style.transition = 'transform 0.24s cubic-bezier(0.32, 0.72, 0, 1)';
-            panelEl.style.transform = 'translate3d(100%, 0, 0)';
-            if (backdropEl) {
-                backdropEl.style.transition = 'opacity 0.22s ease';
-                backdropEl.style.opacity = '0';
-            }
-
-            clearAnimTimer();
-            animTimer = setTimeout(() => {
-                animTimer = null;
-                if (!isEnabled()) {
-                    clearInlineStyles();
-                    return;
-                }
-                panelEl.style.transition = 'none';
-                onDismiss();
-                if (panelEl.isConnected) {
-                    panelEl.style.transform = '';
-                    panelEl.style.willChange = '';
-                    void panelEl.offsetWidth;
-                    panelEl.style.transition = '';
-                }
-                if (backdropEl?.isConnected) {
-                    backdropEl.style.transition = '';
-                    backdropEl.style.opacity = '';
-                }
-            }, 240);
-            return;
-        }
-
-        if (reducedMotion) {
-            clearInlineStyles();
-            return;
-        }
-
-        panelEl.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
-        panelEl.style.transform = 'translate3d(0, 0, 0)';
-        if (backdropEl) {
-            backdropEl.style.transition = 'opacity 0.24s ease';
-            backdropEl.style.opacity = '1';
-        }
-
-        clearAnimTimer();
-        animTimer = setTimeout(() => {
-            animTimer = null;
-            clearInlineStyles();
-        }, 290);
+        }, snapDurationMs + 10);
     };
 
     const onTouchEnd = (e) => finalizeGesture(true, e);
     const onTouchCancel = (e) => finalizeGesture(false, e);
 
-    panelEl.addEventListener('click', onClickCapture, true);
-    panelEl.addEventListener('touchstart', onTouchStart, { passive: true });
-    panelEl.addEventListener('touchmove', onTouchMove, { passive: false });
-    panelEl.addEventListener('touchend', onTouchEnd, { passive: false });
-    panelEl.addEventListener('touchcancel', onTouchCancel, { passive: true });
+    targetEl.addEventListener('click', onClickCapture, true);
+    targetEl.addEventListener('touchstart', onTouchStart, { passive: true });
+    targetEl.addEventListener('touchmove', onTouchMove, { passive: false });
+    targetEl.addEventListener('touchend', onTouchEnd, { passive: false });
+    targetEl.addEventListener('touchcancel', onTouchCancel, { passive: true });
 
     return {
         reset,
@@ -631,11 +417,54 @@ export function attachLeftEdgeDismiss(panelEl, options = {}) {
         destroy() {
             reset();
             suppressNextClickUntil = 0;
-            panelEl.removeEventListener('click', onClickCapture, true);
-            panelEl.removeEventListener('touchstart', onTouchStart);
-            panelEl.removeEventListener('touchmove', onTouchMove);
-            panelEl.removeEventListener('touchend', onTouchEnd);
-            panelEl.removeEventListener('touchcancel', onTouchCancel);
+            targetEl.removeEventListener('click', onClickCapture, true);
+            targetEl.removeEventListener('touchstart', onTouchStart);
+            targetEl.removeEventListener('touchmove', onTouchMove);
+            targetEl.removeEventListener('touchend', onTouchEnd);
+            targetEl.removeEventListener('touchcancel', onTouchCancel);
         }
     };
+}
+
+/**
+ * Attaches iOS-style vertical pull-to-dismiss behavior to a bottom-sheet or upward-sliding page.
+ *
+ * @param {HTMLElement|null} sheetEl
+ * @param {Object} [options={}]
+ * @returns {{ destroy: Function, reset: Function }}
+ */
+export function attachSheetPullToDismiss(sheetEl, options = {}) {
+    const ctrl = attachDirectionalDismiss(sheetEl, {
+        direction: 'y',
+        dismissThreshold: 110,
+        dismissRatio: 0.28,
+        velocityThreshold: 0.55,
+        exitDurationMs: 260,
+        snapDurationMs: 320,
+        ...options
+    });
+    return { reset: ctrl.reset, destroy: ctrl.destroy };
+}
+
+/**
+ * Attaches iOS-style interactive left-edge swipe-to-dismiss to a right-anchored panel.
+ * Activates ONLY when touch starts within `edgeWidth` px of the panel's left edge
+ * AND moves horizontally to the right (`dx > 0`), yielding immediately on leftward
+ * or vertical drags so full-width sibling gestures stay conflict-free.
+ *
+ * @param {HTMLElement|null} panelEl
+ * @param {Object} [options={}]
+ * @returns {{ destroy: Function, reset: Function, isEdgeCandidate: Function }}
+ */
+export function attachLeftEdgeDismiss(panelEl, options = {}) {
+    return attachDirectionalDismiss(panelEl, {
+        direction: 'x',
+        edgeWidth: 20,
+        dismissThreshold: 130,
+        dismissRatio: 0.28,
+        velocityThreshold: 0.45,
+        exitDurationMs: 240,
+        snapDurationMs: 280,
+        ...options
+    });
 }

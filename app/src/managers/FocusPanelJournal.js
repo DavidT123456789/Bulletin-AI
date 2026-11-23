@@ -357,6 +357,7 @@ export const FocusPanelJournal = {
             this._setupDeleteHandlers(contentEl, result);
             this._initTooltips(contentEl);
             this._updateCountBadge(result);
+            this._callbacks.bindScrollAffordances?.(contentEl);
             return;
         }
 
@@ -422,6 +423,7 @@ export const FocusPanelJournal = {
 
         // Update count badge
         this._updateCountBadge(result);
+        this._callbacks.bindScrollAffordances?.(contentEl);
     },
 
     /**

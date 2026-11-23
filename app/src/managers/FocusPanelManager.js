@@ -111,7 +111,8 @@ export const FocusPanelManager = {
 
         FocusPanelJournal.init({
             getCurrentStudentId: () => this.currentStudentId,
-            onStatusRefresh: () => FocusPanelStatus.refreshAppreciationStatus()
+            onStatusRefresh: () => FocusPanelStatus.refreshAppreciationStatus(),
+            bindScrollAffordances: (el) => this.bindScrollAffordances(el)
         });
 
         FocusPanelAnalysis.init({
