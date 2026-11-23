@@ -288,7 +288,10 @@
 .history-popover-list::-webkit-scrollbar-track,
 .sc-random-history-list::-webkit-scrollbar-track,
 .model-dropdown-list::-webkit-scrollbar-track,
-.custom-dropdown-menu::-webkit-scrollbar-track {
+.custom-dropdown-menu::-webkit-scrollbar-track,
+.header-dropdown-menu::-webkit-scrollbar-track,
+.action-dropdown-menu::-webkit-scrollbar-track,
+.global-actions-dropdown-menu::-webkit-scrollbar-track {
     margin-block: 6px 10px;
 }
 
@@ -980,6 +983,25 @@
    ==================================================================== */
 
 /* Tablette & Mobile (<= 768px) : Cibles tactiles d'en-tête confortables & masquage scrollbar */
+@media (max-width: 768px), (pointer: coarse) {
+    .header-dropdown-menu,
+    .action-dropdown-menu,
+    .global-actions-dropdown-menu,
+    .custom-dropdown-menu {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .header-dropdown-menu::-webkit-scrollbar,
+    .action-dropdown-menu::-webkit-scrollbar,
+    .global-actions-dropdown-menu::-webkit-scrollbar,
+    .custom-dropdown-menu::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+}
+
 @media (max-width: 768px) {
     .class-dropdown-list,
     #classManagementModal .modal-body,
@@ -989,8 +1011,7 @@
     .sc-sheet-picker-list,
     .journal-content,
     .sc-random-history-list,
-    .model-dropdown-list,
-    .custom-dropdown-menu {
+    .model-dropdown-list {
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
@@ -1003,8 +1024,7 @@
     .sc-sheet-picker-list::-webkit-scrollbar,
     .journal-content::-webkit-scrollbar,
     .sc-random-history-list::-webkit-scrollbar,
-    .model-dropdown-list::-webkit-scrollbar,
-    .custom-dropdown-menu::-webkit-scrollbar {
+    .model-dropdown-list::-webkit-scrollbar {
         display: none;
         width: 0;
         height: 0;

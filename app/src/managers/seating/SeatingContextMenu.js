@@ -220,6 +220,7 @@ export const SeatingContextMenu = {
 
         void menu.offsetWidth;
         menu.classList.add('open');
+        FocusPanelManager.bindScrollAffordances?.(menu);
         TooltipsUI?.initTooltips?.(menu);
 
         if (context.openedViaKeyboard || (!context.clientX && !context.clientY)) {

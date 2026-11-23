@@ -118,6 +118,7 @@ export const GeneralListeners = {
                         DOM.headerMenuDropdown.style.width = '220px'; // Ensure good width
                     }
 
+                    FocusPanelManager.bindScrollAffordances?.(DOM.headerMenuDropdown);
                     HistoryManager.pushState('headerMenu', (opts) => closeMenu(opts));
                     this._onMenuOpen();
                 } else {

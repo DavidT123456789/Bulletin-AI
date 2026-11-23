@@ -102,6 +102,9 @@ export const ClassManageModal = {
         moreBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             moreMenu?.classList.toggle('open');
+            if (moreMenu?.classList.contains('open')) {
+                FocusPanelManager.bindScrollAffordances?.(moreMenu);
+            }
         });
 
         const setInlineConfirmDisabled = (btn, isDisabled) => {

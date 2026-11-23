@@ -125,6 +125,30 @@
     padding: 6px;
 }
 
+/* Brume dynamique des menus auto-contenus (préserve bordure, ombre et coins arrondis) */
+:is(.header-dropdown-menu, .action-dropdown-menu, .global-actions-dropdown-menu).can-scroll-top::before,
+:is(.header-dropdown-menu, .action-dropdown-menu, .global-actions-dropdown-menu).can-scroll-bottom::after {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    height: var(--scrim-size, 22px);
+    position: sticky;
+    z-index: 2;
+    pointer-events: none;
+}
+
+:is(.header-dropdown-menu, .action-dropdown-menu, .global-actions-dropdown-menu).can-scroll-top::before {
+    top: 0;
+    margin: -6px -6px calc(6px - var(--scrim-size, 22px) - 1px) -6px;
+    background: linear-gradient(to bottom, var(--dropdown-bg) 18%, transparent);
+}
+
+:is(.header-dropdown-menu, .action-dropdown-menu, .global-actions-dropdown-menu).can-scroll-bottom::after {
+    bottom: 0;
+    margin: calc(6px - var(--scrim-size, 22px) - 1px) -6px -6px -6px;
+    background: linear-gradient(to top, var(--dropdown-bg) 18%, transparent);
+}
+
 /* === Liste déroulante (options) === */
 .custom-dropdown-menu {
     position: absolute;

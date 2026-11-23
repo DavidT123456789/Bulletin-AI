@@ -172,6 +172,7 @@ export const ListViewEvents = {
             menu.classList.add('open');
             dropdown?.classList.add('open');
             triggerBtn?.setAttribute('aria-expanded', 'true');
+            FocusPanelManager.bindScrollAffordances?.(menu);
             HistoryManager.pushState('listActionMenu', (opts) => closeAllMenus(opts));
 
             if (focusFirstItem) {
