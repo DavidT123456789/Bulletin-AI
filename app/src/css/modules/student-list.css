@@ -1101,13 +1101,13 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--success-light);
+    width: 20px;
+    height: 20px;
+    background: transparent;
     color: var(--success-text);
-    font-size: 11px;
+    font-size: 14px;
     line-height: 1;
+    cursor: default;
     transition: opacity 0.2s ease;
 }
 
@@ -1158,12 +1158,14 @@
         padding-right: 36px;
     }
 
-    /* Center .copied-indicator on the exact same (right: 18px) axis as .btn-row-quick-copy */
+    /* Center .copied-indicator on the exact same (right: 3px, 30x30) bounds as .btn-row-quick-copy */
     .appreciation-preview-wrapper:has(.btn-row-quick-copy) .copied-indicator {
         position: absolute;
-        right: 9px;
+        right: 3px;
         top: 50%;
         transform: translateY(-50%);
+        width: 30px;
+        height: 30px;
         margin-top: 0;
         z-index: 3;
     }

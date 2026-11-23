@@ -791,6 +791,67 @@ describe('Utils', () => {
         });
     });
 
+    describe('isAppreciationCopied & setAppreciationCopied', () => {
+        it('isole strictement le statut copié par période', () => {
+            const student = {
+                id: 's1',
+                studentData: {
+                    periods: {
+                        S1: { appreciation: 'Texte S1' },
+                        S2: { appreciation: 'Texte S2' }
+                    }
+                }
+            };
+
+            Utils.setAppreciationCopied(student, 'S1', true);
+            expect(Utils.isAppreciationCopied(student, 'S1')).toBe(true);
+            expect(Utils.isAppreciationCopied(student, 'S2')).toBe(false);
+
+            Utils.setAppreciationCopied(student, 'S2', true);
+            expect(Utils.isAppreciationCopied(student, 'S1')).toBe(true);
+            expect(Utils.isAppreciationCopied(student, 'S2')).toBe(true);
+
+            Utils.setAppreciationCopied(student, 'S1', false);
+            expect(Utils.isAppreciationCopied(student, 'S1')).toBe(false);
+            expect(Utils.isAppreciationCopied(student, 'S2')).toBe(true);
+        });
+
+        it('ne contamine pas les autres périodes pour les élèves sans generationPeriod (ex: données démo ou import Pronote)', () => {
+            const demoStudent = {
+                id: 'demo-lucas',
+                appreciation: '',
+                studentData: {
+                    periods: {
+                        S1: { grade: 14, appreciation: 'Super investissement' },
+                        S2: { grade: 15, appreciation: 'Progression continue' }
+                    }
+                }
+            };
+
+            Utils.setAppreciationCopied(demoStudent, 'S1', true);
+            expect(Utils.isAppreciationCopied(demoStudent, 'S1')).toBe(true);
+            expect(Utils.isAppreciationCopied(demoStudent, 'S2')).toBe(false);
+            expect(Utils.isAppreciationCopied(demoStudent, 'S3')).toBe(false);
+        });
+
+        it('utilise le repli rétro-compatible pour les anciens enregistrements v1 sans studentData.periods', () => {
+            const legacyStudent = {
+                id: 'legacy-1',
+                appreciation: 'Très bon travail',
+                copied: true
+            };
+            expect(Utils.isAppreciationCopied(legacyStudent, 'T1')).toBe(true);
+            expect(Utils.isAppreciationCopied(legacyStudent, 'T2')).toBe(true);
+        });
+
+        it('gère gracieusement les cas limites (null, undefined, période vide)', () => {
+            expect(Utils.isAppreciationCopied(null, 'T1')).toBe(false);
+            expect(Utils.isAppreciationCopied(undefined, 'T1')).toBe(false);
+            expect(Utils.isAppreciationCopied({}, null)).toBe(false);
+            expect(Utils.isAppreciationCopied({}, '')).toBe(false);
+        });
+    });
+
     describe('markStudentModified', () => {
         it('devrait horodater la période et la fiche avec le même timestamp', () => {
             const result = { studentData: { periods: { T2: { context: 'x' } } } };

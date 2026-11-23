@@ -212,7 +212,13 @@ export const Utils = {
         if (periodData && typeof periodData.copied === 'boolean') {
             return periodData.copied;
         }
-        return Boolean(result.copied) && (!result.generationPeriod || result.generationPeriod === period);
+        if (result.generationPeriod && result.generationPeriod === period) {
+            return Boolean(result.copied);
+        }
+        if (result.studentData?.periods) {
+            return false;
+        }
+        return Boolean(result.copied);
     },
 
     /**
@@ -231,7 +237,7 @@ export const Utils = {
             if (!result.studentData.periods[period]) result.studentData.periods[period] = {};
             result.studentData.periods[period].copied = boolVal;
         }
-        if (!period || period === appState.currentPeriod || !result.generationPeriod || result.generationPeriod === period) {
+        if (!period || period === appState.currentPeriod || result.generationPeriod === period) {
             result.copied = boolVal;
         }
     },
