@@ -486,16 +486,6 @@ export const ClassStudentTransferModal = {
             </div>
         `;
 
-        const closeModal = () => {
-            this._ui?.closeModal(modalEl);
-        };
-
-        modalEl.querySelector('.close-pick-modal')?.addEventListener('click', closeModal);
-        modalEl.querySelector('.close-pick-modal-cancel')?.addEventListener('click', closeModal);
-        modalEl.addEventListener('click', (e) => {
-            if (e.target === modalEl) closeModal();
-        });
-
         const listEl = modalEl.querySelector('#pickStudentsList');
         const chipsEl = modalEl.querySelector('#pickStudentsChips');
         const chipBtns = modalEl.querySelectorAll('.pick-class-chip');
@@ -506,6 +496,30 @@ export const ClassStudentTransferModal = {
         const confirmLabel = modalEl.querySelector('#confirmPickStudentsLabel');
         const searchInput = modalEl.querySelector('#pickStudentsSearchInput');
         let currentVisibleCandidates = candidates;
+        let switchAnimTimer = null;
+        let previousSelectedCount = 0;
+
+        const clearSwitchAnimation = () => {
+            if (switchAnimTimer) {
+                clearTimeout(switchAnimTimer);
+                switchAnimTimer = null;
+            }
+            listEl?.classList.remove('is-switching');
+        };
+
+        const closeModal = () => {
+            clearSwitchAnimation();
+            this._ui?.closeModal(modalEl);
+        };
+
+        modalEl.querySelector('.close-pick-modal')?.addEventListener('click', closeModal);
+        modalEl.querySelector('.close-pick-modal-cancel')?.addEventListener('click', closeModal);
+        modalEl.addEventListener('click', (e) => {
+            if (e.target === modalEl) closeModal();
+        });
+        confirmBtn?.addEventListener('animationend', () => {
+            confirmBtn.classList.remove('pick-cta-wake');
+        });
 
         const getVisibleCandidates = () => {
             const normWords = searchQuery
@@ -554,7 +568,13 @@ export const ClassStudentTransferModal = {
                 confirmLabel.textContent = count === 0
                     ? 'Sélectionnez des élèves'
                     : `Ajouter ${count} élève${count > 1 ? 's' : ''} à ${targetDisplayName}`;
+                if (count === 0) {
+                    confirmBtn.classList.remove('pick-cta-wake');
+                } else if (previousSelectedCount === 0) {
+                    confirmBtn.classList.add('pick-cta-wake');
+                }
             }
+            previousSelectedCount = count;
         };
 
         // Mise à jour ciblée sur place sans destruction/recréation du DOM (zéro flash image/icône)
@@ -602,7 +622,8 @@ export const ClassStudentTransferModal = {
                     <div class="pick-student-row ${isSelected ? 'selected' : ''} ${isPresent ? 'already-present' : ''}"
                          data-student-id="${this._escapeHtml(String(cand.id ?? ''))}"
                          role="option"
-                         aria-selected="${isSelected || isPresent}"
+                         aria-selected="${isSelected}"
+                         aria-disabled="${isPresent}"
                          tabindex="${isPresent ? '-1' : '0'}">
                         <span class="pick-student-checkbox" aria-hidden="true">
                             <svg viewBox="0 0 12 12" fill="none">
@@ -661,7 +682,9 @@ export const ClassStudentTransferModal = {
         // Filtres par classe
         chipBtns.forEach(chip => {
             chip.addEventListener('click', () => {
-                activeFilterId = chip.dataset.filterId || 'all';
+                const nextFilterId = chip.dataset.filterId || 'all';
+                if (nextFilterId === activeFilterId) return;
+                activeFilterId = nextFilterId;
                 chipBtns.forEach(c => {
                     const isActive = c.dataset.filterId === activeFilterId;
                     c.classList.toggle('active', isActive);
@@ -672,7 +695,13 @@ export const ClassStudentTransferModal = {
                 } else {
                     chip.scrollIntoView?.({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                 }
+                clearSwitchAnimation();
+                if (listEl) {
+                    listEl.scrollTop = 0;
+                    listEl.classList.add('is-switching');
+                }
                 renderList();
+                switchAnimTimer = setTimeout(clearSwitchAnimation, 340);
             });
         });
 
@@ -681,6 +710,7 @@ export const ClassStudentTransferModal = {
             searchInput,
             modalEl.querySelector('#pickStudentsSearchClear'),
             (val) => {
+                clearSwitchAnimation();
                 searchQuery = val;
                 renderList();
             },

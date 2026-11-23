@@ -264,7 +264,7 @@
 .student-list-table tbody tr:hover .student-origin-class-tag,
 .sc-student-chip:hover .student-origin-class-tag,
 .sc-cross-action:hover .student-origin-class-tag,
-.pick-student-row:hover:not(.already-present) .student-origin-class-tag,
+.pick-student-row:is(:hover, .selected):not(.already-present) .student-origin-class-tag,
 .focus-header:has(.focus-header-left:hover) .focus-origin-class-badge,
 .focus-header:has(.focus-student-name:hover) .focus-origin-class-badge {
     color: var(--text-secondary);

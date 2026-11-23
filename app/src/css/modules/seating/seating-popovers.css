@@ -49,38 +49,47 @@
     gap: 6px;
 }
 
+/* Surface & états mutualisés pour les sélecteurs en grille des popovers */
+:is(.sc-placement-size-pill, .sc-config-preset-pill) {
+    border-radius: var(--radius-control, 10px);
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.15s ease;
+}
+
+:is(.sc-placement-size-pill, .sc-config-preset-pill):active {
+    transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    :is(.sc-placement-size-pill, .sc-config-preset-pill):not(.active):hover {
+        background: var(--item-hover-bg);
+        border-color: var(--border-color-hover);
+        color: var(--text-primary);
+    }
+
+    :is(.sc-placement-size-pill, .sc-config-preset-pill).active:hover {
+        background: var(--tonal-hover-bg);
+    }
+}
+
+:is(.sc-placement-size-pill, .sc-config-preset-pill).active {
+    background: var(--tonal-bg);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
 .sc-placement-size-pill {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     height: 30px;
     padding: 0 4px;
-    border-radius: var(--radius-control, 10px);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
     font-size: 0.78rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.15s ease;
-}
-
-.sc-placement-size-pill:active {
-    transform: scale(0.96);
-}
-
-@media (hover: hover) {
-    .sc-placement-size-pill:hover {
-        background: var(--item-hover-bg);
-        color: var(--text-primary);
-    }
-}
-
-.sc-placement-size-pill.active {
-    background: var(--bg-tertiary);
-    border-color: var(--text-secondary);
-    color: var(--text-primary);
 }
 
 .sc-placement-actions-section {
@@ -257,59 +266,57 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 7px 4px;
-    border-radius: var(--radius-control, 10px);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    gap: 5px;
+    padding: 8px 4px 7px;
     font-size: 0.7rem;
     font-weight: 500;
-    cursor: pointer;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.15s ease;
     text-align: center;
     white-space: nowrap;
     min-width: 0;
 }
 
-.sc-config-preset-pill:active {
-    transform: scale(0.97);
-}
-
 .sc-config-preset-pill .sc-mini-diagram {
-    padding: 3px 4px;
+    padding: 2px 0;
     gap: 2px;
+    background: transparent;
+    border: none;
 }
 
 .sc-config-preset-pill .sc-mini-diagram i {
-    width: 4px;
-    height: 6px;
-    border-radius: 1px;
+    width: 5px;
+    height: 7px;
+    border-radius: 1.5px;
+    background: var(--text-secondary);
+    opacity: 0.62;
 }
 
 .sc-config-preset-pill .sc-mini-diagram b.aisle {
-    width: 3px;
-    height: 6px;
+    width: 4px;
+    height: 7px;
     margin: 0;
+    border-left-color: var(--border-color-hover);
+    border-right-color: var(--border-color-hover);
 }
 
-@media (hover: hover) {
-    .sc-config-preset-pill:hover {
-        background: var(--item-hover-bg);
-        color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+    .sc-config-preset-pill:not(.active):hover .sc-mini-diagram i {
+        background: var(--text-primary);
+        opacity: 0.78;
     }
 }
 
 .sc-config-preset-pill.active {
-    background: var(--bg-tertiary);
-    border-color: var(--text-secondary);
-    color: var(--text-primary);
     font-weight: 600;
 }
 
 .sc-config-preset-pill.active .sc-mini-diagram i {
     background: var(--text-primary);
-    opacity: 0.9;
+    opacity: 0.95;
+}
+
+.sc-config-preset-pill.active .sc-mini-diagram b.aisle {
+    border-left-color: var(--text-tertiary);
+    border-right-color: var(--text-tertiary);
 }
 
 .sc-config-row {
