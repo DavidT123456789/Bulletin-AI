@@ -52,13 +52,13 @@
 
 .focus-main-page::before {
     top: 0;
-    height: 28px;
+    height: var(--scrim-size, 26px);
     background: linear-gradient(
         to bottom,
-        rgba(var(--bg-color-rgb), 0.72) 0%,
-        rgba(var(--bg-color-rgb), 0.48) 25%,
-        rgba(var(--bg-color-rgb), 0.22) 50%,
-        rgba(var(--bg-color-rgb), 0.06) 75%,
+        rgba(var(--bg-color-rgb), 0.68) 0%,
+        rgba(var(--bg-color-rgb), 0.42) 26%,
+        rgba(var(--bg-color-rgb), 0.18) 54%,
+        rgba(var(--bg-color-rgb), 0.05) 78%,
         transparent 100%
     );
 }
@@ -66,13 +66,13 @@
 .focus-main-page::after,
 .main-content-wrapper::after {
     bottom: 0;
-    height: 28px;
+    height: var(--scrim-size, 26px);
     background: linear-gradient(
         to top,
-        rgba(var(--bg-color-rgb), 0.72) 0%,
-        rgba(var(--bg-color-rgb), 0.48) 25%,
-        rgba(var(--bg-color-rgb), 0.22) 50%,
-        rgba(var(--bg-color-rgb), 0.06) 75%,
+        rgba(var(--bg-color-rgb), 0.68) 0%,
+        rgba(var(--bg-color-rgb), 0.42) 26%,
+        rgba(var(--bg-color-rgb), 0.18) 54%,
+        rgba(var(--bg-color-rgb), 0.05) 78%,
         transparent 100%
     );
 }
@@ -142,9 +142,8 @@
     transform: translateX(-50%);
     width: 36px;
     height: 4px;
-    border-radius: var(--radius-full, 9999px);
-    background: var(--border-color);
-    opacity: 0.8;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--text-tertiary-rgb), 0.35);
 }
 
 .focus-analysis-header-left {

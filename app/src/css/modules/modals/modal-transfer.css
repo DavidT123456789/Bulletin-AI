@@ -282,11 +282,11 @@
 }
 
 :is(.pick-students-chips, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-left {
-    --scrim-left: transparent 0px, rgba(0, 0, 0, 0.18) 6px, rgba(0, 0, 0, 0.5) 13px, rgba(0, 0, 0, 0.82) 20px, #000 28px;
+    --scrim-left: var(--scrim-fade-start);
 }
 
 :is(.pick-students-chips, .sc-sidebar:not(.drag-over) .sc-student-list).can-scroll-right {
-    --scrim-right: #000 calc(100% - 28px), rgba(0, 0, 0, 0.82) calc(100% - 20px), rgba(0, 0, 0, 0.5) calc(100% - 13px), rgba(0, 0, 0, 0.18) calc(100% - 6px), transparent 100%;
+    --scrim-right: var(--scrim-fade-end);
 }
 
 .pick-class-chip {

@@ -65,12 +65,6 @@
         border-bottom: none;
         border-right: 1px solid var(--border-color);
     }
-
-    /* Indique visuellement que des réglages supplémentaires se trouvent sous le pli */
-    .lab-pane--settings.has-scroll-below {
-        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 26px), transparent 100%);
-        mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 26px), transparent 100%);
-    }
 }
 
 /* --- Left Pane: Field Rows & Controls --- */

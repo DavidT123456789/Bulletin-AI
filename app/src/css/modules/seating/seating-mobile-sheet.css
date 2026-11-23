@@ -25,9 +25,9 @@
     right: 0;
     max-height: 82vh;
     background: var(--bg-primary);
-    border-top: 1px solid var(--border-color);
-    border-top-left-radius: 28px;
-    border-top-right-radius: 28px;
+    border-top: 1px solid var(--border-color-strong);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
     box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
     z-index: 1201;
     transform: translateY(100%);
@@ -35,7 +35,6 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 8px);
 }
 
 .sc-mobile-sheet.active {
@@ -46,7 +45,7 @@
     width: 36px;
     height: 4px;
     border-radius: var(--radius-pill);
-    background: var(--text-quaternary, rgba(150, 150, 150, 0.4));
+    background: rgba(var(--text-tertiary-rgb), 0.35);
     margin: 10px auto 4px;
     flex-shrink: 0;
     touch-action: none;
@@ -56,7 +55,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 18px 12px;
+    padding: 10px 16px 12px;
     border-bottom: 1px solid var(--border-color);
     gap: 12px;
     flex-shrink: 0;
@@ -72,23 +71,16 @@
 }
 
 .sc-sheet-desk-icon {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    background: var(--primary-color-light);
-    border: 1px solid rgba(var(--primary-color-rgb), 0.18);
+    background: var(--tonal-bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
-    color: var(--primary-color);
+    font-size: 1.25rem;
+    color: var(--text-secondary);
     flex-shrink: 0;
-}
-
-[data-theme="dark"] .sc-sheet-desk-icon {
-    background: rgba(var(--primary-color-rgb), 0.16);
-    border-color: rgba(var(--primary-color-rgb), 0.24);
-    color: var(--primary-bright);
 }
 
 .sc-sheet-entity-text {
@@ -98,7 +90,7 @@
 
 .sc-sheet-entity-name {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
@@ -117,6 +109,25 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.sc-sheet-entity-meta > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sc-sheet-meta-pin {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--warning-text);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.sc-sheet-meta-pin iconify-icon {
+    font-size: 0.85rem;
 }
 
 .sc-sheet-close-btn,
@@ -162,10 +173,10 @@
 .sc-sheet-content {
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 12px 16px;
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 16px));
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -175,84 +186,102 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text-tertiary);
-    margin: 10px 4px 4px;
+    margin: 14px 4px 6px;
+    padding: 0;
+    user-select: none;
+}
+
+.sc-sheet-section-title:first-child {
+    margin-top: 2px;
 }
 
 .sc-sheet-actions {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0;
+    background: var(--dropdown-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--dropdown-radius);
+    overflow: hidden;
 }
 
 .sc-sheet-action-btn {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 14px;
-    border-radius: var(--radius-control);
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    color: var(--dropdown-item-text);
     cursor: pointer;
     text-align: left;
     width: 100%;
-    min-height: 52px;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    min-height: 48px;
+    touch-action: manipulation;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-sheet-action-btn + .sc-sheet-action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 48px;
+    right: 14px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .sc-sheet-action-btn:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    .sc-sheet-action-btn:hover .sc-sheet-action-icon {
+        color: currentColor;
+    }
+
+    .sc-sheet-action-btn:hover .sc-sheet-action-chevron {
+        color: var(--text-secondary);
+        transform: translateX(2px);
+    }
+
+    .sc-sheet-action-btn.sc-action-danger:hover {
+        background: var(--error-light);
+        color: var(--error-text);
+    }
 }
 
 .sc-sheet-action-btn:active {
+    background: var(--item-active-bg);
+}
+
+.sc-sheet-action-btn:focus-visible {
+    outline: none;
     background: var(--item-hover-bg);
-    transform: scale(0.985);
+    box-shadow: inset 0 0 0 2px var(--primary-color);
 }
 
 .sc-sheet-action-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: var(--radius-md);
-    display: flex;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: 20px;
+    color: var(--dropdown-item-icon);
     flex-shrink: 0;
-}
-
-.sc-sheet-action-icon.sc-icon-primary {
-    background: var(--primary-color-light);
-    color: var(--primary-color);
-}
-
-.sc-sheet-action-icon.sc-icon-secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
+    transition: color var(--transition-fast);
 }
 
 .sc-sheet-action-icon.sc-icon-warning {
-    background: var(--warning-light);
     color: var(--warning-text);
 }
 
 .sc-sheet-action-icon.sc-icon-danger {
-    background: var(--error-light);
-    color: var(--error-text);
-}
-
-[data-theme="dark"] .sc-sheet-action-icon.sc-icon-primary {
-    background: rgba(var(--primary-color-rgb), 0.18);
-    color: var(--primary-bright);
-}
-
-[data-theme="dark"] .sc-sheet-action-icon.sc-icon-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .sc-sheet-action-icon.sc-icon-warning {
-    background: rgba(var(--color-amber-rgb), 0.22);
-    color: var(--warning-text);
-}
-
-[data-theme="dark"] .sc-sheet-action-icon.sc-icon-danger {
-    background: rgba(var(--error-rgb), 0.22);
     color: var(--error-text);
 }
 
@@ -266,68 +295,131 @@
 
 .sc-sheet-action-label {
     font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.2;
+    font-weight: 500;
+    color: inherit;
+    line-height: 1.25;
 }
 
 .sc-sheet-action-hint {
     font-size: 0.74rem;
-    color: var(--text-secondary);
-    line-height: 1.2;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    line-height: 1.25;
 }
 
-.sc-sheet-action-btn.sc-action-danger .sc-sheet-action-label {
+.sc-sheet-action-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: var(--text-quaternary);
+    flex-shrink: 0;
+    margin-left: auto;
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.sc-sheet-action-btn.sc-action-danger {
     color: var(--error-text);
+}
+
+.sc-sheet-action-btn.sc-action-danger:active {
+    background: var(--error-light);
 }
 
 /* Unplaced Student Picker inside Sheet */
 .sc-sheet-search-wrap {
-    margin-bottom: 6px;
+    margin: 0 0 8px;
 }
 
 .sc-sheet-search {
+    width: 100%;
     height: 42px;
-    padding: 0 15px;
-    background-color: var(--bg-secondary);
+    padding: 0 14px;
+    background-color: var(--dropdown-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-control);
+    color: var(--text-primary);
     font-size: 16px;
     box-sizing: border-box;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .sc-sheet-search:focus {
-    background-color: var(--surface-color);
+    outline: none;
+    background-color: var(--dropdown-bg);
+    border-color: var(--input-border-focus);
+    box-shadow: var(--input-focus-ring);
 }
 
 .sc-sheet-picker-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    max-height: 220px;
+    gap: 0;
+    max-height: 240px;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-right: 2px;
+    background: var(--dropdown-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--dropdown-radius);
 }
 
 .sc-sheet-picker-item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 0;
+    background: transparent;
+    border: none;
     color: var(--text-primary);
     cursor: pointer;
     width: 100%;
-    min-height: 44px;
+    min-height: 48px;
     text-align: left;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    touch-action: manipulation;
+    transition: background var(--transition-fast);
+}
+
+.sc-sheet-picker-item[hidden],
+.sc-sheet-picker-empty[hidden] {
+    display: none;
+}
+
+.sc-sheet-picker-item:not([hidden]) ~ .sc-sheet-picker-item:not([hidden])::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 56px;
+    right: 14px;
+    height: 1px;
+    background: var(--border-color);
+    pointer-events: none;
+}
+
+.sc-sheet-picker-empty {
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 0.84rem;
+    color: var(--text-tertiary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .sc-sheet-picker-item:not(.sc-sheet-member-row):hover {
+        background: var(--item-hover-bg);
+    }
 }
 
 .sc-sheet-picker-item:active {
-    background: rgba(var(--primary-color-rgb), 0.1);
-    border-color: var(--primary-color);
+    background: var(--item-active-bg);
+}
+
+.sc-sheet-picker-item:focus-visible {
+    outline: none;
+    background: var(--item-hover-bg);
+    box-shadow: inset 0 0 0 2px var(--primary-color);
 }
 
 .sc-sheet-picker-user {
@@ -378,53 +470,56 @@
     align-items: center;
     gap: 5px;
     font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-on-primary);
-    background: var(--primary-color);
-    padding: 5px 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--tonal-bg);
+    padding: 6px 11px;
     border-radius: var(--radius-pill);
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(var(--primary-color-rgb, 51, 59, 75), 0.25);
-    transition: transform var(--transition-fast), filter var(--transition-fast);
+    transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
-[data-theme="dark"] .sc-sheet-picker-badge {
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+.sc-sheet-picker-badge iconify-icon {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
 }
 
 .sc-sheet-picker-item:active .sc-sheet-picker-badge {
-    transform: scale(0.95);
-    filter: brightness(0.92);
+    background: var(--tonal-active-bg);
+    transform: scale(0.96);
 }
 
 .sc-sheet-member-row {
     cursor: default;
-    padding: 6px 10px;
+    padding: 4px 6px 4px 14px;
 }
 
 .sc-sheet-member-row:active {
-    background: var(--surface-color);
-    border-color: var(--border-color);
+    background: transparent;
 }
 
 .sc-sheet-member-profile-btn {
     flex: 1;
     min-width: 0;
     min-height: 44px;
-    padding: 0;
+    padding: 4px 6px 4px 0;
     border: none;
+    border-radius: var(--dropdown-item-radius);
     background: transparent;
     color: inherit;
     text-align: left;
     cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.sc-sheet-member-profile-btn:active {
+    background: var(--item-active-bg);
 }
 
 .sc-sheet-member-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     flex-shrink: 0;
 }
 
@@ -435,13 +530,14 @@
     justify-content: center;
     gap: 5px;
     min-height: 44px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
+    border-radius: var(--dropdown-item-radius);
+    border: none;
+    background: transparent;
     color: var(--text-secondary);
     font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
+    touch-action: manipulation;
     transition: background var(--transition-fast), color var(--transition-fast);
 }
 
@@ -455,21 +551,36 @@
     font-size: 1.05rem;
 }
 
-.sc-sheet-member-remove-btn:hover,
-.sc-sheet-member-more-btn:hover,
+@media (hover: hover) and (pointer: fine) {
+    .sc-sheet-member-remove-btn:hover,
+    .sc-sheet-member-more-btn:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+}
+
 .sc-sheet-member-remove-btn:active,
 .sc-sheet-member-more-btn:active {
+    background: var(--item-active-bg);
+    color: var(--text-primary);
+}
+
+.sc-sheet-member-remove-btn:focus-visible,
+.sc-sheet-member-more-btn:focus-visible {
+    outline: none;
     background: var(--item-hover-bg);
     color: var(--text-primary);
+    box-shadow: inset 0 0 0 2px var(--primary-color);
 }
 
 .sc-sheet-empty-unplaced {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px;
-    border-radius: var(--radius-md);
-    background: rgba(var(--success-rgb, 16, 185, 129), 0.1);
+    margin: 0 0 4px;
+    padding: 11px 14px;
+    border-radius: var(--dropdown-radius);
+    background: var(--success-light);
     color: var(--success-text);
     font-size: 0.82rem;
     font-weight: 500;

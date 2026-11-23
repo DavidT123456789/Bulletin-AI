@@ -421,11 +421,10 @@ export const ModalUI = {
         modal.style.display = 'flex';
         // Forcer le reflow pour que la transition s'applique
         void modal.offsetWidth;
-        modal.querySelectorAll('.ui-tabs-content, .modal-body:not(.modal-body-flex):not(.import-wizard-body)').forEach(el => {
+        modal.querySelectorAll('.ui-tabs-content, .modal-body:not(.modal-body-flex):not(.import-wizard-body), .lab-layout, .lab-pane').forEach(el => {
             el.scrollTop = 0;
             FocusPanelManager.bindScrollAffordances?.(el);
         });
-        modal.querySelectorAll('.lab-layout, .lab-pane').forEach(el => { el.scrollTop = 0; });
         // Ajouter les classes pour déclencher l'animation Apple
         const scheduleVisible = typeof requestAnimationFrame === 'function'
             ? requestAnimationFrame

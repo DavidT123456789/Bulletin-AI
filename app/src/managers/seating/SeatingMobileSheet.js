@@ -104,6 +104,24 @@ export const SeatingMobileSheet = {
         this._animateFoldContinuum(isUnfolding);
         return true;
     },
+    _getProfileSheetActionHTML() {
+        return `
+            <div class="sc-sheet-actions">
+                <button class="sc-sheet-action-btn" data-action="profile" type="button">
+                    <span class="sc-sheet-action-icon" aria-hidden="true">
+                        <iconify-icon icon="solar:user-id-linear"></iconify-icon>
+                    </span>
+                    <span class="sc-sheet-action-text">
+                        <span class="sc-sheet-action-label">Voir la fiche</span>
+                    </span>
+                    <span class="sc-sheet-action-chevron" aria-hidden="true">
+                        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                    </span>
+                </button>
+            </div>
+        `;
+    },
+
     _getStudentSheetActionsHTML(student) {
         if (!student) return '';
         const deleteMeta = StudentDataManager.getDeleteActionMeta(student.id);
@@ -122,41 +140,36 @@ export const SeatingMobileSheet = {
         return `
             <div class="sc-sheet-section-title">Élève</div>
             <div class="sc-sheet-actions">
-                <button class="sc-sheet-action-btn" data-action="profile" type="button">
-                    <div class="sc-sheet-action-icon sc-icon-secondary">
-                        <iconify-icon icon="solar:user-id-linear"></iconify-icon>
-                    </div>
-                    <div class="sc-sheet-action-text">
-                        <span class="sc-sheet-action-label">Voir la fiche élève</span>
-                        <span class="sc-sheet-action-hint">Notes, observations et historique</span>
-                    </div>
-                </button>
                 <button class="sc-sheet-action-btn" data-action="move-student" type="button">
-                    <div class="sc-sheet-action-icon sc-icon-secondary">
+                    <span class="sc-sheet-action-icon" aria-hidden="true">
                         <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
-                    </div>
-                    <div class="sc-sheet-action-text">
+                    </span>
+                    <span class="sc-sheet-action-text">
                         <span class="sc-sheet-action-label">Copier / Déplacer…</span>
-                        <span class="sc-sheet-action-hint">Affecter à un groupe ou changer de classe</span>
-                    </div>
+                    </span>
+                    <span class="sc-sheet-action-chevron" aria-hidden="true">
+                        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                    </span>
                 </button>
                 <button class="sc-sheet-action-btn" data-action="reset-student" type="button">
-                    <div class="sc-sheet-action-icon sc-icon-secondary">
+                    <span class="sc-sheet-action-icon" aria-hidden="true">
                         <iconify-icon icon="solar:eraser-linear"></iconify-icon>
-                    </div>
-                    <div class="sc-sheet-action-text">
+                    </span>
+                    <span class="sc-sheet-action-text">
                         <span class="sc-sheet-action-label">Effacer le contenu…</span>
-                        <span class="sc-sheet-action-hint">Appréciation, journal, notes ou photo</span>
-                    </div>
+                    </span>
+                    <span class="sc-sheet-action-chevron" aria-hidden="true">
+                        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+                    </span>
                 </button>
                 <button class="sc-sheet-action-btn sc-action-danger" data-action="delete-student" type="button">
-                    <div class="sc-sheet-action-icon sc-icon-danger">
+                    <span class="sc-sheet-action-icon sc-icon-danger" aria-hidden="true">
                         <iconify-icon icon="${deleteMeta.menuIcon}"></iconify-icon>
-                    </div>
-                    <div class="sc-sheet-action-text">
+                    </span>
+                    <span class="sc-sheet-action-text">
                         <span class="sc-sheet-action-label">${Utils.escapeHtml(deleteMeta.menuLabel)}</span>
                         <span class="sc-sheet-action-hint">${deleteHint}</span>
-                    </div>
+                    </span>
                 </button>
             </div>
         `;
@@ -310,7 +323,7 @@ export const SeatingMobileSheet = {
                     ${headerAvatarHTML}
                     <div class="sc-sheet-entity-text">
                         <h3 class="sc-sheet-entity-name">${headerTitle}</h3>
-                        <p class="sc-sheet-entity-meta">${locationLabel}${primaryStatusSuffix}${isPinned ? ' • 📌 Place fixée' : ''}</p>
+                        <p class="sc-sheet-entity-meta"><span>${locationLabel}${primaryStatusSuffix}</span>${isPinned ? '<span aria-hidden="true">•</span><span class="sc-sheet-meta-pin"><iconify-icon icon="solar:pin-bold"></iconify-icon> Place fixée</span>' : ''}</p>
                     </div>
                 </div>
                 <button class="sc-sheet-close-btn" id="scSheetCloseBtn" aria-label="Fermer" type="button">
@@ -318,36 +331,35 @@ export const SeatingMobileSheet = {
                 </button>
             </div>
             <div class="sc-sheet-content">
+                ${!isMulti ? this._getProfileSheetActionHTML() : ''}
                 ${membersSectionHTML}
                 ${addTeammateSectionHTML}
                 <div class="sc-sheet-section-title">Plan</div>
                 <div class="sc-sheet-actions">
                     <button class="sc-sheet-action-btn" data-action="move" type="button">
-                        <div class="sc-sheet-action-icon sc-icon-primary">
-                            <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
-                        </div>
-                        <div class="sc-sheet-action-text">
+                        <span class="sc-sheet-action-icon" aria-hidden="true">
+                            <iconify-icon icon="solar:move-linear"></iconify-icon>
+                        </span>
+                        <span class="sc-sheet-action-text">
                             <span class="sc-sheet-action-label">${isMulti ? 'Déplacer ou permuter le groupe' : 'Déplacer ou permuter'}</span>
                             <span class="sc-sheet-action-hint">Touchez ensuite le poste de destination</span>
-                        </div>
+                        </span>
                     </button>
                     <button class="sc-sheet-action-btn" data-action="pin" type="button">
-                        <div class="sc-sheet-action-icon ${isPinned ? 'sc-icon-warning' : 'sc-icon-secondary'}">
+                        <span class="sc-sheet-action-icon${isPinned ? ' sc-icon-warning' : ''}" aria-hidden="true">
                             <iconify-icon icon="solar:pin-${isPinned ? 'bold' : 'linear'}"></iconify-icon>
-                        </div>
-                        <div class="sc-sheet-action-text">
-                            <span class="sc-sheet-action-label">${isPinned ? 'Détacher la place' : 'Épingler à ce poste'}</span>
-                            <span class="sc-sheet-action-hint">${isPinned ? 'Le poste redeviendra mobile' : 'Fige ce poste lors des réagencements'}</span>
-                        </div>
+                        </span>
+                        <span class="sc-sheet-action-text">
+                            <span class="sc-sheet-action-label">${isPinned ? (isMulti ? 'Détacher le poste' : 'Détacher') : (isMulti ? 'Épingler le poste' : 'Épingler')}</span>
+                        </span>
                     </button>
                     <button class="sc-sheet-action-btn" data-action="remove" type="button">
-                        <div class="sc-sheet-action-icon sc-icon-secondary">
+                        <span class="sc-sheet-action-icon" aria-hidden="true">
                             <iconify-icon icon="solar:logout-3-linear"></iconify-icon>
-                        </div>
-                        <div class="sc-sheet-action-text">
-                            <span class="sc-sheet-action-label">${isMulti ? 'Libérer tout le poste' : 'Retirer du plan'}</span>
-                            <span class="sc-sheet-action-hint">Renvoie ${isMulti ? 'les élèves' : "l'élève"} dans les non placés</span>
-                        </div>
+                        </span>
+                        <span class="sc-sheet-action-text">
+                            <span class="sc-sheet-action-label">${isMulti ? 'Libérer le poste' : 'Retirer du plan'}</span>
+                        </span>
                     </button>
                 </div>
                 ${!isMulti ? this._getStudentSheetActionsHTML(primary) : ''}
@@ -482,17 +494,17 @@ export const SeatingMobileSheet = {
                 </button>
             </div>
             <div class="sc-sheet-content">
+                ${this._getProfileSheetActionHTML()}
                 ${!this._isLocked ? `
                     <div class="sc-sheet-section-title">Plan</div>
                     <div class="sc-sheet-actions">
                         <button class="sc-sheet-action-btn" data-action="remove-member" type="button">
-                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                            <span class="sc-sheet-action-icon" aria-hidden="true">
                                 <iconify-icon icon="solar:logout-3-linear"></iconify-icon>
-                            </div>
-                            <div class="sc-sheet-action-text">
+                            </span>
+                            <span class="sc-sheet-action-text">
                                 <span class="sc-sheet-action-label">Retirer du poste</span>
-                                <span class="sc-sheet-action-hint">Renvoie l'élève dans les non placés</span>
-                            </div>
+                            </span>
                         </button>
                     </div>
                 ` : ''}
@@ -594,6 +606,7 @@ export const SeatingMobileSheet = {
                                 <span class="sc-sheet-picker-badge"><iconify-icon icon="solar:add-circle-linear"></iconify-icon> Placer</span>
                             </button>
                         `).join('')}
+                        <div class="sc-sheet-picker-empty" id="scSheetPickerEmpty" hidden>Aucun élève trouvé</div>
                     </div>
                 ` : (unplaced.length === 0 && !special ? `
                     <div class="sc-sheet-empty-unplaced">
@@ -605,51 +618,47 @@ export const SeatingMobileSheet = {
                 <div class="sc-sheet-actions">
                     ${!special ? `
                         <button class="sc-sheet-action-btn" data-special-type="aisle" type="button">
-                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                            <span class="sc-sheet-action-icon" aria-hidden="true">
                                 <iconify-icon icon="solar:ghost-linear"></iconify-icon>
-                            </div>
-                            <div class="sc-sheet-action-text">
+                            </span>
+                            <span class="sc-sheet-action-text">
                                 <span class="sc-sheet-action-label">Transformer en allée</span>
-                                <span class="sc-sheet-action-hint">Espace de passage (aucune table)</span>
-                            </div>
+                            </span>
                         </button>
                         <button class="sc-sheet-action-btn" data-special-type="aesh" type="button">
-                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                            <span class="sc-sheet-action-icon" aria-hidden="true">
                                 <iconify-icon icon="solar:user-speak-rounded-linear"></iconify-icon>
-                            </div>
-                            <div class="sc-sheet-action-text">
+                            </span>
+                            <span class="sc-sheet-action-text">
                                 <span class="sc-sheet-action-label">Place AESH</span>
-                                <span class="sc-sheet-action-hint">Réservée pour accompagnant</span>
-                            </div>
+                            </span>
                         </button>
                         <button class="sc-sheet-action-btn" data-special-type="blocked" type="button">
-                            <div class="sc-sheet-action-icon sc-icon-secondary">
+                            <span class="sc-sheet-action-icon" aria-hidden="true">
                                 <iconify-icon icon="solar:forbidden-circle-linear"></iconify-icon>
-                            </div>
-                            <div class="sc-sheet-action-text">
+                            </span>
+                            <span class="sc-sheet-action-text">
                                 <span class="sc-sheet-action-label">Condamner la table</span>
-                                <span class="sc-sheet-action-hint">Table hors service ou indisponible</span>
-                            </div>
+                            </span>
                         </button>
                     ` : `
                         <button class="sc-sheet-action-btn" data-special-type="normal" type="button">
-                            <div class="sc-sheet-action-icon sc-icon-primary">
+                            <span class="sc-sheet-action-icon" aria-hidden="true">
                                 <iconify-icon icon="solar:refresh-linear"></iconify-icon>
-                            </div>
-                            <div class="sc-sheet-action-text">
+                            </span>
+                            <span class="sc-sheet-action-text">
                                 <span class="sc-sheet-action-label">Rétablir en table normale</span>
-                                <span class="sc-sheet-action-hint">Permet d'asseoir à nouveau un élève</span>
-                            </div>
+                            </span>
                         </button>
                         ${special.type === 'blocked' ? `
                             <button class="sc-sheet-action-btn" data-special-type="toggle-scope" type="button">
-                                <div class="sc-sheet-action-icon sc-icon-secondary">
+                                <span class="sc-sheet-action-icon" aria-hidden="true">
                                     <iconify-icon icon="${isClassScope ? 'solar:buildings-linear' : 'solar:users-group-two-rounded-linear'}"></iconify-icon>
-                                </div>
-                                <div class="sc-sheet-action-text">
+                                </span>
+                                <span class="sc-sheet-action-text">
                                     <span class="sc-sheet-action-label">${isClassScope ? 'Appliquer à toute la salle' : 'Restreindre à cette classe'}</span>
                                     <span class="sc-sheet-action-hint">Portée : ${isClassScope ? 'Cette classe uniquement' : 'Toutes les classes'}</span>
-                                </div>
+                                </span>
                             </button>
                         ` : ''}
                     `}
@@ -674,13 +683,20 @@ export const SeatingMobileSheet = {
         // Unplaced student search filter
         const searchInput = sheet.querySelector('#scSheetSearchInput');
         const pickerList = sheet.querySelector('#scSheetPickerList');
+        const pickerEmpty = sheet.querySelector('#scSheetPickerEmpty');
         if (searchInput && pickerList) {
             searchInput.addEventListener('input', (e) => {
                 const q = (e.target.value || '').trim().toLowerCase();
+                let visibleCount = 0;
                 pickerList.querySelectorAll('.sc-sheet-picker-item').forEach(item => {
                     const name = item.querySelector('.sc-sheet-picker-name')?.textContent?.toLowerCase() || '';
-                    item.style.display = name.includes(q) ? 'flex' : 'none';
+                    const matches = name.includes(q);
+                    item.hidden = !matches;
+                    if (matches) visibleCount++;
                 });
+                if (pickerEmpty) {
+                    pickerEmpty.hidden = visibleCount > 0;
+                }
                 FocusPanelManager.updateScrollAffordances?.(pickerList);
             });
         }

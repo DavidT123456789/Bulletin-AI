@@ -343,6 +343,27 @@
 
     /* --- Global Component Variables --- */
     --scrollbar-width: 6px;
+    --scrim-size: 26px;
+    --scrim-fade-start:
+        transparent 0px,
+        rgba(0, 0, 0, 0.30) calc(var(--scrim-size) * 0.16),
+        rgba(0, 0, 0, 0.60) calc(var(--scrim-size) * 0.36),
+        rgba(0, 0, 0, 0.86) calc(var(--scrim-size) * 0.65),
+        #000 var(--scrim-size);
+    --scrim-fade-end:
+        #000 calc(100% - var(--scrim-size)),
+        rgba(0, 0, 0, 0.86) calc(100% - var(--scrim-size) * 0.65),
+        rgba(0, 0, 0, 0.60) calc(100% - var(--scrim-size) * 0.36),
+        rgba(0, 0, 0, 0.30) calc(100% - var(--scrim-size) * 0.16),
+        transparent 100%;
+    --scrim-fade-end-scrollbar:
+        #000 calc(100% - var(--scrollbar-width) - var(--scrim-size)),
+        rgba(0, 0, 0, 0.86) calc(100% - var(--scrollbar-width) - var(--scrim-size) * 0.65),
+        rgba(0, 0, 0, 0.60) calc(100% - var(--scrollbar-width) - var(--scrim-size) * 0.36),
+        rgba(0, 0, 0, 0.30) calc(100% - var(--scrollbar-width) - var(--scrim-size) * 0.16),
+        transparent calc(100% - var(--scrollbar-width)),
+        #000 calc(100% - var(--scrollbar-width)),
+        #000 100%;
 
     /* --- Modal System Tokens (Core Foundation) --- */
     --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
@@ -773,5 +794,6 @@
     :root {
         --radius-lg: 20px;
         --radius-md: 12px;
+        --scrim-size: 22px;
     }
 }

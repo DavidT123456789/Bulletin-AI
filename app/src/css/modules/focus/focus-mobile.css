@@ -360,12 +360,6 @@
         font-size: 10.5px;
     }
 
-    /* Scrim gradient: compact on mobile */
-    .focus-main-page::after,
-    .main-content-wrapper::after {
-        height: 22px;
-    }
-
     /* Card titles: balanced mobile hierarchy */
     .focus-context-label,
     .journal-header-left,
