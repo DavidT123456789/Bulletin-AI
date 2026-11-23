@@ -26,7 +26,8 @@ export const FocusPanelNavigation = {
         renderContent: () => {},
         updateAppreciationStatus: () => {},
         onUpdateActiveRow: () => {},
-        updateScrollAffordances: () => {}
+        updateScrollAffordances: () => {},
+        isLeftEdgeCloseCandidate: () => false
     },
 
     /**
@@ -60,6 +61,7 @@ export const FocusPanelNavigation = {
         let snapBackTimer = null;
         let snapBackRafId = null;
         let suppressNextClickUntil = 0;
+        let startedOnCloseEdge = false;
 
         const clearSwipeStyles = (el) => {
             if (!el) return;
@@ -109,6 +111,7 @@ export const FocusPanelNavigation = {
             touchStartY = null;
             velocityX = 0;
             isSwiping = false;
+            startedOnCloseEdge = false;
         };
 
         targetArea.addEventListener('click', (e) => {
@@ -138,6 +141,7 @@ export const FocusPanelNavigation = {
 
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
+            startedOnCloseEdge = Boolean(this.callbacks?.isLeftEdgeCloseCandidate?.(touchStartX));
             lastMoveX = touchStartX;
             lastMoveTime = Date.now();
 
@@ -162,6 +166,11 @@ export const FocusPanelNavigation = {
             if (!isSwiping) {
                 // Determine swipe intent: horizontal vs vertical
                 if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+                    if (startedOnCloseEdge && diffX > 0) {
+                        clearSwipeStyles(swipeContent);
+                        resetGestureVars(); // Yield cleanly to left-edge panel dismiss
+                        return;
+                    }
                     isSwiping = true;
                     swipeContent.style.transition = 'none'; // Instant follow
                     swipeContent.style.willChange = 'transform, opacity';

@@ -401,6 +401,47 @@ describe('FocusPanelNavigation', () => {
             expect(currentIndex).toBe(0);
         });
 
+        it('yields rightward swipes on left-edge close zone while keeping leftward edge swipes and center swipes active', () => {
+            const { container, content } = setupSwipeDom();
+            const student1 = { id: 's1', nom: 'Alice' };
+            const student2 = { id: 's2', nom: 'Bob' };
+            appState.filteredResults = [student1, student2];
+            appState.generatedResults = [student1, student2];
+
+            let currentIndex = 1;
+            FocusPanelNavigation.init({
+                getCurrentIndex: () => currentIndex,
+                setCurrentIndex: (idx) => { currentIndex = idx; },
+                getCurrentStudentId: () => appState.filteredResults[currentIndex]?.id,
+                setCurrentStudentId: vi.fn(),
+                saveContext: vi.fn(),
+                renderContent: vi.fn(),
+                onUpdateActiveRow: vi.fn(),
+                updateAppreciationStatus: vi.fn(),
+                updateScrollAffordances: vi.fn(),
+                isLeftEdgeCloseCandidate: (clientX) => clientX <= 20
+            });
+
+            // 1. Rightward swipe starting at x = 12 yields cleanly to panel close (does not navigate prev or transform content)
+            dispatchTouch(container, 'touchstart', 12, 200);
+            dispatchTouch(container, 'touchmove', 140, 200);
+            expect(content.style.transform).toBe('');
+            dispatchTouch(container, 'touchend', 140, 200);
+            expect(currentIndex).toBe(1);
+
+            // 2. Rightward swipe starting at x = 35 (> 20) still navigates to prev student
+            dispatchTouch(container, 'touchstart', 35, 200);
+            dispatchTouch(container, 'touchmove', 175, 200);
+            dispatchTouch(container, 'touchend', 175, 200);
+            expect(currentIndex).toBe(0);
+
+            // 3. Leftward swipe starting at x = 15 (even inside left edge!) still navigates to next student
+            dispatchTouch(container, 'touchstart', 15, 200);
+            dispatchTouch(container, 'touchmove', -80, 200);
+            dispatchTouch(container, 'touchend', -80, 200);
+            expect(currentIndex).toBe(1);
+        });
+
         it('respects prefers-reduced-motion without cloning DOM and cancels pending rAF via cancelActiveTransition()', () => {
             const { content } = setupSwipeDom();
             const student1 = { id: 's1', nom: 'Alice' };

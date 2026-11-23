@@ -159,7 +159,8 @@ export const FocusPanelManager = {
             renderContent: (r) => this._renderContent(r),
             updateAppreciationStatus: (s, opts) => FocusPanelStatus.updateAppreciationStatus(s, opts),
             onUpdateActiveRow: (id) => this._updateActiveRow(id),
-            updateScrollAffordances: () => this.updateScrollAffordances()
+            updateScrollAffordances: () => this.updateScrollAffordances(),
+            isLeftEdgeCloseCandidate: (clientX) => Boolean(this._leftEdgeDismiss?.isEdgeCandidate?.(clientX))
         });
 
         this._setupEventListeners();
@@ -481,6 +482,7 @@ export const FocusPanelManager = {
         const wasOpen = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
 
         FocusPanelNavigation.cancelActiveTransition?.();
+        this._leftEdgeDismiss?.reset?.();
         this._analysisPullDismiss?.reset?.();
         this._resetTransformations(panel, backdrop);
         const analysisPage = document.querySelector('.focus-analysis-page');

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { shouldIgnoreHorizontalSwipeTarget, attachSheetPullToDismiss } from './TouchGestures.js';
+import { shouldIgnoreHorizontalSwipeTarget, attachSheetPullToDismiss, attachLeftEdgeDismiss } from './TouchGestures.js';
 
 const dispatchTouch = (el, type, x, y, extra = {}) => {
     const evt = new Event(type, { cancelable: true, bubbles: true });
@@ -264,6 +264,121 @@ describe('TouchGestures', () => {
             dispatchTouch(handle, 'touchend', 150, 260, { timeStamp: 650 });
             expect(onDismiss).toHaveBeenCalledTimes(1);
 
+            window.matchMedia = origMatchMedia;
+        });
+    });
+
+    describe('attachLeftEdgeDismiss', () => {
+        const setupPanel = (panelLeft = 0) => {
+            document.body.innerHTML = `
+                <div id="backdrop"></div>
+                <div id="panel">
+                    <button id="edgeBtn" type="button">Action</button>
+                </div>
+            `;
+            const panel = document.getElementById('panel');
+            const backdrop = document.getElementById('backdrop');
+            const edgeBtn = document.getElementById('edgeBtn');
+            Object.defineProperty(panel, 'offsetWidth', { value: 400, configurable: true });
+            vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue({
+                left: panelLeft,
+                top: 0,
+                right: panelLeft + 400,
+                bottom: 800,
+                width: 400,
+                height: 800
+            });
+            return { panel, backdrop, edgeBtn };
+        };
+
+        it('dismisses on rightward drag from left edge (<= 20px) and syncs backdrop opacity', () => {
+            vi.useFakeTimers();
+            const { panel, backdrop } = setupPanel(0);
+            const onDismiss = vi.fn();
+            const origMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+
+            const ctrl = attachLeftEdgeDismiss(panel, {
+                backdropEl: backdrop,
+                edgeWidth: 20,
+                onDismiss
+            });
+
+            expect(ctrl.isEdgeCandidate(12)).toBe(true);
+            expect(ctrl.isEdgeCandidate(25)).toBe(false);
+
+            dispatchTouch(panel, 'touchstart', 12, 200, { timeStamp: 1000 });
+            dispatchTouch(panel, 'touchmove', 152, 204, { timeStamp: 1150 });
+            expect(panel.style.transform).toBe('translate3d(140px, 0, 0)');
+            expect(Number(backdrop.style.opacity)).toBeLessThan(1);
+
+            const te = dispatchTouch(panel, 'touchend', 152, 204, { timeStamp: 1200 });
+            expect(te.defaultPrevented).toBe(true);
+            expect(onDismiss).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(240);
+            expect(onDismiss).toHaveBeenCalledTimes(1);
+
+            ctrl.destroy();
+            window.matchMedia = origMatchMedia;
+        });
+
+        it('ignores starts beyond 20px, leftward/vertical drags from left edge, and stale timer if closed concurrently', () => {
+            vi.useFakeTimers();
+            const { panel, backdrop, edgeBtn } = setupPanel(40);
+            const onDismiss = vi.fn();
+            const btnClickSpy = vi.fn();
+            edgeBtn.addEventListener('click', btnClickSpy);
+            let enabled = true;
+            const origMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+
+            const ctrl = attachLeftEdgeDismiss(panel, {
+                backdropEl: backdrop,
+                edgeWidth: 20,
+                isEnabled: () => enabled,
+                onDismiss
+            });
+
+            // 1. Touch at relX = 28 (> 20) -> ignored
+            dispatchTouch(panel, 'touchstart', 68, 200, { timeStamp: 100 });
+            dispatchTouch(panel, 'touchmove', 220, 200, { timeStamp: 200 });
+            expect(panel.style.transform).toBe('');
+            dispatchTouch(panel, 'touchend', 220, 200, { timeStamp: 250 });
+            expect(onDismiss).not.toHaveBeenCalled();
+
+            // 2. Touch at relX = 10 moving LEFT -> yields cleanly without transforming panel
+            dispatchTouch(panel, 'touchstart', 50, 200, { timeStamp: 300 });
+            dispatchTouch(panel, 'touchmove', 20, 200, { timeStamp: 360 });
+            expect(panel.style.transform).toBe('');
+            dispatchTouch(panel, 'touchend', 20, 200, { timeStamp: 400 });
+
+            // 3. Touch at relX = 10 moving VERTICALLY -> yields cleanly
+            dispatchTouch(panel, 'touchstart', 50, 200, { timeStamp: 500 });
+            dispatchTouch(panel, 'touchmove', 54, 280, { timeStamp: 560 });
+            expect(panel.style.transform).toBe('');
+            dispatchTouch(panel, 'touchend', 54, 280, { timeStamp: 600 });
+
+            // 4. Small slow rightward drag -> snaps back AND absorbs trailing click
+            dispatchTouch(edgeBtn, 'touchstart', 50, 200, { timeStamp: 1000 });
+            dispatchTouch(edgeBtn, 'touchmove', 80, 200, { timeStamp: 1300 });
+            dispatchTouch(edgeBtn, 'touchend', 80, 200, { timeStamp: 1350 });
+            edgeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(btnClickSpy).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(300);
+            expect(onDismiss).not.toHaveBeenCalled();
+            expect(panel.style.transform).toBe('');
+
+            // 5. Fast rightward flick, but isEnabled() turns false mid-animation -> no stale onDismiss
+            dispatchTouch(panel, 'touchstart', 50, 200, { timeStamp: 2000 });
+            dispatchTouch(panel, 'touchmove', 98, 200, { timeStamp: 2040 });
+            dispatchTouch(panel, 'touchend', 98, 200, { timeStamp: 2060 });
+            enabled = false;
+            vi.advanceTimersByTime(240);
+            expect(onDismiss).not.toHaveBeenCalled();
+            expect(panel.style.transform).toBe('');
+
+            ctrl.destroy();
             window.matchMedia = origMatchMedia;
         });
     });

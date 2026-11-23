@@ -457,22 +457,23 @@
         line-height: 1.5;
     }
 
-    /* Refinement buttons: 2x2 balanced wrap on mobile (works with inline display:flex, 44px touch targets) */
+    /* Refinement buttons: 2x2 refined tonal pills on mobile (lighter than 44px primary footer) */
     .focus-refinement-options {
         flex-wrap: wrap;
         overflow-x: visible;
         margin: 2px 0 0;
         padding: 0 14px 12px;
-        gap: 6px;
+        gap: 7px;
     }
 
     .focus-refinement-options .btn {
-        flex: 1 1 calc(50% - 3px);
+        flex: 1 1 calc(50% - 4px);
         min-width: 0;
         font-size: 12px;
-        padding: 8px 10px;
-        min-height: 44px;
+        padding: 6px 10px;
+        min-height: 34px;
         height: auto;
+        gap: 6px;
         justify-content: center;
     }
 

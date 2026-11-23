@@ -20,7 +20,7 @@ import { SettingsModalListeners } from '../listeners/SettingsModalListeners.js';
 import { ExportManager } from '../ExportManager.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
-import { attachSheetPullToDismiss } from '../../utils/TouchGestures.js';
+import { attachSheetPullToDismiss, attachLeftEdgeDismiss } from '../../utils/TouchGestures.js';
 
 const isPanelOpen = (panel) => (typeof panel.isOpen === 'function' ? panel.isOpen() : Boolean(panel.isOpen));
 
@@ -691,14 +691,34 @@ export const FocusPanelEvents = {
     },
 
     /**
-     * Initialise le geste pull-to-dismiss sur la page Analyse (feuille modale montante).
-     * Le panneau principal reste dédié à 100 % au swipe horizontal inter-élèves.
+     * Initialise les gestes tactiles de fermeture du Focus Panel :
+     * - Edge-swipe strict depuis le bord gauche (<= 20px vers la droite) pour fermer le volet principal
+     * - Pull-to-dismiss vertical sur la page Analyse (feuille modale montante)
+     * Le reste de l’écran reste dédié à 100 % au swipe horizontal inter-élèves.
      * @param {Object} panel - Instance FocusPanelManager
      */
     initCloseGestures(panel) {
         const panelEl = document.getElementById('focusPanel');
-        const analysisPage = panelEl?.querySelector('.focus-analysis-page');
-        if (!panelEl || !analysisPage) return;
+        if (!panelEl) return;
+
+        const backdropEl = document.getElementById('focusPanelBackdrop');
+        panel._leftEdgeDismiss?.destroy?.();
+        panel._leftEdgeDismiss = attachLeftEdgeDismiss(panelEl, {
+            backdropEl,
+            edgeWidth: 20,
+            isEnabled: () => {
+                if (!isPanelOpen(panel)) return false;
+                if (document.getElementById('focusPagesContainer')?.classList.contains('show-analysis')) return false;
+                if (panelEl.querySelector('.focus-header')?.classList.contains('editing')) return false;
+                return true;
+            },
+            onDismiss: () => {
+                panel.close();
+            }
+        });
+
+        const analysisPage = panelEl.querySelector('.focus-analysis-page');
+        if (!analysisPage) return;
 
         panel._analysisPullDismiss?.destroy?.();
         panel._analysisPullDismiss = attachSheetPullToDismiss(analysisPage, {

@@ -375,3 +375,267 @@ export function attachSheetPullToDismiss(sheetEl, options = {}) {
         }
     };
 }
+
+/**
+ * Attaches iOS-style interactive left-edge swipe-to-dismiss to a right-anchored panel.
+ * Activates ONLY when touch starts within `edgeWidth` px of the panel's left edge
+ * AND moves horizontally to the right (`dx > 0`), yielding immediately on leftward
+ * or vertical drags so full-width sibling gestures (e.g. inter-student swipe) stay conflict-free.
+ *
+ * @param {HTMLElement|null} panelEl
+ * @param {Object} [options={}]
+ * @param {HTMLElement|null} [options.backdropEl=null]
+ * @param {number} [options.edgeWidth=20]
+ * @param {number} [options.dismissRatio=0.28]
+ * @param {number} [options.velocityThreshold=0.45]
+ * @param {Function} [options.isEnabled]
+ * @param {Function} [options.onDismiss]
+ * @returns {{ destroy: Function, reset: Function, isEdgeCandidate: Function }}
+ */
+export function attachLeftEdgeDismiss(panelEl, options = {}) {
+    if (!panelEl || typeof panelEl.addEventListener !== 'function') {
+        return { destroy() {}, reset() {}, isEdgeCandidate: () => false };
+    }
+
+    const {
+        backdropEl = null,
+        edgeWidth = 20,
+        dismissRatio = 0.28,
+        velocityThreshold = 0.45,
+        isEnabled = () => true,
+        onDismiss = () => {}
+    } = options;
+
+    let startX = null;
+    let startY = null;
+    let lastX = 0;
+    let lastMoveTime = 0;
+    let velocityX = 0;
+    let currentDx = 0;
+    let axis = null;
+    let aborted = false;
+    let animTimer = null;
+    let suppressNextClickUntil = 0;
+
+    const clearAnimTimer = () => {
+        if (animTimer !== null) {
+            clearTimeout(animTimer);
+            animTimer = null;
+        }
+    };
+
+    const clearInlineStyles = () => {
+        panelEl.style.transition = '';
+        panelEl.style.transform = '';
+        panelEl.style.willChange = '';
+        if (backdropEl) {
+            backdropEl.style.transition = '';
+            backdropEl.style.opacity = '';
+        }
+    };
+
+    const resetVars = () => {
+        startX = null;
+        startY = null;
+        lastX = 0;
+        lastMoveTime = 0;
+        velocityX = 0;
+        currentDx = 0;
+        axis = null;
+        aborted = false;
+    };
+
+    const reset = () => {
+        clearAnimTimer();
+        resetVars();
+        clearInlineStyles();
+    };
+
+    const isEdgeCandidate = (clientX) => {
+        if (typeof clientX !== 'number' || !isEnabled()) return false;
+        const left = panelEl.getBoundingClientRect?.().left ?? 0;
+        const relX = clientX - left;
+        return relX >= -4 && relX <= edgeWidth;
+    };
+
+    const onClickCapture = (e) => {
+        if (Date.now() < suppressNextClickUntil) {
+            e.preventDefault();
+            e.stopPropagation();
+            suppressNextClickUntil = 0;
+        }
+    };
+
+    const onTouchStart = (e) => {
+        suppressNextClickUntil = 0;
+        if (!e.touches || e.touches.length !== 1 || !isEnabled()) {
+            resetVars();
+            return;
+        }
+
+        const clientX = e.touches[0].clientX;
+        if (!isEdgeCandidate(clientX) || shouldIgnoreHorizontalSwipeTarget(e.target)) {
+            resetVars();
+            return;
+        }
+
+        clearAnimTimer();
+        startX = clientX;
+        startY = e.touches[0].clientY;
+        lastX = startX;
+        lastMoveTime = e.timeStamp || Date.now();
+        velocityX = 0;
+        currentDx = 0;
+        axis = null;
+        aborted = false;
+    };
+
+    const onTouchMove = (e) => {
+        if (startX === null || aborted || !e.touches || e.touches.length !== 1) return;
+
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        const rawDx = x - startX;
+        const dy = y - startY;
+
+        if (!axis) {
+            if (Math.abs(rawDx) < 8 && Math.abs(dy) < 8) return;
+            if (rawDx > 8 && Math.abs(rawDx) > Math.abs(dy)) {
+                axis = 'x';
+                panelEl.style.transition = 'none';
+                panelEl.style.willChange = 'transform';
+                if (backdropEl) {
+                    backdropEl.style.transition = 'none';
+                }
+                const active = typeof document !== 'undefined' ? document.activeElement : null;
+                if (active && panelEl.contains(active) && active.matches?.('input, textarea, [contenteditable="true"]')) {
+                    active.blur?.();
+                }
+            } else {
+                aborted = true;
+                startX = null;
+                return;
+            }
+        }
+
+        if (axis !== 'x') return;
+
+        if (e.cancelable) e.preventDefault();
+
+        const dx = Math.max(0, rawDx);
+        const now = e.timeStamp || Date.now();
+        const dt = now - lastMoveTime;
+        if (dt >= 4) {
+            const instVx = (x - lastX) / dt;
+            velocityX = velocityX === 0 ? instVx : (velocityX * 0.4 + instVx * 0.6);
+            lastX = x;
+            lastMoveTime = now;
+        }
+        currentDx = dx;
+
+        const panelWidth = panelEl.offsetWidth || (typeof window !== 'undefined' ? window.innerWidth : 400) || 400;
+        const progress = Math.min(1, dx / panelWidth);
+
+        panelEl.style.transform = `translate3d(${dx}px, 0, 0)`;
+        if (backdropEl) {
+            backdropEl.style.opacity = String(Math.max(0, 1 - progress));
+        }
+    };
+
+    const finalizeGesture = (shouldEvaluateDismiss, e) => {
+        const wasHorizontal = axis === 'x';
+        const dx = currentDx;
+        const vx = velocityX;
+        const lastMove = lastMoveTime;
+        const eventTimeStamp = e?.timeStamp || Date.now();
+        resetVars();
+
+        if (!wasHorizontal) return;
+
+        suppressNextClickUntil = Date.now() + 350;
+        if (shouldEvaluateDismiss && e?.cancelable) e.preventDefault();
+
+        const panelWidth = panelEl.offsetWidth || (typeof window !== 'undefined' ? window.innerWidth : 400) || 400;
+        const effectiveThreshold = Math.min(130, Math.max(72, Math.round(panelWidth * dismissRatio)));
+        const isFastFlick = (eventTimeStamp - lastMove) <= 100 && dx >= 32 && vx >= velocityThreshold;
+        const reducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+
+        if (shouldEvaluateDismiss && (dx >= effectiveThreshold || isFastFlick)) {
+            if (reducedMotion) {
+                onDismiss();
+                clearInlineStyles();
+                return;
+            }
+
+            panelEl.style.transition = 'transform 0.24s cubic-bezier(0.32, 0.72, 0, 1)';
+            panelEl.style.transform = 'translate3d(100%, 0, 0)';
+            if (backdropEl) {
+                backdropEl.style.transition = 'opacity 0.22s ease';
+                backdropEl.style.opacity = '0';
+            }
+
+            clearAnimTimer();
+            animTimer = setTimeout(() => {
+                animTimer = null;
+                if (!isEnabled()) {
+                    clearInlineStyles();
+                    return;
+                }
+                panelEl.style.transition = 'none';
+                onDismiss();
+                if (panelEl.isConnected) {
+                    panelEl.style.transform = '';
+                    panelEl.style.willChange = '';
+                    void panelEl.offsetWidth;
+                    panelEl.style.transition = '';
+                }
+                if (backdropEl?.isConnected) {
+                    backdropEl.style.transition = '';
+                    backdropEl.style.opacity = '';
+                }
+            }, 240);
+            return;
+        }
+
+        if (reducedMotion) {
+            clearInlineStyles();
+            return;
+        }
+
+        panelEl.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
+        panelEl.style.transform = 'translate3d(0, 0, 0)';
+        if (backdropEl) {
+            backdropEl.style.transition = 'opacity 0.24s ease';
+            backdropEl.style.opacity = '1';
+        }
+
+        clearAnimTimer();
+        animTimer = setTimeout(() => {
+            animTimer = null;
+            clearInlineStyles();
+        }, 290);
+    };
+
+    const onTouchEnd = (e) => finalizeGesture(true, e);
+    const onTouchCancel = (e) => finalizeGesture(false, e);
+
+    panelEl.addEventListener('click', onClickCapture, true);
+    panelEl.addEventListener('touchstart', onTouchStart, { passive: true });
+    panelEl.addEventListener('touchmove', onTouchMove, { passive: false });
+    panelEl.addEventListener('touchend', onTouchEnd, { passive: false });
+    panelEl.addEventListener('touchcancel', onTouchCancel, { passive: true });
+
+    return {
+        reset,
+        isEdgeCandidate,
+        destroy() {
+            reset();
+            suppressNextClickUntil = 0;
+            panelEl.removeEventListener('click', onClickCapture, true);
+            panelEl.removeEventListener('touchstart', onTouchStart);
+            panelEl.removeEventListener('touchmove', onTouchMove);
+            panelEl.removeEventListener('touchend', onTouchEnd);
+            panelEl.removeEventListener('touchcancel', onTouchCancel);
+        }
+    };
+}

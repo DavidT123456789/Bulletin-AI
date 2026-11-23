@@ -1048,7 +1048,7 @@ button > .icon-spin-wrapper {
         transform: translate(-50%, -50%);
     }
 
-    .menu-btn {
+    .header-actions-pill .pill-segment.menu-btn {
         box-sizing: border-box;
         width: 44px;
         height: 44px;
@@ -1057,8 +1057,8 @@ button > .icon-spin-wrapper {
         background-clip: padding-box;
     }
 
-    .menu-btn.active,
-    [data-theme="dark"] .menu-btn.active {
+    .header-actions-pill .pill-segment.menu-btn.active,
+    [data-theme="dark"] .header-actions-pill .pill-segment.menu-btn.active {
         background-color: var(--item-active-bg);
         box-shadow: none;
     }
@@ -1083,7 +1083,7 @@ button > .icon-spin-wrapper {
 
     .header {
         gap: 3px;
-        padding: 0 6px;
+        padding: 0 10px 0 6px;
     }
 
     .header-left {
@@ -1109,7 +1109,7 @@ button > .icon-spin-wrapper {
     }
 
     .header-actions {
-        gap: 1px;
+        gap: 3px;
     }
 
     .header-center {
@@ -1121,12 +1121,15 @@ button > .icon-spin-wrapper {
     }
 
     .header-actions-pill .pill-segment {
-        width: 30px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
     }
 
-    .menu-btn {
-        margin: -7px;
+    .header-actions-pill .pill-segment.menu-btn {
+        width: 44px;
+        height: 44px;
+        margin: -6px;
+        border: 6px solid transparent;
     }
 
     .ui-segmented-control.header-style {
