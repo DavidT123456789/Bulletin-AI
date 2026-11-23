@@ -226,6 +226,24 @@ describe('StorageManager', () => {
             await StorageManager.saveAppState();
             expect(DBService.putAll).toHaveBeenCalledTimes(1);
         });
+
+        it('should persist theme change without marking synced data as modified', async () => {
+            const { userSettings } = await import('../state/State.js');
+            userSettings.ui.theme = 'system';
+            await StorageManager.saveAppState();
+
+            const syncHash = StorageManager.computeCurrentDataHash();
+            localStorage.setItem('bulletin_last_sync', '1000');
+            localStorage.setItem('bulletin_last_modified', '1000');
+            localStorage.setItem('bulletin_last_sync_hash', syncHash);
+
+            userSettings.ui.theme = 'light';
+            await StorageManager.saveAppState();
+
+            const savedData = JSON.parse(localStorage.getItem('bulletin-assistant-state'));
+            expect(savedData.settings.theme).toBe('light');
+            expect(localStorage.getItem('bulletin_last_modified')).toBe('1000');
+        });
     });
 
     describe('loadAppState', () => {
@@ -512,25 +530,23 @@ describe('StorageManager', () => {
             expect(changedHash).not.toBe(initialHash);
         });
 
-        it('should include synced preferences (theme, accent, seating dots) in the data hash but ignore view and navigation state', () => {
+        it('should include synced preferences (accent, seating dots) in the data hash but ignore theme, view and navigation state', () => {
             const { theme, accentColor, activeView, isAppreciationFullView, seatingStatusDots } = userSettings.ui;
             const baseHash = StorageManager.computeCurrentDataHash();
 
+            userSettings.ui.theme = 'light';
             userSettings.ui.activeView = 'plan';
             userSettings.ui.isAppreciationFullView = true;
             runtimeState.navigation.currentPeriod = 'T2';
             expect(StorageManager.computeCurrentDataHash()).toBe(baseHash);
+            expect(StorageManager.getExportableSettings().theme).toBe('light');
 
             userSettings.ui.accentColor = '#ff0055';
             const accentHash = StorageManager.computeCurrentDataHash();
             expect(accentHash).not.toBe(baseHash);
 
-            userSettings.ui.theme = 'light';
-            const themeHash = StorageManager.computeCurrentDataHash();
-            expect(themeHash).not.toBe(accentHash);
-
             userSettings.ui.seatingStatusDots = { ppre: false };
-            expect(StorageManager.computeCurrentDataHash()).not.toBe(themeHash);
+            expect(StorageManager.computeCurrentDataHash()).not.toBe(accentHash);
 
             Object.assign(userSettings.ui, { theme, accentColor, activeView, isAppreciationFullView, seatingStatusDots });
             runtimeState.navigation.currentPeriod = 'T1';

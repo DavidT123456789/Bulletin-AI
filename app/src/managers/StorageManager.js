@@ -61,11 +61,11 @@ const DEVICE_ONLY_SETTINGS_KEYS = [
 ];
 
 /**
- * @const {string[]} Clés exclues de l'empreinte de données : clés propres à l'appareil + états de vue restaurés
- * avec la sauvegarde sans compter comme une modification. Les préférences synchronisées (thème, couleur
+ * @const {string[]} Clés exclues de l'empreinte de données : clés propres à l'appareil + préférences d'affichage (thème, états de vue) restaurées
+ * avec la sauvegarde sans compter comme une modification. Les autres préférences synchronisées (couleur
  * d'accentuation, pastilles du plan de classe…) font partie de l'empreinte.
  */
-const DATA_HASH_IGNORED_KEYS = [...DEVICE_ONLY_SETTINGS_KEYS, 'activeView', 'isAppreciationFullView'];
+const DATA_HASH_IGNORED_KEYS = [...DEVICE_ONLY_SETTINGS_KEYS, 'theme', 'activeView', 'isAppreciationFullView'];
 
 /**
  * Normalise `tokenUsage` au format canonique `{ appreciation, analysis }` de manière idempotente :
