@@ -202,7 +202,8 @@ export const ListViewEvents = {
             const rect = menuBtn.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom - 16;
             const spaceAbove = rect.top - 72;
-            const openUp = spaceBelow < 240 && spaceAbove > spaceBelow;
+            const flipThreshold = window.matchMedia?.('(pointer: coarse)')?.matches ? 320 : 240;
+            const openUp = spaceBelow < flipThreshold && spaceAbove > spaceBelow;
             dropdown.classList.toggle('dropup', openUp);
 
             activateMenu(menu, dropdown, menuBtn, openUp ? spaceAbove : spaceBelow, options);

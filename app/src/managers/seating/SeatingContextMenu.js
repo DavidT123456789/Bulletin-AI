@@ -382,6 +382,7 @@ export const SeatingContextMenu = {
                     this._activeContextMenu?.anchorX ?? context.clientX,
                     this._activeContextMenu?.anchorY ?? context.clientY
                 );
+                FocusPanelManager.bindScrollAffordances?.(menu);
                 menu.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
                 return;
             }
@@ -538,6 +539,7 @@ export const SeatingContextMenu = {
         triggerEl?.classList?.remove('sc-context-target');
         parentCell?.classList?.remove('sc-context-target-parent');
         cleanupListeners?.();
+        menu?._scrollAffordanceRo?.disconnect?.();
         TooltipsUI?.cleanupTooltipsIn?.(menu);
         menu?.remove();
 

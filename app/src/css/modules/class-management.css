@@ -951,7 +951,7 @@
 /* Équilibre optique Desktop quand la scrollbar (5px + 2px) est présente :
    garde une vraie marge entre la carte et le curseur sans sur-élargir la droite,
    et préserve le curseur de défilement de l'estompage vertical du mask-image */
-@media (min-width: 769px) {
+@media (min-width: 769px) and (pointer: fine) {
     :is(.class-dropdown-list, #classManagementModal .modal-body, .modal-prompt-preview .modal-body, .ui-tabs-content, .lab-layout, .lab-pane, .pick-students-list, .move-class-list, .trombi-assignment-grid, .trombi-popover-list, .trombi-preview-grid > .preview-list, .history-popover-list, .focus-analysis-content-area, .sc-sidebar:not(.drag-over) .sc-student-list, .sc-sheet-content, .sc-sheet-picker-list, .journal-content:not(:has(.journal-draft-preview.visible)), .sc-random-history-list, .model-dropdown-list, .custom-dropdown-menu):is(.can-scroll-top, .can-scroll-bottom) {
         -webkit-mask-image:
             linear-gradient(to bottom, var(--scrim-top, #000 0px), var(--scrim-bottom, #000 100%)),
