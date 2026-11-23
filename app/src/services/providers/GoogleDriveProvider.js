@@ -204,8 +204,12 @@ export const GoogleDriveProvider = {
                     },
                 });
 
-                // If forcePrompt is requested, ask for consent; if silent, use 'none'; otherwise '' avoids re-prompting consent
-                const prompt = options.forcePrompt ? 'consent' : (options.silent ? 'none' : '');
+                // If forcePrompt is requested, ask for consent; if silent, use 'none';
+                // if no account is cached (first connect or after disconnect), force Google's account chooser;
+                // otherwise '' re-authenticates the known account without re-prompting.
+                const prompt = options.forcePrompt
+                    ? 'consent'
+                    : (options.silent ? 'none' : (knownEmail ? '' : 'select_account'));
                 tokenClient.requestAccessToken({ prompt });
             });
 
@@ -295,6 +299,7 @@ export const GoogleDriveProvider = {
         }
         this._token = null;
         this._fileId = null;
+        this._needsReconnect = false;
         SafeStorage.removeSession(STORAGE_KEYS.GOOGLE_TOKEN);
         this._purgeLegacyLocalToken();
         SafeStorage.remove(STORAGE_KEYS.GOOGLE_USER);
@@ -344,10 +349,13 @@ export const GoogleDriveProvider = {
     // =========================================================================
 
     /**
-     * Find or create the sync file in AppData.
+     * Find (and optionally create) the sync file in AppData.
+     * @param {Object} [options]
+     * @param {boolean} [options.createIfMissing=true] - Create an empty file when absent (write path only)
+     * @returns {Promise<string|null>}
      * @private
      */
-    async _ensureFile() {
+    async _ensureFile({ createIfMissing = true } = {}) {
         if (this._fileId) return this._fileId;
 
         try {
@@ -380,6 +388,10 @@ export const GoogleDriveProvider = {
                 return this._fileId;
             }
 
+            if (!createIfMissing) {
+                return null;
+            }
+
             // Create new file
             const createResponse = await Utils.withTimeout(
                 window.gapi.client.drive.files.create({
@@ -410,7 +422,8 @@ export const GoogleDriveProvider = {
         try {
             // Invalidate cached fileId to ensure we always pick the newest file from Drive
             this._fileId = null;
-            const fileId = await this._ensureFile();
+            const fileId = await this._ensureFile({ createIfMissing: false });
+            if (!fileId) return null;
 
             const response = await Utils.withTimeout(
                 window.gapi.client.drive.files.get({
@@ -496,7 +509,8 @@ export const GoogleDriveProvider = {
     async getMetadata() {
         try {
             this._fileId = null;
-            const fileId = await this._ensureFile();
+            const fileId = await this._ensureFile({ createIfMissing: false });
+            if (!fileId) return null;
 
             const response = await Utils.withTimeout(
                 window.gapi.client.drive.files.get({
@@ -507,9 +521,12 @@ export const GoogleDriveProvider = {
                 'Délai dépassé lors de la vérification sur Google Drive.'
             );
 
+            const size = parseInt(response.result.size, 10) || 0;
+            if (size === 0) return null;
+
             return {
                 lastModified: response.result.modifiedTime,
-                size: parseInt(response.result.size) || 0
+                size
             };
 
         } catch (error) {

@@ -481,6 +481,7 @@ export const FocusPanelManager = {
         const wasOpen = typeof this.isOpen === 'function' ? this.isOpen() : Boolean(this.isOpen);
 
         FocusPanelNavigation.cancelActiveTransition?.();
+        this._analysisPullDismiss?.reset?.();
         this._resetTransformations(panel, backdrop);
         const analysisPage = document.querySelector('.focus-analysis-page');
         if (analysisPage) this._resetTransformations(analysisPage, null);

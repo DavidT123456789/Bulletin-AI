@@ -1831,17 +1831,6 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         padding-top: 0;
     }
 
-    .sc-sidebar::before {
-        content: '';
-        display: block;
-        width: 36px;
-        height: 4px;
-        border-radius: var(--radius-pill);
-        background: var(--text-quaternary, rgba(150, 150, 150, 0.4));
-        margin: 8px auto 0;
-        flex-shrink: 0;
-    }
-
     /* Locked sidebar slides smoothly off-screen vertically on mobile (120Hz GPU translate) */
     #seatingChartView[data-locked="true"] .sc-sidebar {
         translate: 0 calc(100% + 12px);
@@ -2242,29 +2231,25 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         margin-top: 4px;
     }
 
-    /* ── Config & Placement Popovers mobile alignment (open upwards into board area) ── */
+    /* ── Config & Placement Popovers mobile alignment (centered over dock, open upwards into board area) ── */
+    #seatingChartView :is(.sc-placement-wrapper, .sc-config-wrapper) {
+        position: static;
+    }
+
     #seatingChartView :is(.sc-config-popover, .sc-placement-popover) {
         top: auto;
         bottom: calc(100% + 10px);
+        left: 50%;
+        right: auto;
         max-width: calc(100vw - 24px);
-        transform: translateY(8px) scale(0.95);
+        transform-origin: bottom center;
+        transform: translateX(-50%) translateY(8px) scale(0.95);
         box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border-color);
         z-index: 300;
     }
 
-    #seatingChartView .sc-config-popover {
-        left: auto;
-        right: -15px;
-        transform-origin: bottom right;
-    }
-
-    #seatingChartView .sc-placement-popover {
-        left: 0;
-        transform-origin: bottom left;
-    }
-
     #seatingChartView :is(.sc-config-popover, .sc-placement-popover).open {
-        transform: translateY(0) scale(1);
+        transform: translateX(-50%) translateY(0) scale(1);
     }
 
     #seatingChartView .sc-popover-item {
@@ -2412,7 +2397,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     /* Empty sidebar message adapts to horizontal layout */
     .sc-empty-sidebar {
         flex-direction: row !important;
-        padding: 2px 4px;
+        padding: 4px 8px;
         font-size: 0.78rem;
         gap: 6px;
         justify-content: center !important;
@@ -2422,30 +2407,46 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     .sc-empty-success-badge {
-        width: 18px !important;
-        height: 18px !important;
+        width: 16px !important;
+        height: 16px !important;
         margin-bottom: 0 !important;
         order: 1 !important;
-        color: var(--text-tertiary) !important;
+        color: var(--success-text) !important;
+        opacity: 0.85;
     }
 
     .sc-empty-check-svg {
-        width: 16px !important;
-        height: 16px !important;
+        width: 15px !important;
+        height: 15px !important;
     }
 
     .sc-empty-text {
         order: 2 !important;
-        font-size: 0.75rem !important;
+        font-size: 0.78rem !important;
+        line-height: 1.25 !important;
         max-width: none !important;
-        text-align: left !important;
+        text-align: center !important;
         margin-bottom: 0 !important;
+    }
+
+    .sc-empty-text br {
+        display: none;
     }
 
     .sc-empty-text strong {
         display: inline;
-        font-size: 0.75rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-primary);
         margin-bottom: 0;
+    }
+
+    .sc-empty-text strong::after {
+        content: '·';
+        margin: 0 5px;
+        font-weight: 400;
+        color: var(--text-tertiary);
+        opacity: 0.7;
     }
 
     #seatingChartView[data-all-placed="true"] .sc-student-list {

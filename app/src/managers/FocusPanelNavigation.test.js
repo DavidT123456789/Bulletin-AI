@@ -328,10 +328,19 @@ describe('FocusPanelNavigation', () => {
             vi.useRealTimers();
         });
 
-        it('ignores touches starting in the left edge-swipe zone (< 30px) and inside focused contenteditable elements', () => {
+        it('allows swiping from left edge, unfocused fields, and static buttons while ignoring focused inputs and absorbing synthetic clicks', () => {
             const { container, content } = setupSwipeDom();
-            content.innerHTML = '<div id="focusAppreciationText" contenteditable="true">Texte</div>';
+            content.innerHTML = `
+                <textarea id="focusContextInput"></textarea>
+                <div id="focusAppreciationText" contenteditable="true">Texte</div>
+                <button id="focusGenerateBtn" type="button">Générer</button>
+            `;
+            const textarea = document.getElementById('focusContextInput');
             const editable = document.getElementById('focusAppreciationText');
+            const genBtn = document.getElementById('focusGenerateBtn');
+            const genClickSpy = vi.fn();
+            genBtn.addEventListener('click', genClickSpy);
+
             const student1 = { id: 's1', nom: 'Alice' };
             const student2 = { id: 's2', nom: 'Bob' };
             appState.filteredResults = [student1, student2];
@@ -350,20 +359,46 @@ describe('FocusPanelNavigation', () => {
                 updateScrollAffordances: vi.fn()
             });
 
-            // 1. Edge swipe starting at clientX = 12 (< 30px) must be ignored by student swipe
+            // 1. Edge swipe starting at clientX = 12 is no longer blocked -> navigates to prev
             dispatchTouch(container, 'touchstart', 12, 200);
             dispatchTouch(container, 'touchmove', 160, 200);
             dispatchTouch(container, 'touchend', 160, 200);
+            expect(currentIndex).toBe(0);
+
+            // 2. Touch on unfocused textarea navigates next
+            const tsTextarea = new Event('touchstart', { bubbles: true });
+            tsTextarea.touches = [{ clientX: 250, clientY: 200 }];
+            textarea.dispatchEvent(tsTextarea);
+            dispatchTouch(container, 'touchmove', 120, 200);
+            dispatchTouch(container, 'touchend', 120, 200);
             expect(currentIndex).toBe(1);
 
-            // 2. Touch on focused contenteditable must not trigger student swipe
+            // 3. Touch on resting button navigates prev AND absorbs trailing synthetic click
+            const tsBtn = new Event('touchstart', { bubbles: true });
+            tsBtn.touches = [{ clientX: 120, clientY: 200 }];
+            genBtn.dispatchEvent(tsBtn);
+            dispatchTouch(container, 'touchmove', 250, 200);
+            dispatchTouch(container, 'touchend', 250, 200);
+            expect(currentIndex).toBe(0);
+            genBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(genClickSpy).not.toHaveBeenCalled();
+
+            // 4. Touch on focused contenteditable or focused textarea must NOT trigger student swipe
             editable.focus();
             const touchStart = new Event('touchstart', { bubbles: true });
             touchStart.touches = [{ clientX: 250, clientY: 200 }];
             editable.dispatchEvent(touchStart);
             dispatchTouch(container, 'touchmove', 100, 200);
             dispatchTouch(container, 'touchend', 100, 200);
-            expect(currentIndex).toBe(1);
+            expect(currentIndex).toBe(0);
+
+            textarea.focus();
+            const touchStartTa = new Event('touchstart', { bubbles: true });
+            touchStartTa.touches = [{ clientX: 250, clientY: 200 }];
+            textarea.dispatchEvent(touchStartTa);
+            dispatchTouch(container, 'touchmove', 100, 200);
+            dispatchTouch(container, 'touchend', 100, 200);
+            expect(currentIndex).toBe(0);
         });
 
         it('respects prefers-reduced-motion without cloning DOM and cancels pending rAF via cancelActiveTransition()', () => {

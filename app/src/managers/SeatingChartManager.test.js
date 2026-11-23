@@ -2354,6 +2354,44 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._activeMobileSheet).toBeNull();
         });
 
+        it('devrait fermer le Mobile Action Sheet par glissement vers le bas (pull-to-dismiss) et dépiler HistoryManager', () => {
+            vi.useFakeTimers();
+            const origMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+
+            try {
+                const student = SeatingChartManager._students[0];
+                SeatingChartManager._openOccupiedCellSheet(0, 0, student);
+
+                const sheet = document.getElementById('scMobileSheet');
+                const handle = sheet.querySelector('.sc-sheet-handle');
+                expect(sheet).not.toBeNull();
+                expect(HistoryManager.isOpen('scMobileSheet')).toBe(true);
+                Object.defineProperty(sheet, 'offsetHeight', { value: 400, configurable: true });
+
+                const ts = new Event('touchstart', { bubbles: true });
+                ts.touches = [{ clientX: 150, clientY: 100 }];
+                handle.dispatchEvent(ts);
+
+                const tm = new Event('touchmove', { bubbles: true, cancelable: true });
+                tm.touches = [{ clientX: 150, clientY: 250 }];
+                handle.dispatchEvent(tm);
+
+                const te = new Event('touchend', { bubbles: true });
+                te.touches = [];
+                te.changedTouches = [{ clientX: 150, clientY: 250 }];
+                handle.dispatchEvent(te);
+
+                vi.advanceTimersByTime(260);
+                expect(document.getElementById('scMobileSheet')).toBeNull();
+                expect(SeatingChartManager._activeMobileSheet).toBeNull();
+                expect(HistoryManager.isOpen('scMobileSheet')).toBe(false);
+            } finally {
+                window.matchMedia = origMatchMedia;
+                vi.useRealTimers();
+            }
+        });
+
         it('devrait ouvrir le Mobile Sheet pour une table vide avec sélecteur d’élèves trié A→Z par NOM Prénom et formaté avec .student-nom / .student-prenom', () => {
             SeatingChartManager._gridState = [
                 ['s1', null, null],
@@ -4679,7 +4717,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             performSwipe(120, 240);
             expect(SeatingChartManager._planMode).toBe('course');
 
-            // 5. En mode Édition (_isLocked = false) ou zoomé (_isFitted = false) ou edge-swipe (< 24px) ou touchcancel : pas de bascule
+            // 5. En mode Édition (_isLocked = false) ou zoomé (_isFitted = false) ou touchcancel : pas de bascule
             SeatingChartManager._isLocked = false;
             performSwipe(240, 120);
             expect(SeatingChartManager._planMode).toBe('course');
@@ -4690,24 +4728,21 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._planMode).toBe('course');
 
             SeatingChartManager._isFitted = true;
-            performSwipe(12, 140); // Edge swipe système
-            expect(SeatingChartManager._planMode).toBe('course');
-
             performSwipe(240, 120, 200, 200, true); // touchcancel
             expect(SeatingChartManager._planMode).toBe('course');
 
-            // 6. Swipe droite depuis Cours -> retour vers la vue Liste (et swipe gauche depuis Liste -> retour Plan Cours)
+            // 6. Swipe droite depuis le bord (x=12) en mode Cours -> retour vers la vue Liste (et swipe gauche depuis Liste -> retour Plan Cours)
             const switchToViewSpy = vi.spyOn(SeatingChartManager, 'switchToView');
-            performSwipe(120, 240);
+            performSwipe(12, 140);
             expect(switchToViewSpy).toHaveBeenCalledWith('list');
 
             SeatingChartManager.switchToView('list', { immediate: true });
             const outputSection = document.querySelector('.main-content .output-section');
             const tsList = new Event('touchstart');
-            tsList.touches = [{ clientX: 260, clientY: 200 }];
+            tsList.touches = [{ clientX: 390, clientY: 200 }];
             outputSection.dispatchEvent(tsList);
             const teList = new Event('touchend');
-            teList.changedTouches = [{ clientX: 140, clientY: 205 }];
+            teList.changedTouches = [{ clientX: 250, clientY: 205 }];
             outputSection.dispatchEvent(teList);
             expect(switchToViewSpy).toHaveBeenCalledWith('plan');
             switchToViewSpy.mockRestore();
@@ -4814,6 +4849,45 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             } finally {
                 vi.useRealTimers();
             }
+        });
+
+        it('devrait absorber le click synthétique résiduel sur une ligne élève après un swipe horizontal annulé en vue Liste', () => {
+            SeatingChartManager.switchToView('list', { immediate: true });
+            const outputSection = document.querySelector('.main-content .output-section');
+            const studentRow = document.createElement('div');
+            studentRow.className = 'student-row';
+            const rowClickSpy = vi.fn();
+            studentRow.addEventListener('click', rowClickSpy);
+            outputSection.appendChild(studentRow);
+
+            // 1. Swipe horizontal avorté (-24px, sous le seuil de -48px) -> ne bascule pas et absorbe le click résiduel
+            const ts = new Event('touchstart', { bubbles: true, cancelable: true });
+            ts.touches = [{ clientX: 200, clientY: 200 }];
+            studentRow.dispatchEvent(ts);
+
+            const tm = new Event('touchmove', { bubbles: true, cancelable: true });
+            tm.touches = [{ clientX: 176, clientY: 200 }];
+            studentRow.dispatchEvent(tm);
+
+            const te = new Event('touchend', { bubbles: true, cancelable: true });
+            te.changedTouches = [{ clientX: 176, clientY: 200 }];
+            studentRow.dispatchEvent(te);
+            expect(te.defaultPrevented).toBe(true);
+
+            studentRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(rowClickSpy).not.toHaveBeenCalled();
+
+            // 2. Tap normal juste après -> le nouveau touchstart réarme et laisse passer le click
+            const tsTap = new Event('touchstart', { bubbles: true, cancelable: true });
+            tsTap.touches = [{ clientX: 200, clientY: 200 }];
+            studentRow.dispatchEvent(tsTap);
+
+            const teTap = new Event('touchend', { bubbles: true, cancelable: true });
+            teTap.changedTouches = [{ clientX: 200, clientY: 200 }];
+            studentRow.dispatchEvent(teTap);
+
+            studentRow.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            expect(rowClickSpy).toHaveBeenCalledTimes(1);
         });
 
         it('devrait chaîner Liste ↔ Plan (Cours) ↔ Plan (Activité) avec les flèches Gauche/Droite (avec ou sans Ctrl) sans contour focus parasite', () => {

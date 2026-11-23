@@ -211,6 +211,8 @@ export const SyncService = {
 
             if (meta && meta.lastModified) {
                 this.remoteSyncTime = new Date(meta.lastModified).getTime();
+            } else {
+                this.remoteSyncTime = null;
             }
             this._updateCloudIndicator('connected');
         } catch (e) {
@@ -824,9 +826,16 @@ export const SyncService = {
         }
         this._provider = null;
         this.currentProviderName = null;
+        this.lastSyncTime = null;
         this.remoteSyncTime = null;
+        this._lastSyncState = null;
         this._wasConfigured = false;
         SafeStorage.remove(STORAGE_KEYS.SYNC_PROVIDER);
+        SafeStorage.remove(STORAGE_KEYS.LAST_SYNC);
+        SafeStorage.remove(STORAGE_KEYS.LAST_SYNC_HASH);
+        SafeStorage.remove(STORAGE_KEYS.LAST_SYNC_STUDENTS);
+        SafeStorage.remove(STORAGE_KEYS.LAST_SYNC_CLASSES);
+        SafeStorage.remove(STORAGE_KEYS.LAST_SYNC_ROSTER);
         this._updateCloudIndicator('disconnected');
         bus.emit(EVENTS.SYNC_DISCONNECTED, {});
     },

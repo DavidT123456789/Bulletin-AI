@@ -15,6 +15,7 @@ import { ClassUIManager } from '../ClassUIManager.js';
 import { HistoryManager } from '../HistoryManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { ListSelectionManager } from '../list/ListSelectionManager.js';
+import { attachSheetPullToDismiss } from '../../utils/TouchGestures.js';
 import {
     MIN_COLS,
     MAX_COLS,
@@ -185,6 +186,14 @@ export const SeatingMobileSheet = {
         });
     },
 
+    _bindSheetDismissGesture(sheet, backdrop) {
+        return attachSheetPullToDismiss(sheet, {
+            backdropEl: backdrop,
+            scrollContainer: '.sc-sheet-content',
+            onDismiss: () => this._closeMobileSheet(true)
+        });
+    },
+
     _openOccupiedCellSheet(row, col, student, cellStudents = null) {
         this._closeContextMenu?.();
         const students = Array.isArray(cellStudents) && cellStudents.length > 0
@@ -344,7 +353,8 @@ export const SeatingMobileSheet = {
 
         document.body.appendChild(backdrop);
         document.body.appendChild(sheet);
-        this._activeMobileSheet = { backdrop, sheet };
+        const gesture = this._bindSheetDismissGesture(sheet, backdrop);
+        this._activeMobileSheet = { backdrop, sheet, gesture };
 
         requestAnimationFrame(() => {
             backdrop.classList.add('active');
@@ -489,7 +499,8 @@ export const SeatingMobileSheet = {
 
         document.body.appendChild(backdrop);
         document.body.appendChild(sheet);
-        this._activeMobileSheet = { backdrop, sheet };
+        const gesture = this._bindSheetDismissGesture(sheet, backdrop);
+        this._activeMobileSheet = { backdrop, sheet, gesture };
 
         requestAnimationFrame(() => {
             backdrop.classList.add('active');
@@ -645,7 +656,8 @@ export const SeatingMobileSheet = {
 
         document.body.appendChild(backdrop);
         document.body.appendChild(sheet);
-        this._activeMobileSheet = { backdrop, sheet };
+        const gesture = this._bindSheetDismissGesture(sheet, backdrop);
+        this._activeMobileSheet = { backdrop, sheet, gesture };
 
         requestAnimationFrame(() => {
             backdrop.classList.add('active');
@@ -705,6 +717,8 @@ export const SeatingMobileSheet = {
         if (!silentHistory && HistoryManager.isOpen('scMobileSheet')) {
             HistoryManager.handleManualClose('scMobileSheet', { replaceNext });
         }
+
+        this._activeMobileSheet?.gesture?.destroy?.();
 
         const existingSheets = document.querySelectorAll('.sc-mobile-sheet, .sc-mobile-sheet-backdrop');
         if (immediate) {

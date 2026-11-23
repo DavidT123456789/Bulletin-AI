@@ -690,7 +690,6 @@ export const SeatingZoom = {
         const MAX_RAW_EXCESS = 160;
         const SWIPE_MODE_MIN_DX = 44;
         const SWIPE_MODE_MIN_EXCESS = 24;
-        const SWIPE_EDGE_GUARD = 24;
         let touchStartX = 0;
         let touchStartY = 0;
         let prevTouchX = 0;
@@ -707,7 +706,6 @@ export const SeatingZoom = {
         let isTouching = false;
         let isOverscrolling = false;
         let isPostPinchPanPending = false;
-        let isEdgeSwipe = false;
         let startedOnOverlayControl = false;
         let canSwipeUnlockedEmpty = false;
         let touchBoard = null;
@@ -1126,8 +1124,6 @@ export const SeatingZoom = {
             }
 
             beginSingleTouch(e.touches[0], board, false);
-            const viewportW = window.innerWidth || document.documentElement?.clientWidth || 0;
-            isEdgeSwipe = touchStartX < SWIPE_EDGE_GUARD || (viewportW > 0 && touchStartX > viewportW - SWIPE_EDGE_GUARD);
             startedOnOverlayControl = Boolean(
                 e.target?.closest?.('.sc-top-left-bar, .sc-floating-actions, .sc-status-pill, .sc-desk, .sc-mobile-sheet, .sc-onboarding-hint')
             );
@@ -1274,7 +1270,6 @@ export const SeatingZoom = {
                 maxScrollY === 0 &&
                 this._isActive &&
                 this._isFitted &&
-                !isEdgeSwipe &&
                 !startedOnOverlayControl &&
                 !this._activeMobileSheet &&
                 !this._isSearchOpen?.()
@@ -1412,7 +1407,6 @@ export const SeatingZoom = {
                 this._isFitted &&
                 baseMaxScrollX === 0 &&
                 baseMaxScrollY === 0 &&
-                !isEdgeSwipe &&
                 !startedOnOverlayControl &&
                 !this._activeMobileSheet &&
                 !this._isSearchOpen?.()

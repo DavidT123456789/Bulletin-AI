@@ -11,6 +11,7 @@ import { FocusPanelHeader } from './FocusPanelHeader.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
+import { shouldIgnoreHorizontalSwipeTarget } from '../utils/TouchGestures.js';
 
 export const FocusPanelNavigation = {
     /**
@@ -42,7 +43,7 @@ export const FocusPanelNavigation = {
      * @private
      */
     _initSwipeNavigation() {
-        const targetArea = document.getElementById('focusPagesContainer') || document.getElementById('focusPanel');
+        const targetArea = document.getElementById('focusPanel') || document.getElementById('focusPagesContainer');
         if (!targetArea || targetArea.dataset.swipeBound === 'true') return;
         targetArea.dataset.swipeBound = 'true';
 
@@ -58,6 +59,7 @@ export const FocusPanelNavigation = {
         let currentTranslateX = 0;
         let snapBackTimer = null;
         let snapBackRafId = null;
+        let suppressNextClickUntil = 0;
 
         const clearSwipeStyles = (el) => {
             if (!el) return;
@@ -68,6 +70,7 @@ export const FocusPanelNavigation = {
         };
 
         const cancelSnapBack = () => {
+            const hadActiveSnap = Boolean(snapBackTimer || snapBackRafId);
             if (snapBackTimer) {
                 clearTimeout(snapBackTimer);
                 snapBackTimer = null;
@@ -75,6 +78,9 @@ export const FocusPanelNavigation = {
             if (snapBackRafId) {
                 cancelAnimationFrame(snapBackRafId);
                 snapBackRafId = null;
+            }
+            if (hadActiveSnap && swipeContent) {
+                clearSwipeStyles(swipeContent);
             }
         };
 
@@ -105,7 +111,16 @@ export const FocusPanelNavigation = {
             isSwiping = false;
         };
 
+        targetArea.addEventListener('click', (e) => {
+            if (Date.now() < suppressNextClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                suppressNextClickUntil = 0;
+            }
+        }, true);
+
         targetArea.addEventListener('touchstart', e => {
+            suppressNextClickUntil = 0;
             if (e.touches.length > 1) return; // Ignore multi-touch
 
             cancelSnapBack();
@@ -117,31 +132,11 @@ export const FocusPanelNavigation = {
                 return;
             }
 
-            // Ignore edge-swipe close zone so panel dismissal and student swipe never collide
-            const panelEl = document.getElementById('focusPanel');
-            const panelLeft = panelEl?.getBoundingClientRect?.().left || 0;
-            const rawStartX = e.touches[0].clientX;
-            if (rawStartX >= panelLeft && (rawStartX - panelLeft) < 30) {
+            if (shouldIgnoreHorizontalSwipeTarget(e.target)) {
                 return;
             }
 
-            // Ignore if touching an input, textarea, slider, horizontal scroll area, or interactive elements
-            if (e.target.closest('input') ||
-                e.target.closest('textarea') ||
-                e.target.closest('.focus-refinement-options') ||
-                e.target.closest('.history-navigation-group') ||
-                e.target.closest('select') ||
-                e.target.closest('button')) {
-                return;
-            }
-
-            // Ignore focused or actively selected contenteditable regions so text selection never triggers a swipe
-            const editable = e.target.closest('[contenteditable="true"]');
-            if (editable && (editable === document.activeElement || editable.contains(document.activeElement) || !window.getSelection?.()?.isCollapsed)) {
-                return;
-            }
-
-            touchStartX = rawStartX;
+            touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
             lastMoveX = touchStartX;
             lastMoveTime = Date.now();
@@ -151,11 +146,6 @@ export const FocusPanelNavigation = {
             swipeContent = isAnalysisMode
                 ? document.querySelector('.focus-analysis-content-area')
                 : document.querySelector('.focus-main-page .focus-content');
-
-            if (swipeContent) {
-                swipeContent.style.transition = 'none'; // Instant follow
-                swipeContent.style.willChange = 'transform, opacity';
-            }
 
             currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
             totalItems = appState.filteredResults?.length ?? 0;
@@ -173,6 +163,13 @@ export const FocusPanelNavigation = {
                 // Determine swipe intent: horizontal vs vertical
                 if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
                     isSwiping = true;
+                    swipeContent.style.transition = 'none'; // Instant follow
+                    swipeContent.style.willChange = 'transform, opacity';
+
+                    const active = document.activeElement;
+                    if (active && targetArea.contains(active) && active.matches?.('input, textarea, [contenteditable="true"]')) {
+                        active.blur?.();
+                    }
                 } else if (Math.abs(diffY) > 10) {
                     clearSwipeStyles(swipeContent);
                     resetGestureVars(); // Vertical scroll, abort swipe
@@ -216,6 +213,10 @@ export const FocusPanelNavigation = {
         const finishSwipe = (shouldEvaluateNavigation) => {
             if (touchStartX === null || !swipeContent) return;
 
+            if (isSwiping) {
+                suppressNextClickUntil = Date.now() + 350;
+            }
+
             if (isSwiping && shouldEvaluateNavigation) {
                 const panelWidth = targetArea.clientWidth || swipeContent.clientWidth || Math.min(window.innerWidth || 400, 480);
                 const distanceThreshold = Math.min(56, Math.max(40, Math.round(panelWidth * 0.14)));
@@ -243,7 +244,10 @@ export const FocusPanelNavigation = {
             resetGestureVars();
         };
 
-        targetArea.addEventListener('touchend', () => finishSwipe(true), { passive: true });
+        targetArea.addEventListener('touchend', (e) => {
+            if (isSwiping && e.cancelable) e.preventDefault();
+            finishSwipe(true);
+        }, { passive: false });
         targetArea.addEventListener('touchcancel', () => finishSwipe(false), { passive: true });
     },
 

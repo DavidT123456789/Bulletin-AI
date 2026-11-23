@@ -20,6 +20,7 @@ import { SettingsModalListeners } from '../listeners/SettingsModalListeners.js';
 import { ExportManager } from '../ExportManager.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 import { bus, EVENTS } from '../../core/EventBus.js';
+import { attachSheetPullToDismiss } from '../../utils/TouchGestures.js';
 
 const isPanelOpen = (panel) => (typeof panel.isOpen === 'function' ? panel.isOpen() : Boolean(panel.isOpen));
 
@@ -90,6 +91,51 @@ export const FocusPanelEvents = {
                     scrollRafId = requestAnimationFrame(updateHeaderScrollState);
                 }
             }, { passive: true });
+
+            // Clear phantom mobile focus (Android virtual keyboard dismissal) on intentional vertical content scroll
+            let scrollTouchX = 0;
+            let scrollTouchY = 0;
+            let scrollTouchTarget = null;
+            let scrollTouchActive = false;
+
+            focusContent.addEventListener('touchstart', (e) => {
+                if (e.touches?.length === 1 && window.matchMedia?.('(pointer: coarse)')?.matches) {
+                    scrollTouchX = e.touches[0].clientX;
+                    scrollTouchY = e.touches[0].clientY;
+                    scrollTouchTarget = e.target;
+                    scrollTouchActive = true;
+                } else {
+                    scrollTouchActive = false;
+                }
+            }, { passive: true });
+
+            focusContent.addEventListener('touchmove', (e) => {
+                if (!scrollTouchActive || e.touches?.length !== 1) return;
+                const dx = e.touches[0].clientX - scrollTouchX;
+                const dy = e.touches[0].clientY - scrollTouchY;
+                if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) {
+                    scrollTouchActive = false;
+                    const active = document.activeElement;
+                    const isEditable = active && focusContent.contains(active) &&
+                        (['INPUT', 'TEXTAREA'].includes(active.tagName) || active.isContentEditable || active.matches?.('[contenteditable="true"]'));
+                    if (isEditable) {
+                        const selection = window.getSelection?.();
+                        const hasSelection = Boolean(selection && selection.isCollapsed === false);
+                        const startedOutside = Boolean(scrollTouchTarget && !active.contains(scrollTouchTarget));
+                        const hasInternalScroll = (active.scrollHeight || 0) > (active.clientHeight || 0) + 2;
+                        if (!hasSelection && (startedOutside || !hasInternalScroll)) {
+                            active.blur?.();
+                        }
+                    }
+                }
+            }, { passive: true });
+
+            const resetScrollTouch = () => {
+                scrollTouchActive = false;
+                scrollTouchTarget = null;
+            };
+            focusContent.addEventListener('touchend', resetScrollTouch, { passive: true });
+            focusContent.addEventListener('touchcancel', resetScrollTouch, { passive: true });
 
             if (typeof ResizeObserver !== 'undefined') {
                 const resizeObserver = new ResizeObserver(() => {
@@ -256,7 +302,7 @@ export const FocusPanelEvents = {
         if (printStudentBtn) printStudentBtn.addEventListener('click', (e) => handleStudentPrint(printStudentBtn, e));
         if (analysisPrintBtn) analysisPrintBtn.addEventListener('click', (e) => handleStudentPrint(analysisPrintBtn, e));
         const analysisBackBtn = document.getElementById('focusAnalysisBackBtn');
-        if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => FocusPanelAnalysis.hide());
+        if (analysisBackBtn) analysisBackBtn.addEventListener('click', () => { panel._analysisPullDismiss?.reset?.(); FocusPanelAnalysis.hide(); });
         const generateAnalysisBtn = document.getElementById('focusGenerateAnalysisBtn');
         if (generateAnalysisBtn) {
             generateAnalysisBtn.addEventListener('click', (e) => {
@@ -645,243 +691,25 @@ export const FocusPanelEvents = {
     },
 
     /**
-     * Initialise les gestures natives iOS pour fermer le panneau ("Edge Swipe" et "Pull-to-Dismiss")
+     * Initialise le geste pull-to-dismiss sur la page Analyse (feuille modale montante).
+     * Le panneau principal reste dédié à 100 % au swipe horizontal inter-élèves.
      * @param {Object} panel - Instance FocusPanelManager
      */
     initCloseGestures(panel) {
         const panelEl = document.getElementById('focusPanel');
-        if (!panelEl) return;
+        const analysisPage = panelEl?.querySelector('.focus-analysis-page');
+        if (!panelEl || !analysisPage) return;
 
-        let touchStartX = null;
-        let touchStartY = null;
-        let touchStartTime = 0;
-        let currentX = 0;
-        let currentY = 0;
-        let isEdgeSwiping = false;
-        let isPullingDown = false;
-        let contentEl = null;
-        let resetTimer = null;
-
-        const clearPendingReset = () => {
-            if (resetTimer) {
-                clearTimeout(resetTimer);
-                resetTimer = null;
+        panel._analysisPullDismiss?.destroy?.();
+        panel._analysisPullDismiss = attachSheetPullToDismiss(analysisPage, {
+            scrollContainer: '.focus-analysis-content-area',
+            scaleTargetEl: panelEl.querySelector('.focus-main-page'),
+            isEnabled: () => Boolean(document.getElementById('focusPagesContainer')?.classList.contains('show-analysis')),
+            onDismiss: () => {
+                FocusPanelAnalysis.hide();
+                panel._resetTransformations(analysisPage, null);
             }
-        };
-
-        const resetGestureVars = () => {
-            touchStartX = null;
-            touchStartY = null;
-            touchStartTime = 0;
-            currentX = 0;
-            currentY = 0;
-            isEdgeSwiping = false;
-            isPullingDown = false;
-        };
-
-        const prefersReducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
-
-        panelEl.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) return;
-            if (e.target.closest('button, [role="button"], input, textarea, select, .focus-nav-btn, .close-modal-btn')) return;
-
-            const editable = e.target.closest('[contenteditable="true"]');
-            if (editable && (editable === document.activeElement || editable.contains(document.activeElement) || !window.getSelection?.()?.isCollapsed)) {
-                return;
-            }
-
-            const header = document.querySelector('.focus-header');
-            if (header && header.classList.contains('editing')) return;
-
-            clearPendingReset();
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            touchStartTime = e.timeStamp || Date.now();
-            currentX = 0;
-            currentY = 0;
-
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-            const panelLeft = panelEl.getBoundingClientRect?.().left || 0;
-
-            isEdgeSwiping = touchStartX >= panelLeft && (touchStartX - panelLeft) < 30;
-            isPullingDown = false;
-
-            contentEl = isAnalysisVisible
-                ? panelEl.querySelector('.focus-analysis-content-area')
-                : panelEl.querySelector('.focus-main-page .focus-content');
-
-            if (!isEdgeSwiping && contentEl && contentEl.scrollTop <= 0) {
-                let currentHeaderRect = null;
-                if (isAnalysisVisible) {
-                    const analysisHeader = panelEl.querySelector('.focus-analysis-header');
-                    currentHeaderRect = analysisHeader ? analysisHeader.getBoundingClientRect() : null;
-                } else {
-                    currentHeaderRect = header ? header.getBoundingClientRect() : null;
-                }
-
-                if (currentHeaderRect && touchStartY <= currentHeaderRect.bottom + 40) {
-                    isPullingDown = true;
-                }
-            }
-
-            if (isEdgeSwiping || isPullingDown) {
-                const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panelEl;
-                if (target) {
-                    target.style.transition = 'none';
-                    target.style.willChange = 'transform';
-                }
-            }
-        }, { passive: true });
-
-        panelEl.addEventListener('touchmove', (e) => {
-            if (touchStartX === null || touchStartY === null) return;
-
-            currentX = e.touches[0].clientX - touchStartX;
-            currentY = e.touches[0].clientY - touchStartY;
-
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panelEl;
-            if (!target) return;
-
-            if (isEdgeSwiping) {
-                if (currentX > 0) {
-                    if (e.cancelable) e.preventDefault();
-
-                    if (isAnalysisVisible) {
-                        target.style.transform = `translateX(${currentX}px)`;
-                    } else {
-                        const progress = Math.min(currentX / window.innerWidth, 1);
-                        target.style.transform = `translateX(${currentX}px)`;
-                        const backdrop = document.getElementById('focusPanelBackdrop');
-                        if (backdrop) backdrop.style.opacity = (1 - progress).toString();
-                    }
-                }
-            } else if (isPullingDown && currentY > 0) {
-                if (currentY > Math.abs(currentX)) {
-                    if (e.cancelable) e.preventDefault();
-                    const resistance = currentY * 0.45;
-                    target.style.transform = `translateY(${resistance}px)`;
-                } else {
-                    isPullingDown = false;
-                    target.style.transition = '';
-                    target.style.transform = '';
-                }
-            }
-        }, { passive: false });
-
-        panelEl.addEventListener('touchend', (e) => {
-            if (touchStartX === null || touchStartY === null) return;
-
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panelEl;
-            const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
-            if (!target) {
-                resetGestureVars();
-                return;
-            }
-
-            const reducedMotion = prefersReducedMotion();
-
-            if (isEdgeSwiping) {
-                const threshold = window.innerWidth * 0.3;
-                const elapsedMs = Math.max(1, (e.timeStamp || Date.now()) - touchStartTime);
-                const velocity = currentX / elapsedMs;
-
-                if (currentX > threshold || (currentX > 24 && velocity > 0.65)) {
-                    panel._isClosing = true;
-                    const finalizeClose = () => {
-                        if (isAnalysisVisible) {
-                            FocusPanelAnalysis.hide();
-                            panel._resetTransformations(target, null);
-                        } else {
-                            target.style.transition = 'none';
-                            panel.close();
-                            panel._resetTransformations(target, backdrop);
-                        }
-                    };
-
-                    if (reducedMotion) {
-                        finalizeClose();
-                    } else {
-                        target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                        target.style.transform = 'translateX(100%)';
-                        if (!isAnalysisVisible && backdrop) {
-                            backdrop.style.transition = 'opacity 0.3s ease';
-                            backdrop.style.opacity = '0';
-                        }
-                        clearPendingReset();
-                        resetTimer = setTimeout(() => {
-                            resetTimer = null;
-                            finalizeClose();
-                        }, 300);
-                    }
-                } else if (currentX > 10 && !reducedMotion) {
-                    target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateX(0)';
-
-                    if (backdrop) {
-                        backdrop.style.transition = 'opacity 0.45s ease';
-                        backdrop.style.opacity = '1';
-                    }
-                    clearPendingReset();
-                    resetTimer = setTimeout(() => {
-                        resetTimer = null;
-                        panel._resetTransformations(target, backdrop);
-                    }, 450);
-                } else {
-                    panel._resetTransformations(target, backdrop);
-                }
-            } else if (isPullingDown) {
-                const threshold = 100;
-                if (currentY > threshold) {
-                    panel._isClosing = true;
-                    const finalizePullClose = () => {
-                        if (isAnalysisVisible) {
-                            FocusPanelAnalysis.hide();
-                            panel._resetTransformations(target, null);
-                        } else {
-                            target.style.transition = 'none';
-                            panel.close();
-                            panel._resetTransformations(target, null);
-                        }
-                    };
-
-                    if (reducedMotion) {
-                        finalizePullClose();
-                    } else {
-                        target.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-                        target.style.transform = 'translateY(100vh)';
-                        clearPendingReset();
-                        resetTimer = setTimeout(() => {
-                            resetTimer = null;
-                            finalizePullClose();
-                        }, 300);
-                    }
-                } else if (currentY > 10 && !reducedMotion) {
-                    target.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1)';
-                    target.style.transform = 'translateX(0) translateY(0)';
-                    clearPendingReset();
-                    resetTimer = setTimeout(() => {
-                        resetTimer = null;
-                        panel._resetTransformations(target, null);
-                    }, 450);
-                } else {
-                    panel._resetTransformations(target, null);
-                }
-            }
-
-            resetGestureVars();
-        }, { passive: true });
-
-        panelEl.addEventListener('touchcancel', () => {
-            if (touchStartX === null && touchStartY === null && !isEdgeSwiping && !isPullingDown) return;
-            clearPendingReset();
-            const isAnalysisVisible = document.getElementById('focusPagesContainer')?.classList.contains('show-analysis');
-            const target = isAnalysisVisible ? document.querySelector('.focus-analysis-page') : panelEl;
-            const backdrop = !isAnalysisVisible ? document.getElementById('focusPanelBackdrop') : null;
-            panel._resetTransformations(target, backdrop);
-            resetGestureVars();
-        }, { passive: true });
+        });
     },
 
     /**

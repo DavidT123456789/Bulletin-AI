@@ -279,38 +279,136 @@ describe('SyncService & GoogleDriveProvider Authentication & Connection State', 
             const result = await GoogleDriveProvider.authorize();
 
             expect(result).toBe(true);
-            expect(requestAccessToken).toHaveBeenCalledWith({ prompt: '' });
+            expect(requestAccessToken).toHaveBeenCalledWith({ prompt: 'select_account' });
             expect(setToken).toHaveBeenCalledWith({ access_token: 'fresh-token' });
         });
     });
 
-    describe('GoogleDriveProvider.authorize() login_hint', () => {
-        it('should pass the cached email as login_hint only when a valid profile is known', async () => {
+    describe('GoogleDriveProvider.authorize() login_hint & prompt', () => {
+        it('should use select_account without cached profile, empty prompt with login_hint when known, and consent on forcePrompt', async () => {
             vi.spyOn(GoogleDriveProvider, '_ensureGapiLoaded').mockResolvedValue();
             vi.spyOn(GoogleDriveProvider, '_loadGapiClient').mockResolvedValue();
             vi.spyOn(GoogleDriveProvider, 'getUserInfo').mockResolvedValue(null);
+            const requestAccessToken = vi.fn();
             const initTokenClient = vi.fn((cfg) => ({
-                requestAccessToken: () => cfg.callback({ access_token: 'fresh-token', expires_in: 3600 })
+                requestAccessToken: (opts) => {
+                    requestAccessToken(opts);
+                    cfg.callback({ access_token: 'fresh-token', expires_in: 3600 });
+                }
             }));
             window.google = { accounts: { oauth2: { initTokenClient } } };
             window.gapi = { client: { setToken: vi.fn() } };
-            const authorizeWithoutSavedToken = () => {
+            const authorizeWithoutSavedToken = (options) => {
                 sessionStorage.removeItem('bulletin_google_token');
                 localStorage.removeItem('bulletin_google_token');
-                return GoogleDriveProvider.authorize();
+                return GoogleDriveProvider.authorize(options);
             };
 
             await authorizeWithoutSavedToken();
             expect(initTokenClient.mock.calls[0][0]).not.toHaveProperty('login_hint');
+            expect(requestAccessToken).toHaveBeenNthCalledWith(1, { prompt: 'select_account' });
 
             localStorage.setItem('bulletin_google_user', JSON.stringify({ email: 'prof@ac-paris.fr' }));
             await authorizeWithoutSavedToken();
             expect(initTokenClient.mock.calls[1][0].login_hint).toBe('prof@ac-paris.fr');
+            expect(requestAccessToken).toHaveBeenNthCalledWith(2, { prompt: '' });
+
+            await authorizeWithoutSavedToken({ forcePrompt: true });
+            expect(requestAccessToken).toHaveBeenNthCalledWith(3, { prompt: 'consent' });
 
             localStorage.setItem('bulletin_google_user', '{corrupted');
             await authorizeWithoutSavedToken();
-            expect(initTokenClient.mock.calls[2][0]).not.toHaveProperty('login_hint');
+            expect(initTokenClient.mock.calls[3][0]).not.toHaveProperty('login_hint');
+            expect(requestAccessToken).toHaveBeenNthCalledWith(4, { prompt: 'select_account' });
             expect(localStorage.getItem('bulletin_google_user')).toBeNull();
+        });
+    });
+
+    describe('Account switch: disconnect baseline purge & empty Drive metadata', () => {
+        it('GoogleDriveProvider.disconnect() should also reset _needsReconnect', async () => {
+            GoogleDriveProvider._needsReconnect = true;
+            sessionStorage.setItem('bulletin_google_token', JSON.stringify({ access_token: 'abc' }));
+            localStorage.setItem('bulletin_google_user', JSON.stringify({ displayName: 'Test' }));
+
+            await GoogleDriveProvider.disconnect();
+
+            expect(GoogleDriveProvider.needsReconnect()).toBe(false);
+            expect(localStorage.getItem('bulletin_google_user')).toBeNull();
+            expect(sessionStorage.getItem('bulletin_google_token')).toBeNull();
+        });
+
+        it('SyncService.disconnect() should purge cloud sync baseline while preserving local modification timestamp', async () => {
+            const providerDisconnect = vi.fn().mockResolvedValue();
+            SyncService._provider = { disconnect: providerDisconnect };
+            SyncService.currentProviderName = 'google';
+            SyncService._wasConfigured = true;
+            SyncService.lastSyncTime = 1700000000000;
+            SyncService.remoteSyncTime = 1700000005000;
+            SyncService._lastSyncState = 'in-sync';
+            localStorage.setItem('bulletin_sync_provider', 'google');
+            localStorage.setItem('bulletin_last_sync', '1700000000000');
+            localStorage.setItem('bulletin_last_sync_hash', 'hash-account-a');
+            localStorage.setItem('bulletin_last_sync_students', '28');
+            localStorage.setItem('bulletin_last_sync_classes', '2');
+            localStorage.setItem('bulletin_last_sync_roster', JSON.stringify({ v: 1, classes: {}, entries: [] }));
+            localStorage.setItem('bulletin_last_modified', '1700000010000');
+
+            await SyncService.disconnect();
+
+            expect(providerDisconnect).toHaveBeenCalledTimes(1);
+            expect(SyncService.lastSyncTime).toBeNull();
+            expect(SyncService.remoteSyncTime).toBeNull();
+            expect(SyncService._lastSyncState).toBeNull();
+            expect(localStorage.getItem('bulletin_sync_provider')).toBeNull();
+            expect(localStorage.getItem('bulletin_last_sync')).toBeNull();
+            expect(localStorage.getItem('bulletin_last_sync_hash')).toBeNull();
+            expect(localStorage.getItem('bulletin_last_sync_students')).toBeNull();
+            expect(localStorage.getItem('bulletin_last_sync_classes')).toBeNull();
+            expect(localStorage.getItem('bulletin_last_sync_roster')).toBeNull();
+            expect(localStorage.getItem('bulletin_last_modified')).toBe('1700000010000');
+        });
+
+        it('GoogleDriveProvider.getMetadata() and read() should return null without creating a ghost file on an empty Drive', async () => {
+            const list = vi.fn().mockResolvedValue({ result: { files: [] } });
+            const create = vi.fn();
+            const get = vi.fn();
+            window.gapi = { client: { drive: { files: { list, create, get } } } };
+
+            expect(await GoogleDriveProvider.getMetadata()).toBeNull();
+            expect(await GoogleDriveProvider.read()).toBeNull();
+            expect(create).not.toHaveBeenCalled();
+            expect(get).not.toHaveBeenCalled();
+        });
+
+        it('GoogleDriveProvider.getMetadata() should ignore 0-byte ghost files and return metadata when file has content', async () => {
+            const list = vi.fn().mockResolvedValue({ result: { files: [{ id: 'file-1' }] } });
+            const get = vi.fn()
+                .mockResolvedValueOnce({ result: { modifiedTime: '2026-10-29T12:00:00Z', size: '0' } })
+                .mockResolvedValueOnce({ result: { modifiedTime: '2026-10-29T13:04:00Z', size: '2048' } });
+            window.gapi = { client: { drive: { files: { list, get, create: vi.fn() } } } };
+
+            expect(await GoogleDriveProvider.getMetadata()).toBeNull();
+            expect(await GoogleDriveProvider.getMetadata()).toEqual({
+                lastModified: '2026-10-29T13:04:00Z',
+                size: 2048
+            });
+            GoogleDriveProvider._fileId = null;
+        });
+
+        it('SyncService.refreshStatus() should clear remoteSyncTime when getMetadata() returns null', async () => {
+            SyncService._wasConfigured = true;
+            SyncService._isOnline = true;
+            SyncService.currentProviderName = 'google';
+            SyncService.remoteSyncTime = 1700000000000;
+            SyncService._provider = {
+                isConnected: () => true,
+                getMetadata: vi.fn().mockResolvedValue(null)
+            };
+
+            await SyncService.refreshStatus();
+
+            expect(SyncService.remoteSyncTime).toBeNull();
+            SyncService._wasConfigured = false;
         });
     });
 

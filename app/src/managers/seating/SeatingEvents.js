@@ -555,6 +555,15 @@ export const SeatingEvents = {
             let listCurrentOx = 0;
             let activeListContainers = [];
             let listReleaseTimer = null;
+            let suppressNextListClickUntil = 0;
+
+            outputSection.addEventListener('click', (e) => {
+                if (Date.now() < suppressNextListClickUntil) {
+                    suppressNextListClickUntil = 0;
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
 
             const resolveListSwipeContainers = () => this._getVisibleListContainers();
 
@@ -587,6 +596,7 @@ export const SeatingEvents = {
             };
 
             outputSection.addEventListener('touchstart', (e) => {
+                suppressNextListClickUntil = 0;
                 if (this._isActive || e.touches.length !== 1 || FocusPanelManager.isOpen?.() || UI.isAnyModalOpen()) {
                     listTouchValid = false;
                     return;
@@ -600,18 +610,7 @@ export const SeatingEvents = {
                     listTouchValid = false;
                     return;
                 }
-                const x = e.touches[0].clientX;
-                const viewportW = window.innerWidth || document.documentElement?.clientWidth || 0;
-                if (x < 24 || (viewportW > 0 && x > viewportW - 24)) {
-                    listTouchValid = false;
-                    return;
-                }
-                if (listReleaseTimer) {
-                    clearTimeout(listReleaseTimer);
-                    listReleaseTimer = null;
-                }
-                this._clearNavigationBoundaryBounce?.();
-                listTouchStartX = x;
+                listTouchStartX = e.touches[0].clientX;
                 listTouchStartY = e.touches[0].clientY;
                 listTouchValid = true;
                 listSwipeAxis = null;
@@ -639,6 +638,7 @@ export const SeatingEvents = {
                 }
 
                 if (listSwipeAxis === 'x') {
+                    if (e.cancelable) e.preventDefault();
                     const ox = dampListSwipe(dx, dx < 0 && this._getCurrentClassStudents().length > 0);
                     listCurrentOx = ox;
                     activeListContainers.forEach(el => {
@@ -647,14 +647,22 @@ export const SeatingEvents = {
                         el.style.transform = `translate3d(${ox}px, 0, 0)`;
                     });
                 }
-            }, { passive: true });
+            }, { passive: false });
 
             outputSection.addEventListener('touchend', (e) => {
                 if (!listTouchValid || this._isActive) {
+                    listSwipeAxis = null;
                     releaseListSwipe();
                     return;
                 }
+                const wasHorizontalSwipe = listSwipeAxis === 'x';
+                const swipeAxis = listSwipeAxis;
                 listTouchValid = false;
+                listSwipeAxis = null;
+                if (wasHorizontalSwipe) {
+                    suppressNextListClickUntil = Date.now() + 350;
+                    if (e.cancelable) e.preventDefault();
+                }
                 const endTouch = e.changedTouches?.[0];
                 if (!endTouch) {
                     releaseListSwipe();
@@ -662,7 +670,7 @@ export const SeatingEvents = {
                 }
                 const dx = endTouch.clientX - listTouchStartX;
                 const dy = endTouch.clientY - listTouchStartY;
-                if (listSwipeAxis !== 'scroll' && dx <= -48 && Math.abs(dx) > Math.abs(dy) * 1.35 && this._getCurrentClassStudents().length > 0) {
+                if (swipeAxis !== 'scroll' && dx <= -48 && Math.abs(dx) > Math.abs(dy) * 1.35 && this._getCurrentClassStudents().length > 0) {
                     listCurrentOx = 0;
                     activeListContainers = [];
                     if (this._hasClassCoursePlan() || !this._hasClassActivityPlan()) {
@@ -672,7 +680,7 @@ export const SeatingEvents = {
                     return;
                 }
                 releaseListSwipe();
-            }, { passive: true });
+            }, { passive: false });
 
             outputSection.addEventListener('touchcancel', () => {
                 listTouchValid = false;

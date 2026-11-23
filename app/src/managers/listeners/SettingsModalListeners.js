@@ -1348,10 +1348,10 @@ export const SettingsModalListeners = {
                 }
                 if (cloudActionsBar) cloudActionsBar.style.display = 'flex';
 
-                if (lastSaveEl && SyncService.lastSyncTime) {
-                    lastSaveEl.textContent = `Dernière sauvegarde : ${this._formatBackupTimestamp(SyncService.lastSyncTime)}`;
-                } else if (lastSaveEl && !lastSaveEl.textContent) {
-                    lastSaveEl.textContent = 'Prêt à synchroniser';
+                if (lastSaveEl) {
+                    lastSaveEl.textContent = SyncService.lastSyncTime
+                        ? `Dernière sauvegarde : ${this._formatBackupTimestamp(SyncService.lastSyncTime)}`
+                        : 'Prêt à synchroniser';
                 }
             } else {
                 if (titleBadge) titleBadge.style.display = 'none';

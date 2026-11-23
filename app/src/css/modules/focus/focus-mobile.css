@@ -82,7 +82,7 @@
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 6px;
     }
 
     .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons {
@@ -341,8 +341,7 @@
 
     .focus-header.editing .focus-input-header {
         padding: 8px 12px;
-        font-size: 16px;
-        /* 16px prevents iOS Safari automatic viewport zoom on focus */
+        font-size: 14.5px;
     }
 
     /* Status selection: wrapped pills so all statuses remain visible on mobile */
@@ -367,6 +366,13 @@
         height: 22px;
     }
 
+    /* Card titles: balanced mobile hierarchy */
+    .focus-context-label,
+    .journal-header-left,
+    .focus-appreciation-label {
+        font-size: 14px;
+    }
+
     /* Context group */
     .focus-context-header {
         /* Restore row layout on mobile for header to save space */
@@ -384,7 +390,8 @@
     .focus-context-textarea {
         min-height: 44px;
         padding: 10px 14px;
-        font-size: 16px;
+        font-size: 14.5px;
+        line-height: 1.5;
     }
 
     /* Appreciation area */
@@ -446,7 +453,7 @@
     .focus-appreciation-text {
         min-height: 48px;
         padding: 10px 14px;
-        font-size: 16px;
+        font-size: 14.5px;
         line-height: 1.5;
     }
 
@@ -473,6 +480,7 @@
     .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
         height: 44px;
         padding: 0 12px;
+        font-size: 12.5px;
     }
 
     /* Analysis page on mobile */
@@ -587,13 +595,32 @@
     /* Inline actions — small mobile */
     .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
         padding: 0 10px;
-        font-size: 11px;
+        font-size: 12px;
     }
 
     /* EDIT MODE: Ultra-compact adjustments */
     .focus-header.editing .focus-input-header {
-        font-size: 16px;
+        font-size: 14.5px;
         padding: 7px 10px;
+    }
+}
+
+/* iOS Safari anti-zoom safeguard without inflating Android/other mobile typography */
+@supports (-webkit-touch-callout: none) {
+    @media (max-width: 600px) {
+        .focus-context-label,
+        .journal-header-left,
+        .focus-appreciation-label {
+            font-size: 14.5px;
+        }
+
+        .focus-context-textarea,
+        .focus-appreciation-text,
+        .focus-header.editing .focus-input-header,
+        .context-grade-input,
+        .journal-note-input {
+            font-size: 16px !important;
+        }
     }
 }
 

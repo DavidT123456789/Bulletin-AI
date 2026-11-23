@@ -1156,6 +1156,10 @@
         gap: 12px;
     }
 
+    .journal-empty-subtitle {
+        font-size: 12px;
+    }
+
     .journal-content:has(.journal-draft-preview.visible) {
         max-height: none;
     }
@@ -1167,7 +1171,7 @@
 
     .journal-entry-date {
         min-width: 40px;
-        font-size: 10px;
+        font-size: 11px;
     }
 
     .journal-tag {
@@ -1176,7 +1180,12 @@
     }
 
     .journal-entry-note {
-        font-size: 12px;
+        font-size: 13.5px;
+        line-height: 1.45;
+    }
+
+    .journal-note-input {
+        font-size: 14px;
     }
 
     /* Flat wrap pills on mobile */

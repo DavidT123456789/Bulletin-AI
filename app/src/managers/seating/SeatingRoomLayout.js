@@ -129,7 +129,7 @@ export const SeatingRoomLayout = {
             <div class="sc-placement-actions-section">
                 <div class="sc-config-section-title">Agencement</div>
                 <button class="sc-popover-item" data-mode="alpha-asc" type="button">
-                    <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
+                    <iconify-icon icon="solar:sort-from-top-to-bottom-linear"></iconify-icon>
                     <span class="sc-popover-item-label">Alphabétique <small>A → Z</small></span>
                 </button>
                 <button class="sc-popover-item" data-mode="alpha-desc" type="button">

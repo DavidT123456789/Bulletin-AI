@@ -1011,12 +1011,12 @@ button > .icon-spin-wrapper {
     }
 
     .header .header-context-chip,
-    .ui-segmented-control.header-style,
     .header-actions-pill {
         height: 36px;
     }
 
     .ui-segmented-control.header-style {
+        height: 34px;
         --sc-padding: 3px;
     }
 
@@ -1064,7 +1064,7 @@ button > .icon-spin-wrapper {
     }
 
     .ui-segmented-control.header-style .ui-segment {
-        min-width: 36px;
+        min-width: 38px;
         padding: 0 10px;
         gap: 4px;
     }
@@ -1130,17 +1130,23 @@ button > .icon-spin-wrapper {
     }
 
     .ui-segmented-control.header-style {
+        height: 32px;
         --sc-padding: 2px;
     }
 
     .ui-segmented-control.header-style .ui-segment {
-        min-width: 28px;
-        padding: 0 6px;
+        min-width: 36px;
+        padding: 0 10px;
+    }
+
+    #viewToggle.ui-segmented-control.header-style .ui-segment {
+        min-width: 38px;
+        padding: 0 10px;
     }
 
     #mainPeriodSelector:has(label:nth-of-type(3)) .ui-segment {
-        min-width: 24px;
-        padding: 0 4.5px;
+        min-width: 31px;
+        padding: 0 6.5px;
         font-size: 0.76rem;
     }
 
