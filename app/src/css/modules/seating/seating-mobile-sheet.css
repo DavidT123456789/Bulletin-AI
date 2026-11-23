@@ -23,7 +23,8 @@
     bottom: 0;
     left: 0;
     right: 0;
-    max-height: 82vh;
+    max-height: 86vh;
+    max-height: 86dvh;
     background: var(--bg-primary);
     border-top: 1px solid var(--border-color-strong);
     border-top-left-radius: 24px;
@@ -180,6 +181,10 @@
     -webkit-overflow-scrolling: touch;
 }
 
+.sc-sheet-content > * {
+    flex-shrink: 0;
+}
+
 .sc-sheet-section-title {
     font-size: 0.72rem;
     font-weight: 600;
@@ -219,6 +224,7 @@
     text-align: left;
     width: 100%;
     min-height: 48px;
+    flex-shrink: 0;
     touch-action: manipulation;
     transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -378,6 +384,7 @@
     cursor: pointer;
     width: 100%;
     min-height: 48px;
+    flex-shrink: 0;
     text-align: left;
     touch-action: manipulation;
     transition: background var(--transition-fast);
