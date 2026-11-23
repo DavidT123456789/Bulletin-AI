@@ -1923,25 +1923,25 @@
                                         </div>
                                     </div>
 
-                                    <div class="settings-row">
-                                        <div class="settings-row-info">
-                                            <label for="enableApiFallbackToggle" class="settings-row-title">Relais automatique</label>
-                                            <span class="settings-row-desc">
-                                                Bascule sur le modèle suivant en cas de quota atteint ou d'erreur.
-                                                <small id="fallbackOrderHint">
-                                                    <span id="fallbackOrderText">...</span>
-                                                    <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
-                                                        style="display: none;"></span>
-                                                </small>
-                                                <small id="fallbackSovereigntyHint" class="fallback-sovereignty-hint" hidden></small>
-                                            </span>
+                                    <div class="settings-row settings-row-fallback">
+                                        <div class="settings-row-head">
+                                            <div class="settings-row-info">
+                                                <label for="enableApiFallbackToggle" class="settings-row-title">Relais automatique</label>
+                                                <span class="settings-row-desc">Bascule sur le modèle suivant en cas de quota atteint ou d'erreur.</span>
+                                            </div>
+                                            <div class="settings-row-control">
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" id="enableApiFallbackToggle" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
                                         </div>
-                                        <div class="settings-row-control">
-                                            <label class="toggle-switch">
-                                                <input type="checkbox" id="enableApiFallbackToggle" checked>
-                                                <span class="slider"></span>
-                                            </label>
+                                        <div id="fallbackOrderHint" class="fallback-order-hint">
+                                            <span id="fallbackOrderText">...</span>
+                                            <span id="fallbackOrderMore" class="fallback-more-badge tooltip"
+                                                style="display: none;"></span>
                                         </div>
+                                        <div id="fallbackSovereigntyHint" class="fallback-sovereignty-hint" hidden></div>
                                     </div>
 
                                     <div id="missingApiKeyWarning" class="missing-key-warning compact"

@@ -548,7 +548,7 @@
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
-    margin: 4px 0 10px 0;
+    margin: 0 0 10px 0;
     font-size: 0.75rem;
     color: var(--text-tertiary);
 }
@@ -1395,13 +1395,51 @@
     gap: 3px;
 }
 
-#fallbackOrderHint {
+/* Fallback Row within Exécution & Relais */
+.settings-row.settings-row-fallback {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.settings-row-fallback .settings-row-head {
     display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+.settings-row-fallback .settings-row-control {
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+#fallbackOrderHint {
+    display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 3px 6px;
+    gap: 4px 8px;
+    padding: 6px 11px;
+    background: var(--tonal-bg);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
     line-height: 1.35;
     margin-top: 2px;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.settings-row-fallback .fallback-sovereignty-hint {
+    margin-top: 2px;
+}
+
+/* Dim fallback sequence and sovereignty warning when fallback toggle is unchecked */
+.settings-row-fallback:has(#enableApiFallbackToggle:not(:checked)) #fallbackOrderHint,
+.settings-row-fallback:has(#enableApiFallbackToggle:not(:checked)) #fallbackSovereigntyHint {
+    opacity: 0.38;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
 }
 
 /* Badge "+X" pour l'ordre de secours */
@@ -1484,13 +1522,26 @@ label.settings-row-title {
 }
 
 .settings-providers-card .api-key-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.settings-providers-card .api-key-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .settings-providers-card .api-key-links {
-    margin-left: -10px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: auto;
 }
 
 .settings-providers-card > .api-key-section + .api-key-section {
@@ -1901,18 +1952,18 @@ label.settings-row-title {
         padding: 13px 0;
     }
 
-    .api-key-header {
-        gap: 4px 8px;
-        margin-bottom: 6px;
+    .settings-providers-card .api-key-header {
+        gap: 6px 8px;
+        margin-bottom: 8px;
     }
 
-    .api-key-links {
-        margin-left: -6px;
+    .settings-providers-card .api-key-links {
+        margin-left: 0;
     }
 
     .provider-models-hint {
         gap: 4px;
-        margin: 2px 0 8px 0;
+        margin: 0 0 8px 0;
         font-size: 0.7rem;
     }
 
@@ -1924,6 +1975,15 @@ label.settings-row-title {
     .api-key-actions.api-key-actions-wrap > .toggle-switch-container {
         flex: 1 1 100%;
         margin-bottom: 2px;
+    }
+
+    .settings-row-fallback .settings-row-head {
+        gap: 12px;
+    }
+
+    #fallbackOrderHint {
+        font-size: 0.74rem;
+        padding: 5px 8px;
     }
 
     /* Onglet Données : boutons d'action équilibrés sur mobile */
