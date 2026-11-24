@@ -208,17 +208,21 @@ export const Utils = {
      */
     isAppreciationCopied(result, period = appState.currentPeriod) {
         if (!result || !period) return false;
-        const periodData = result.studentData?.periods?.[period];
+        const periods = result.studentData?.periods;
+        const periodData = periods?.[period];
         if (periodData && typeof periodData.copied === 'boolean') {
             return periodData.copied;
         }
-        if (result.generationPeriod && result.generationPeriod === period) {
-            return Boolean(result.copied);
+        if (periods) {
+            const hasPerPeriodCopiedState = Object.values(periods).some(
+                p => p && typeof p.copied === 'boolean'
+            );
+            if (hasPerPeriodCopiedState) {
+                return false;
+            }
+            return Boolean(result.copied) && result.generationPeriod === period;
         }
-        if (result.studentData?.periods) {
-            return false;
-        }
-        return Boolean(result.copied);
+        return Boolean(result.copied) && (!result.generationPeriod || result.generationPeriod === period);
     },
 
     /**
@@ -237,7 +241,7 @@ export const Utils = {
             if (!result.studentData.periods[period]) result.studentData.periods[period] = {};
             result.studentData.periods[period].copied = boolVal;
         }
-        if (!period || period === appState.currentPeriod || result.generationPeriod === period) {
+        if (!period || !result.generationPeriod || result.generationPeriod === period) {
             result.copied = boolVal;
         }
     },

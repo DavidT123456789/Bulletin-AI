@@ -428,6 +428,76 @@ describe('MassImportManager', () => {
             saveSpy.mockRestore();
             filterSpy.mockRestore();
         });
+
+        it('réinitialise le statut copié uniquement si une nouvelle appréciation différente est importée pour la période', async () => {
+            appState.currentPeriod = 'T1';
+            appState.currentClassId = 'c1';
+            appState.generatedResults = [
+                {
+                    id: 'st-same',
+                    classId: 'c1',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    appreciation: 'Texte inchangé.',
+                    copied: true,
+                    generationPeriod: 'T1',
+                    studentData: {
+                        nom: 'MARTIN',
+                        prenom: 'Lucas',
+                        periods: {
+                            T1: { grade: 14, appreciation: 'Texte inchangé.', context: '', copied: true },
+                            T2: { grade: 15, appreciation: 'Texte T2.', context: '', copied: true }
+                        }
+                    }
+                },
+                {
+                    id: 'st-updated',
+                    classId: 'c1',
+                    nom: 'DUPONT',
+                    prenom: 'Léa',
+                    appreciation: 'Ancien texte.',
+                    copied: true,
+                    generationPeriod: 'T1',
+                    studentData: {
+                        nom: 'DUPONT',
+                        prenom: 'Léa',
+                        periods: {
+                            T1: { grade: 12, appreciation: 'Ancien texte.', context: '', copied: true },
+                            T2: { grade: 13, appreciation: 'Texte T2.', context: '', copied: true }
+                        }
+                    }
+                }
+            ];
+
+            const { StorageManager } = await import('./StorageManager.js');
+            const { ClassManager } = await import('./ClassManager.js');
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockResolvedValue();
+            const filterSpy = vi.spyOn(ClassManager, '_filterResultsByClass').mockResolvedValue();
+
+            await MassImportManager.importStudentsOnly([
+                {
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    periods: { T1: { grade: 14.5, appreciation: 'Texte inchangé.', context: '' } }
+                },
+                {
+                    nom: 'DUPONT',
+                    prenom: 'Léa',
+                    periods: { T1: { grade: 13, appreciation: 'Nouvelle appréciation importée.', context: '' } }
+                }
+            ], 0);
+
+            const martin = appState.generatedResults.find(r => r.id === 'st-same');
+            const dupont = appState.generatedResults.find(r => r.id === 'st-updated');
+
+            expect(martin.studentData.periods.T1.copied).toBe(true);
+            expect(martin.studentData.periods.T2.copied).toBe(true);
+            expect(dupont.studentData.periods.T1.copied).toBe(false);
+            expect(dupont.studentData.periods.T2.copied).toBe(true);
+
+            saveSpy.mockRestore();
+            filterSpy.mockRestore();
+        });
     });
 
     describe('generateAllPending — garde préalable sans clé API (B3)', () => {

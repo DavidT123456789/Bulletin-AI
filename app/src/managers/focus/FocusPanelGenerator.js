@@ -555,7 +555,7 @@ export const FocusPanelGenerator = {
             await navigator.clipboard.writeText(cleanText);
             Utils.setAppreciationCopied(result, appState.currentPeriod, true);
             StorageManager.saveAppState();
-            ListViewManager.updateStudentRow?.(result.id);
+            ListViewManager.updateStudentRow?.(result.id, { copiedOnly: true });
             FocusPanelStatus.syncCopyButton({ isEmpty: false, isGenerating: false });
             UI?.recordSupportMilestone?.('bulletin-export');
             try { navigator?.vibrate?.(10); } catch (_) { }

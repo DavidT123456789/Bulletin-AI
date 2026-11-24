@@ -275,7 +275,7 @@ export const ListViewRenderer = {
      * Called when data changes in Focus Panel
      * @param {string} studentId
      */
-    updateStudentRow(studentId) {
+    updateStudentRow(studentId, options = {}) {
         if (!studentId) return false;
         const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
         if (!row) return false;
@@ -286,6 +286,14 @@ export const ListViewRenderer = {
 
         if (result) {
             const appreciationCell = row.querySelector('.appreciation-cell');
+
+            // Surgical path for copy-only state changes: preserves DOM & keyboard focus on .btn-row-quick-copy
+            if (options?.copiedOnly && appreciationCell) {
+                const isCopied = Utils.isAppreciationCopied?.(result, appState.currentPeriod) ?? false;
+                if (this.updateCopiedIndicatorOnly(appreciationCell, isCopied)) {
+                    return true;
+                }
+            }
 
             // CRITICAL: If the cell shows a skeleton (generating/pending) or queued state, always do a full update
             // The dirty-only optimization would otherwise add an indicator on top of the skeleton
@@ -370,6 +378,63 @@ export const ListViewRenderer = {
                 existingIndicator.remove();
             }, 250);
         }
+    },
+
+    /**
+     * Retourne le libellé accessible du bouton de copie rapide selon l'état copié.
+     * @param {boolean} isCopied
+     * @returns {string}
+     * @private
+     */
+    _getQuickCopyLabel(isCopied) {
+        return isCopied ? 'Copier à nouveau (déjà copiée)' : "Copier l'appréciation";
+    },
+
+    /**
+     * Retourne le HTML de l'indicateur « copié » pour la cellule d'appréciation.
+     * @returns {string}
+     * @private
+     */
+    _getCopiedIndicatorHTML() {
+        return '<span class="copied-indicator tooltip" data-tooltip="Copiée pour cette période" aria-label="Copiée pour cette période"><iconify-icon icon="ph:check-bold" aria-hidden="true"></iconify-icon></span>';
+    },
+
+    /**
+     * Mise à jour chirurgicale de l'indicateur « copié » sans reconstruire la cellule
+     * ni détruire `.btn-row-quick-copy` (préserve le focus clavier).
+     * @param {HTMLElement} cell - Cellule `.appreciation-cell`
+     * @param {boolean} isCopied - État copié pour la période active
+     * @returns {boolean} true si la mise à jour en place a pu être effectuée
+     * @private
+     */
+    updateCopiedIndicatorOnly(cell, isCopied) {
+        const wrapper = cell.querySelector('.appreciation-preview-wrapper');
+        if (!wrapper) return false;
+
+        const existingCopied = wrapper.querySelector('.copied-indicator');
+        const quickCopyBtn = wrapper.querySelector('.btn-row-quick-copy');
+
+        if (isCopied && !existingCopied) {
+            const indicatorHtml = this._getCopiedIndicatorHTML();
+            if (quickCopyBtn) {
+                quickCopyBtn.insertAdjacentHTML('beforebegin', indicatorHtml);
+            } else {
+                wrapper.insertAdjacentHTML('beforeend', indicatorHtml);
+            }
+            TooltipsUI.initTooltips?.(wrapper);
+        } else if (!isCopied && existingCopied) {
+            existingCopied._tippy?.destroy?.();
+            existingCopied.remove();
+        }
+
+        if (quickCopyBtn) {
+            const quickCopyLabel = this._getQuickCopyLabel(isCopied);
+            quickCopyBtn.setAttribute('data-tooltip', quickCopyLabel);
+            quickCopyBtn.setAttribute('aria-label', quickCopyLabel);
+            quickCopyBtn._tippy?.setContent?.(quickCopyLabel);
+        }
+
+        return true;
     },
 
     /**
@@ -926,10 +991,8 @@ export const ListViewRenderer = {
             }
 
             const isCopied = Utils.isAppreciationCopied?.(result, appState.currentPeriod) ?? false;
-            const copiedBadge = isCopied
-                ? `<span class="copied-indicator tooltip" data-tooltip="Copiée pour cette période" aria-label="Copiée pour cette période"><iconify-icon icon="ph:check-bold" aria-hidden="true"></iconify-icon></span>`
-                : '';
-            const quickCopyLabel = isCopied ? "Copier à nouveau (déjà copiée)" : "Copier l'appréciation";
+            const copiedBadge = isCopied ? this._getCopiedIndicatorHTML() : '';
+            const quickCopyLabel = this._getQuickCopyLabel(isCopied);
             const quickCopyBtn = `<button type="button" class="btn-row-quick-copy tooltip" data-action="quick-copy-appreciation" data-tooltip="${quickCopyLabel}" aria-label="${quickCopyLabel}"><iconify-icon icon="solar:copy-linear" aria-hidden="true"></iconify-icon></button>`;
 
             return `<div class="appreciation-preview-wrapper">

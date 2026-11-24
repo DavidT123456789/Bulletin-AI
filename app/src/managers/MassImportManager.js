@@ -309,8 +309,9 @@ export const MassImportManager = {
                 for (const [periodKey, importedPData] of Object.entries(studentData.periods || {})) {
                     if (!importedPData) continue;
                     const existingPData = existingResult.studentData.periods[periodKey] || {};
+                    const existingApp = typeof existingPData.appreciation === 'string' ? existingPData.appreciation.trim() : '';
                     const incomingApp = typeof importedPData.appreciation === 'string' ? importedPData.appreciation.trim() : '';
-                    if (incomingApp && existingPData.appreciation?.trim()) {
+                    if (incomingApp && existingApp) {
                         HistoryUtils.getStudentPeriodState(existingResult, periodKey, { createIfMissing: true, autoSeed: true });
                     }
                     const hasImportedGrade = importedPData.grade !== null && importedPData.grade !== undefined;
@@ -322,6 +323,9 @@ export const MassImportManager = {
                         appreciation: importedPData.appreciation || existingPData.appreciation || '',
                         context: importedPData.context || existingPData.context || ''
                     };
+                    if (incomingApp && incomingApp !== existingApp) {
+                        Utils.setAppreciationCopied(existingResult, periodKey, false);
+                    }
                     if (incomingApp) {
                         HistoryUtils.recordStudentVersion(existingResult, periodKey, incomingApp, 'imported', {
                             appreciationSource: 'imported',

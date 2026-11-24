@@ -601,22 +601,22 @@ export const PromptService = {
     },
 
     /**
-     * Traduit une cible en mots en gabarit combiné (mots + nombre de phrases + paragraphe unique)
-     * plus fiable sur les petits et moyens modèles (7B-24B).
+     * Traduit une cible en mots en gabarit souple (mots + fourchette de phrases)
+     * plus fiable sur les petits et moyens modèles (7B-24B) sans figer le rythme.
      * @param {number} wordCount
      * @returns {string}
      * @private
      */
     _formatLengthInstruction(wordCount) {
-        let sentenceRange = '2 à 3 phrases';
-        if (wordCount <= 25) {
+        let sentenceRange = '1 à 3 phrases';
+        if (wordCount <= 15) {
+            sentenceRange = '1 phrase courte';
+        } else if (wordCount <= 30) {
             sentenceRange = '1 à 2 phrases courtes';
-        } else if (wordCount <= 45) {
-            sentenceRange = '2 phrases';
-        } else if (wordCount > 70) {
-            sentenceRange = '3 à 4 phrases';
+        } else if (wordCount > 60) {
+            sentenceRange = '2 à 4 phrases';
         }
-        return `environ ${wordCount} mots (${sentenceRange}, en un seul paragraphe)`;
+        return `environ ${wordCount} mots (${sentenceRange})`;
     },
 
     /**

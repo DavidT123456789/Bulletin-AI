@@ -1045,9 +1045,16 @@ describe('PromptService', () => {
             );
 
             expect(prompts.appreciationSystem).toContain('Rédige à la troisième personne');
-            expect(prompts.appreciationSystem).toContain('environ 40 mots (2 phrases, en un seul paragraphe)');
+            expect(prompts.appreciationSystem).toContain('environ 40 mots (1 à 3 phrases)');
+            expect(prompts.appreciationSystem.match(/en un seul paragraphe/g)).toHaveLength(1);
             expect(prompts.appreciationUser).not.toContain('Observations du professeur : Observations:');
             expect(prompts.appreciationUser).not.toMatch(/\n\n$/);
+
+            // Vérification des 4 paliers de fourchettes souples (10 à 90 mots)
+            expect(PromptService._formatLengthInstruction(15)).toBe('environ 15 mots (1 phrase courte)');
+            expect(PromptService._formatLengthInstruction(25)).toBe('environ 25 mots (1 à 2 phrases courtes)');
+            expect(PromptService._formatLengthInstruction(45)).toBe('environ 45 mots (1 à 3 phrases)');
+            expect(PromptService._formatLengthInstruction(75)).toBe('environ 75 mots (2 à 4 phrases)');
         });
 
         it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {

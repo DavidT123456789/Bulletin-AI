@@ -834,6 +834,62 @@ describe('Utils', () => {
             expect(Utils.isAppreciationCopied(demoStudent, 'S3')).toBe(false);
         });
 
+        it('ne contamine pas S2 lorsque generationPeriod vaut S2 et que l\'on copie S1 (période active)', () => {
+            const previousPeriod = appState.currentPeriod;
+            try {
+                appState.currentPeriod = 'S1';
+                const student = {
+                    id: 'cross-period-1',
+                    generationPeriod: 'S2',
+                    copied: false,
+                    studentData: {
+                        periods: {
+                            S1: { appreciation: 'Texte S1' },
+                            S2: { appreciation: 'Texte S2 importé' }
+                        }
+                    }
+                };
+
+                Utils.setAppreciationCopied(student, 'S1', true);
+                expect(student.copied).toBe(false);
+                expect(Utils.isAppreciationCopied(student, 'S1')).toBe(true);
+                expect(Utils.isAppreciationCopied(student, 'S2')).toBe(false);
+            } finally {
+                appState.currentPeriod = previousPeriod;
+            }
+        });
+
+        it('respecte le repli rétro-compatible sur generationPeriod uniquement si aucune période ne porte de statut copié explicite', () => {
+            const legacyMultiPeriod = {
+                id: 'legacy-mp',
+                generationPeriod: 'T1',
+                copied: true,
+                studentData: {
+                    periods: {
+                        T1: { appreciation: 'Texte T1' },
+                        T2: { appreciation: 'Texte T2' }
+                    }
+                }
+            };
+            expect(Utils.isAppreciationCopied(legacyMultiPeriod, 'T1')).toBe(true);
+            expect(Utils.isAppreciationCopied(legacyMultiPeriod, 'T2')).toBe(false);
+
+            // Dès qu'une autre période utilise le format isolé, le miroir racine ne contamine plus generationPeriod
+            const mixedState = {
+                id: 'mixed-1',
+                generationPeriod: 'S2',
+                copied: true,
+                studentData: {
+                    periods: {
+                        S1: { appreciation: 'Texte S1', copied: true },
+                        S2: { appreciation: 'Texte S2' }
+                    }
+                }
+            };
+            expect(Utils.isAppreciationCopied(mixedState, 'S1')).toBe(true);
+            expect(Utils.isAppreciationCopied(mixedState, 'S2')).toBe(false);
+        });
+
         it('utilise le repli rétro-compatible pour les anciens enregistrements v1 sans studentData.periods', () => {
             const legacyStudent = {
                 id: 'legacy-1',
@@ -842,6 +898,15 @@ describe('Utils', () => {
             };
             expect(Utils.isAppreciationCopied(legacyStudent, 'T1')).toBe(true);
             expect(Utils.isAppreciationCopied(legacyStudent, 'T2')).toBe(true);
+
+            const legacyWithGenPeriod = {
+                id: 'legacy-2',
+                appreciation: 'Très bon travail',
+                generationPeriod: 'T1',
+                copied: true
+            };
+            expect(Utils.isAppreciationCopied(legacyWithGenPeriod, 'T1')).toBe(true);
+            expect(Utils.isAppreciationCopied(legacyWithGenPeriod, 'T2')).toBe(false);
         });
 
         it('gère gracieusement les cas limites (null, undefined, période vide)', () => {

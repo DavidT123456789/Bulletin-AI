@@ -816,6 +816,7 @@ export const FocusPanelManager = {
                 if (result.studentData.periods?.[currentPeriod]?.appreciation) {
                     Utils.markStudentModified(result, currentPeriod);
                     result.studentData.periods[currentPeriod].appreciation = '';
+                    Utils.setAppreciationCopied(result, currentPeriod, false);
                     result.appreciation = '';
                 }
                 this._initialAppreciationHtml = '';

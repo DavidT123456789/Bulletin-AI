@@ -313,7 +313,7 @@ export const ListViewEvents = {
                 const studentId = row?.dataset.studentId;
                 if (studentId) {
                     ExportManager.copyAppreciation(studentId, quickCopyBtn, () => {
-                        ListViewRenderer.updateStudentRow(studentId);
+                        ListViewRenderer.updateStudentRow(studentId, { copiedOnly: true });
                     });
                 }
                 return;

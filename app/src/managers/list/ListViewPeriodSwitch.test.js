@@ -380,4 +380,53 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
         dirtyOnlySpy.mockRestore();
         fullUpdateSpy.mockRestore();
     });
+
+    it('should surgically update copied indicator without rebuilding row or losing keyboard focus on quick-copy button', () => {
+        const student = {
+            id: 's-quick-copy',
+            nom: 'LEROY',
+            prenom: 'Emma',
+            appreciation: 'Très bon semestre.',
+            generationPeriod: 'S1',
+            studentData: {
+                prenom: 'Emma',
+                periods: {
+                    S1: { grade: 16.0, appreciation: 'Très bon semestre.' }
+                }
+            }
+        };
+
+        appState.currentPeriod = 'S1';
+        appState.generatedResults = [student];
+
+        ListViewRenderer.renderFresh(container, [student], ['S1', 'S2'], 0);
+        const row = container.querySelector('.student-row[data-student-id="s-quick-copy"]');
+        const quickCopyBtn = row.querySelector('.btn-row-quick-copy');
+        expect(quickCopyBtn).not.toBeNull();
+        expect(row.querySelector('.copied-indicator')).toBeNull();
+
+        quickCopyBtn.focus();
+        const fullUpdateSpy = vi.spyOn(ListViewRenderer, 'updateRowContent');
+
+        student.studentData.periods.S1.copied = true;
+        ListViewRenderer.updateStudentRow('s-quick-copy', { copiedOnly: true });
+
+        expect(fullUpdateSpy).not.toHaveBeenCalled();
+        expect(row.querySelector('.copied-indicator')).not.toBeNull();
+        // Same button node & keyboard focus preserved
+        expect(row.querySelector('.btn-row-quick-copy')).toBe(quickCopyBtn);
+        expect(document.activeElement).toBe(quickCopyBtn);
+        expect(quickCopyBtn.getAttribute('aria-label')).toBe('Copier à nouveau (déjà copiée)');
+
+        // Uncopying removes the indicator in place and restores label
+        student.studentData.periods.S1.copied = false;
+        ListViewRenderer.updateStudentRow('s-quick-copy', { copiedOnly: true });
+
+        expect(fullUpdateSpy).not.toHaveBeenCalled();
+        expect(row.querySelector('.copied-indicator')).toBeNull();
+        expect(document.activeElement).toBe(quickCopyBtn);
+        expect(quickCopyBtn.getAttribute('aria-label')).toBe("Copier l'appréciation");
+
+        fullUpdateSpy.mockRestore();
+    });
 });

@@ -660,7 +660,7 @@ export const ListSelectionManager = {
     async bulkCopy(ids) {
         const count = await ExportManager.copyBulkAppreciations(ids);
         if (count > 0) {
-            ids.forEach(id => this.callbacks.updateStudentRow(id));
+            ids.forEach(id => this.callbacks.updateStudentRow(id, { copiedOnly: true }));
             this.clearSelections();
             UI?.showNotification(`${count} appréciation${count > 1 ? 's' : ''} copiée${count > 1 ? 's' : ''}.`, 'success');
         }
@@ -673,7 +673,7 @@ export const ListSelectionManager = {
      */
     async copySingleAppreciation(studentId) {
         const ok = await ExportManager.copyAppreciation(studentId, null, () => {
-            this.callbacks.updateStudentRow(studentId);
+            this.callbacks.updateStudentRow(studentId, { copiedOnly: true });
         });
         if (ok) {
             UI?.showNotification('Appréciation copiée.', 'success');

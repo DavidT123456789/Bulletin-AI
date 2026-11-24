@@ -1395,51 +1395,19 @@
     gap: 3px;
 }
 
-/* Fallback Row within Exécution & Relais */
-.settings-row.settings-row-fallback {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-}
-
-.settings-row-fallback .settings-row-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    width: 100%;
-}
-
-.settings-row-fallback .settings-row-control {
-    margin-top: 1px;
-    flex-shrink: 0;
-}
-
 #fallbackOrderHint {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 4px 8px;
-    padding: 6px 11px;
-    background: var(--tonal-bg);
-    border-radius: var(--radius-sm);
-    font-size: 0.8rem;
+    gap: 4px 6px;
+    font-size: 0.78rem;
     line-height: 1.35;
-    margin-top: 2px;
-    width: fit-content;
-    max-width: 100%;
-}
-
-.settings-row-fallback .fallback-sovereignty-hint {
-    margin-top: 2px;
-}
-
-/* Dim fallback sequence and sovereignty warning when fallback toggle is unchecked */
-.settings-row-fallback:has(#enableApiFallbackToggle:not(:checked)) #fallbackOrderHint,
-.settings-row-fallback:has(#enableApiFallbackToggle:not(:checked)) #fallbackSovereigntyHint {
-    opacity: 0.38;
-    pointer-events: none;
+    color: var(--text-secondary);
     transition: opacity var(--transition-fast);
+}
+
+.settings-row:has(#enableApiFallbackToggle:not(:checked)) #fallbackOrderHint {
+    opacity: 0.42;
 }
 
 /* Badge "+X" pour l'ordre de secours */
@@ -1521,27 +1489,8 @@ label.settings-row-title {
     border-radius: 0;
 }
 
-.settings-providers-card .api-key-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px 12px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-
-.settings-providers-card .api-key-title-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
 .settings-providers-card .api-key-links {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin-left: auto;
+    margin-right: -10px;
 }
 
 .settings-providers-card > .api-key-section + .api-key-section {
@@ -1890,7 +1839,7 @@ label.settings-row-title {
         width: 100%;
     }
 
-    /* Les lignes à simple interrupteur (Relais automatique, RGPD) placent le switch à droite du titre et la description sur 100 % de la largeur */
+    /* Les lignes à simple interrupteur (ex. RGPD) placent le switch à droite du titre et la description sur 100 % de la largeur */
     .settings-row:has(> .settings-row-control > .toggle-switch) {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -1958,7 +1907,7 @@ label.settings-row-title {
     }
 
     .settings-providers-card .api-key-links {
-        margin-left: 0;
+        margin-inline: -6px;
     }
 
     .provider-models-hint {
@@ -1975,15 +1924,6 @@ label.settings-row-title {
     .api-key-actions.api-key-actions-wrap > .toggle-switch-container {
         flex: 1 1 100%;
         margin-bottom: 2px;
-    }
-
-    .settings-row-fallback .settings-row-head {
-        gap: 12px;
-    }
-
-    #fallbackOrderHint {
-        font-size: 0.74rem;
-        padding: 5px 8px;
     }
 
     /* Onglet Données : boutons d'action équilibrés sur mobile */

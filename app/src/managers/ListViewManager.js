@@ -28,7 +28,7 @@ export const ListViewManager = {
     // Renderer Proxies
     _createRowElement(r, p, c) { return ListViewRenderer.createRowElement(r, p, c); },
     _updateRowContent(row, res) { ListViewRenderer.updateRowContent(row, res); },
-    updateStudentRow(id) { return ListViewRenderer.updateStudentRow(id); },
+    updateStudentRow(id, options) { return ListViewRenderer.updateStudentRow(id, options); },
     _renderFresh(c, r, p, idx, options) { ListViewRenderer.renderFresh(c, r, p, idx, options); },
     _updateHeaderSortIcons(v) { ListViewRenderer.updateHeaderSortIcons(v); },
     _getAppreciationSkeletonHTML(label, pending) { return ListViewRenderer.getAppreciationSkeletonHTML(label, pending); },
@@ -39,7 +39,7 @@ export const ListViewManager = {
     // Inject dependencies into SelectionManager
     initSelectionManager() {
         ListSelectionManager?.init?.({
-            updateStudentRow: (id) => this.updateStudentRow(id),
+            updateStudentRow: (id, options) => this.updateStudentRow(id, options),
             setRowStatus: (id, status) => this.setRowStatus(id, status),
             renderList: () => this.render(appState.filteredResults, document.getElementById('outputList'))
         });
