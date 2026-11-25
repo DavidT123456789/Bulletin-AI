@@ -735,7 +735,7 @@
 
 .sc-status-pill.sc-status-locked,
 .sc-status-pill.sc-status-virtual {
-    background: var(--floating-capsule-bg);
+    background: var(--floating-rail-bg);
     color: var(--text-secondary);
     border: var(--floating-capsule-border);
 }
@@ -845,7 +845,7 @@
 
 @media (hover: hover) {
     .sc-status-pill.sc-status-locked:hover {
-        background: color-mix(in srgb, var(--floating-capsule-bg), var(--text-primary) 7%);
+        background: color-mix(in srgb, var(--floating-rail-bg), var(--text-primary) 7%);
         color: var(--text-primary);
     }
 
