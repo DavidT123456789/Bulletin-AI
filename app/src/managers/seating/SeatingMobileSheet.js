@@ -857,13 +857,13 @@ export const SeatingMobileSheet = {
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
                     <div class="sc-hint-title">Plan de classe vide</div>
-                    <div class="sc-hint-subtitle">Placez vos élèves manuellement, ajustez la salle ou lancez un agencement automatique.</div>
+                    <div class="sc-hint-subtitle">Placez vos élèves manuellement, ajustez la salle ou lancez un placement automatique.</div>
                 </div>
                 ${capacityWarningHTML}
                 <div class="sc-onboarding-actions">
                     <button type="button" class="sc-onboarding-btn secondary" id="scHintAutoBtn">
                         <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
-                        <span>Agencer automatiquement</span>
+                        <span>Placer automatiquement</span>
                     </button>
                     <div class="sc-onboarding-footer-links">
                         <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">

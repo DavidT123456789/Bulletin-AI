@@ -129,7 +129,7 @@ export const SeatingRoomLayout = {
 
         return `
             <div class="sc-placement-actions-section">
-                <div class="sc-config-section-title">Agencement</div>
+                <div class="sc-config-section-title">Placement des élèves</div>
                 <button class="sc-popover-item" data-mode="alpha-asc" type="button">
                     <iconify-icon icon="solar:sort-from-top-to-bottom-linear"></iconify-icon>
                     <span class="sc-popover-item-label">Alphabétique <small>A → Z</small></span>
@@ -336,21 +336,17 @@ export const SeatingRoomLayout = {
             desk.setAttribute('data-tooltip', tooltip);
         }
 
-        // Update orientation action buttons
-        const orientationBtns = [
-            document.getElementById('scOrientationBtn'),
-            document.getElementById('scFloatingOrientationBtn')
-        ];
-        orientationBtns.forEach(btn => {
-            if (!btn) return;
-            btn.classList.toggle('active', isStudent);
-            btn.setAttribute('aria-label', ariaLabel);
-            btn.setAttribute('data-tooltip', tooltip);
-            const icon = btn.querySelector('iconify-icon');
+        // Update orientation action button (floating capsule)
+        const orientationBtn = document.getElementById('scFloatingOrientationBtn');
+        if (orientationBtn) {
+            orientationBtn.classList.toggle('active', isStudent);
+            orientationBtn.setAttribute('aria-label', ariaLabel);
+            orientationBtn.setAttribute('data-tooltip', tooltip);
+            const icon = orientationBtn.querySelector('iconify-icon');
             if (icon) {
                 icon.setAttribute('icon', 'solar:users-group-rounded-linear');
             }
-        });
+        }
         if (skipRender) return;
         TooltipsUI.initTooltips(document.getElementById('seatingChartView'));
 

@@ -230,7 +230,6 @@ export const SeatingEvents = {
                 this._toggleLock();
             }
         });
-        document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
         document.getElementById('scFloatingDotsBtn')?.addEventListener('click', (e) => {

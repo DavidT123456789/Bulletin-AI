@@ -4,8 +4,7 @@
 }
 
 .sc-action-btn.sc-auto-place-btn.active,
-.sc-action-btn.sc-config-trigger.active,
-.sc-action-btn.sc-orientation-btn.active {
+.sc-action-btn.sc-config-trigger.active {
     background: var(--item-hover-bg);
     color: var(--text-primary);
 }
@@ -674,7 +673,7 @@
 }
 
 /* In Edit mode, Activity mode, or Random Picker mode: smoothly collapse action buttons in floating capsule */
-#seatingChartView[data-locked="false"] .sc-floating-actions :is(.sc-orientation-btn, .sc-print-btn, .sc-random-btn, .sc-random-close-btn),
+#seatingChartView[data-locked="false"] .sc-floating-actions :is(.sc-print-btn, .sc-random-btn, .sc-random-close-btn),
 #seatingChartView[data-plan-mode="activity"] .sc-floating-actions .sc-orientation-btn,
 #seatingChartView:not(.sc-random-active) .sc-floating-actions .sc-random-close-btn,
 #seatingChartView.sc-random-active .sc-floating-actions :is(.sc-zoom-btn, .sc-dots-btn, .sc-orientation-btn, .sc-print-btn) {
@@ -1069,14 +1068,6 @@
 }
 
 /* ────────── ORIENTATION TOGGLE ────────── */
-.sc-sidebar .sc-action-btn.sc-orientation-btn {
-    transition: background var(--transition-fast),
-                color var(--transition-fast),
-                border-color var(--transition-fast),
-                box-shadow var(--transition-spring),
-                transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 .sc-action-btn.sc-orientation-btn:active {
     transform: scale(0.88);
 }
@@ -1360,8 +1351,7 @@ body:has(#seatingChartView[data-plan-mode="activity"]) .sc-touch-ghost {
 }
 
 .sc-classroom-board[data-plan-mode="activity"] .sc-desk-row,
-#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row,
-#seatingChartView[data-plan-mode="activity"] .sc-sidebar .sc-orientation-btn {
+#seatingChartView[data-plan-mode="activity"] .sc-classroom-board:not([data-plan-mode="course"]) .sc-desk-row {
     display: none !important;
 }
 

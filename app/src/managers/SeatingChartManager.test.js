@@ -460,7 +460,6 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
                 </div>
                 <div id="scSidebarTitle"></div>
                 <div id="scFooterInfo"></div>
-                <button id="scOrientationBtn" class="sc-orientation-btn"><iconify-icon></iconify-icon></button>
                 <button id="scFloatingOrientationBtn" class="sc-orientation-btn"><iconify-icon></iconify-icon></button>
             </div>
         `;
@@ -495,7 +494,7 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
     it('devrait basculer de la vue Enseignant vers la vue Élèves et inversement', () => {
         expect(SeatingChartManager._orientation).toBe('teacher');
         expect(document.getElementById('scDesk').textContent).toContain('Tableau');
-        expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(false);
+        expect(document.getElementById('scFloatingOrientationBtn').classList.contains('active')).toBe(false);
 
         SeatingChartManager._toggleOrientation();
         expect(SeatingChartManager._orientation).toBe('student');
@@ -503,8 +502,8 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(localStorage.getItem('bulletin_seating_orientation')).toBe('student');
         expect(document.getElementById('scDesk').textContent).toContain('Tableau');
         expect(document.getElementById('scDesk').textContent).not.toContain('Vue élèves');
-        expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(true);
-        expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
+        expect(document.getElementById('scFloatingOrientationBtn').classList.contains('active')).toBe(true);
+        expect(document.getElementById('scFloatingOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
         expect(document.getElementById('scFooterInfo').innerHTML).not.toContain('Vue Élèves');
 
         SeatingChartManager._toggleOrientation();
@@ -512,8 +511,8 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         expect(document.getElementById('seatingChartView').dataset.orientation).toBe('teacher');
         expect(localStorage.getItem('bulletin_seating_orientation')).toBe('teacher');
         expect(document.getElementById('scDesk').textContent).toBe('Tableau');
-        expect(document.getElementById('scOrientationBtn').classList.contains('active')).toBe(false);
-        expect(document.getElementById('scOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
+        expect(document.getElementById('scFloatingOrientationBtn').classList.contains('active')).toBe(false);
+        expect(document.getElementById('scFloatingOrientationBtn').querySelector('iconify-icon').getAttribute('icon')).toBe('solar:users-group-rounded-linear');
     });
 
     it('devrait ordonner les cellules de la grille en miroir 180° en vue Élèves', () => {

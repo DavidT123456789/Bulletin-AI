@@ -214,7 +214,7 @@ export const SeatingChartManager = {
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">
                                 <div class="sc-placement-wrapper">
-                                    <button type="button" class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Agencer la classe" data-tooltip="Agencer la classe">
+                                    <button type="button" class="sc-action-btn sc-auto-place-btn" id="scAutoPlaceBtn" aria-label="Placer les élèves" data-tooltip="Placer les élèves">
                                         <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-placement-popover" id="scPlacementPopover">
@@ -227,11 +227,8 @@ export const SeatingChartManager = {
                                 <button type="button" class="sc-action-btn sc-redo-btn disabled" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" aria-disabled="true">
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
-                                <button type="button" class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active<br><span class='kbd-hint'>Cliquer pour inverser</span>">
-                                    <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                                </button>
                                 <div class="sc-config-wrapper">
-                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Grille de la salle" data-tooltip="Grille de la salle">
+                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Agencement de la salle" data-tooltip="Agencement de la salle">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
