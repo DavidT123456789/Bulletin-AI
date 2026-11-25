@@ -2261,7 +2261,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 }
 
 .sc-empty-sidebar {
-    padding: 56px 16px 32px;
+    padding: 40px 16px 32px;
     text-align: center;
     color: var(--text-tertiary);
     font-size: 0.85rem;
@@ -2270,50 +2270,56 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     align-items: center;
     justify-content: flex-start;
     flex: 1;
-    animation: scFadeUp 0.5s var(--ease-spring) both;
+}
+
+.sc-empty-sidebar:where(:not(.sc-empty-success)) {
+    animation: scEmptyReveal 0.24s var(--ease-spring) both;
+}
+
+.sc-empty-sidebar:where(.sc-empty-success) {
+    justify-content: center;
+    padding: 32px 16px clamp(48px, 14vh, 108px);
+}
+
+.sc-empty-sidebar:where(.sc-empty-success) > * {
+    animation: scEmptyReveal 0.36s var(--ease-spring) 0.12s both;
+}
+
+.sc-empty-sidebar:where(.sc-empty-success:not(:last-child)) {
+    padding-bottom: 32px;
 }
 
 .sc-empty-text {
     font-weight: 400;
     color: var(--text-tertiary);
     max-width: 220px;
-    line-height: 1.5;
-    font-size: 0.84rem;
-    margin-bottom: auto;
+    line-height: 1.45;
+    font-size: 0.83rem;
     text-wrap: balance;
 }
 
 .sc-empty-text strong {
     display: inline-block;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     font-size: 0.9rem;
     font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--text-primary);
 }
 
-/* Subtle Filigrane Checkmark (No button circle — melts into sidebar surface) */
+/* Hidden on desktop (avoids duplicating the "Valider" checkmark); shown inline in mobile strip */
 .sc-empty-success-badge {
-    width: 56px;
-    height: 56px;
-    margin-bottom: auto;
-    background: transparent;
-    border: none;
-    color: rgba(0, 0, 0, 0.14);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    display: none;
     pointer-events: none;
 }
 
-[data-theme="dark"] .sc-empty-success-badge {
-    color: rgba(255, 255, 255, 0.12);
+.sc-empty-check-svg {
+    display: block;
 }
 
-.sc-empty-check-svg {
-    width: 48px;
-    height: 48px;
-    display: block;
+@keyframes scEmptyReveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scFadeUp {
@@ -2325,37 +2331,37 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 @media (max-width: 768px) {
     /* Empty sidebar message adapts to horizontal layout */
     .sc-empty-sidebar {
-        flex-direction: row !important;
+        flex-direction: row;
         padding: 4px 8px;
         font-size: 0.78rem;
         gap: 6px;
-        justify-content: center !important;
-        align-items: center !important;
-        flex: none !important;
-        height: auto !important;
+        justify-content: center;
+        align-items: center;
+        flex: none;
+        height: auto;
     }
 
     .sc-empty-success-badge {
-        width: 16px !important;
-        height: 16px !important;
-        margin-bottom: 0 !important;
-        order: 1 !important;
-        color: var(--success-text) !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        color: var(--success-text);
         opacity: 0.85;
     }
 
     .sc-empty-check-svg {
-        width: 15px !important;
-        height: 15px !important;
+        width: 15px;
+        height: 15px;
     }
 
     .sc-empty-text {
-        order: 2 !important;
-        font-size: 0.78rem !important;
-        line-height: 1.25 !important;
-        max-width: none !important;
-        text-align: center !important;
-        margin-bottom: 0 !important;
+        font-size: 0.78rem;
+        line-height: 1.25;
+        max-width: none;
+        text-align: center;
     }
 
     .sc-empty-text br {
@@ -2445,6 +2451,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     #seatingChartView.sc-entering .sc-body,
     #seatingChartView.sc-exiting,
     .sc-empty-sidebar,
+    .sc-empty-sidebar > *,
     .sc-plan-mode-switch .ui-glider,
     .sc-plan-mode-switch .ui-segment,
     .sc-plan-mode-switch .sc-mode-label {

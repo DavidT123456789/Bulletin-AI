@@ -661,12 +661,12 @@ export const SeatingSidebar = {
         const activeListHtml = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
                  ${unplaced.length === 0 
-                    ? `<div class="sc-empty-text"><strong>Bravo</strong><br>Tous les élèves sont placés</div>
-                       <div class="sc-empty-success-badge" aria-hidden="true">
+                    ? `<div class="sc-empty-success-badge" aria-hidden="true">
                            <svg class="sc-empty-check-svg" viewBox="0 0 24 24" fill="none">
                                <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                            </svg>
-                       </div>`
+                       </div>
+                       <div class="sc-empty-text"><strong>Bravo</strong><br>Tous les élèves sont placés</div>`
                     : 'Aucun résultat'}
                </div>`
             : filtered.map((s, index) => {
