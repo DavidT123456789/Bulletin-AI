@@ -4397,47 +4397,61 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellSpecial(0, 3)).toEqual({ type: 'aisle', scope: 'global' });
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
 
-            // Passer au modèle "En U" (fond rangée 0 sans allée, centre creusé à partir de r >= 1) et conserver les 24 élèves
+            // Passer au modèle "En U" (vrai U simple : 1 col gauche + fond + 1 col droite) et conserver les 24 élèves
             SeatingChartManager._applyRoomPreset('u-shape');
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getRows()).toBe(10);
+            expect(SeatingChartManager._getCols()).toBe(10);
             expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
             expect(SeatingChartManager._getCellSpecial(1, 3)).toEqual({ type: 'aisle', scope: 'global' });
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
 
-            // Ajouter une rangée en U conserve le mur du fond à r = 0 et prolonge l'allée centrale vers le bas
-            const rowsBefore = SeatingChartManager._getRows();
-            SeatingChartManager._stepGridDimension('rows', 1);
-            expect(SeatingChartManager._getRows()).toBe(rowsBefore + 1);
+            // Retirer puis rajouter une rangée en U conserve le mur du fond à r = 0 et ajuste l'allée centrale
+            const rowsBefore = SeatingChartManager._getRows(); // 10
+            SeatingChartManager._stepGridDimension('rows', -1); // 10 -> 9
+            expect(SeatingChartManager._getRows()).toBe(rowsBefore - 1);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
             expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
-            expect(SeatingChartManager._getCellSpecial(rowsBefore, 3)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellSpecial(rowsBefore - 2, 3)).toEqual({ type: 'aisle', scope: 'global' });
 
-            // Ajouter puis retirer une colonne en U décale l'aile droite (classe active + autres classes + Ctrl+Z)
-            const colsBefore = SeatingChartManager._getCols(); // 8 colonnes (uWing = 2 -> aile droite en col 6 et 7)
-            const otherClassStudent = appState.generatedResults.find(r => r.classId === appState.classes[1].id);
-            otherClassStudent.seatingPosition = { row: 2, col: colsBefore - 2, pinned: false };
-            const rightWingStudentId = SeatingChartManager._getCellStudentIds(1, colsBefore - 2)[0];
-            expect(rightWingStudentId).toBeTruthy();
-            SeatingChartManager._stepGridDimension('cols', 1);
-            expect(SeatingChartManager._getCols()).toBe(colsBefore + 1);
+            SeatingChartManager._stepGridDimension('rows', 1); // 9 -> 10
+            expect(SeatingChartManager._getRows()).toBe(rowsBefore);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
-            expect(SeatingChartManager._getCellSpecial(1, colsBefore - 2)).toEqual({ type: 'aisle', scope: 'global' });
-            expect(SeatingChartManager._getCellStudentIds(1, colsBefore - 1)).toEqual([rightWingStudentId]);
-            expect(otherClassStudent.seatingPosition.col).toBe(colsBefore - 1);
+            expect(SeatingChartManager._getCellSpecial(rowsBefore - 1, 3)).toEqual({ type: 'aisle', scope: 'global' });
+
+            // Retirer une colonne en U décale l'aile droite (classe active + autres classes + Ctrl+Z)
+            const colsBefore = SeatingChartManager._getCols(); // 10 colonnes (aile droite en col 9)
+            const otherClassStudent = appState.generatedResults.find(r => r.classId === appState.classes[1].id);
+            otherClassStudent.seatingPosition = { row: 2, col: colsBefore - 1, pinned: false };
+            const rightWingStudentId = SeatingChartManager._getCellStudentIds(1, colsBefore - 1)[0];
+            expect(rightWingStudentId).toBeTruthy();
+            SeatingChartManager._stepGridDimension('cols', -1); // 10 -> 9
+            expect(SeatingChartManager._getCols()).toBe(colsBefore - 1);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getCellSpecial(1, colsBefore - 2)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(1, colsBefore - 3)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellStudentIds(1, colsBefore - 2)).toEqual([rightWingStudentId]);
+            expect(otherClassStudent.seatingPosition.col).toBe(colsBefore - 2);
 
             // Ctrl+Z ramène aussi l'aile droite de l'autre classe à sa colonne d'origine
             SeatingChartManager._undo();
             expect(SeatingChartManager._getCols()).toBe(colsBefore);
-            expect(SeatingChartManager._getCellStudentIds(1, colsBefore - 2)).toEqual([rightWingStudentId]);
-            expect(otherClassStudent.seatingPosition.col).toBe(colsBefore - 2);
+            expect(SeatingChartManager._getCellStudentIds(1, colsBefore - 1)).toEqual([rightWingStudentId]);
+            expect(otherClassStudent.seatingPosition.col).toBe(colsBefore - 1);
             otherClassStudent.seatingPosition = null;
 
-            // Passer au modèle "Sans allée" (6 colonnes continues)
+            // Passer au modèle "Sans allée" depuis "En U" (10x10) recalibre aussi les rangées (6x6 pour max 34 élèves)
             SeatingChartManager._applyRoomPreset('compact');
             expect(SeatingChartManager._getCols()).toBe(6);
+            expect(SeatingChartManager._getRows()).toBe(6);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
             expect(Object.keys(appState.seatingGrid.specialLayout || {}).length).toBe(0);
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+
+            // Cliquer à nouveau sur le schéma déjà actif aux mêmes dimensions n'empile pas de snapshot inutile
+            const undoLenBefore = SeatingChartManager._undoStack.length;
+            SeatingChartManager._applyRoomPreset('compact');
+            expect(SeatingChartManager._undoStack.length).toBe(undoLenBefore);
         });
 
         it('devrait permettre de tracer des allées en un geste sans écraser élèves/AESH et d\'annuler tout le trait en un seul Ctrl+Z', () => {
@@ -4577,6 +4591,197 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._undo();
             expect(SeatingChartManager._getCols()).toBe(6);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
+        });
+
+        it('devrait maintenir la géométrie En U intacte sur toute la plage colonnes/rangées sans trous liés aux autres classes', () => {
+            const otherClass = appState.classes[1];
+            otherClass.seatingSpecialLayout = { '1,3': 'aesh', '2,2': 'blocked' };
+
+            SeatingChartManager._applyRoomPreset('u-shape');
+            const initialRows = SeatingChartManager._getRows();
+            expect(SeatingChartManager._getCols()).toBe(10);
+            expect(initialRows).toBe(10);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getRoomCapacityInfo().totalSeats).toBe(28);
+            // Les places spéciales d'une autre classe situées dans l'allée centrale du U sont purgées
+            expect(otherClass.seatingSpecialLayout['1,3']).toBeUndefined();
+            expect(otherClass.seatingSpecialLayout['2,2']).toBeUndefined();
+
+            // Descente complète des colonnes 10 -> 3 en maintenant un vrai U simple (1 colonne par côté)
+            for (let targetCols = 9; targetCols >= 3; targetCols--) {
+                SeatingChartManager._stepGridDimension('cols', -1);
+                expect(SeatingChartManager._getCols()).toBe(targetCols);
+                expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+                expect(SeatingChartManager._isUShapeLayout(appState.seatingGrid.specialLayout, initialRows, targetCols)).toBe(true);
+                expect(SeatingChartManager._getCellSpecial(1, 0)).toBeNull();
+                expect(SeatingChartManager._getCellSpecial(1, targetCols - 1)).toBeNull();
+                for (let c = 1; c < targetCols - 1; c++) {
+                    expect(SeatingChartManager._getCellSpecial(1, c)).toEqual({ type: 'aisle', scope: 'global' });
+                }
+            }
+
+            // Descente à 2 colonnes -> compact sans aucune allée fantôme
+            SeatingChartManager._stepGridDimension('cols', -1);
+            expect(SeatingChartManager._getCols()).toBe(2);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
+            expect(Object.keys(appState.seatingGrid.specialLayout || {})).toHaveLength(0);
+
+            // Calibration d'une classe max de 18 élèves : 8x6 (18 places en U simple)
+            const prevResults = appState.generatedResults;
+            appState.generatedResults = prevResults.filter(r => r.classId === appState.classes[0].id).slice(0, 18);
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            appState.seatingGrid = null;
+            SeatingChartManager._initGrid(5, 6);
+            SeatingChartManager._applyRoomPreset('u-shape');
+            expect(SeatingChartManager._getCols()).toBe(8);
+            expect(SeatingChartManager._getRows()).toBe(6);
+            expect(SeatingChartManager._getRoomCapacityInfo().totalSeats).toBe(18);
+            appState.generatedResults = prevResults;
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+
+            // Réappliquer En U et descendre les rangées jusqu'à 2 puis remonter : le mur du fond (r = 0) reste intact
+            SeatingChartManager._applyRoomPreset('u-shape');
+            const rowSlider = document.getElementById('scRowsSlider');
+            rowSlider.value = '2';
+            rowSlider.dispatchEvent(new Event('change'));
+            expect(SeatingChartManager._getRows()).toBe(2);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(1, 3)).toEqual({ type: 'aisle', scope: 'global' });
+
+            rowSlider.value = '6';
+            rowSlider.dispatchEvent(new Event('change'));
+            expect(SeatingChartManager._getRows()).toBe(6);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(5, 3)).toEqual({ type: 'aisle', scope: 'global' });
+
+            // Surnombre dans une autre classe lors d'une forte réduction : zéro collision de coordonnées + restauration au Ctrl+Z
+            const otherStudents = appState.generatedResults.filter(r => r.classId === otherClass.id).slice(0, 6);
+            otherStudents.forEach((s, i) => {
+                s.seatingPosition = { row: 0, col: i, pinned: false };
+            });
+            const colSlider = document.getElementById('scColsSlider');
+            rowSlider.value = '2';
+            rowSlider.dispatchEvent(new Event('change'));
+            colSlider.value = '2';
+            colSlider.dispatchEvent(new Event('change'));
+            const remainingCoords = otherStudents
+                .map(s => s.seatingPosition)
+                .filter(Boolean)
+                .map(p => `${p.row},${p.col}`);
+            expect(remainingCoords).toHaveLength(4);
+            expect(new Set(remainingCoords).size).toBe(4);
+            expect(otherStudents.filter(s => s.seatingPosition === null)).toHaveLength(2);
+
+            SeatingChartManager._undo();
+            SeatingChartManager._undo();
+            otherStudents.forEach((s, i) => {
+                expect(s.seatingPosition).toEqual({ row: 0, col: i, pinned: false });
+                s.seatingPosition = null;
+            });
+        });
+
+        it('devrait recentrer et symétriser dynamiquement les allées de 1 allée et 2 allées lors du changement de colonnes/rangées sans allée fantôme ni saut d\'allée', () => {
+            // 1. Modèle "1 allée" (7 cols -> 9 -> 5 -> 3 -> 2 -> 6)
+            SeatingChartManager._applyRoomPreset('center-aisle');
+            const leftStudent = SeatingChartManager._students[0];
+            const rightStudent = SeatingChartManager._students[1];
+            const otherStudent = appState.generatedResults.find(r => r.classId === appState.classes[1].id);
+            SeatingChartManager._gridState[0][1] = leftStudent.id;
+            SeatingChartManager._gridState[0][4] = rightStudent.id;
+            SeatingChartManager._savePositionsToState();
+            otherStudent.seatingPosition = { row: 0, col: 5, pinned: false };
+
+            // 7 -> 8 : allée passe de col 3 à col 4, le bloc droit se décale ensemble (+1) sans traverser l'allée
+            SeatingChartManager._stepGridDimension('cols', 1);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('center-aisle');
+            expect(SeatingChartManager._getCellSpecial(0, 4)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellStudentIds(0, 1)).toEqual([leftStudent.id]);
+            expect(SeatingChartManager._getCellStudentIds(0, 5)).toEqual([rightStudent.id]);
+            expect(otherStudent.seatingPosition.col).toBe(6);
+
+            // Undo puis Redo restaurent exactement la classe active ET l'autre classe
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._getCols()).toBe(7);
+            expect(SeatingChartManager._getCellStudentIds(0, 4)).toEqual([rightStudent.id]);
+            expect(otherStudent.seatingPosition.col).toBe(5);
+            SeatingChartManager._redo();
+            expect(SeatingChartManager._getCols()).toBe(8);
+            expect(SeatingChartManager._getCellStudentIds(0, 5)).toEqual([rightStudent.id]);
+            expect(otherStudent.seatingPosition.col).toBe(6);
+
+            // Réduction à 2 colonnes -> compact (zéro allée fantôme conservée hors-grille)
+            const colSlider = document.getElementById('scColsSlider');
+            colSlider.value = '2';
+            colSlider.dispatchEvent(new Event('change'));
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
+            expect(Object.keys(appState.seatingGrid.specialLayout || {})).toHaveLength(0);
+
+            // 2. Modèle "2 allées" (8 cols [2,5] -> 9 [2,6] -> 10 [3,6] -> 7 [2,4] -> 6 [1,4] -> 5 [1,3] -> 4 [2])
+            SeatingChartManager._applyRoomPreset('double-aisles');
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('double-aisles');
+
+            const expectedByCols = [
+                { cols: 9, preset: 'double-aisles', aisles: [2, 6] },
+                { cols: 10, preset: 'double-aisles', aisles: [3, 6] },
+                { cols: 7, preset: 'double-aisles', aisles: [2, 4] },
+                { cols: 6, preset: 'double-aisles', aisles: [1, 4] },
+                { cols: 5, preset: 'double-aisles', aisles: [1, 3] },
+                { cols: 4, preset: 'center-aisle', aisles: [2] },
+                { cols: 2, preset: 'compact', aisles: [] }
+            ];
+            for (const step of expectedByCols) {
+                colSlider.value = String(step.cols);
+                colSlider.dispatchEvent(new Event('change'));
+                expect(SeatingChartManager._detectCurrentRoomPreset()).toBe(step.preset);
+                const actualAisleCols = [];
+                for (let c = 0; c < step.cols; c++) {
+                    if (SeatingChartManager._getCellSpecial(0, c)?.type === 'aisle') {
+                        actualAisleCols.push(c);
+                    }
+                }
+                expect(actualAisleCols).toEqual(step.aisles);
+                // Vérifie qu'aucune clé d'allée fantôme hors-grille ne subsiste
+                for (const [k, v] of Object.entries(appState.seatingGrid.specialLayout || {})) {
+                    if (v === 'aisle') {
+                        const [r, c] = k.split(',').map(Number);
+                        expect(r).toBeGreaterThanOrEqual(0);
+                        expect(r).toBeLessThan(SeatingChartManager._getRows());
+                        expect(c).toBeGreaterThanOrEqual(0);
+                        expect(c).toBeLessThan(step.cols);
+                    }
+                }
+            }
+            otherStudent.seatingPosition = null;
+        });
+
+        it('devrait prévisualiser fidèlement le modèle actif et le nombre de places pendant le glissement du curseur sans empiler de snapshot vide', () => {
+            SeatingChartManager._applyRoomPreset('u-shape'); // 10 cols, vrai U simple (1 col par côté)
+            const rows = SeatingChartManager._getRows();
+            SeatingChartManager._undoStack = [];
+
+            const colSlider = document.getElementById('scColsSlider');
+            // Simuler un glissement en direct (input sans change) de 10 à 7 colonnes
+            colSlider.value = '7';
+            colSlider.dispatchEvent(new Event('input'));
+
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            // Capacité projetée en U simple sur 7 cols : 7 (fond) + (rows - 1) * 2 (ailes)
+            expect(SeatingChartManager._getRoomCapacityInfo().totalSeats).toBe(7 + (rows - 1) * 2);
+            expect(SeatingChartManager._undoStack).toHaveLength(0);
+
+            // Revenir à 10 et relâcher (change sans changement réel) : aucun snapshot inutile
+            colSlider.value = '10';
+            colSlider.dispatchEvent(new Event('input'));
+            colSlider.dispatchEvent(new Event('change'));
+            expect(SeatingChartManager._undoStack).toHaveLength(0);
+
+            // Relâcher à 7 colonnes : 1 seul snapshot empilé, capacité identique à la prévisualisation
+            colSlider.value = '7';
+            colSlider.dispatchEvent(new Event('change'));
+            expect(SeatingChartManager._undoStack).toHaveLength(1);
+            expect(SeatingChartManager._getRoomCapacityInfo().totalSeats).toBe(7 + (rows - 1) * 2);
         });
     });
 

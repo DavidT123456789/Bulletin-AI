@@ -590,9 +590,86 @@ export const SeatingState = {
     // UNDO / REDO (Full-snapshot, two-stack)
     // ========================================================================
 
+    _captureOtherClassesSnapshot(posKey = this._getActivePositionKey(), classSpecialKey = this._getActiveClassSpecialKey()) {
+        const currentClassId = this._getCurrentClass()?.id;
+        const currentStudentIds = new Set((this._students || []).map(s => s.id));
+        const classSpecials = {};
+        (appState.classes || []).forEach(cls => {
+            if (!cls || cls.id === currentClassId) return;
+            classSpecials[cls.id] = cls[classSpecialKey] ? Utils.deepClone(cls[classSpecialKey]) : null;
+        });
+        const studentPositions = {};
+        (appState.generatedResults || []).forEach(r => {
+            if (!r || currentStudentIds.has(r.id)) return;
+            if (r[posKey] !== undefined) {
+                studentPositions[r.id] = r[posKey] ? { ...r[posKey] } : null;
+            }
+        });
+        return { classSpecials, studentPositions };
+    },
+
+    _areShallowMapsEqual(a, b) {
+        if (a === b) return true;
+        if (!a || !b) return false;
+        const keysA = Object.keys(a);
+        const keysB = Object.keys(b);
+        if (keysA.length !== keysB.length) return false;
+        return keysA.every(k => a[k] === b[k]);
+    },
+
+    _restoreOtherClassesSnapshot(otherClasses, posKey = this._getActivePositionKey(), classSpecialKey = this._getActiveClassSpecialKey()) {
+        if (!otherClasses) return;
+        const currentClassId = this._getCurrentClass()?.id;
+        const currentStudentIds = new Set((this._students || []).map(s => s.id));
+        const updatedKey = this._getActiveClassUpdatedKey();
+        const mutatedClassIds = new Set();
+
+        (appState.classes || []).forEach(cls => {
+            if (!cls || cls.id === currentClassId) return;
+            if (!Object.prototype.hasOwnProperty.call(otherClasses.classSpecials || {}, cls.id)) return;
+            const prevSpecial = otherClasses.classSpecials[cls.id];
+            const curSpecial = cls[classSpecialKey] || null;
+            if (!this._areShallowMapsEqual(curSpecial, prevSpecial)) {
+                if (prevSpecial) {
+                    cls[classSpecialKey] = Utils.deepClone(prevSpecial);
+                } else {
+                    delete cls[classSpecialKey];
+                }
+                mutatedClassIds.add(cls.id);
+            }
+        });
+
+        (appState.generatedResults || []).forEach(r => {
+            if (!r || currentStudentIds.has(r.id)) return;
+            if (!Object.prototype.hasOwnProperty.call(otherClasses.studentPositions || {}, r.id)) return;
+            const prevPos = otherClasses.studentPositions[r.id];
+            const curPos = r[posKey] || null;
+            const posChanged = (!curPos && prevPos)
+                || (curPos && !prevPos)
+                || (curPos && prevPos && (
+                    curPos.row !== prevPos.row ||
+                    curPos.col !== prevPos.col ||
+                    Boolean(curPos.pinned) !== Boolean(prevPos.pinned) ||
+                    (curPos.order ?? 0) !== (prevPos.order ?? 0)
+                ));
+            if (posChanged) {
+                r[posKey] = prevPos ? { ...prevPos } : null;
+                mutatedClassIds.add(r.classId);
+            }
+        });
+
+        if (mutatedClassIds.size > 0) {
+            const now = Date.now();
+            (appState.classes || []).forEach(cls => {
+                if (cls && mutatedClassIds.has(cls.id)) cls[updatedKey] = now;
+            });
+        }
+    },
+
     _captureSnapshot() {
         const currentClass = this._getCurrentClass();
         const gridKey = this._getActiveGridKey();
+        const posKey = this._getActivePositionKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
         return {
             gridState: this._gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell)),
@@ -600,6 +677,7 @@ export const SeatingState = {
             classSpecialLayout: currentClass?.[classSpecialKey]
                 ? Utils.deepClone(currentClass[classSpecialKey])
                 : null,
+            otherClasses: this._captureOtherClassesSnapshot(posKey, classSpecialKey),
             rows: this._gridState?.length || this._getRows(),
             cols: this._gridState?.[0]?.length || this._getCols()
         };
@@ -638,54 +716,6 @@ export const SeatingState = {
         });
     },
 
-    /**
-     * Décale l'aile droite (élèves + places spéciales de classe) des autres classes
-     * lors d'un redimensionnement de colonnes ou d'un Undo/Redo en disposition En U.
-     */
-    _shiftOtherClassesUShapeRightWing(oldCols, newCols, uWing, targetRows = this._getRows()) {
-        const colDelta = newCols - oldCols;
-        if (!colDelta || uWing <= 0) return;
-
-        const posKey = this._getActivePositionKey();
-        const classSpecialKey = this._getActiveClassSpecialKey();
-        const updatedKey = this._getActiveClassUpdatedKey();
-        const currentClassId = this._getCurrentClass()?.id;
-        const currentStudentIds = new Set(this._students.map(s => s.id));
-        const shiftedClassIds = new Set();
-
-        (appState.classes || []).forEach(cls => {
-            if (!cls || cls.id === currentClassId || !cls[classSpecialKey]) return;
-            const nextClassSpecial = {};
-            let mutated = false;
-            for (const [key, type] of Object.entries(cls[classSpecialKey])) {
-                const [r, c] = key.split(',').map(Number);
-                const nextC = (r >= 1 && c >= oldCols - uWing) ? (c + colDelta) : c;
-                if (r >= 0 && r < targetRows && nextC >= 0 && nextC < newCols) {
-                    nextClassSpecial[`${r},${nextC}`] = type;
-                    if (nextC !== c) mutated = true;
-                } else {
-                    mutated = true;
-                }
-            }
-            cls[classSpecialKey] = nextClassSpecial;
-            if (mutated) shiftedClassIds.add(cls.id);
-        });
-
-        (appState.generatedResults || []).forEach(r => {
-            if (!r || currentStudentIds.has(r.id)) return;
-            const pos = r[posKey];
-            if (pos && typeof pos.row === 'number' && typeof pos.col === 'number' && pos.row >= 1 && pos.col >= oldCols - uWing) {
-                r[posKey] = { ...pos, col: pos.col + colDelta };
-                shiftedClassIds.add(r.classId);
-            }
-        });
-
-        const now = Date.now();
-        (appState.classes || []).forEach(cls => {
-            if (cls && shiftedClassIds.has(cls.id)) cls[updatedKey] = now;
-        });
-    },
-
     _undo() {
         if (this._undoStack.length === 0 || this._isLocked) return;
         this._redoStack.push(this._captureSnapshot());
@@ -714,18 +744,11 @@ export const SeatingState = {
 
     _restoreSnapshot(snapshot) {
         const gridKey = this._getActiveGridKey();
+        const posKey = this._getActivePositionKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
         const oldRows = this._gridState?.length || this._getRows();
-        const oldCols = this._gridState?.[0]?.length || this._getCols();
         const targetRows = snapshot.rows || oldRows;
-        const targetCols = snapshot.cols || oldCols;
-        const oldUWing = !this._isActivityMode()
-            ? (this._detectUShapeWingWidth?.(appState[gridKey]?.specialLayout || {}, oldRows, oldCols) || 0)
-            : 0;
-        const targetUWing = !this._isActivityMode()
-            ? (this._detectUShapeWingWidth?.(snapshot.specialLayout || appState[gridKey]?.specialLayout || {}, targetRows, targetCols) || 0)
-            : 0;
-        const rowOffset = (this._isActivityMode() || oldUWing > 0 || targetUWing > 0) ? 0 : (targetRows - oldRows);
+        const rowOffset = this._isActivityMode() ? 0 : (targetRows - oldRows);
 
         this._gridState = snapshot.gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell));
         if (appState[gridKey]) {
@@ -743,8 +766,8 @@ export const SeatingState = {
             }
         }
 
-        if (oldUWing > 0 && targetUWing > 0 && targetCols !== oldCols) {
-            this._shiftOtherClassesUShapeRightWing?.(oldCols, targetCols, oldUWing, targetRows);
+        if (snapshot.otherClasses) {
+            this._restoreOtherClassesSnapshot(snapshot.otherClasses, posKey, classSpecialKey);
         } else if (rowOffset !== 0) {
             (appState.classes || []).forEach(cls => {
                 if (!cls || cls.id === currentClass?.id || !cls[classSpecialKey]) return;
@@ -762,11 +785,13 @@ export const SeatingState = {
         const colSlider = document.getElementById('scColsSlider');
         if (rowSlider && snapshot.rows) { 
             rowSlider.value = snapshot.rows; 
-            document.getElementById('scRowsValue').textContent = snapshot.rows; 
+            const rowValEl = document.getElementById('scRowsValue');
+            if (rowValEl) rowValEl.textContent = snapshot.rows; 
         }
         if (colSlider && snapshot.cols) { 
             colSlider.value = snapshot.cols; 
-            document.getElementById('scColsValue').textContent = snapshot.cols; 
+            const colValEl = document.getElementById('scColsValue');
+            if (colValEl) colValEl.textContent = snapshot.cols; 
         }
 
         const savedPositions = this._savePositionsToState();

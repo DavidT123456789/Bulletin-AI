@@ -510,47 +510,30 @@ export const SeatingEvents = {
             this._exitAislePaintMode?.();
         });
 
-        let isSliding = false;
-        const startSlide = () => {
-            if (!isSliding) {
-                this._snapshotGrid();
-                isSliding = true;
-            }
+        const commitSliderChange = () => {
+            if (this._isLocked) return;
+            const oldRows = this._gridState?.length || 0;
+            const oldCols = this._gridState?.[0]?.length || 0;
+            if (this._getRows() === oldRows && this._getCols() === oldCols) return;
+            this._snapshotGrid();
+            this._onGridConfigChange();
         };
 
         const colsSlider = document.getElementById('scColsSlider');
-        colsSlider?.addEventListener('pointerdown', startSlide);
-        colsSlider?.addEventListener('keydown', (e) => {
-            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
-                startSlide();
-            }
-        });
         colsSlider?.addEventListener('input', (e) => {
             const valEl = document.getElementById('scColsValue');
             if (valEl) valEl.textContent = e.target.value;
             this._syncConfigPopoverUI();
         });
-        colsSlider?.addEventListener('change', () => {
-            isSliding = false;
-            this._onGridConfigChange();
-        });
+        colsSlider?.addEventListener('change', commitSliderChange);
 
         const rowsSlider = document.getElementById('scRowsSlider');
-        rowsSlider?.addEventListener('pointerdown', startSlide);
-        rowsSlider?.addEventListener('keydown', (e) => {
-            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
-                startSlide();
-            }
-        });
         rowsSlider?.addEventListener('input', (e) => {
             const valEl = document.getElementById('scRowsValue');
             if (valEl) valEl.textContent = e.target.value;
             this._syncConfigPopoverUI();
         });
-        rowsSlider?.addEventListener('change', () => {
-            isSliding = false;
-            this._onGridConfigChange();
-        });
+        rowsSlider?.addEventListener('change', commitSliderChange);
 
         window.addEventListener('pointermove', (e) => {
             if (!this._isAislePaintMode || this._aislePaintPointerId === null || e.pointerId !== this._aislePaintPointerId) return;
@@ -564,7 +547,6 @@ export const SeatingEvents = {
         });
 
         window.addEventListener('pointerup', (e) => {
-            isSliding = false;
             if (this._isAislePaintMode && this._aislePaintPointerId !== null && e.pointerId === this._aislePaintPointerId) {
                 this._finishAislePaintStroke?.();
             }

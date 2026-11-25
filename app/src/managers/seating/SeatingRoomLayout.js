@@ -427,15 +427,78 @@ export const SeatingRoomLayout = {
         const cols = this._getCols();
         const isActivity = this._isActivityMode();
         const gridKey = this._getActiveGridKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
         const globalSpecial = appState[gridKey]?.specialLayout || {};
-        const previewRowShift = isActivity ? 0 : ((this._gridState?.length || rows) - rows);
+        const currentClass = this._getCurrentClass();
+        const classSpecial = currentClass?.[classSpecialKey] || {};
+        const preview = this._getPreviewPresetContext(globalSpecial, rows, cols);
         let specialCount = 0;
         let globalSpecialCount = 0;
-        for (let r = 0; r < rows; r++) {
-            const srcR = r + previewRowShift;
-            for (let c = 0; c < cols; c++) {
-                if (this._isSpecialSpot(srcR, c)) specialCount++;
-                if (globalSpecial[`${srcR},${c}`]) globalSpecialCount++;
+
+        if (preview?.targetGeo) {
+            const { committedRows, committedCols, sourcePreset, targetGeo } = preview;
+            const { mapCoord } = this._buildPresetResizeMapper(
+                sourcePreset,
+                committedRows,
+                committedCols,
+                targetGeo,
+                rows,
+                cols
+            );
+            const projectedGlobal = this._buildPresetSpecialLayout(
+                globalSpecial,
+                rows,
+                cols,
+                mapCoord,
+                targetGeo.isAisle
+            );
+            const projectedClass = this._remapClassSpecialMap(
+                classSpecial,
+                rows,
+                cols,
+                mapCoord,
+                projectedGlobal
+            );
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cellKey = `${r},${c}`;
+                    if (projectedGlobal[cellKey]) {
+                        globalSpecialCount++;
+                        specialCount++;
+                    } else if (projectedClass[cellKey]) {
+                        specialCount++;
+                    }
+                }
+            }
+        } else if (preview) {
+            const previewRowShift = preview.committedRows - rows;
+            for (let r = 0; r < rows; r++) {
+                const srcR = r + previewRowShift;
+                for (let c = 0; c < cols; c++) {
+                    if (c >= preview.committedCols) continue;
+                    if (srcR < 0) {
+                        if (classSpecial[`${srcR},${c}`]) {
+                            specialCount++;
+                        } else if (globalSpecial[`0,${c}`] === 'aisle') {
+                            globalSpecialCount++;
+                            specialCount++;
+                        }
+                    } else if (srcR < preview.committedRows) {
+                        if (globalSpecial[`${srcR},${c}`]) {
+                            globalSpecialCount++;
+                            specialCount++;
+                        } else if (classSpecial[`${srcR},${c}`]) {
+                            specialCount++;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (this._isSpecialSpot(r, c)) specialCount++;
+                    if (globalSpecial[`${r},${c}`]) globalSpecialCount++;
+                }
             }
         }
         const totalSeats = Math.max(0, (rows * cols) - specialCount);
@@ -526,36 +589,38 @@ export const SeatingRoomLayout = {
         return `<iconify-icon icon="solar:chair-linear"></iconify-icon><span><strong>${seatsLabel}</strong> disponibles</span>`;
     },
 
-    _detectUShapeWingWidth(specialLayout, rows, cols) {
-        if (!specialLayout || rows < 3 || cols < 4) return 0;
-        for (let c = 0; c < cols; c++) {
-            if (specialLayout[`0,${c}`] === 'aisle') return 0;
+    _getPresetAisleCols(presetId, cols) {
+        if (presetId === 'compact') return [];
+        if (presetId === 'center-aisle') {
+            return cols >= 3 ? [Math.floor(cols / 2)] : null;
         }
-        for (const w of [1, 2]) {
-            if (cols - (2 * w) < 2) continue;
-            let matches = true;
-            for (let r = 1; r < rows && matches; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const isAisle = specialLayout[`${r},${c}`] === 'aisle';
-                    const expected = c >= w && c < cols - w;
-                    if (isAisle !== expected) {
-                        matches = false;
-                        break;
-                    }
-                }
-            }
-            if (matches) return w;
+        if (presetId === 'double-aisles') {
+            if (cols < 5) return null;
+            const side = Math.round((cols - 2) / 3);
+            return [side, cols - 1 - side];
         }
-        return 0;
+        return null;
     },
 
-    _detectCurrentRoomPreset() {
-        const gridKey = this._getActiveGridKey();
-        const rows = this._getRows();
-        const cols = this._getCols();
-        const specialLayout = appState[gridKey]?.specialLayout || {};
+    _isUShapeLayout(specialLayout, rows, cols) {
+        if (!specialLayout || rows < 2 || cols < 3) return false;
+        for (let c = 0; c < cols; c++) {
+            if (specialLayout[`0,${c}`] === 'aisle') return false;
+        }
+        for (let r = 1; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const isAisle = specialLayout[`${r},${c}`] === 'aisle';
+                const expected = c >= 1 && c < cols - 1;
+                if (isAisle !== expected) return false;
+            }
+        }
+        return true;
+    },
 
-        if (this._detectUShapeWingWidth(specialLayout, rows, cols) > 0) {
+    _detectPresetFromLayout(specialLayout, rows, cols) {
+        if (!specialLayout || rows <= 0 || cols <= 0) return 'compact';
+
+        if (this._isUShapeLayout(specialLayout, rows, cols)) {
             return 'u-shape';
         }
 
@@ -565,7 +630,7 @@ export const SeatingRoomLayout = {
             for (let r = 0; r < rows; r++) {
                 if (specialLayout[`${r},${c}`] === 'aisle') aisleCountInCol++;
             }
-            if (rows > 0 && aisleCountInCol === rows) {
+            if (aisleCountInCol === rows) {
                 aisleCols.push(c);
             } else if (aisleCountInCol > 0) {
                 return 'custom';
@@ -575,13 +640,311 @@ export const SeatingRoomLayout = {
         if (aisleCols.length === 0) {
             return 'compact';
         }
-        if (cols === 7 && aisleCols.length === 1 && aisleCols[0] === 3) {
+        const centerAisles = this._getPresetAisleCols('center-aisle', cols);
+        if (centerAisles && aisleCols.length === 1 && aisleCols[0] === centerAisles[0]) {
             return 'center-aisle';
         }
-        if (cols === 8 && aisleCols.length === 2 && aisleCols[0] === 2 && aisleCols[1] === 5) {
+        const doubleAisles = this._getPresetAisleCols('double-aisles', cols);
+        if (doubleAisles && aisleCols.length === 2 && aisleCols[0] === doubleAisles[0] && aisleCols[1] === doubleAisles[1]) {
             return 'double-aisles';
         }
         return 'custom';
+    },
+
+    _getPresetGeometry(presetId, rows, cols) {
+        if (presetId === 'u-shape') {
+            if (rows >= 2 && cols >= 3) {
+                return {
+                    presetId: 'u-shape',
+                    aisleCols: [],
+                    isAisle: (r, c) => r >= 1 && c >= 1 && c < cols - 1
+                };
+            }
+            return { presetId: 'compact', aisleCols: [], isAisle: () => false };
+        }
+        if (presetId === 'double-aisles') {
+            const doubleCols = this._getPresetAisleCols('double-aisles', cols);
+            if (doubleCols) {
+                return { presetId: 'double-aisles', aisleCols: doubleCols, isAisle: (_r, c) => doubleCols.includes(c) };
+            }
+            const centerCols = this._getPresetAisleCols('center-aisle', cols);
+            if (centerCols) {
+                return { presetId: 'center-aisle', aisleCols: centerCols, isAisle: (_r, c) => centerCols.includes(c) };
+            }
+            return { presetId: 'compact', aisleCols: [], isAisle: () => false };
+        }
+        if (presetId === 'center-aisle') {
+            const centerCols = this._getPresetAisleCols('center-aisle', cols);
+            if (centerCols) {
+                return { presetId: 'center-aisle', aisleCols: centerCols, isAisle: (_r, c) => centerCols.includes(c) };
+            }
+            return { presetId: 'compact', aisleCols: [], isAisle: () => false };
+        }
+        if (presetId === 'compact') {
+            return { presetId: 'compact', aisleCols: [], isAisle: () => false };
+        }
+        return null;
+    },
+
+    _buildBlockColumnMap(oldCols, oldAisleCols, newCols, newAisleCols) {
+        const splitDeskBlocks = (totalCols, aisles) => {
+            const aisleSet = new Set(aisles);
+            const blocks = [];
+            let current = [];
+            for (let c = 0; c < totalCols; c++) {
+                if (aisleSet.has(c)) {
+                    if (current.length > 0) {
+                        blocks.push(current);
+                        current = [];
+                    }
+                } else {
+                    current.push(c);
+                }
+            }
+            if (current.length > 0) blocks.push(current);
+            return blocks;
+        };
+
+        const oldBlocks = splitDeskBlocks(oldCols, oldAisleCols);
+        const newBlocks = splitDeskBlocks(newCols, newAisleCols);
+        const colMap = new Map();
+
+        if (oldBlocks.length === newBlocks.length) {
+            for (let b = 0; b < oldBlocks.length; b++) {
+                const len = Math.min(oldBlocks[b].length, newBlocks[b].length);
+                for (let i = 0; i < len; i++) {
+                    colMap.set(oldBlocks[b][i], newBlocks[b][i]);
+                }
+            }
+        } else {
+            const oldDeskCols = oldBlocks.flat();
+            const newDeskCols = newBlocks.flat();
+            const len = Math.min(oldDeskCols.length, newDeskCols.length);
+            for (let i = 0; i < len; i++) {
+                colMap.set(oldDeskCols[i], newDeskCols[i]);
+            }
+        }
+        return colMap;
+    },
+
+    _buildPresetResizeMapper(sourcePreset, oldRows, oldCols, targetGeo, newRows, newCols) {
+        if (sourcePreset === 'u-shape') {
+            return {
+                rowOffset: 0,
+                relocateDisplaced: true,
+                preserveOutOfBoundsRows: false,
+                mapCoord: (r, c) => {
+                    if (r < 0) return null;
+                    if (r === 0) return (c >= 0 && c < newCols) ? { row: 0, col: c } : null;
+                    if (c === 0) return { row: r, col: 0 };
+                    if (c === oldCols - 1) return { row: r, col: newCols - 1 };
+                    return null;
+                }
+            };
+        }
+
+        const rowOffset = newRows - oldRows;
+        const oldAisleCols = this._getPresetAisleCols(sourcePreset, oldCols) || [];
+        const colMap = newCols === oldCols
+            ? null
+            : this._buildBlockColumnMap(oldCols, oldAisleCols, newCols, targetGeo.aisleCols);
+
+        return {
+            rowOffset,
+            relocateDisplaced: newCols !== oldCols,
+            preserveOutOfBoundsRows: newCols === oldCols,
+            mapCoord: (r, c) => {
+                if (!colMap) {
+                    return { row: r + rowOffset, col: c };
+                }
+                if (!colMap.has(c)) return null;
+                return { row: r + rowOffset, col: colMap.get(c) };
+            }
+        };
+    },
+
+    _buildPresetSpecialLayout(oldSpecial, targetRows, targetCols, mapCoord, isAisle, { preserveOutOfBoundsRows = false, skipAisleKeys = null } = {}) {
+        const next = {};
+        for (const [key, type] of Object.entries(oldSpecial || {})) {
+            if (type === 'aisle') continue;
+            const [r, c] = key.split(',').map(Number);
+            const mapped = mapCoord(r, c);
+            if (!mapped || mapped.col < 0 || mapped.col >= targetCols) continue;
+            const inRowBounds = mapped.row >= 0 && mapped.row < targetRows;
+            if (!inRowBounds && !preserveOutOfBoundsRows) continue;
+            if (inRowBounds && isAisle(mapped.row, mapped.col)) continue;
+            next[`${mapped.row},${mapped.col}`] = type;
+        }
+        for (let r = 0; r < targetRows; r++) {
+            for (let c = 0; c < targetCols; c++) {
+                const cellKey = `${r},${c}`;
+                if (isAisle(r, c) && !skipAisleKeys?.has(cellKey)) {
+                    next[cellKey] = 'aisle';
+                }
+            }
+        }
+        return next;
+    },
+
+    _remapClassSpecialMap(specialMap, targetRows, targetCols, mapCoord, newGlobalSpecial, preserveOutOfBoundsRows = false) {
+        const next = {};
+        for (const [key, type] of Object.entries(specialMap || {})) {
+            const [r, c] = key.split(',').map(Number);
+            const mapped = mapCoord(r, c);
+            if (!mapped || mapped.col < 0 || mapped.col >= targetCols) continue;
+            const inRowBounds = mapped.row >= 0 && mapped.row < targetRows;
+            if (!inRowBounds && !preserveOutOfBoundsRows) continue;
+            const nextKey = `${mapped.row},${mapped.col}`;
+            if (inRowBounds && newGlobalSpecial[nextKey]) continue;
+            next[nextKey] = type;
+        }
+        return next;
+    },
+
+    _getPreviewPresetContext(globalSpecial, rows, cols) {
+        const committedRows = this._gridState?.length || rows;
+        const committedCols = this._gridState?.[0]?.length || cols;
+        const isPreview = !this._isActivityMode()
+            && this._gridState?.length > 0
+            && (rows !== committedRows || cols !== committedCols);
+        if (!isPreview) return null;
+
+        const sourcePreset = this._detectPresetFromLayout(globalSpecial, committedRows, committedCols);
+        const targetGeo = sourcePreset !== 'custom'
+            ? this._getPresetGeometry(sourcePreset, rows, cols)
+            : null;
+        return { committedRows, committedCols, sourcePreset, targetGeo };
+    },
+
+    _remapOtherClassesForRoomChange({
+        mapCoord,
+        oldRows,
+        oldCols,
+        targetRows,
+        targetCols,
+        newGlobalSpecial,
+        relocateDisplaced = false,
+        preserveOutOfBoundsRows = false
+    }) {
+        const posKey = this._getActivePositionKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
+        const currentClassId = this._getCurrentClass()?.id;
+        const currentStudentIds = new Set((this._students || []).map(s => s.id));
+        const mutatedClassIds = new Set();
+
+        const classSpecialById = new Map();
+        (appState.classes || []).forEach(cls => {
+            if (!cls || cls.id === currentClassId) return;
+            if (!cls[classSpecialKey]) {
+                classSpecialById.set(cls.id, {});
+                return;
+            }
+            const oldEntries = Object.entries(cls[classSpecialKey]);
+            const nextClassSpecial = this._remapClassSpecialMap(
+                cls[classSpecialKey],
+                targetRows,
+                targetCols,
+                mapCoord,
+                newGlobalSpecial,
+                preserveOutOfBoundsRows
+            );
+            const nextKeys = Object.keys(nextClassSpecial);
+            const changed = nextKeys.length !== oldEntries.length
+                || oldEntries.some(([k, v]) => nextClassSpecial[k] !== v);
+            if (changed) {
+                cls[classSpecialKey] = nextClassSpecial;
+                mutatedClassIds.add(cls.id);
+            }
+            classSpecialById.set(cls.id, cls[classSpecialKey]);
+        });
+
+        const studentsByClass = new Map();
+        (appState.generatedResults || []).forEach(r => {
+            if (!r || currentStudentIds.has(r.id)) return;
+            const pos = r[posKey];
+            if (!pos || typeof pos.row !== 'number' || typeof pos.col !== 'number') return;
+            if (!studentsByClass.has(r.classId)) studentsByClass.set(r.classId, []);
+            studentsByClass.get(r.classId).push(r);
+        });
+
+        for (const [classId, classStudents] of studentsByClass.entries()) {
+            const clsSpecial = classSpecialById.get(classId) || {};
+            const occupied = new Set();
+            const displaced = [];
+
+            for (const student of classStudents) {
+                const pos = student[posKey];
+                const wasVisible = pos.row >= 0 && pos.row < oldRows && pos.col >= 0 && pos.col < oldCols;
+                const mapped = mapCoord(pos.row, pos.col);
+
+                if (mapped && mapped.row >= 0 && mapped.row < targetRows && mapped.col >= 0 && mapped.col < targetCols) {
+                    const cellKey = `${mapped.row},${mapped.col}`;
+                    if (!newGlobalSpecial[cellKey] && !clsSpecial[cellKey] && !occupied.has(cellKey)) {
+                        if (mapped.row !== pos.row || mapped.col !== pos.col) {
+                            student[posKey] = { ...pos, row: mapped.row, col: mapped.col };
+                            mutatedClassIds.add(classId);
+                        }
+                        occupied.add(cellKey);
+                    } else if (wasVisible && relocateDisplaced) {
+                        displaced.push(student);
+                    } else if (mapped.row !== pos.row || mapped.col !== pos.col) {
+                        student[posKey] = { ...pos, row: mapped.row, col: mapped.col };
+                        mutatedClassIds.add(classId);
+                    }
+                } else if (wasVisible && relocateDisplaced && (!preserveOutOfBoundsRows || mapped === null)) {
+                    displaced.push(student);
+                } else if (mapped && (mapped.row !== pos.row || mapped.col !== pos.col)) {
+                    student[posKey] = { ...pos, row: mapped.row, col: mapped.col };
+                    mutatedClassIds.add(classId);
+                }
+            }
+
+            if (displaced.length > 0) {
+                for (let r = 0; r < targetRows && displaced.length > 0; r++) {
+                    for (let c = 0; c < targetCols && displaced.length > 0; c++) {
+                        const cellKey = `${r},${c}`;
+                        if (!newGlobalSpecial[cellKey] && !clsSpecial[cellKey] && !occupied.has(cellKey)) {
+                            const student = displaced.shift();
+                            const pos = student[posKey];
+                            if (pos.row !== r || pos.col !== c) {
+                                student[posKey] = { ...pos, row: r, col: c };
+                                mutatedClassIds.add(classId);
+                            }
+                            occupied.add(cellKey);
+                        }
+                    }
+                }
+                while (displaced.length > 0) {
+                    const student = displaced.shift();
+                    if (student[posKey] !== null) {
+                        student[posKey] = null;
+                        mutatedClassIds.add(classId);
+                    }
+                }
+            }
+        }
+
+        if (mutatedClassIds.size > 0) {
+            const now = Date.now();
+            (appState.classes || []).forEach(cls => {
+                if (cls && mutatedClassIds.has(cls.id)) {
+                    cls[updatedKey] = now;
+                }
+            });
+        }
+    },
+
+    _detectCurrentRoomPreset() {
+        const gridKey = this._getActiveGridKey();
+        const rows = this._getRows();
+        const cols = this._getCols();
+        const specialLayout = appState[gridKey]?.specialLayout || {};
+        const preview = this._getPreviewPresetContext(specialLayout, rows, cols);
+        if (preview) {
+            return preview.targetGeo ? preview.targetGeo.presetId : 'custom';
+        }
+        return this._detectPresetFromLayout(specialLayout, rows, cols);
     },
 
     _syncConfigPopoverUI() {
@@ -652,18 +1015,10 @@ export const SeatingRoomLayout = {
     _applyRoomPreset(presetId) {
         if (this._isLocked) return;
         const maxStudents = this._getMaxClassStudentCount();
-        const uWing = maxStudents <= 19 ? 1 : 2;
-        const uCols = uWing === 1 ? 7 : 8;
-        const presetConfigs = {
-            'compact': { cols: 6, aisles: [] },
-            'center-aisle': { cols: 7, aisles: [3] },
-            'double-aisles': { cols: 8, aisles: [2, 5] },
-            'u-shape': { cols: uCols, aisles: [], uWing }
-        };
-        const preset = presetConfigs[presetId];
-        if (!preset) return;
-
-        this._snapshotGrid();
+        const uCols = maxStudents <= 15 ? 7 : (maxStudents <= 20 ? 8 : (maxStudents <= 25 ? 9 : 10));
+        const presetColsMap = { 'compact': 6, 'center-aisle': 7, 'double-aisles': 8, 'u-shape': uCols };
+        const targetCols = presetColsMap[presetId];
+        if (!targetCols) return;
 
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
@@ -672,24 +1027,29 @@ export const SeatingRoomLayout = {
 
         const oldRows = this._gridState?.length || this._getRows();
         const oldCols = this._gridState?.[0]?.length || this._getCols();
+        const oldSpecial = appState[gridKey]?.specialLayout || {};
+        const oldPreset = this._detectPresetFromLayout(oldSpecial, oldRows, oldCols);
+
         let minPresetRows = Math.min(10, Math.max(DEFAULT_ROWS, Math.ceil(maxStudents / 6)));
         if (presetId === 'u-shape') {
-            const perSideRow = uWing * 2;
             const remaining = Math.max(0, maxStudents - uCols);
-            minPresetRows = Math.min(10, Math.max(DEFAULT_ROWS, 1 + Math.ceil(remaining / perSideRow)));
+            minPresetRows = Math.min(10, Math.max(DEFAULT_ROWS, 1 + Math.ceil(remaining / 2)));
         }
+        const isLeavingUShape = oldPreset === 'u-shape' && presetId !== 'u-shape';
         const targetRows = presetId === 'u-shape'
-            ? Math.min(10, Math.max(3, oldRows, minPresetRows))
-            : Math.max(oldRows, !appState[gridKey] ? minPresetRows : oldRows);
-        const targetCols = preset.cols;
-        const aisleCols = preset.aisles;
-        const isTargetAisle = (r, c) => (
-            presetId === 'u-shape'
-                ? (r >= 1 && c >= uWing && c < targetCols - uWing)
-                : aisleCols.includes(c)
-        );
+            ? Math.min(10, Math.max(3, minPresetRows))
+            : (isLeavingUShape || !appState[gridKey] ? minPresetRows : oldRows);
 
-        const oldSpecial = appState[gridKey]?.specialLayout || {};
+        if (oldPreset === presetId && oldRows === targetRows && oldCols === targetCols) {
+            return;
+        }
+
+        this._snapshotGrid();
+
+        const targetGeo = this._getPresetGeometry(presetId, targetRows, targetCols);
+        const aisleCols = targetGeo.aisleCols;
+        const isTargetAisle = targetGeo.isAisle;
+
         const oldAisleCols = [];
         for (let c = 0; c < oldCols; c++) {
             let aisleRows = 0;
@@ -716,35 +1076,44 @@ export const SeatingRoomLayout = {
             colMap.set(oldDeskCols[i], newDeskCols[i]);
         }
 
-        const newSpecialLayout = {};
-        for (const [key, type] of Object.entries(oldSpecial)) {
-            if (type === 'aisle') continue;
-            const [r, c] = key.split(',').map(Number);
-            const mappedC = colMap.has(c) ? colMap.get(c) : c;
-            if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !isTargetAisle(r, mappedC)) {
-                newSpecialLayout[`${r},${mappedC}`] = type;
-            }
-        }
-        for (let r = 0; r < targetRows; r++) {
-            for (let c = 0; c < targetCols; c++) {
-                if (isTargetAisle(r, c)) {
-                    newSpecialLayout[`${r},${c}`] = 'aisle';
-                }
-            }
-        }
+        const mapPresetCoord = (r, c) => {
+            if (r < 0 || r >= targetRows) return null;
+            const mappedC = colMap.has(c)
+                ? colMap.get(c)
+                : (!isTargetAisle(r, c) && c >= 0 && c < targetCols ? c : -1);
+            if (mappedC < 0 || mappedC >= targetCols || isTargetAisle(r, mappedC)) return null;
+            return { row: r, col: mappedC };
+        };
+
+        const newSpecialLayout = this._buildPresetSpecialLayout(
+            oldSpecial,
+            targetRows,
+            targetCols,
+            mapPresetCoord,
+            isTargetAisle
+        );
 
         const currentClass = this._getCurrentClass();
         if (currentClass?.[classSpecialKey]) {
-            const nextClassSpecial = {};
-            for (const [key, type] of Object.entries(currentClass[classSpecialKey])) {
-                const [r, c] = key.split(',').map(Number);
-                const mappedC = colMap.has(c) ? colMap.get(c) : c;
-                if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !isTargetAisle(r, mappedC)) {
-                    nextClassSpecial[`${r},${mappedC}`] = type;
-                }
-            }
-            currentClass[classSpecialKey] = nextClassSpecial;
+            currentClass[classSpecialKey] = this._remapClassSpecialMap(
+                currentClass[classSpecialKey],
+                targetRows,
+                targetCols,
+                mapPresetCoord,
+                newSpecialLayout
+            );
         }
+
+        this._remapOtherClassesForRoomChange({
+            mapCoord: mapPresetCoord,
+            oldRows,
+            oldCols,
+            targetRows,
+            targetCols,
+            newGlobalSpecial: newSpecialLayout,
+            relocateDisplaced: true,
+            preserveOutOfBoundsRows: false
+        });
 
         const newGrid = Array.from({ length: targetRows }, () => Array(targetCols).fill(null));
         const displacedCells = [];
@@ -752,10 +1121,10 @@ export const SeatingRoomLayout = {
             for (let c = 0; c < oldCols; c++) {
                 const cellIds = this._getCellStudentIds(r, c);
                 if (cellIds.length === 0) continue;
-                const mappedC = colMap.has(c) ? colMap.get(c) : (!isTargetAisle(r, c) && c < targetCols ? c : -1);
+                const mapped = mapPresetCoord(r, c);
                 const cellPayload = cellIds.length === 1 ? cellIds[0] : [...cellIds];
-                if (r < targetRows && mappedC >= 0 && mappedC < targetCols && !newSpecialLayout[`${r},${mappedC}`] && !currentClass?.[classSpecialKey]?.[`${r},${mappedC}`] && !newGrid[r][mappedC]) {
-                    newGrid[r][mappedC] = cellPayload;
+                if (mapped && !newSpecialLayout[`${mapped.row},${mapped.col}`] && !currentClass?.[classSpecialKey]?.[`${mapped.row},${mapped.col}`] && !newGrid[mapped.row][mapped.col]) {
+                    newGrid[mapped.row][mapped.col] = cellPayload;
                 } else {
                     displacedCells.push(cellPayload);
                 }
@@ -795,8 +1164,11 @@ export const SeatingRoomLayout = {
             currentClass[updatedKey] = Date.now();
         }
 
-        this._savePositionsToState(true);
-        this._saveGridConfig();
+        const savedPositions = this._savePositionsToState(true);
+        const savedGrid = this._saveGridConfig();
+        if (!savedPositions && !savedGrid && !this._isVirtualClass()) {
+            StorageManager.saveAppState();
+        }
         this._render();
         this._applySmartFit(true);
         this._staggerCellEntrance();
@@ -883,18 +1255,23 @@ export const SeatingRoomLayout = {
         const newCols = this._getCols();
         const oldRows = this._gridState ? this._gridState.length : newRows;
         const oldCols = this._gridState?.[0] ? this._gridState[0].length : newCols;
+        if (this._gridState?.length > 0 && newRows === oldRows && newCols === oldCols) return;
+
         const posKey = this._getActivePositionKey();
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
         const lockKey = this._getActiveClassLockKey();
         const updatedKey = this._getActiveClassUpdatedKey();
-        const uWing = !this._isActivityMode()
-            ? this._detectUShapeWingWidth(appState[gridKey]?.specialLayout || {}, oldRows, oldCols)
-            : 0;
-        const preserveUShape = uWing > 0 && newRows >= 3 && newCols >= (2 * uWing) + 2;
-        
+        const isActivity = this._isActivityMode();
+        const oldSpecial = appState[gridKey]?.specialLayout || {};
+        const oldPreset = isActivity ? 'custom' : this._detectPresetFromLayout(oldSpecial, oldRows, oldCols);
+        const targetPresetGeo = (!isActivity && oldPreset !== 'custom')
+            ? this._getPresetGeometry(oldPreset, newRows, newCols)
+            : null;
+
         // Récupère toutes les positions connues des étudiants (y compris ceux temporairement hors de la grille visible)
         const placed = {};
+        const visibleBeforeIds = new Set();
         this._students.forEach(s => {
             const pos = s[posKey];
             if (pos?.row != null && pos?.col != null) {
@@ -911,6 +1288,7 @@ export const SeatingRoomLayout = {
                 for (let c = 0; c < this._gridState[r].length; c++) {
                     const cellIds = this._getCellStudentIds(r, c);
                     cellIds.forEach((id, idx) => {
+                        visibleBeforeIds.add(id);
                         placed[id] = {
                             row: r,
                             col: c,
@@ -924,55 +1302,86 @@ export const SeatingRoomLayout = {
 
         this._initGrid(newRows, newCols);
 
-        // En mode Cours, le bureau (en bas) est l'origine visuelle : on ajoute/supprime par le haut (fond de salle).
-        // Exception "En U" : la rangée 0 (mur du fond) reste ancrée au fond pour ne pas déplacer la barre du U au centre,
-        // et l'aile droite (r >= 1, c >= oldCols - uWing) suit le bord droit lors d'un ajout/retrait de colonnes.
-        const rowOffset = (this._isActivityMode() || preserveUShape) ? 0 : (newRows - oldRows);
-        const colDelta = preserveUShape ? (newCols - oldCols) : 0;
-        const shiftUCol = (r, c) => (colDelta !== 0 && r >= 1 && c >= oldCols - uWing) ? (c + colDelta) : c;
+        const currentClass = this._getCurrentClass();
+        let rowOffset = isActivity ? 0 : (newRows - oldRows);
+        let relocateDisplaced = false;
+        let mapCoord = (r, c) => ({ row: r + rowOffset, col: c });
 
         // Repositionne d'abord la cartographie des places spéciales (allées, AESH...)
-        if (preserveUShape && appState[gridKey]?.specialLayout) {
-            const oldSpecial = appState[gridKey].specialLayout;
-            const currentClassObj = this._getCurrentClass();
-            if (currentClassObj?.[classSpecialKey] && colDelta !== 0) {
-                const nextCurrentClassSpecial = {};
-                for (const [key, type] of Object.entries(currentClassObj[classSpecialKey])) {
-                    const [r, c] = key.split(',').map(Number);
-                    const nextC = shiftUCol(r, c);
-                    if (r >= 0 && r < newRows && nextC >= 0 && nextC < newCols) {
-                        nextCurrentClassSpecial[`${r},${nextC}`] = type;
+        if (targetPresetGeo) {
+            const resizePlan = this._buildPresetResizeMapper(
+                oldPreset,
+                oldRows,
+                oldCols,
+                targetPresetGeo,
+                newRows,
+                newCols
+            );
+            rowOffset = resizePlan.rowOffset;
+            relocateDisplaced = resizePlan.relocateDisplaced;
+            mapCoord = resizePlan.mapCoord;
+
+            const restoredClassSpecialKeys = new Set();
+            if (newCols === oldCols && rowOffset > 0) {
+                (appState.classes || []).forEach(cls => {
+                    if (!cls?.[classSpecialKey]) return;
+                    for (const key of Object.keys(cls[classSpecialKey])) {
+                        const [r, c] = key.split(',').map(Number);
+                        if (r < 0) {
+                            const newR = r + rowOffset;
+                            if (newR >= 0 && newR < rowOffset && c >= 0 && c < newCols) {
+                                restoredClassSpecialKeys.add(`${newR},${c}`);
+                            }
+                        }
                     }
-                }
-                currentClassObj[classSpecialKey] = nextCurrentClassSpecial;
+                });
             }
-            if (colDelta !== 0) {
-                this._shiftOtherClassesUShapeRightWing?.(oldCols, newCols, uWing, newRows);
-            }
-            const occupiedClassSpecialKeys = new Set();
-            (appState.classes || []).forEach(cls => {
-                if (cls?.[classSpecialKey]) {
-                    Object.keys(cls[classSpecialKey]).forEach(k => occupiedClassSpecialKeys.add(k));
+
+            const newSpecialLayout = this._buildPresetSpecialLayout(
+                oldSpecial,
+                newRows,
+                newCols,
+                mapCoord,
+                targetPresetGeo.isAisle,
+                {
+                    preserveOutOfBoundsRows: resizePlan.preserveOutOfBoundsRows,
+                    skipAisleKeys: restoredClassSpecialKeys
                 }
+            );
+
+            if (currentClass?.[classSpecialKey]) {
+                currentClass[classSpecialKey] = this._remapClassSpecialMap(
+                    currentClass[classSpecialKey],
+                    newRows,
+                    newCols,
+                    mapCoord,
+                    newSpecialLayout,
+                    resizePlan.preserveOutOfBoundsRows
+                );
+            }
+
+            if (!appState[gridKey]) {
+                appState[gridKey] = {
+                    rows: oldRows,
+                    cols: oldCols,
+                    locked: this._isLocked,
+                    roomConfigured: true,
+                    specialLayout: newSpecialLayout
+                };
+            } else {
+                appState[gridKey].specialLayout = newSpecialLayout;
+            }
+
+            this._remapOtherClassesForRoomChange({
+                mapCoord,
+                oldRows,
+                oldCols,
+                targetRows: newRows,
+                targetCols: newCols,
+                newGlobalSpecial: newSpecialLayout,
+                relocateDisplaced,
+                preserveOutOfBoundsRows: resizePlan.preserveOutOfBoundsRows
             });
-            const newSpecialLayout = {};
-            for (const [key, type] of Object.entries(oldSpecial)) {
-                if (type === 'aisle') continue;
-                const [r, c] = key.split(',').map(Number);
-                const nextC = shiftUCol(r, c);
-                if (r >= 0 && r < newRows && nextC >= 0 && nextC < newCols) {
-                    newSpecialLayout[`${r},${nextC}`] = type;
-                }
-            }
-            for (let r = 1; r < newRows; r++) {
-                for (let c = uWing; c < newCols - uWing; c++) {
-                    const cellKey = `${r},${c}`;
-                    if (!newSpecialLayout[cellKey] && !occupiedClassSpecialKeys.has(cellKey)) {
-                        newSpecialLayout[cellKey] = 'aisle';
-                    }
-                }
-            }
-            appState[gridKey].specialLayout = newSpecialLayout;
         } else if (rowOffset !== 0) {
             const occupiedClassSpecialKeys = new Set();
             const classes = appState.classes || [];
@@ -991,11 +1400,11 @@ export const SeatingRoomLayout = {
             });
 
             if (appState[gridKey]?.specialLayout) {
-                const oldSpecial = appState[gridKey].specialLayout;
                 const newSpecialLayout = {};
                 for (const [key, type] of Object.entries(oldSpecial)) {
                     const [r, c] = key.split(',').map(Number);
                     const newR = r + rowOffset;
+                    if (type === 'aisle' && (newR < 0 || newR >= newRows || c < 0 || c >= newCols)) continue;
                     newSpecialLayout[`${newR},${c}`] = type;
                 }
                 if (rowOffset > 0) {
@@ -1014,46 +1423,57 @@ export const SeatingRoomLayout = {
             }
 
             this._shiftOtherClassesStudentRows(rowOffset);
-        } else if (newRows > oldRows && oldRows > 0 && appState[gridKey]?.specialLayout) {
-            const occupiedClassSpecialKeys = new Set();
-            (appState.classes || []).forEach(cls => {
-                if (cls?.[classSpecialKey]) {
-                    Object.keys(cls[classSpecialKey]).forEach(k => occupiedClassSpecialKeys.add(k));
-                }
-            });
-            const specialLayout = appState[gridKey].specialLayout;
-            for (let c = 0; c < newCols; c++) {
-                if (specialLayout[`${oldRows - 1},${c}`] === 'aisle') {
-                    for (let r = oldRows; r < newRows; r++) {
-                        const cellKey = `${r},${c}`;
-                        if (!specialLayout[cellKey] && !occupiedClassSpecialKeys.has(cellKey)) {
-                            specialLayout[cellKey] = 'aisle';
+        } else if (appState[gridKey]?.specialLayout) {
+            const nextSpecial = {};
+            for (const [key, type] of Object.entries(oldSpecial)) {
+                const [r, c] = key.split(',').map(Number);
+                if (type === 'aisle' && (r < 0 || r >= newRows || c < 0 || c >= newCols)) continue;
+                nextSpecial[key] = type;
+            }
+            if (newRows > oldRows && oldRows > 0) {
+                const occupiedClassSpecialKeys = new Set();
+                (appState.classes || []).forEach(cls => {
+                    if (cls?.[classSpecialKey]) {
+                        Object.keys(cls[classSpecialKey]).forEach(k => occupiedClassSpecialKeys.add(k));
+                    }
+                });
+                for (let c = 0; c < newCols; c++) {
+                    if (nextSpecial[`${oldRows - 1},${c}`] === 'aisle') {
+                        for (let r = oldRows; r < newRows; r++) {
+                            const cellKey = `${r},${c}`;
+                            if (!nextSpecial[cellKey] && !occupiedClassSpecialKeys.has(cellKey)) {
+                                nextSpecial[cellKey] = 'aisle';
+                            }
                         }
                     }
                 }
             }
+            appState[gridKey].specialLayout = nextSpecial;
         }
 
         // Repositionne les étudiants (en préservant les binômes/groupes et leur ordre)
         const cellBuckets = new Map();
-        const displacedUShape = [];
+        const displacedStudents = [];
         for (const [resultId, pos] of Object.entries(placed)) {
-            const newR = pos.row + rowOffset;
-            const newC = preserveUShape ? shiftUCol(newR, pos.col) : pos.col;
-            pos.row = newR;
-            pos.col = newC;
-            if (newR >= 0 && newR < newRows && newC >= 0 && newC < newCols && !this._isSpecialSpot(newR, newC)) {
-                const key = `${newR},${newC}`;
-                if (!cellBuckets.has(key)) cellBuckets.set(key, []);
-                cellBuckets.get(key).push({ id: resultId, order: pos.order ?? 0 });
-            } else if (preserveUShape) {
-                displacedUShape.push(resultId);
+            const wasVisible = visibleBeforeIds.has(resultId);
+            const mapped = mapCoord(pos.row, pos.col);
+            if (mapped) {
+                pos.row = mapped.row;
+                pos.col = mapped.col;
+                if (mapped.row >= 0 && mapped.row < newRows && mapped.col >= 0 && mapped.col < newCols && !this._isSpecialSpot(mapped.row, mapped.col)) {
+                    const key = `${mapped.row},${mapped.col}`;
+                    if (!cellBuckets.has(key)) cellBuckets.set(key, []);
+                    cellBuckets.get(key).push({ id: resultId, order: pos.order ?? 0 });
+                } else if (wasVisible && relocateDisplaced) {
+                    displacedStudents.push(resultId);
+                }
+            } else if (wasVisible && relocateDisplaced) {
+                displacedStudents.push(resultId);
             }
         }
 
-        const currentClass = this._getCurrentClass();
         const isVirtual = this._isVirtualClass(currentClass);
-        const maxPerCell = (isVirtual || this._isActivityMode()) ? MAX_ACTIVITY_GROUP_SIZE : 1;
+        const maxPerCell = (isVirtual || isActivity) ? MAX_ACTIVITY_GROUP_SIZE : 1;
 
         for (const [key, items] of cellBuckets.entries()) {
             const [r, c] = key.split(',').map(Number);
@@ -1061,18 +1481,18 @@ export const SeatingRoomLayout = {
             this._setCellStudentIds(r, c, items.slice(0, maxPerCell).map(item => item.id));
         }
 
-        if (preserveUShape && displacedUShape.length > 0) {
-            for (let r = 0; r < newRows && displacedUShape.length > 0; r++) {
-                for (let c = 0; c < newCols && displacedUShape.length > 0; c++) {
+        if (displacedStudents.length > 0) {
+            for (let r = 0; r < newRows && displacedStudents.length > 0; r++) {
+                for (let c = 0; c < newCols && displacedStudents.length > 0; c++) {
                     if (this._getCellStudentIds(r, c).length === 0 && !this._isSpecialSpot(r, c)) {
-                        this._setCellStudentIds(r, c, [displacedUShape.shift()]);
+                        this._setCellStudentIds(r, c, [displacedStudents.shift()]);
                     }
                 }
             }
         }
 
         // Met à jour la coordonnée des élèves temporairement hors-grille pour éviter toute collision au ré-agrandissement
-        if (newRows !== oldRows || rowOffset !== 0) {
+        if (newRows !== oldRows || newCols !== oldCols || rowOffset !== 0) {
             const activePlacedIds = this._getPlacedIds();
             this._students.forEach(s => {
                 if (!activePlacedIds.has(s.id) && placed[s.id]) {

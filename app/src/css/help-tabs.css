@@ -1517,7 +1517,7 @@
 }
 
 [data-theme="dark"] .btn.btn-kofi {
-    background-color: var(--color-rose-deep);
+    background-color: color-mix(in srgb, var(--color-rose-deep) 76%, var(--bg-color));
     color: var(--text-primary);
 }
 
@@ -1529,7 +1529,7 @@
 }
 
 [data-theme="dark"] .btn.btn-kofi:hover:not(:disabled) {
-    background-color: var(--color-rose);
+    background-color: color-mix(in srgb, var(--color-rose-deep) 84%, var(--bg-color));
     background-image: none;
     color: var(--text-primary);
     box-shadow: 0 4px 16px color-mix(in srgb, var(--color-rose) 38%, transparent);
