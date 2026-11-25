@@ -239,10 +239,12 @@
    Single source of truth for all print rules.
    ==================================================================== */
 @media print {
-    /* --- Reset (list & fallback print mode; seating/report have dedicated print modes) --- */
+    /* --- Reset (native browser Ctrl+P fallback; seating/report have dedicated print modes) --- */
+    html:has(body:not([data-print-mode="seating"]):not([data-print-mode="report"])),
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) {
-        background: white !important;
-        color: black !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        color-scheme: light !important;
         font-size: 11pt;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -256,6 +258,7 @@
     /* --- Hide UI chrome (NOT .app-layout — it's the root wrapper) --- */
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .header,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .stats-container,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .stats-pagination,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-actions,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .fab-add-student,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .focus-panel-backdrop,
@@ -265,7 +268,8 @@
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .selection-toolbar,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) #period-mismatch-container,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .pwa-install-prompt,
-    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) #notification-container {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) #notification-container,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .sc-floating-search {
         display: none !important;
     }
 
@@ -371,7 +375,10 @@
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .sort-icon-placeholder,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-toggle-icon,
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .appreciation-toggle-btn,
-    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .dirty-indicator {
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .dirty-indicator,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .copied-indicator,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .char-limit-overflow-badge,
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .btn-row-quick-copy {
         display: none !important;
     }
 
@@ -385,6 +392,11 @@
         margin-bottom: 0 !important; /* Remove bottom margin since badges are on same line */
         min-width: 120px;
         white-space: nowrap;
+        color: #111827 !important;
+    }
+
+    body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .student-name-cell .student-prenom {
+        color: #374151 !important;
     }
 
     /* --- Badges / Status row (Row 1 Right) --- */
@@ -428,6 +440,7 @@
         white-space: normal !important;
         font-size: 10pt;
         line-height: 1.5;
+        color: #1f2937 !important;
         background: #f6f6f6 !important;
         padding: 12px 16px !important;
         border-radius: 6px !important;
@@ -441,11 +454,13 @@
         display: block !important;
         max-height: none !important;
         overflow: visible !important;
+        padding-right: 0 !important;
     }
 
     /* --- Grade cells: ensure colors print --- */
     body:not([data-print-mode="seating"]):not([data-print-mode="report"]) .grade-value {
         font-weight: 600;
+        color: #111827 !important;
     }
 
     /* --- Evolution icons: ensure visibility --- */

@@ -489,24 +489,65 @@ describe('ExportManager', () => {
             // Title should be restored
         });
 
-        it('should escape HTML in class name inside #print-header to prevent DOM XSS', () => {
-            document.body.innerHTML = '<div class="main-content"></div>';
-            appState.filteredResults = [{ id: '1' }];
+        it('should render autonomous A4 portrait report in #print-report-root, escape XSS, and clean up after print', () => {
+            appState.currentPeriod = 'T2';
+            appState.currentSubject = 'Français';
             appState.currentClassId = 'c-xss';
             appState.classes = [{ id: 'c-xss', name: '<img src=x onerror=alert(1)>' }];
+            appState.filteredResults = [
+                {
+                    id: '1',
+                    nom: 'MARTIN',
+                    prenom: 'Lucas',
+                    evolutions: { T2: { delta: 1.5 } },
+                    studentData: {
+                        statuses: ['Délégué'],
+                        periods: { T2: { grade: 14.5, appreciation: 'Très bon trimestre : efforts constants.' } }
+                    }
+                },
+                {
+                    id: '2',
+                    nom: '<script>alert(1)</script>',
+                    prenom: 'Zoé',
+                    studentData: {
+                        statuses: [],
+                        periods: { T2: { grade: 11.5, appreciation: '' } }
+                    }
+                }
+            ];
 
-            let injectedHeader = null;
+            Utils.getRelevantEvolution.mockImplementation((evolutions, period) => evolutions?.[period] || null);
+            let rootEl = null;
+            let capturedMode = '';
+            let capturedPageCss = '';
             mockPrint.mockImplementationOnce(() => {
-                injectedHeader = document.getElementById('print-header');
+                capturedMode = document.body.dataset.printMode;
+                rootEl = document.getElementById('print-report-root');
+                capturedPageCss = document.getElementById('print-dynamic-page-style')?.textContent || '';
             });
 
             ExportManager.exportToPdf();
+            Utils.getRelevantEvolution.mockImplementation(() => null);
 
-            expect(injectedHeader).not.toBeNull();
-            expect(injectedHeader.querySelector('img')).toBeNull();
-            expect(injectedHeader.textContent).toContain('<img src=x onerror=alert(1)>');
+            expect(capturedMode).toBe('report');
+            expect(capturedPageCss).toContain('A4 portrait');
+            expect(rootEl).not.toBeNull();
+            expect(rootEl.querySelector('img')).toBeNull();
+            expect(rootEl.querySelector('script')).toBeNull();
+            expect(rootEl.textContent).toContain('<img src=x onerror=alert(1)>');
+            expect(rootEl.textContent).toContain('Français');
+            expect(rootEl.textContent).toContain('Moyenne 13,0/20');
+            expect(rootEl.textContent).toContain('MARTIN Lucas');
+            expect(rootEl.textContent).toContain('14,5/20');
+            expect(rootEl.textContent).toContain('+1,5 pt');
+            expect(rootEl.textContent).toContain('Délégué');
+            expect(rootEl.innerHTML).toContain('trimestre&nbsp;:');
+            expect(rootEl.textContent).toContain('Appréciation non rédigée.');
+            expect(rootEl.querySelector('.pr-footer')).not.toBeNull();
+
             window.onafterprint?.();
-            document.body.innerHTML = '';
+            expect(document.getElementById('print-report-root')).toBeNull();
+            expect(document.body.dataset.printMode).toBeUndefined();
         });
     });
 

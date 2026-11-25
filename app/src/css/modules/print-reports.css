@@ -53,6 +53,23 @@
         gap: 12px;
     }
 
+    .pr-document--single-page {
+        /* A4 portrait (297mm) minus @page top/bottom margins (2 × 12mm = 24mm) = 273mm printable height.
+           Using 266mm (instead of 100vh which Chromium evaluates to the full 297mm page box) anchors the
+           footer at the bottom of page 1 without ever overflowing onto a blank page 2. */
+        min-height: 266mm;
+        gap: 10px;
+    }
+
+    .pr-document--single-page .pr-footer {
+        margin-top: auto;
+    }
+
+    .pr-document--single-page .pr-writing-lines {
+        gap: 14px;
+        padding-top: 6px;
+    }
+
     .pr-header {
         display: flex;
         justify-content: space-between;
@@ -60,6 +77,8 @@
         gap: 16px;
         padding-bottom: 10px;
         border-bottom: 2px solid #111827;
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
 
     .pr-eyebrow {
@@ -136,11 +155,26 @@
         font-size: 13pt;
     }
 
+    .pr-avatar-img.is-compact,
+    .pr-avatar-initials.is-compact {
+        width: 28px;
+        height: 28px;
+        border-width: 1px;
+    }
+
+    .pr-avatar-initials.is-compact {
+        font-size: 8.5pt;
+    }
+
     .pr-status-pills {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
         margin-top: 5px;
+    }
+
+    .pr-status-pills.is-inline {
+        margin-top: 0;
     }
 
     .pr-status-pill {
@@ -229,6 +263,8 @@
         color: #374151;
         border-bottom: 1px solid #e5e7eb;
         padding-bottom: 3px;
+        break-after: avoid;
+        page-break-after: avoid;
     }
 
     .pr-grid-2 {
@@ -236,6 +272,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         break-inside: avoid;
+        page-break-inside: avoid;
     }
 
     .pr-grid-3 {
@@ -251,6 +288,8 @@
         border-radius: 6px;
         padding: 9px 11px;
         background: #ffffff;
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
 
     .pr-subcard h3 {
@@ -288,6 +327,8 @@
         background: #f8fafc;
         border-radius: 6px;
         padding: 8px 11px;
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
 
     .pr-intro-box strong {
@@ -450,6 +491,81 @@
         color: #6b7280;
     }
 
+    /* --- Appreciations List Report (exportToPdf) --- */
+    .pr-appreciation-list {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .pr-student-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 7px 10px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .pr-student-card.is-departed {
+        border-style: dashed;
+        border-color: #cbd5e1;
+        background: #fafafa;
+        opacity: 0.85;
+    }
+
+    .pr-student-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pr-student-card-left {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .pr-student-card-name {
+        font-size: 9.5pt;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .pr-student-card-metrics {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pr-grade-pill {
+        font-size: 8.5pt;
+        font-weight: 700;
+        color: #111827;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        padding: 1px 6px;
+    }
+
+    .pr-student-card-body {
+        font-size: 9pt;
+        line-height: 1.45;
+        color: #1f2937;
+        background: #f9fafb;
+        border-radius: 5px;
+        padding: 6px 9px;
+    }
+
     .pr-footer {
         margin-top: 6px;
         padding-top: 6px;
@@ -458,5 +574,7 @@
         justify-content: space-between;
         font-size: 7.5pt;
         color: #9ca3af;
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
 }

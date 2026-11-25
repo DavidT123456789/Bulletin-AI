@@ -479,51 +479,127 @@ export const ExportManager = {
     },
 
     /**
-     * Lance l'impression de la page pour générer un PDF de la liste des appréciations.
-     * Injecte un en-tête imprimable avec classe, période et date.
+     * Génère le balisage HTML de l'avatar imprimable (photo base64 validée ou initiales).
+     * @param {Object} student
+     * @param {string} fullName
+     * @param {string} [modifierClass='']
+     * @returns {string}
+     * @private
+     */
+    _renderPrintAvatar(student, fullName, modifierClass = '') {
+        const photo = student?.studentPhoto || student?.studentData?.photo;
+        const hasValidPhoto = typeof photo?.data === 'string' && /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/i.test(photo.data);
+        const initials = `${(student?.prenom || '').charAt(0)}${(student?.nom || '').charAt(0)}`.toUpperCase() || '?';
+        const mod = modifierClass ? ` ${modifierClass}` : '';
+        return hasValidPhoto
+            ? `<img class="pr-avatar-img${mod}" src="${photo.data}" alt="${Utils.escapeHtml(fullName)}" />`
+            : `<div class="pr-avatar-initials${mod}">${Utils.escapeHtml(initials)}</div>`;
+    },
+
+    /**
+     * Lance l'impression A4 portrait autonome de la liste des appréciations visibles.
+     * Utilise le moteur #print-report-root (immunisé contre le thème sombre et les artefacts d'interface).
      */
     exportToPdf() {
-        if (appState.filteredResults.length === 0) {
+        const results = appState.filteredResults;
+        if (!results || results.length === 0) {
             UI.showNotification('Aucune donnée à exporter.', 'warning');
             return;
         }
 
         UI.showNotification("Préparation de l'export PDF...", 'info');
 
+        const currentPeriod = appState.currentPeriod;
         const { classLabel, subjectLabel, periodLabel, dateStr } = this._getReportContextMeta();
         const title = `Appréciations${subjectLabel ? ` ${subjectLabel}` : ''}${classLabel ? ` - ${classLabel}` : ''} - ${periodLabel}`;
 
-        const printHeader = document.createElement('div');
-        printHeader.id = 'print-header';
-        printHeader.setAttribute('style',
-            'display:none; padding: 12px 0 8px; margin-bottom: 12px; border-bottom: 2px solid #111;'
-        );
-        printHeader.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <h1 style="margin:0; font-size:16pt; font-weight:700; color:#111;">
-                    ${Utils.escapeHtml(classLabel || 'Appréciations')}
-                    <span style="font-weight:400; font-size:12pt; color:#525252; margin-left:8px;">${Utils.escapeHtml(periodLabel)}</span>
-                </h1>
-                <span style="font-size:9pt; color:#737373;">${dateStr}</span>
-            </div>
+        const validGrades = results
+            .filter(r => !Utils.isStudentDeparted?.(r, currentPeriod))
+            .map(r => StatsService.parseGrade(r?.studentData?.periods?.[currentPeriod]?.grade))
+            .filter(g => !Number.isNaN(g));
+        const visibleAvg = validGrades.length > 0
+            ? validGrades.reduce((sum, g) => sum + g, 0) / validGrades.length
+            : NaN;
+
+        const cardsHtml = results.map(r => {
+            const fullName = Utils.formatStudentName(r?.nom || '', r?.prenom || '').trim();
+            const isDeparted = Boolean(Utils.isStudentDeparted?.(r, currentPeriod));
+            const statuses = Utils.getActiveStatuses?.(r, currentPeriod) || r?.studentData?.statuses || [];
+            const gradeVal = StatsService.parseGrade(r?.studentData?.periods?.[currentPeriod]?.grade);
+            const evo = Utils.getRelevantEvolution?.(r?.evolutions, currentPeriod);
+            const hasEvo = evo && typeof evo.delta === 'number' && !Number.isNaN(evo.delta);
+
+            const rawAppreciation = Utils.getPeriodAppreciation?.(r, currentPeriod)
+                || r?.studentData?.periods?.[currentPeriod]?.appreciation
+                || (r?.generationPeriod === currentPeriod ? r?.appreciation : '')
+                || '';
+            const appreciationMarkup = rawAppreciation.trim()
+                ? `<div class="pr-student-card-body">${this._formatPrintRichText(rawAppreciation).replace(/\n/g, '<br>')}</div>`
+                : `<p class="pr-muted-note">Appréciation non rédigée.</p>`;
+
+            const statusPillsHtml = statuses.length > 0
+                ? `<div class="pr-status-pills is-inline">${statuses.map(s => `<span class="pr-status-pill">${Utils.escapeHtml(String(s))}</span>`).join('')}</div>`
+                : '';
+
+            const metricsHtml = (!Number.isNaN(gradeVal) || hasEvo)
+                ? `
+                    <div class="pr-student-card-metrics">
+                        ${!Number.isNaN(gradeVal) ? `<span class="pr-grade-pill">${this._formatNumberFr(gradeVal)}/20</span>` : ''}
+                        ${hasEvo ? `<span class="pr-delta ${this._getDeltaToneClass(evo.delta)}">${this._formatNumberFr(evo.delta, true)} pt</span>` : ''}
+                    </div>
+                `
+                : '';
+
+            return `
+                <section class="pr-student-card${isDeparted ? ' is-departed' : ''}">
+                    <div class="pr-student-card-head">
+                        <div class="pr-student-card-left">
+                            ${this._renderPrintAvatar(r, fullName, 'is-compact')}
+                            <span class="pr-student-card-name">${Utils.escapeHtml(fullName || 'Élève')}</span>
+                            ${statusPillsHtml}
+                        </div>
+                        ${metricsHtml}
+                    </div>
+                    ${appreciationMarkup}
+                </section>
+            `;
+        }).join('');
+
+        const metaParts = [
+            subjectLabel ? `<span>${Utils.escapeHtml(subjectLabel)}</span>` : '',
+            `<span>${results.length} élève${results.length > 1 ? 's' : ''}</span>`,
+            !Number.isNaN(visibleAvg) ? `<span>Moyenne ${this._formatNumberFr(visibleAvg)}/20</span>` : ''
+        ].filter(Boolean).join(' · ');
+
+        const htmlContent = `
+            <article class="pr-document pr-document--list">
+                <header class="pr-header">
+                    <div>
+                        <p class="pr-eyebrow">Relevé d'appréciations</p>
+                        <h1 class="pr-title">${Utils.escapeHtml(classLabel || 'Appréciations')} — ${Utils.escapeHtml(periodLabel)}</h1>
+                        <p class="pr-subtitle">${metaParts}</p>
+                    </div>
+                    <div class="pr-meta-right">
+                        <span class="pr-date">${Utils.escapeHtml(dateStr)}</span>
+                        <span class="pr-brand">Bulletin AI</span>
+                    </div>
+                </header>
+
+                <div class="pr-appreciation-list">
+                    ${cardsHtml}
+                </div>
+
+                <footer class="pr-footer">
+                    <span>Relevé d'appréciations établi avec Bulletin AI</span>
+                    <span>${Utils.escapeHtml([classLabel, periodLabel].filter(Boolean).join(' · '))}</span>
+                </footer>
+            </article>
         `;
 
-        const mainContent = document.querySelector('.main-content');
-        const printStyle = document.createElement('style');
-        printStyle.id = 'print-header-style';
-        printStyle.textContent = '@media print { #print-header { display: block !important; } }';
-
-        this._runPrintSession({
-            mode: 'list',
+        this._printHtmlReport({
             title,
-            setup: () => {
-                mainContent?.insertBefore(printHeader, mainContent.firstChild);
-                document.head.appendChild(printStyle);
-            },
-            cleanup: () => {
-                printHeader.remove();
-                printStyle.remove();
-            }
+            htmlContent,
+            pageCss: '@page { size: A4 portrait; margin: 11mm 13mm; }'
         });
         UI?.recordSupportMilestone?.('bulletin-export');
     },
@@ -594,13 +670,13 @@ export const ExportManager = {
                 synthesisHtml = `
                     <section class="pr-section">
                         <h2 class="pr-section-title">Bilan</h2>
-                        ${introSec ? `<div class="pr-intro-box"><strong>${Utils.escapeHtml(String(introSec.title || 'Appréciation de classe'))}</strong><p>${Utils.escapeHtml(String(introSec.text || ''))}</p></div>` : ''}
+                        ${introSec ? `<div class="pr-intro-box"><strong>${Utils.escapeHtml(String(introSec.title || 'Appréciation de classe'))}</strong><p>${this._formatPrintRichText(String(introSec.text || '')).replace(/\n/g, '<br>')}</p></div>` : ''}
                         ${gridSecs.length > 0 ? `
                             <div class="pr-grid-3">
                                 ${gridSecs.map(sec => `
                                     <div class="pr-subcard pr-tone-${Utils.escapeHtml(String(sec.tone || 'info'))}">
                                         <h3>${Utils.escapeHtml(String(sec.title || ''))}</h3>
-                                        <ul>${sec.items.map(item => `<li>${Utils.escapeHtml(String(item ?? ''))}</li>`).join('')}</ul>
+                                        <ul>${sec.items.map(item => `<li>${this._formatPrintRichText(String(item ?? ''))}</li>`).join('')}</ul>
                                     </div>
                                 `).join('')}
                             </div>
@@ -694,6 +770,11 @@ export const ExportManager = {
                         ${renderStudentMetricList(stats.atRisk, 'Aucun élève en vigilance à ce stade.', false)}
                     </div>
                 </section>
+
+                <footer class="pr-footer">
+                    <span>Bilan de classe établi avec Bulletin AI</span>
+                    <span>Document pédagogique — Conseil de classe</span>
+                </footer>
             </article>
         `;
 
@@ -780,12 +861,7 @@ export const ExportManager = {
 
         // Avatar (photo base64 validée ou initiales)
         const fullName = Utils.formatStudentName(result.nom, result.prenom);
-        const photo = result.studentPhoto || result.studentData?.photo;
-        const hasValidPhoto = typeof photo?.data === 'string' && /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/i.test(photo.data);
-        const initials = `${(result.prenom || '').charAt(0)}${(result.nom || '').charAt(0)}`.toUpperCase() || '?';
-        const avatarHtml = hasValidPhoto
-            ? `<img class="pr-avatar-img" src="${photo.data}" alt="${Utils.escapeHtml(fullName)}" />`
-            : `<div class="pr-avatar-initials">${Utils.escapeHtml(initials)}</div>`;
+        const avatarHtml = this._renderPrintAvatar(result, fullName);
 
         // Appréciation de la période active
         const rawAppreciation = result.studentData?.periods?.[currentPeriod]?.appreciation
@@ -829,7 +905,7 @@ export const ExportManager = {
         ` : '';
 
         const htmlContent = `
-            <article class="pr-document">
+            <article class="pr-document pr-document--single-page">
                 <header class="pr-header">
                     <div class="pr-student-identity">
                         ${avatarHtml}
