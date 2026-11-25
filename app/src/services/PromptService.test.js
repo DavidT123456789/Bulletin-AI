@@ -89,8 +89,8 @@ describe('PromptService', () => {
             // tone 3 = free mode, no explicit 'Adopte un ton'
             expect(prompts.appreciation).toContain("première personne du singulier"); // voice je
             expect(prompts.appreciation).toContain("Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »)");
-            expect(prompts.appreciation).toContain("Ne cite pas les moyennes chiffrées");
-            expect(prompts.appreciation).not.toContain("ne compare pas explicitement l'élève à la classe");
+            expect(prompts.appreciation).toContain("Traduis le niveau de réussite en termes qualitatifs, sans citer de moyenne chiffrée.");
+            expect(prompts.appreciation).not.toContain("comparer explicitement l'élève à la classe");
             expect(prompts.appreciation).toContain("sans écriture inclusive (ni point médian)");
             expect(prompts.appreciation).toContain("sans sigles de période");
             expect(prompts.appreciation).not.toContain("Si la période courante n'a pas de moyenne");
@@ -131,7 +131,7 @@ describe('PromptService', () => {
             const prompts = PromptService.getAllPrompts(dataWithHistory);
             expect(prompts.appreciation).toContain('10,0');
             expect(prompts.appreciation).toContain('suggéré par la moyenne et son évolution');
-            expect(prompts.appreciation).toContain('ne les recopie pas et ne les paraphrase pas');
+            expect(prompts.appreciation).toContain('en renouvelant la formulation, sans les recopier ni les paraphraser');
         });
 
         it('should include gender guidance for epicene names (detectGender === "neutre") even when anonymizeData is false', () => {
@@ -173,7 +173,7 @@ describe('PromptService', () => {
             const prompts = PromptService.getAllPrompts(dataWithNoData);
             
             expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
-            expect(prompts.appreciation).not.toContain("Ne cite ni les moyennes");
+            expect(prompts.appreciation).not.toContain("Traduis le niveau de réussite en termes qualitatifs");
             expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
         });
 
@@ -214,7 +214,7 @@ describe('PromptService', () => {
             
             expect(prompts.appreciation).toContain("aucune donnée d'évaluation");
             expect(prompts.appreciation).not.toContain("cohérente avec le niveau de réussite");
-            expect(prompts.appreciation).not.toContain("Ne cite ni les moyennes");
+            expect(prompts.appreciation).not.toContain("Traduis le niveau de réussite en termes qualitatifs");
         });
 
         it('should keep the current appreciation as analysis reference when the period is not in the active period system', () => {
@@ -247,7 +247,8 @@ describe('PromptService', () => {
             const prompts = PromptService.getAllPrompts(studentWithClass);
             
             expect(prompts.appreciation).toContain('[Classe : Moy 12,0, Min 10,0, Max 14,0]');
-            expect(prompts.appreciation).toContain("ne compare pas explicitement l'élève à la classe");
+            expect(prompts.appreciation).toContain("Traduis le niveau de réussite en termes qualitatifs");
+            expect(prompts.appreciation).toContain("comparer explicitement l'élève à la classe");
         });
 
         it('should NOT include class statistics when less than 3 students have grades', () => {
@@ -1006,7 +1007,7 @@ describe('PromptService', () => {
             });
             expect(contextOnly.appreciationSystem).toContain("Aucune moyenne chiffrée n'est disponible");
             expect(contextOnly.appreciationSystem).not.toContain('suggéré par la moyenne');
-            expect(contextOnly.appreciationSystem).not.toContain('Ne cite pas les moyennes chiffrées');
+            expect(contextOnly.appreciationSystem).not.toContain('sans citer de moyenne chiffrée');
             expect(contextOnly.appreciationUser).toContain('Moy Non renseignée');
 
             // 2. Une seule évaluation
@@ -1044,8 +1045,9 @@ describe('PromptService', () => {
                 { voice: 'default', length: 40 }
             );
 
-            expect(prompts.appreciationSystem).toContain('Rédige à la troisième personne');
+            expect(prompts.appreciationSystem).toContain('Rédige à la troisième personne, sans utiliser « je » ni « nous ».');
             expect(prompts.appreciationSystem).toContain('environ 40 mots (1 à 3 phrases)');
+            expect(prompts.appreciationSystem).toContain('La justesse prime sur le décompte');
             expect(prompts.appreciationSystem.match(/en un seul paragraphe/g)).toHaveLength(1);
             expect(prompts.appreciationUser).not.toContain('Observations du professeur : Observations:');
             expect(prompts.appreciationUser).not.toMatch(/\n\n$/);
@@ -1058,13 +1060,35 @@ describe('PromptService', () => {
             expect(PromptService._formatLengthInstruction(75)).toBe('environ 75 mots (2 à 4 phrases)');
 
             // Vérification de la priorité explicite des consignes spécifiques sur les règles de style
+            // et de l'isolation de la fidélité factuelle au-dessus des règles de style
+            Utils.getPeriods.mockReturnValue(['S1', 'S2']);
             const customPrompts = PromptService.getAllPrompts(
-                { nom: 'DUPONT', prenom: 'Emma', statuses: [], currentPeriod: 'T1', periods: { T1: { grade: 14 } } },
+                {
+                    nom: 'DUPONT',
+                    prenom: 'Emma',
+                    statuses: [],
+                    currentPeriod: 'S2',
+                    periods: {
+                        S1: { grade: 14, appreciation: 'Bon travail.' },
+                        S2: { grade: 14.5, context: 'Très investie à l\'oral.' }
+                    }
+                },
                 { voice: 'default', length: 40, styleInstructions: "Vouvoyer l'élève.", enableStyleInstructions: true }
             );
             expect(customPrompts.appreciationSystem).toContain(
                 "Consigne de l'enseignant (prioritaire sur les règles de style ci-dessus en cas de conflit) : Vouvoyer l'élève."
             );
+            expect(customPrompts.appreciationSystem).toContain('ouverture facultative uniquement si elle vient naturellement');
+            const fidelityIdx = customPrompts.appreciationSystem.indexOf('Appuie-toi uniquement sur les données fournies');
+            const styleHeaderIdx = customPrompts.appreciationSystem.indexOf('--- INSTRUCTIONS DE STYLE ---');
+            expect(fidelityIdx).toBeGreaterThan(-1);
+            expect(styleHeaderIdx).toBeGreaterThan(fidelityIdx);
+
+            // Période à évaluer regroupée avec les métadonnées élève avant le contexte
+            const periodIdx = customPrompts.appreciationUser.indexOf('Période à évaluer : S2');
+            const contextIdx = customPrompts.appreciationUser.indexOf('Contexte :');
+            expect(periodIdx).toBeGreaterThan(-1);
+            expect(contextIdx).toBeGreaterThan(periodIdx);
         });
 
         it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {

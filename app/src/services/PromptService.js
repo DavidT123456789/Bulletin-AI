@@ -914,7 +914,7 @@ export const PromptService = {
 
         const isYearEnd = currentPeriodIndex === allPeriods.length - 1;
         const temporalite = isYearEnd
-            ? "Bilan de fin d'année (bilan de la période et, si les données le permettent, de l'année ; ouverture possible si elle est naturelle, le bilan restant prioritaire)."
+            ? "Bilan de fin d'année (bilan de la période et, si les données le permettent, de l'année ; ouverture facultative uniquement si elle vient naturellement)."
             : "Bilan intermédiaire (analyse de la période écoulée).";
 
         systemParts.push(`Cadre d'évaluation : ${temporalite}`);
@@ -930,7 +930,7 @@ export const PromptService = {
         });
         const evolutionText = this._formatEvolutions(filteredEvolutions);
 
-        // Instruction critique sur la cohérence note/appréciation et les cas limites (placée en tête)
+        // Instruction critique sur la cohérence note/appréciation, la fidélité factuelle et les cas limites (hors règles de style)
         if (!hasNoData) {
             const coherenceNotes = [];
             if (hasGrades) {
@@ -951,16 +951,16 @@ export const PromptService = {
                         coherenceNotes.push("Les résultats sont très fragiles : reste factuel, professionnel et constructif avec une piste de remédiation simple, sans formulation décourageante.");
                     }
                 }
+                coherenceNotes.push("Appuie-toi uniquement sur les données fournies : n'invente ni attitude, ni participation, ni méthode de travail qui n'y figurent pas.");
             } else {
-                coherenceNotes.push("Aucune moyenne chiffrée n'est disponible : appuie-toi uniquement sur le contexte et les observations fournis, sans inventer ni suggérer de niveau chiffré.");
+                coherenceNotes.push("Aucune moyenne chiffrée n'est disponible : appuie-toi uniquement sur le contexte et les observations fournis, sans suggérer de niveau chiffré ni inventer d'attitude, de participation ou de méthode de travail absentes du dossier.");
             }
             systemParts.push(coherenceNotes.join(' '));
         }
 
         const hasPastAppreciations = relevantPeriods.some(p => { const app = periods?.[p]?.appreciation?.trim(); return p !== currentPeriod && !!app && app !== 'N/A'; });
         const styleParts = [
-            `Appuie-toi uniquement sur les données fournies : n'invente ni attitude, ni participation, ni méthode de travail qui n'y figurent pas.`,
-            ...(hasPastAppreciations && !hasNoData ? [`Utilise les appréciations des périodes précédentes comme repères de continuité : ne les recopie pas et ne les paraphrase pas.`] : []),
+            ...(hasPastAppreciations && !hasNoData ? [`Utilise les appréciations des périodes précédentes comme repères de continuité en renouvelant la formulation, sans les recopier ni les paraphraser.`] : []),
             `Écris dans un style naturel, précis et varié, sans formules scolaires toutes faites ni éloge excessif.`
         ];
 
@@ -968,7 +968,7 @@ export const PromptService = {
             'je': 'Rédige à la première personne du singulier, sans commencer chaque phrase par « je ».',
             'nous': 'Rédige à la première personne du pluriel (« nous »), au nom de l\'équipe pédagogique.',
             'neutre': 'Rédige dans un style impersonnel et factuel, sans prénom ni pronom désignant l\'élève ou l\'enseignant (les tournures impersonnelles comme « il convient de » restent possibles).'
-        }[effectiveStyle.voice] || 'Rédige à la troisième personne dans un style de bulletin scolaire naturel, sans utiliser « je » ni « nous ».';
+        }[effectiveStyle.voice] || 'Rédige à la troisième personne, sans utiliser « je » ni « nous ».';
 
         styleParts.push(voiceInstruction);
 
@@ -991,17 +991,17 @@ export const PromptService = {
                     ? Math.min(effectiveStyle.length, safeWordCap)
                     : safeWordCap;
                 styleParts.push(
-                    `Longueur visée : ${this._formatLengthInstruction(effectiveWordTarget)}, sans jamais dépasser ${effectiveCharBudget} caractères (espaces compris). Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`
+                    `Longueur visée : ${this._formatLengthInstruction(effectiveWordTarget)}, sans jamais dépasser ${effectiveCharBudget} caractères (espaces compris). La justesse prime sur le décompte : reste plus bref si les données sont succinctes.`
                 );
             } else if (effectiveStyle.length) {
-                styleParts.push(`Longueur visée : ${this._formatLengthInstruction(effectiveStyle.length)}. Le naturel prime sur le décompte : reste plus bref si les données sont succinctes.`);
+                styleParts.push(`Longueur visée : ${this._formatLengthInstruction(effectiveStyle.length)}. La justesse prime sur le décompte : reste plus bref si les données sont succinctes.`);
             }
         }
         if (!hasNoData && hasGrades) {
             if (hasAnyClassStats) {
-                styleParts.push(`Ne cite ni les moyennes ni les statistiques de classe, et ne compare pas explicitement l'élève à la classe : sers-t'en uniquement pour ajuster ton degré d'exigence ou d'encouragement.`);
+                styleParts.push(`Traduis le niveau de réussite en termes qualitatifs et utilise les statistiques de classe uniquement pour ajuster ton degré d'exigence ou d'encouragement, sans citer de moyenne chiffrée ni de statistique, et sans comparer explicitement l'élève à la classe.`);
             } else {
-                styleParts.push(`Ne cite pas les moyennes chiffrées dans l'appréciation : traduis le niveau de réussite en termes qualitatifs.`);
+                styleParts.push(`Traduis le niveau de réussite en termes qualitatifs, sans citer de moyenne chiffrée.`);
             }
         }
         styleParts.push(`Rédige en français courant sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`);
@@ -1101,7 +1101,7 @@ export const PromptService = {
         }
         const classPrefix = classLines.length > 0 ? classLines.join('\n') + '\n' : '';
         const evolutionBlock = evolutionText ? `\n\n${evolutionText}` : '';
-        const appreciationUser = `--- DONNÉES DE L'ÉLÈVE ---\n${classPrefix}${studentLine}${statusLine}${specificInfoLine}${journalLine}\nPériode à évaluer : ${currentPeriod}\n\nPériodes :\n${periodsInfo}${evolutionBlock}`;
+        const appreciationUser = `--- DONNÉES DE L'ÉLÈVE ---\n${classPrefix}${studentLine}\nPériode à évaluer : ${currentPeriod}${statusLine}${specificInfoLine}${journalLine}\n\nPériodes :\n${periodsInfo}${evolutionBlock}`;
 
         // Le prompt complet (aperçu, copie) est strictement la concaténation de ce qui est envoyé à l'API
         const appreciationSystem = systemParts.join('\n\n');
