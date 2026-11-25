@@ -371,8 +371,8 @@
     --modal-bg: var(--surface-color);
     --modal-scene-bg: #f3f3f3;
     --modal-radius: var(--radius-lg);
-    --modal-border: 1px solid rgba(0, 0, 0, 0.07);
-    --modal-shadow: var(--shadow-lg);
+    --modal-border: none;
+    --modal-shadow: 0 0 0 1px rgba(0, 0, 0, 0.07), var(--shadow-lg);
 
     /* --- Niveau 3 : Tokens de Composants Préfixés (Sans collision) --- */
     --seating-padding: 16px;
@@ -404,15 +404,15 @@
     --dropdown-item-radius: var(--radius-control);    /* 10px - Concentric inner item radius (16px - 6px) */
     --dropdown-item-radius-sm: var(--radius-control); /* 10px - Compact item style */
     --dropdown-bg: var(--surface-color);
-    --dropdown-border: 1px solid rgba(0, 0, 0, 0.06);
-    --dropdown-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
+    --dropdown-border: none;
+    --dropdown-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 10px 30px -4px rgba(0, 0, 0, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
     --dropdown-item-text: var(--text-primary);
     --dropdown-item-icon: var(--text-secondary);
 
     /* --- Floating HUD Capsule Tokens (Plan de classe, pilules flottantes) --- */
     --floating-capsule-bg: rgba(255, 255, 255, 0.78);
     --floating-rail-bg: rgba(235, 235, 235, 0.88);
-    --floating-capsule-border: 1px solid rgba(0, 0, 0, 0.045);
+    --floating-capsule-border: none;
     --floating-capsule-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
 
     /* --- Tooltip Tokens (Monolithic Inverted Surface + Unified Drop-Shadow) --- */
@@ -491,6 +491,7 @@
     --surface-elevated: rgba(23, 23, 24, 0.88);
     --modal-scene-bg: var(--bg-color);
     --modal-border: 1px solid rgba(255, 255, 255, 0.07);
+    --modal-shadow: var(--shadow-lg);
     --input-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 2.5%);
     --input-focus-bg: color-mix(in srgb, var(--surface-color), var(--text-primary) 4%);
     --input-border: var(--border-color);

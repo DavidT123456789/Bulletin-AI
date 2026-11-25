@@ -634,8 +634,7 @@
     pointer-events: auto;
     cursor: pointer;
     user-select: none;
-    background-clip: padding-box;
-    border: 1px solid transparent;
+    border: none;
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow: var(--floating-capsule-shadow);
