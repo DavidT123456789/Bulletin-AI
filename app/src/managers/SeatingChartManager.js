@@ -376,7 +376,7 @@ export const SeatingChartManager = {
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-random-btn" id="scFloatingRandomBtn" aria-label="Tirer un élève au sort" data-tooltip="Tirer un élève au sort">
                         <iconify-icon icon="solar:dice-linear"></iconify-icon>
                     </button>
-                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-random-close-btn" id="scFloatingRandomCloseBtn" aria-label="Fermer le tirage au sort" data-tooltip="Fermer (Échap)">
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-random-close-btn" id="scFloatingRandomCloseBtn" aria-label="Fermer le tirage au sort" data-tooltip="Fermer <kbd class='kbd-hint'>Échap</kbd>">
                         <iconify-icon icon="ph:x"></iconify-icon>
                     </button>
                 </div>

@@ -238,7 +238,7 @@ describe('FocusPanelStatus', () => {
             expect(status.state).toBe('dirty');
             expect(status.isDirty).toBe(true);
             expect(status.hasContent).toBe(true);
-            expect(status.tooltip).toContain('Cliquez pour marquer comme vérifiée');
+            expect(status.tooltip).toContain('Cliquer pour marquer comme vérifiée');
         });
 
         it('devrait identifier une appréciation à jour (state: uptodate)', () => {

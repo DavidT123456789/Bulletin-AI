@@ -294,7 +294,7 @@ export const SyncService = {
             expired: {
                 icon: 'logos:google-drive',
                 label: 'Reconnecter',
-                tooltip: 'Session expirée : cliquez pour actualiser l\'état Cloud'
+                tooltip: 'Renouveler la connexion Google Drive'
             },
             syncing: {
                 icon: 'ph:spinner-gap-bold',

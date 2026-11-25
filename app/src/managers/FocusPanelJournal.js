@@ -686,7 +686,7 @@ export const FocusPanelJournal = {
             btn.classList.toggle('is-ai-excluded', !includeInAI);
             const contextLabel = currentClass ? `(Classe : ${currentClass.name})` : '(Global)';
             const tooltip = includeInAI
-                ? `Journal transmis à l'IA · Seuil ≥${threshold} ${contextLabel}<br><span class="kbd-hint">Notes écrites toujours incluses · Cliquer pour régler</span>`
+                ? `Journal transmis à l'IA · Seuil ≥${threshold} ${contextLabel}<br>Notes écrites toujours incluses<br><span class="kbd-hint">Cliquer pour régler</span>`
                 : `Bloc-notes personnel (Hors IA) ${contextLabel}<br><span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
             TooltipsUI.updateTooltip(btn, tooltip);
         }

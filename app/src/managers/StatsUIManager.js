@@ -459,8 +459,8 @@ export const StatsUI = {
                 // Update tooltip with richer info: avg chars + target words (+ active char limit)
                 const targetWords = appState.subjects?.['MonStyle']?.iaConfig?.length || DEFAULT_IA_CONFIG.length;
                 const activeMaxChars = PromptService.getActiveMaxChars?.() ?? null;
-                const limitSuffix = activeMaxChars ? ` • Limite : ${activeMaxChars} car.` : '';
-                avgWordsEl.setAttribute('data-tooltip', `Moyenne : ${stats.avgWords} mot${stats.avgWords > 1 ? 's' : ''} (${stats.avgChars} car.)<br>Cible : ${targetWords} mots${limitSuffix}<br><span class="kbd-hint">Modifier</span>`);
+                const limitSuffix = activeMaxChars ? ` · Limite : ${activeMaxChars} car.` : '';
+                avgWordsEl.setAttribute('data-tooltip', `Moyenne : ${stats.avgWords} mot${stats.avgWords > 1 ? 's' : ''} (${stats.avgChars} car.)<br>Cible : ${targetWords} mots${limitSuffix}<br><span class="kbd-hint">Ajuster la longueur</span>`);
                 avgWordsEl.classList.add('tooltip', 'clickable-chip');
                 avgWordsEl.style.cursor = 'pointer';
 

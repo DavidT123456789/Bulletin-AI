@@ -193,7 +193,7 @@ export function buildStepperHTML({
     return `
         <div class="history-navigation-group${extraClass}" style="display: none;">
             <button type="button" class="history-nav-btn disabled tooltip"${prevAttr}
-                data-tooltip="Version précédente (Ctrl+Z)" aria-label="Version précédente" aria-disabled="true">
+                data-tooltip="Version précédente <kbd class='kbd-hint'>Ctrl+Z</kbd>" aria-label="Version précédente" aria-disabled="true">
                 <iconify-icon icon="solar:alt-arrow-left-linear" aria-hidden="true"></iconify-icon>
             </button>
             <button type="button" class="history-indicator-btn tooltip"${indAttr}
@@ -201,7 +201,7 @@ export function buildStepperHTML({
                 <span class="history-count">0</span>
             </button>
             <button type="button" class="history-nav-btn disabled tooltip"${nextAttr}
-                data-tooltip="Version suivante (Ctrl+Y)" aria-label="Version suivante" aria-disabled="true">
+                data-tooltip="Version suivante <kbd class='kbd-hint'>Ctrl+Y</kbd>" aria-label="Version suivante" aria-disabled="true">
                 <iconify-icon icon="solar:alt-arrow-right-linear" aria-hidden="true"></iconify-icon>
             </button>
         </div>
@@ -248,8 +248,8 @@ export function syncStepperUI({
         }
 
         const indicatorTooltip = isCurrentlyEmpty
-            ? "Texte effacé • Cliquez pour restaurer une version"
-            : `Version ${current} sur ${total} • Cliquez pour l'historique`;
+            ? 'Texte effacé<br><span class="kbd-hint">Restaurer une version</span>'
+            : `Version ${current} sur ${total}<br><span class="kbd-hint">Voir l'historique</span>`;
         setTooltipText(indicatorBtn, indicatorTooltip);
         setSoftDisabled(indicatorBtn, isBusy);
 
@@ -262,7 +262,9 @@ export function syncStepperUI({
         if (prevBtn) {
             setTooltipText(
                 prevBtn,
-                isCurrentlyEmpty ? 'Restaurer la version précédente (Ctrl+Z)' : 'Version précédente (Ctrl+Z)'
+                isCurrentlyEmpty
+                    ? 'Restaurer la version précédente <kbd class="kbd-hint">Ctrl+Z</kbd>'
+                    : 'Version précédente <kbd class="kbd-hint">Ctrl+Z</kbd>'
             );
         }
     } else {

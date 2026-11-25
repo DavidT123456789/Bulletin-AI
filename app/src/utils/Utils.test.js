@@ -1427,14 +1427,14 @@ describe('Utils', () => {
                 tokenUsage: { appreciation: { total_tokens: 699 }, generationTimeMs: 815 }
             });
             expect(shortInfo).toEqual({
-                tooltip: 'Gemini 4 Hydrogen • 699\u00A0tokens • 0,8\u00A0s'
+                tooltip: 'Gemini 4 Hydrogen · 699\u00A0tokens · 0,8\u00A0s'
             });
 
             const longInfo = Utils.getGenerationModeInfo({
                 studentData: { currentAIModel: 'ollama-qwen3-8b' },
                 tokenUsage: { appreciation: { total_tokens: 1482 }, generationTimeMs: 75400 }
             });
-            expect(longInfo.tooltip).toContain(`${(1482).toLocaleString('fr-FR')}\u00A0tokens • 1\u00A0min 15\u00A0s`);
+            expect(longInfo.tooltip).toContain(`${(1482).toLocaleString('fr-FR')}\u00A0tokens · 1\u00A0min 15\u00A0s`);
         });
 
         it('gère le singulier (1 token) et les replis sans modèle ou sans métadonnées', () => {
@@ -1442,13 +1442,13 @@ describe('Utils', () => {
                 studentData: { currentAIModel: 'gemini-4-hydrogen' },
                 tokenUsage: { appreciation: { total_tokens: 1 }, generationTimeMs: 0 }
             });
-            expect(singleToken.tooltip).toBe('Gemini 4 Hydrogen • 1\u00A0token');
+            expect(singleToken.tooltip).toBe('Gemini 4 Hydrogen · 1\u00A0token');
 
             const fallbackWithModel = Utils.getGenerationModeInfo({
                 studentData: { currentAIModel: 'gemini-4-hydrogen' },
                 tokenUsage: { appreciation: { total_tokens: 0 }, generationTimeMs: 0 }
             });
-            expect(fallbackWithModel.tooltip).toBe('Gemini 4 Hydrogen • Généré par IA');
+            expect(fallbackWithModel.tooltip).toBe('Gemini 4 Hydrogen · Généré par IA');
 
             const fallbackEmpty = Utils.getGenerationModeInfo(null);
             expect(fallbackEmpty.tooltip).toBe('Généré par IA');

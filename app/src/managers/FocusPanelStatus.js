@@ -326,7 +326,7 @@ export const FocusPanelStatus = {
             state = 'error';
             isRegenerationError = hasContent;
             if (isRegenerationError) {
-                tooltip = `Échec de la régénération : ${errorMessage}\n(Ancienne version conservée)`;
+                tooltip = `Échec de la régénération : ${errorMessage}<br>Ancienne version conservée`;
             } else {
                 tooltip = errorMessage || 'Échec de génération';
             }
@@ -337,8 +337,8 @@ export const FocusPanelStatus = {
             state = 'dirty';
             const isAI = this._resolveSource(result) === 'ai';
             tooltip = isAI
-                ? 'Données modifiées depuis la génération.\nCliquez pour régénérer.'
-                : 'Données modifiées depuis l\'écriture.\nCliquez pour marquer comme vérifiée.';
+                ? 'Données modifiées depuis la génération<br><span class="kbd-hint">Cliquer pour régénérer</span>'
+                : 'Données modifiées depuis l\'écriture<br><span class="kbd-hint">Cliquer pour marquer comme vérifiée</span>';
         } else {
             state = 'uptodate';
             tooltip = '';
@@ -621,13 +621,14 @@ export const FocusPanelStatus = {
             // Update tooltip (only if we have char count)
             if (charCount !== null) {
                 const wordLabel = `${words} mot${words !== 1 ? 's' : ''}`;
-                let tooltipText;
+                let summaryLine;
                 if (limitInfo.limit) {
-                    const overSuffix = limitInfo.overBy > 0 ? ` (+${limitInfo.overBy} au-dessus)` : '';
-                    tooltipText = `${wordLabel} • ${charCount}/${limitInfo.limit} car.${overSuffix} • Cliquer pour ajuster`;
+                    const overSuffix = limitInfo.overBy > 0 ? ` (+${limitInfo.overBy})` : '';
+                    summaryLine = `${wordLabel} · ${charCount}/${limitInfo.limit} car.${overSuffix}`;
                 } else {
-                    tooltipText = `${wordLabel} • ${charCount} car. • Cliquer pour ajuster la longueur`;
+                    summaryLine = `${wordLabel} · ${charCount} car.`;
                 }
+                const tooltipText = `${summaryLine}<br><span class="kbd-hint">Ajuster la longueur</span>`;
                 if (typeof UI?.updateTooltip === 'function') {
                     UI.updateTooltip(wordCountEl, tooltipText);
                 } else {

@@ -472,7 +472,7 @@ export const FocusPanelAnalysis = {
             case 'modified':
                 badge.classList.add('modified', 'tooltip');
                 badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon>';
-                badge.setAttribute('data-tooltip', 'Données modifiées depuis l\'analyse. Cliquez pour actualiser.');
+                badge.setAttribute('data-tooltip', 'Données modifiées depuis l\'analyse<br><span class="kbd-hint">Cliquer pour actualiser</span>');
                 badge.onclick = () => this.generate();
                 UI.initTooltips?.();
                 break;

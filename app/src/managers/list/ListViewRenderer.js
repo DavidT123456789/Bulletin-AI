@@ -347,7 +347,7 @@ export const ListViewRenderer = {
      * @param {string} [tooltip=''] - Status tooltip from FocusPanelStatus.getAppreciationStatus
      * @private
      */
-    updateDirtyIndicatorOnly(cell, shouldBeDirty, tooltip = 'Données modifiées depuis la génération.\nActualisation recommandée.') {
+    updateDirtyIndicatorOnly(cell, shouldBeDirty, tooltip = 'Données modifiées depuis la génération<br><span class="kbd-hint">Cliquer pour régénérer</span>') {
         const existingIndicator = cell.querySelector('.dirty-indicator:not(.dirty-indicator-leave)');
 
         if (shouldBeDirty && !existingIndicator) {

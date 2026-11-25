@@ -1515,9 +1515,9 @@ export const Utils = {
         // Fallback si aucune métadonnée disponible
         let tip;
         if (parts.length > 1) {
-            tip = parts.join(' • ');
+            tip = parts.join(' · ');
         } else if (modelName && parts.length === 1) {
-            tip = `${modelName} • Généré par IA`;
+            tip = `${modelName} · Généré par IA`;
         } else {
             tip = parts[0] || 'Généré par IA';
         }

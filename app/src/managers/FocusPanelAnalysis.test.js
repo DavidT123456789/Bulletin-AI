@@ -162,7 +162,7 @@ describe('FocusPanelAnalysis - État du bouton, isolation par période et éditi
 
         const modifiedBadge = document.querySelector('.analysis-status-badge.modified');
         expect(modifiedBadge).not.toBeNull();
-        expect(modifiedBadge.getAttribute('data-tooltip')).toContain('Cliquez pour actualiser');
+        expect(modifiedBadge.getAttribute('data-tooltip')).toContain('Cliquer pour actualiser');
 
         modifiedBadge.click();
         expect(genSpy).toHaveBeenCalledTimes(1);

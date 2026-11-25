@@ -152,10 +152,10 @@ export const ClassManageModal = {
                                data-form-type="other">
                     </div>
                     <div class="class-management-actions">
-                        <button type="button" class="inline-action-btn confirm create-class-confirm disabled" data-tooltip="Confirmer (Entrée)" aria-label="Confirmer (Entrée)" aria-disabled="true">
+                        <button type="button" class="inline-action-btn confirm create-class-confirm disabled" data-tooltip="Confirmer <kbd class='kbd-hint'>Entrée</kbd>" aria-label="Confirmer (Entrée)" aria-disabled="true">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button type="button" class="inline-action-btn cancel create-class-cancel" data-tooltip="Annuler (Échap)" aria-label="Annuler (Échap)">
+                        <button type="button" class="inline-action-btn cancel create-class-cancel" data-tooltip="Annuler <kbd class='kbd-hint'>Échap</kbd>" aria-label="Annuler (Échap)">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     </div>
@@ -437,10 +437,10 @@ export const ClassManageModal = {
 
                     // Remplacement des actions par Confirmer / Annuler
                     actionsEl.innerHTML = `
-                        <button type="button" class="inline-action-btn confirm save-rename-btn disabled" data-tooltip="Confirmer (Entrée)" aria-label="Confirmer (Entrée)" aria-disabled="true">
+                        <button type="button" class="inline-action-btn confirm save-rename-btn disabled" data-tooltip="Confirmer <kbd class='kbd-hint'>Entrée</kbd>" aria-label="Confirmer (Entrée)" aria-disabled="true">
                             <iconify-icon icon="ph:check-bold"></iconify-icon>
                         </button>
-                        <button type="button" class="inline-action-btn cancel cancel-rename-btn" data-tooltip="Annuler (Échap)" aria-label="Annuler (Échap)">
+                        <button type="button" class="inline-action-btn cancel cancel-rename-btn" data-tooltip="Annuler <kbd class='kbd-hint'>Échap</kbd>" aria-label="Annuler (Échap)">
                             <iconify-icon icon="ph:x"></iconify-icon>
                         </button>
                     `;

@@ -1031,7 +1031,7 @@ export const UI = {
             if (iconEl) {
                 iconEl.setAttribute('icon', 'solar:key-linear');
             }
-            tooltip = `<strong>Aucune clé active</strong><br><span>Cliquez pour activer Albert (Gouv.fr) ou Gemini (100&nbsp;% gratuit)</span>`;
+            tooltip = 'Aucune clé active<br>Albert (Gouv.fr) ou Gemini — gratuits';
         } else {
             const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
             const shortModelName = providerId === 'albert' ? 'Albert' : modelName.split(' ')[0];

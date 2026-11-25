@@ -111,11 +111,16 @@ body.side-panel-open {
 
 /* Print styles: see modules/responsive.css (single source of truth) */
 
-/* Correction kbd-hint dans les tooltips */
+/* Correction kbd-hint dans les tooltips (inline pour raccourcis, sous <br> pour actions) */
 .tippy-box .kbd-hint {
+    vertical-align: 1px;
+}
+
+.tippy-box br + .kbd-hint {
     margin-left: 0;
     margin-top: 4px;
     display: inline-block;
+    vertical-align: baseline;
 }
 
 /* ============================

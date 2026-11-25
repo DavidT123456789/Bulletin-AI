@@ -127,10 +127,10 @@ export const TrombiZoneEditor = {
                             </button>
                         </div>
                         <div class="grid-control-actions">
-                            <button type="button" class="grid-reset-btn" id="trombiUndoBtn" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler (Ctrl+Z)" disabled>
+                            <button type="button" class="grid-reset-btn" id="trombiUndoBtn" aria-label="Annuler (Ctrl+Z)" data-tooltip="Annuler <kbd class='kbd-hint'>Ctrl+Z</kbd>" disabled>
                                 <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
                             </button>
-                            <button type="button" class="grid-reset-btn" id="trombiRedoBtn" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir (Ctrl+Y)" disabled>
+                            <button type="button" class="grid-reset-btn" id="trombiRedoBtn" aria-label="Rétablir (Ctrl+Y)" data-tooltip="Rétablir <kbd class='kbd-hint'>Ctrl+Y</kbd>" disabled>
                                 <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                             </button>
                             <button type="button" class="grid-reset-btn" id="gridResetBtn" aria-label="${resetLabel}" data-tooltip="${resetLabel}">
