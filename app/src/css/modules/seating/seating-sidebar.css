@@ -536,13 +536,22 @@
     align-items: center;
     gap: 8px;
     pointer-events: none;
-    translate: 0 0;
-    will-change: translate;
-    transition: translate var(--sc-drawer-transition);
 }
 
-#seatingChartView[data-locked="false"] .sc-top-left-bar {
-    translate: 260px 0;
+@media (min-width: 769px) {
+    .sc-plan-mode-switch {
+        translate: 0 0;
+        will-change: translate;
+        transition: translate var(--sc-drawer-transition);
+    }
+
+    #seatingChartView[data-locked="true"] .sc-top-left-bar:has(:is(.sc-status-locked, .sc-status-testing)) .sc-plan-mode-switch {
+        translate: 44px 0;
+    }
+
+    #seatingChartView[data-locked="false"] .sc-plan-mode-switch {
+        translate: 260px 0;
+    }
 }
 
 :is(:root, [data-theme="dark"]) .ui-segmented-control.sc-plan-mode-switch {
@@ -759,6 +768,9 @@
 
 @media (min-width: 769px) {
     .sc-status-pill:not(.sc-status-virtual) {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 34px;
         padding: 0;
     }
