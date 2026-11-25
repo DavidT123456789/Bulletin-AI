@@ -103,7 +103,7 @@ export const TrombiCropExporter = {
             confirmInfo?.replaceChildren();
             if (confirmBtn) {
                 confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Importer les photos';
+                confirmBtn.textContent = 'Importer les photos';
             }
             if (reassuranceBanner) {
                 reassuranceBanner.style.display = 'none';
@@ -218,16 +218,16 @@ export const TrombiCropExporter = {
                             const studentLabel = (newAssignedCount === 1 && newStudentObj)
                                 ? `Ajouter ${Utils.formatStudentName(newStudentObj.nom, newStudentObj.prenom)}`
                                 : `Ajouter ${newAssignedCount > 1 ? `les ${newAssignedCount} nouveaux élèves` : `le nouvel élève`}`;
-                            confirmBtn.innerHTML = `<svg aria-hidden="true"><use href="#icon-user-plus"></use></svg> ${Utils.escapeHtml(studentLabel)}`;
+                            confirmBtn.textContent = studentLabel;
                         } else {
-                            confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}${realPhotoCount > 0 ? `, ${realPhotoCount} photo${realPhotoCount > 1 ? 's' : ''}` : ''})`;
+                            confirmBtn.textContent = `Importer (${newAssignedCount} nouveau${newAssignedCount > 1 ? 'x' : ''}${realPhotoCount > 0 ? `, ${realPhotoCount} photo${realPhotoCount > 1 ? 's' : ''}` : ''})`;
                         }
                     } else {
-                        confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Mettre à jour ${realPhotoCount > 1 ? `les ${realPhotoCount} photos` : 'la photo'}`;
+                        confirmBtn.textContent = `Mettre à jour ${realPhotoCount > 1 ? `les ${realPhotoCount} photos` : 'la photo'}`;
                     }
                 } else {
                     const photoLabel = realPhotoCount > 1 ? `${realPhotoCount} photos` : (realPhotoCount === 1 ? 'la photo' : `${assignedCount} élève${assignedCount > 1 ? 's' : ''}`);
-                    confirmBtn.innerHTML = `<iconify-icon icon="ph:check-bold"></iconify-icon> Importer ${photoLabel}`;
+                    confirmBtn.textContent = `Importer ${photoLabel}`;
                 }
             }
         };

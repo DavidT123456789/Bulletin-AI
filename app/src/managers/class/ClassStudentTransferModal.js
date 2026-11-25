@@ -136,8 +136,7 @@ export const ClassStudentTransferModal = {
                         <div class="move-create-class-form ${classes.length === 0 ? 'open' : ''}" id="moveCreateClassForm">
                             <input type="text" class="move-create-class-input" id="moveCreateClassInput" placeholder="Nom du groupe (ex : Groupe PAD, Projet PAPD...)" maxlength="50" autocomplete="off">
                             <button type="button" class="btn btn-primary move-create-class-submit" id="moveCreateClassSubmit">
-                                <iconify-icon icon="ph:check-bold"></iconify-icon>
-                                <span>Créer</span>
+                                Créer
                             </button>
                         </div>
                     </div>
@@ -479,7 +478,6 @@ export const ClassStudentTransferModal = {
                 <div class="modal-footer pick-students-modal-footer">
                     <button type="button" class="btn btn-secondary close-pick-modal-cancel">Annuler</button>
                     <button type="button" class="btn btn-primary" id="confirmPickStudentsBtn" disabled>
-                        <svg aria-hidden="true"><use href="#icon-user-plus"></use></svg>
                         <span id="confirmPickStudentsLabel">Sélectionnez des élèves</span>
                     </button>
                 </div>

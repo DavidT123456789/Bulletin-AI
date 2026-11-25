@@ -424,7 +424,7 @@ export const TrombinoscopeManager = {
         const confirmBtn = document.getElementById('trombiConfirmBtn');
         if (confirmBtn) {
             confirmBtn.disabled = false;
-            confirmBtn.innerHTML = '<iconify-icon icon="ph:check-bold"></iconify-icon> Importer les photos';
+            confirmBtn.textContent = 'Importer les photos';
         }
 
         const pageBar = document.getElementById('trombiPageSelectorBar');
