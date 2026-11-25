@@ -140,7 +140,7 @@ export const TrombiPdfLoader = {
             if (parsed.students.length === 0) {
                 manager._removeImage();
                 const shouldSwitch = await UI.showCustomConfirm(
-                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un relevé de notes ou d\'un bilan de classe, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un bilan de bulletins ou d\'une liste d\'élèves, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
                     null,
                     null,
                     {
@@ -235,7 +235,7 @@ export const TrombiPdfLoader = {
             console.error('[TrombinoscopeManager] Échec parsing PDF:', err);
             manager._removeImage();
             const shouldSwitch = await UI.showCustomConfirm(
-                'Ce document PDF ne correspond pas à un format de trombinoscope avec photos. S\'il s\'agit d\'un relevé de notes ou d\'un bilan de classe, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                'Ce document PDF ne correspond pas à un format de trombinoscope avec photos. S\'il s\'agit d\'un bilan de bulletins ou d\'une liste d\'élèves, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
                 null,
                 null,
                 {

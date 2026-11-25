@@ -162,6 +162,8 @@ export function initDOM() {
     DOM.googleSyncBadge = document.getElementById('googleSyncBadge');
     DOM.welcomeModal = document.getElementById('welcomeModal');
     DOM.closeWelcomeModalBtn = document.getElementById('closeWelcomeModalBtn');
+    DOM.welcomeRestoreBtn = document.getElementById('welcomeRestoreBtn');
+    DOM.welcomeProviderHint = document.getElementById('welcomeProviderHint');
     DOM.welcomePrevBtn = document.getElementById('welcomePrevBtn');
     DOM.welcomeNextBtn = document.getElementById('welcomeNextBtn');
     DOM.welcomeFinishAndHideBtn = document.getElementById('welcomeFinishAndHideBtn');

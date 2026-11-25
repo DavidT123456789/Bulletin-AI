@@ -220,7 +220,7 @@
     top: calc(100% + 8px);
     left: 45%;
     padding: 14px;
-    width: 268px;
+    width: 286px;
     box-sizing: border-box;
     transform-origin: top center;
     z-index: 100;
@@ -247,6 +247,13 @@
     border-bottom: 1px solid var(--border-color);
 }
 
+.sc-config-section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .sc-config-section-title {
     font-size: 0.7rem;
     font-weight: 600;
@@ -255,9 +262,16 @@
     letter-spacing: 0.04em;
 }
 
+.sc-config-section-meta {
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
 .sc-config-preset-pills {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 6px;
 }
 
@@ -266,36 +280,126 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    padding: 8px 4px 7px;
-    font-size: 0.7rem;
+    gap: 3px;
+    padding: 8px 6px 7px;
+    font-size: 0.72rem;
     font-weight: 500;
     text-align: center;
     white-space: nowrap;
     min-width: 0;
 }
 
-.sc-config-preset-pill .sc-mini-diagram {
-    padding: 2px 0;
+.sc-config-preset-title {
+    font-size: 0.73rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.sc-config-preset-sub {
+    font-size: 0.64rem;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    line-height: 1.15;
+}
+
+.sc-mini-diagram {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: 2px;
-    background: transparent;
-    border: none;
+    padding: 4px 6px;
+    border-radius: var(--radius-xs, 4px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .sc-mini-diagram {
+    background: var(--item-idle-bg);
+}
+
+.sc-mini-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
 }
 
 .sc-config-preset-pill .sc-mini-diagram i {
-    width: 5px;
-    height: 7px;
-    border-radius: 1.5px;
+    display: inline-block;
+    width: 4.5px;
+    height: 4.5px;
+    border-radius: 1.25px;
     background: var(--text-secondary);
-    opacity: 0.62;
+    opacity: 0.68;
+    transition: background-color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .sc-config-preset-pill .sc-mini-diagram b.aisle {
+    display: inline-block;
     width: 4px;
-    height: 7px;
+    height: 4.5px;
     margin: 0;
-    border-left-color: var(--border-color-hover);
-    border-right-color: var(--border-color-hover);
+    border-left: 1px dashed var(--border-color-hover);
+    border-right: 1px dashed var(--border-color-hover);
+}
+
+.sc-config-preset-pill .sc-mini-diagram.is-u-shape b.aisle-wide {
+    display: inline-block;
+    width: 24px;
+    height: 4.5px;
+    margin: 0 1px;
+    border-left: 1px dashed var(--border-color-hover);
+    border-right: 1px dashed var(--border-color-hover);
+}
+
+.sc-paint-aisles-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: var(--radius-control, 10px);
+    border: 1px dashed var(--border-color-strong);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform 0.15s ease;
+}
+
+.sc-paint-aisles-trigger iconify-icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .sc-paint-aisles-trigger:hover {
+        background: var(--item-hover-bg);
+        border-color: var(--border-color-hover);
+        color: var(--text-primary);
+    }
+}
+
+.sc-paint-aisles-trigger:active {
+    transform: scale(0.985);
+}
+
+.sc-paint-aisles-trigger:focus-visible {
+    outline: 2px solid var(--text-secondary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .sc-paint-aisles-trigger {
+        min-height: 44px;
+        font-size: 0.78rem;
+    }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -409,103 +513,149 @@
     color: var(--warning-text);
 }
 
-.sc-config-dots-section {
-    margin-top: 0;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-color);
+/* ---------- STATUS DOTS POPOVER (capsule flottante) ---------- */
+.sc-status-dots-popover {
+    width: 248px;
+    padding: 10px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-.seating-dots-selector.sc-config-dots-selector {
+.seating-dots-selector {
+    display: flex;
     flex-direction: column;
-    flex-wrap: nowrap;
     gap: 2px;
 }
 
-.sc-config-dots-selector .seating-dot-option {
+.seating-dot-option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     box-sizing: border-box;
     margin: 0;
     padding: 6px 8px;
     border-radius: var(--dropdown-item-radius, 10px);
-    border: none;
     background: transparent;
+    color: var(--text-secondary);
     font-size: 0.76rem;
     font-weight: 500;
-    gap: 8px;
-    box-shadow: none;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform 0.15s ease;
 }
 
-.sc-config-dots-selector .seating-dot-option:active {
-    transform: scale(0.985);
+.seating-dot-option input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .sc-config-dots-selector .seating-dot-option:not(.active):not(:has(input:checked)):hover {
+    .seating-dot-option:hover {
         background: var(--item-hover-bg);
+        color: var(--text-primary);
     }
 
-    .sc-config-dots-selector .seating-dot-option.active:hover,
-    .sc-config-dots-selector .seating-dot-option:has(input:checked):hover {
+    .seating-dot-option:has(input:checked):hover {
         background: var(--tonal-hover-bg);
     }
 }
 
-.sc-config-dots-selector .seating-dot-option.active,
-.sc-config-dots-selector .seating-dot-option:has(input:checked) {
+.seating-dot-option:active {
+    transform: scale(0.985);
+}
+
+.seating-dot-option:has(input:focus-visible) {
+    outline: 2px solid var(--text-tertiary);
+    outline-offset: 2px;
+}
+
+.seating-dot-option:has(input:checked) {
     background: var(--tonal-bg);
     color: var(--text-primary);
-    font-weight: 500;
-    box-shadow: none;
 }
 
-.sc-config-dots-selector .seating-dot-preview {
+.seating-dot-preview {
     width: 8px;
     height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
     opacity: 0.55;
+    transition: opacity var(--transition-fast);
 }
 
-.sc-config-dots-selector .seating-dot-option:hover .seating-dot-preview,
-.sc-config-dots-selector .seating-dot-option.active .seating-dot-preview,
-.sc-config-dots-selector .seating-dot-option:has(input:checked) .seating-dot-preview {
+[data-theme="dark"] .seating-dot-preview {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.seating-dot-option:hover .seating-dot-preview,
+.seating-dot-option:has(input:checked) .seating-dot-preview {
     opacity: 1;
 }
 
-.sc-config-dots-selector .seating-dot-label {
+.seating-dot-preview--movements {
+    background: linear-gradient(135deg, var(--color-sky, #0ea5e9) 49.5%, var(--color-amber, #f59e0b) 50.5%);
+}
+
+.seating-dot-preview--devices {
+    background: linear-gradient(135deg, var(--purple-color, #9333ea) 49.5%, var(--color-rose, #f43f5e) 50.5%);
+}
+
+.seating-dot-preview--delegates {
+    background: var(--color-emerald, #10b981);
+}
+
+.seating-dot-label {
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
     min-width: 0;
     flex: 1;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.sc-config-dots-selector .seating-dot-label small {
+.seating-dot-label small {
     font-size: 0.68rem;
     font-weight: 400;
     color: var(--text-tertiary);
-    margin-left: 0;
 }
 
-.sc-config-dots-selector .seating-dot-check {
+.seating-dot-option:has(input:checked) .seating-dot-label small {
+    color: var(--text-secondary);
+}
+
+.seating-dot-check {
     margin-left: auto;
     width: 13px;
     font-size: 12px;
+    color: var(--text-primary);
+    flex-shrink: 0;
     opacity: 0;
     transform: scale(0.65);
     transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.sc-config-dots-selector .seating-dot-option.active .seating-dot-check,
-.sc-config-dots-selector .seating-dot-option:has(input:checked) .seating-dot-check {
+.seating-dot-option:has(input:checked) .seating-dot-check {
     opacity: 1;
-    width: 13px;
-    margin-left: auto;
     transform: scale(1);
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .seating-dot-option {
+        min-height: 44px;
+        font-size: 0.84rem;
+    }
 }
 
 /* ---------- FLOATING ACTIONS CAPSULE (TOP-RIGHT) ---------- */
@@ -527,7 +677,7 @@
 #seatingChartView[data-locked="false"] .sc-floating-actions :is(.sc-orientation-btn, .sc-print-btn, .sc-random-btn, .sc-random-close-btn),
 #seatingChartView[data-plan-mode="activity"] .sc-floating-actions .sc-orientation-btn,
 #seatingChartView:not(.sc-random-active) .sc-floating-actions .sc-random-close-btn,
-#seatingChartView.sc-random-active .sc-floating-actions :is(.sc-zoom-btn, .sc-orientation-btn, .sc-print-btn) {
+#seatingChartView.sc-random-active .sc-floating-actions :is(.sc-zoom-btn, .sc-dots-btn, .sc-orientation-btn, .sc-print-btn) {
     width: 0 !important;
     margin-left: -2px !important;
     overflow: hidden;
@@ -664,16 +814,14 @@
     }
 }
 
-/* Random Picker History Popover (surface mutualisée dans dropdown.css) */
-.sc-random-history-popover {
+/* Random Picker History & Status Dots Popovers (surface mutualisée dans dropdown.css) */
+.sc-random-history-popover,
+.sc-status-dots-popover {
     position: absolute;
     top: calc(56px + 20px + 34px + 8px);
     right: var(--content-padding-x, 24px);
     left: auto;
-    min-width: 200px;
-    max-width: 260px;
     z-index: 105;
-    overflow: hidden;
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -684,7 +832,14 @@
                 visibility 0.2s;
 }
 
-.sc-random-history-popover.open {
+.sc-random-history-popover {
+    min-width: 200px;
+    max-width: 260px;
+    overflow: hidden;
+}
+
+.sc-random-history-popover.open,
+.sc-status-dots-popover.open {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -969,6 +1124,11 @@
 #seatingChartView .sc-floating-actions .sc-action-btn.sc-orientation-btn.active {
     background: var(--tonal-active-bg) !important;
     color: var(--text-primary) !important;
+}
+
+.sc-floating-actions .sc-action-btn.sc-dots-btn.active {
+    background: var(--item-active-bg);
+    color: var(--text-primary);
 }
 
 .sc-action-btn.sc-orientation-btn iconify-icon {

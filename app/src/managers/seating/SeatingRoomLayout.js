@@ -4,6 +4,8 @@
  */
 
 import { appState } from '../../state/State.js';
+import { DEFAULT_SEATING_STATUS_DOTS } from '../../config/Config.js';
+import { bus, EVENTS } from '../../core/EventBus.js';
 import { SafeStorage, STORAGE_KEYS } from '../../utils/SafeStorage.js';
 import { StorageManager } from '../StorageManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
@@ -173,7 +175,10 @@ export const SeatingRoomLayout = {
     },
 
     _openPlacementPopover() {
+        this._exitAislePaintMode?.();
+        this._dismissOnboardingHint?.();
         this._closeConfigPopover();
+        this._closeStatusDotsPopover();
         const popover = document.getElementById('scPlacementPopover');
         if (!popover) return;
         this._syncPlacementPopover();
@@ -202,18 +207,22 @@ export const SeatingRoomLayout = {
     _toggleConfigPopover() {
         if (!this._configPopoverOpen) {
             this._closePlacementPopover();
-            document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
         }
         this._configPopoverOpen ? this._closeConfigPopover() : this._openConfigPopover();
     },
 
     _openConfigPopover() {
+        this._exitAislePaintMode?.();
+        this._dismissOnboardingHint?.();
         this._closePlacementPopover();
+        this._closeStatusDotsPopover();
         const popover = document.getElementById('scConfigPopover');
         if (!popover) return;
         this._syncConfigPopoverUI();
         popover.classList.add('open');
-        document.getElementById('scConfigBtn')?.classList.add('active');
+        const configBtn = document.getElementById('scConfigBtn');
+        configBtn?.classList.remove('sc-has-pulse');
+        configBtn?.classList.add('active');
         this._configPopoverOpen = true;
 
         if (!HistoryManager.isOpen('scConfigPopover')) {
@@ -231,6 +240,60 @@ export const SeatingRoomLayout = {
         if (HistoryManager.isOpen('scConfigPopover')) {
             HistoryManager.handleManualClose('scConfigPopover');
         }
+    },
+
+    _toggleStatusDotsPopover() {
+        this._statusDotsPopoverOpen ? this._closeStatusDotsPopover() : this._openStatusDotsPopover();
+    },
+
+    _openStatusDotsPopover() {
+        const popover = document.getElementById('scStatusDotsPopover');
+        if (!popover || this._isRandomPickerActive?.()) return;
+        this._closeContextMenu?.();
+        this._closePlacementPopover();
+        this._closeConfigPopover();
+        this._syncStatusDotsUI();
+        popover.classList.add('open');
+        popover.setAttribute('aria-hidden', 'false');
+        const btn = document.getElementById('scFloatingDotsBtn');
+        btn?._tippy?.hide?.();
+        btn?.classList.add('active');
+        btn?.setAttribute('aria-expanded', 'true');
+        this._statusDotsPopoverOpen = true;
+        if (!HistoryManager.isOpen('scStatusDotsPopover')) {
+            HistoryManager.pushState('scStatusDotsPopover', () => this._closeStatusDotsPopover());
+        }
+    },
+
+    _closeStatusDotsPopover() {
+        const popover = document.getElementById('scStatusDotsPopover');
+        if (!popover) return;
+        popover.classList.remove('open');
+        popover.setAttribute('aria-hidden', 'true');
+        const btn = document.getElementById('scFloatingDotsBtn');
+        btn?.classList.remove('active');
+        btn?.setAttribute('aria-expanded', 'false');
+        this._statusDotsPopoverOpen = false;
+        if (HistoryManager.isOpen('scStatusDotsPopover')) {
+            HistoryManager.handleManualClose('scStatusDotsPopover');
+        }
+    },
+
+    _syncStatusDotsUI() {
+        const dots = { ...DEFAULT_SEATING_STATUS_DOTS, ...(appState.seatingStatusDots || {}) };
+        document.querySelectorAll('#seatingStatusDotsSelector input[type="checkbox"][data-dot-category]').forEach(cb => {
+            cb.checked = Boolean(dots[cb.dataset.dotCategory]);
+        });
+    },
+
+    _setStatusDot(category, isVisible) {
+        appState.seatingStatusDots = {
+            ...DEFAULT_SEATING_STATUS_DOTS,
+            ...(appState.seatingStatusDots || {}),
+            [category]: isVisible
+        };
+        bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState, reason: 'seating-status-dots' });
+        StorageManager.saveAppState();
     },
     // ========================================================================
     // VIEW ORIENTATION (Teacher ⇄ Student Projection)
@@ -463,11 +526,38 @@ export const SeatingRoomLayout = {
         return `<iconify-icon icon="solar:chair-linear"></iconify-icon><span><strong>${seatsLabel}</strong> disponibles</span>`;
     },
 
+    _detectUShapeWingWidth(specialLayout, rows, cols) {
+        if (!specialLayout || rows < 3 || cols < 4) return 0;
+        for (let c = 0; c < cols; c++) {
+            if (specialLayout[`0,${c}`] === 'aisle') return 0;
+        }
+        for (const w of [1, 2]) {
+            if (cols - (2 * w) < 2) continue;
+            let matches = true;
+            for (let r = 1; r < rows && matches; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const isAisle = specialLayout[`${r},${c}`] === 'aisle';
+                    const expected = c >= w && c < cols - w;
+                    if (isAisle !== expected) {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+            if (matches) return w;
+        }
+        return 0;
+    },
+
     _detectCurrentRoomPreset() {
         const gridKey = this._getActiveGridKey();
         const rows = this._getRows();
         const cols = this._getCols();
         const specialLayout = appState[gridKey]?.specialLayout || {};
+
+        if (this._detectUShapeWingWidth(specialLayout, rows, cols) > 0) {
+            return 'u-shape';
+        }
 
         const aisleCols = [];
         for (let c = 0; c < cols; c++) {
@@ -526,23 +616,6 @@ export const SeatingRoomLayout = {
             capEl.className = `sc-config-capacity ${capInfo.isShortForCurrent || capInfo.isShortForMax ? 'is-warning' : 'is-ok'}`;
             capEl.innerHTML = this._getCapacityBadgeInnerHTML(capInfo);
         }
-
-        const dotsSelector = popover.querySelector('#seatingStatusDotsSelector');
-        if (dotsSelector) {
-            const dots = {
-                movements: true,
-                devices: false,
-                delegates: false,
-                ...(appState.seatingStatusDots || {})
-            };
-            dotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
-                const cat = cb.getAttribute('data-dot-category');
-                if (!cat) return;
-                const isChecked = Boolean(dots[cat]);
-                cb.checked = isChecked;
-                cb.closest('.seating-dot-option')?.classList.toggle('active', isChecked);
-            });
-        }
     },
 
     _stepGridDimension(dim, delta) {
@@ -578,10 +651,14 @@ export const SeatingRoomLayout = {
 
     _applyRoomPreset(presetId) {
         if (this._isLocked) return;
+        const maxStudents = this._getMaxClassStudentCount();
+        const uWing = maxStudents <= 19 ? 1 : 2;
+        const uCols = uWing === 1 ? 7 : 8;
         const presetConfigs = {
             'compact': { cols: 6, aisles: [] },
             'center-aisle': { cols: 7, aisles: [3] },
-            'double-aisles': { cols: 8, aisles: [2, 5] }
+            'double-aisles': { cols: 8, aisles: [2, 5] },
+            'u-shape': { cols: uCols, aisles: [], uWing }
         };
         const preset = presetConfigs[presetId];
         if (!preset) return;
@@ -595,10 +672,22 @@ export const SeatingRoomLayout = {
 
         const oldRows = this._gridState?.length || this._getRows();
         const oldCols = this._gridState?.[0]?.length || this._getCols();
-        const minRowsForMaxClass = Math.min(10, Math.max(DEFAULT_ROWS, Math.ceil(this._getMaxClassStudentCount() / 6)));
-        const targetRows = Math.max(oldRows, !appState[gridKey] ? minRowsForMaxClass : oldRows);
+        let minPresetRows = Math.min(10, Math.max(DEFAULT_ROWS, Math.ceil(maxStudents / 6)));
+        if (presetId === 'u-shape') {
+            const perSideRow = uWing * 2;
+            const remaining = Math.max(0, maxStudents - uCols);
+            minPresetRows = Math.min(10, Math.max(DEFAULT_ROWS, 1 + Math.ceil(remaining / perSideRow)));
+        }
+        const targetRows = presetId === 'u-shape'
+            ? Math.min(10, Math.max(3, oldRows, minPresetRows))
+            : Math.max(oldRows, !appState[gridKey] ? minPresetRows : oldRows);
         const targetCols = preset.cols;
         const aisleCols = preset.aisles;
+        const isTargetAisle = (r, c) => (
+            presetId === 'u-shape'
+                ? (r >= 1 && c >= uWing && c < targetCols - uWing)
+                : aisleCols.includes(c)
+        );
 
         const oldSpecial = appState[gridKey]?.specialLayout || {};
         const oldAisleCols = [];
@@ -632,13 +721,15 @@ export const SeatingRoomLayout = {
             if (type === 'aisle') continue;
             const [r, c] = key.split(',').map(Number);
             const mappedC = colMap.has(c) ? colMap.get(c) : c;
-            if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !aisleCols.includes(mappedC)) {
+            if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !isTargetAisle(r, mappedC)) {
                 newSpecialLayout[`${r},${mappedC}`] = type;
             }
         }
         for (let r = 0; r < targetRows; r++) {
-            for (const c of aisleCols) {
-                newSpecialLayout[`${r},${c}`] = 'aisle';
+            for (let c = 0; c < targetCols; c++) {
+                if (isTargetAisle(r, c)) {
+                    newSpecialLayout[`${r},${c}`] = 'aisle';
+                }
             }
         }
 
@@ -648,7 +739,7 @@ export const SeatingRoomLayout = {
             for (const [key, type] of Object.entries(currentClass[classSpecialKey])) {
                 const [r, c] = key.split(',').map(Number);
                 const mappedC = colMap.has(c) ? colMap.get(c) : c;
-                if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !aisleCols.includes(mappedC)) {
+                if (r >= 0 && r < targetRows && mappedC >= 0 && mappedC < targetCols && !isTargetAisle(r, mappedC)) {
                     nextClassSpecial[`${r},${mappedC}`] = type;
                 }
             }
@@ -656,13 +747,26 @@ export const SeatingRoomLayout = {
         }
 
         const newGrid = Array.from({ length: targetRows }, () => Array(targetCols).fill(null));
-        for (let r = 0; r < Math.min(oldRows, targetRows); r++) {
+        const displacedCells = [];
+        for (let r = 0; r < oldRows; r++) {
             for (let c = 0; c < oldCols; c++) {
                 const cellIds = this._getCellStudentIds(r, c);
                 if (cellIds.length === 0) continue;
-                const mappedC = colMap.has(c) ? colMap.get(c) : (!aisleCols.includes(c) && c < targetCols ? c : -1);
-                if (mappedC >= 0 && mappedC < targetCols && !newSpecialLayout[`${r},${mappedC}`] && !currentClass?.[classSpecialKey]?.[`${r},${mappedC}`]) {
-                    newGrid[r][mappedC] = cellIds.length === 1 ? cellIds[0] : [...cellIds];
+                const mappedC = colMap.has(c) ? colMap.get(c) : (!isTargetAisle(r, c) && c < targetCols ? c : -1);
+                const cellPayload = cellIds.length === 1 ? cellIds[0] : [...cellIds];
+                if (r < targetRows && mappedC >= 0 && mappedC < targetCols && !newSpecialLayout[`${r},${mappedC}`] && !currentClass?.[classSpecialKey]?.[`${r},${mappedC}`] && !newGrid[r][mappedC]) {
+                    newGrid[r][mappedC] = cellPayload;
+                } else {
+                    displacedCells.push(cellPayload);
+                }
+            }
+        }
+        if (displacedCells.length > 0) {
+            for (let r = 0; r < targetRows && displacedCells.length > 0; r++) {
+                for (let c = 0; c < targetCols && displacedCells.length > 0; c++) {
+                    if (!newGrid[r][c] && !newSpecialLayout[`${r},${c}`] && !currentClass?.[classSpecialKey]?.[`${r},${c}`]) {
+                        newGrid[r][c] = displacedCells.shift();
+                    }
                 }
             }
         }
@@ -778,11 +882,16 @@ export const SeatingRoomLayout = {
         const newRows = this._getRows();
         const newCols = this._getCols();
         const oldRows = this._gridState ? this._gridState.length : newRows;
+        const oldCols = this._gridState?.[0] ? this._gridState[0].length : newCols;
         const posKey = this._getActivePositionKey();
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
         const lockKey = this._getActiveClassLockKey();
         const updatedKey = this._getActiveClassUpdatedKey();
+        const uWing = !this._isActivityMode()
+            ? this._detectUShapeWingWidth(appState[gridKey]?.specialLayout || {}, oldRows, oldCols)
+            : 0;
+        const preserveUShape = uWing > 0 && newRows >= 3 && newCols >= (2 * uWing) + 2;
         
         // Récupère toutes les positions connues des étudiants (y compris ceux temporairement hors de la grille visible)
         const placed = {};
@@ -816,11 +925,55 @@ export const SeatingRoomLayout = {
         this._initGrid(newRows, newCols);
 
         // En mode Cours, le bureau (en bas) est l'origine visuelle : on ajoute/supprime par le haut (fond de salle).
-        // En mode Activité, le poste #1 (en haut à gauche) est l'origine : on ajoute/supprime par le bas.
-        const rowOffset = this._isActivityMode() ? 0 : (newRows - oldRows);
+        // Exception "En U" : la rangée 0 (mur du fond) reste ancrée au fond pour ne pas déplacer la barre du U au centre,
+        // et l'aile droite (r >= 1, c >= oldCols - uWing) suit le bord droit lors d'un ajout/retrait de colonnes.
+        const rowOffset = (this._isActivityMode() || preserveUShape) ? 0 : (newRows - oldRows);
+        const colDelta = preserveUShape ? (newCols - oldCols) : 0;
+        const shiftUCol = (r, c) => (colDelta !== 0 && r >= 1 && c >= oldCols - uWing) ? (c + colDelta) : c;
 
         // Repositionne d'abord la cartographie des places spéciales (allées, AESH...)
-        if (rowOffset !== 0) {
+        if (preserveUShape && appState[gridKey]?.specialLayout) {
+            const oldSpecial = appState[gridKey].specialLayout;
+            const currentClassObj = this._getCurrentClass();
+            if (currentClassObj?.[classSpecialKey] && colDelta !== 0) {
+                const nextCurrentClassSpecial = {};
+                for (const [key, type] of Object.entries(currentClassObj[classSpecialKey])) {
+                    const [r, c] = key.split(',').map(Number);
+                    const nextC = shiftUCol(r, c);
+                    if (r >= 0 && r < newRows && nextC >= 0 && nextC < newCols) {
+                        nextCurrentClassSpecial[`${r},${nextC}`] = type;
+                    }
+                }
+                currentClassObj[classSpecialKey] = nextCurrentClassSpecial;
+            }
+            if (colDelta !== 0) {
+                this._shiftOtherClassesUShapeRightWing?.(oldCols, newCols, uWing, newRows);
+            }
+            const occupiedClassSpecialKeys = new Set();
+            (appState.classes || []).forEach(cls => {
+                if (cls?.[classSpecialKey]) {
+                    Object.keys(cls[classSpecialKey]).forEach(k => occupiedClassSpecialKeys.add(k));
+                }
+            });
+            const newSpecialLayout = {};
+            for (const [key, type] of Object.entries(oldSpecial)) {
+                if (type === 'aisle') continue;
+                const [r, c] = key.split(',').map(Number);
+                const nextC = shiftUCol(r, c);
+                if (r >= 0 && r < newRows && nextC >= 0 && nextC < newCols) {
+                    newSpecialLayout[`${r},${nextC}`] = type;
+                }
+            }
+            for (let r = 1; r < newRows; r++) {
+                for (let c = uWing; c < newCols - uWing; c++) {
+                    const cellKey = `${r},${c}`;
+                    if (!newSpecialLayout[cellKey] && !occupiedClassSpecialKeys.has(cellKey)) {
+                        newSpecialLayout[cellKey] = 'aisle';
+                    }
+                }
+            }
+            appState[gridKey].specialLayout = newSpecialLayout;
+        } else if (rowOffset !== 0) {
             const occupiedClassSpecialKeys = new Set();
             const classes = appState.classes || [];
             classes.forEach(cls => {
@@ -883,13 +1036,18 @@ export const SeatingRoomLayout = {
 
         // Repositionne les étudiants (en préservant les binômes/groupes et leur ordre)
         const cellBuckets = new Map();
+        const displacedUShape = [];
         for (const [resultId, pos] of Object.entries(placed)) {
             const newR = pos.row + rowOffset;
+            const newC = preserveUShape ? shiftUCol(newR, pos.col) : pos.col;
             pos.row = newR;
-            if (newR >= 0 && newR < newRows && pos.col >= 0 && pos.col < newCols && !this._isSpecialSpot(newR, pos.col)) {
-                const key = `${newR},${pos.col}`;
+            pos.col = newC;
+            if (newR >= 0 && newR < newRows && newC >= 0 && newC < newCols && !this._isSpecialSpot(newR, newC)) {
+                const key = `${newR},${newC}`;
                 if (!cellBuckets.has(key)) cellBuckets.set(key, []);
                 cellBuckets.get(key).push({ id: resultId, order: pos.order ?? 0 });
+            } else if (preserveUShape) {
+                displacedUShape.push(resultId);
             }
         }
 
@@ -901,6 +1059,16 @@ export const SeatingRoomLayout = {
             const [r, c] = key.split(',').map(Number);
             items.sort((a, b) => a.order - b.order);
             this._setCellStudentIds(r, c, items.slice(0, maxPerCell).map(item => item.id));
+        }
+
+        if (preserveUShape && displacedUShape.length > 0) {
+            for (let r = 0; r < newRows && displacedUShape.length > 0; r++) {
+                for (let c = 0; c < newCols && displacedUShape.length > 0; c++) {
+                    if (this._getCellStudentIds(r, c).length === 0 && !this._isSpecialSpot(r, c)) {
+                        this._setCellStudentIds(r, c, [displacedUShape.shift()]);
+                    }
+                }
+            }
         }
 
         // Met à jour la coordonnée des élèves temporairement hors-grille pour éviter toute collision au ré-agrandissement
@@ -1123,6 +1291,132 @@ export const SeatingRoomLayout = {
             this._animateCellSwap(srcRow, srcCol, targetRow, targetCol, { fromDrag: true });
         } else {
             this._animateCellPlaced(targetRow, targetCol);
+        }
+    },
+
+    // ========================================================================
+    // CUSTOM AISLE PAINT MODE (Tracer des allées en 1 geste)
+    // ========================================================================
+
+    _enterAislePaintMode() {
+        if (this._isLocked || this._isVirtualClass() || this._isActivityMode()) return;
+        this._closeConfigPopover();
+        this._closePlacementPopover();
+        this._clearSelection();
+        this._dismissOnboardingHint();
+
+        this._isAislePaintMode = true;
+        this._aislePaintPointerId = null;
+        this._aislePaintAction = null;
+        this._aislePaintTouchedKeys = null;
+        this._aislePaintHasMutated = false;
+
+        const view = document.getElementById('seatingChartView');
+        if (view) view.dataset.aislePaint = 'true';
+
+        const banner = document.getElementById('scAislePaintBanner');
+        if (banner) {
+            banner.hidden = false;
+            banner.classList.add('visible');
+        }
+
+        if (!HistoryManager.isOpen('scAislePaint')) {
+            HistoryManager.pushState('scAislePaint', () => this._exitAislePaintMode({ causedByHistory: true }));
+        }
+    },
+
+    _exitAislePaintMode({ causedByHistory = false } = {}) {
+        this._finishAislePaintStroke();
+        const wasActive = Boolean(this._isAislePaintMode);
+
+        this._isAislePaintMode = false;
+
+        const view = document.getElementById('seatingChartView');
+        if (view) delete view.dataset.aislePaint;
+
+        const banner = document.getElementById('scAislePaintBanner');
+        if (banner) {
+            banner.classList.remove('visible');
+            banner.hidden = true;
+        }
+
+        if (wasActive && !causedByHistory && HistoryManager.isOpen('scAislePaint')) {
+            HistoryManager.handleManualClose('scAislePaint');
+        }
+    },
+
+    _startAislePaintStroke(cell, pointerId = null) {
+        if (!this._isAislePaintMode || this._isLocked || !cell) return;
+        const r = parseInt(cell.dataset.row, 10);
+        const c = parseInt(cell.dataset.col, 10);
+        if (Number.isNaN(r) || Number.isNaN(c)) return;
+
+        const special = this._getCellSpecial(r, c);
+        this._aislePaintPointerId = pointerId;
+        this._aislePaintAction = special?.type === 'aisle' ? null : 'aisle';
+        this._aislePaintTouchedKeys = new Set();
+        this._aislePaintHasMutated = false;
+        this._applyAislePaintCell(cell, r, c);
+    },
+
+    _continueAislePaintStroke(cell) {
+        if (!this._isAislePaintMode || this._isLocked || !this._aislePaintTouchedKeys || !cell) return;
+        const r = parseInt(cell.dataset.row, 10);
+        const c = parseInt(cell.dataset.col, 10);
+        if (Number.isNaN(r) || Number.isNaN(c)) return;
+        this._applyAislePaintCell(cell, r, c);
+    },
+
+    _applyAislePaintCell(cell, r, c) {
+        const key = `${r},${c}`;
+        if (this._aislePaintTouchedKeys?.has(key)) return;
+        this._aislePaintTouchedKeys?.add(key);
+
+        if (this._getCellStudentIds(r, c).length > 0) return;
+        const special = this._getCellSpecial(r, c);
+        if (special && special.type !== 'aisle') return;
+
+        const targetIsAisle = this._aislePaintAction === 'aisle';
+        const currentlyIsAisle = special?.type === 'aisle';
+        if (targetIsAisle === currentlyIsAisle) return;
+
+        if (!this._aislePaintHasMutated) {
+            this._snapshotGrid();
+            this._aislePaintHasMutated = true;
+        }
+
+        const gridKey = this._getActiveGridKey();
+        if (!appState[gridKey]) {
+            appState[gridKey] = {
+                rows: this._getRows(),
+                cols: this._getCols(),
+                locked: this._isLocked,
+                roomConfigured: true,
+                specialLayout: {}
+            };
+        }
+        if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
+        appState[gridKey].roomConfigured = true;
+
+        if (targetIsAisle) {
+            appState[gridKey].specialLayout[key] = 'aisle';
+            cell.classList.add('sc-cell-special-aisle', 'sc-cell-scope-global');
+        } else {
+            delete appState[gridKey].specialLayout[key];
+            cell.classList.remove('sc-cell-special-aisle', 'sc-cell-scope-global');
+        }
+    },
+
+    _finishAislePaintStroke() {
+        const hadMutation = Boolean(this._aislePaintHasMutated);
+        this._aislePaintPointerId = null;
+        this._aislePaintAction = null;
+        this._aislePaintTouchedKeys = null;
+        this._aislePaintHasMutated = false;
+
+        if (hadMutation) {
+            this._commitSpecialLayoutChange(this._getCurrentClass());
+            this._haptic(8);
         }
     }
 };

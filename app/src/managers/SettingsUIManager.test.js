@@ -253,47 +253,6 @@ describe('SettingsUIManager', () => {
             expect(appState.evolutionThresholds.veryNegative).toBe(-1.6);
         });
 
-        it('should sync seatingStatusDots from DOM, toggle .active classes and avoid duplicate event on saveSettings', () => {
-            const selector = document.createElement('div');
-            selector.id = 'seatingStatusDotsSelector';
-            selector.innerHTML = `
-                <label class="seating-dot-option active"><input type="checkbox" data-dot-category="movements" checked></label>
-                <label class="seating-dot-option"><input type="checkbox" data-dot-category="devices" checked></label>
-                <label class="seating-dot-option active"><input type="checkbox" data-dot-category="delegates"></label>
-            `;
-            document.body.appendChild(selector);
-
-            const events = [];
-            const unsubscribe = bus.on(EVENTS.APP_SETTINGS_CHANGED, (data) => events.push(data));
-
-            try {
-                appState.seatingStatusDots = { movements: true, devices: false, delegates: true };
-                const movCb = selector.querySelector('[data-dot-category="movements"]');
-                movCb.checked = false;
-
-                SettingsUIManager.syncSeatingStatusDotsFromDOM();
-
-                expect(appState.seatingStatusDots).toEqual({ movements: false, devices: true, delegates: false });
-                expect(movCb.closest('.seating-dot-option').classList.contains('active')).toBe(false);
-                expect(selector.querySelector('[data-dot-category="devices"]').closest('.seating-dot-option').classList.contains('active')).toBe(true);
-                expect(events.length).toBe(1);
-
-                // saveSettings() ne doit émettre qu'un seul événement APP_SETTINGS_CHANGED
-                events.length = 0;
-                SettingsUIManager.saveSettings(false);
-                expect(events.length).toBe(1);
-            } finally {
-                unsubscribe();
-                selector.remove();
-            }
-        });
-
-        it('should safely no-op syncSeatingStatusDotsFromDOM when selector is absent', () => {
-            appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
-            expect(() => SettingsUIManager.syncSeatingStatusDotsFromDOM()).not.toThrow();
-            expect(appState.seatingStatusDots).toEqual({ movements: true, devices: false, delegates: false });
-        });
-
         it('should call StorageManager.saveAppState', () => {
             SettingsUIManager.saveSettings();
 

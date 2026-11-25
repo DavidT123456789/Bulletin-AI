@@ -157,6 +157,10 @@
                                 <textarea id="classNoteTextarea" class="class-note-textarea" rows="3" maxlength="400"
                                     placeholder="Où vous êtes-vous arrêté ? (ex. Ch. 3 act. 2 finie, interro à faire rattraper à Thomas…)"></textarea>
                             </div>
+                            <div class="class-note-popover-footer">
+                                <iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon>
+                                <span>Pense-bête personnel · Non transmis à l'IA</span>
+                            </div>
                         </div>
                         <div id="classDropdown" class="class-dropdown" style="display: none;">
                             <div class="class-dropdown-header">
@@ -287,12 +291,12 @@
                                 </button>
                                 <div id="cloudSeparator" class="menu-separator"></div>
                                 <button type="button" id="cloudConnectBtn" class="menu-item cloud-connect-item tooltip"
-                                    style="display: none;" data-tooltip="Sauvegardez vos données dans votre espace personnel pour ne jamais les perdre et y accéder partout.">
+                                    style="display: none;" data-tooltip="Sauvegarder vos classes sur votre Google Drive privé">
                                     <iconify-icon icon="logos:google-drive"></iconify-icon>
                                     <span>Connecter Google Drive</span>
                                 </button>
                                 <button type="button" id="cloudSaveMenuBtn" class="menu-item cloud-save-menu-item tooltip"
-                                    style="display: none;" data-tooltip="Envoyer vos données vers le Cloud">
+                                    style="display: none;" data-tooltip="Envoyer vos données sur Google Drive">
                                     <iconify-icon icon="lucide:cloud-upload"></iconify-icon>
                                     <div class="cloud-btn-content">
                                         <span class="cloud-save-label">Sauvegarder</span>
@@ -300,7 +304,7 @@
                                     </div>
                                 </button>
                                 <button type="button" id="cloudLoadMenuBtn" class="menu-item cloud-save-menu-item tooltip"
-                                    style="display: none;" data-tooltip="Récupérer vos données depuis le Cloud">
+                                    style="display: none;" data-tooltip="Récupérer vos données depuis Google Drive">
                                     <iconify-icon icon="lucide:cloud-download"></iconify-icon>
                                     <div class="cloud-btn-content">
                                         <span class="cloud-save-label">Restaurer</span>
@@ -381,7 +385,7 @@
                                     <span class="detail-label">Min</span>
                                 </div>
                                 <div class="detail-item tooltip"
-                                    data-tooltip="Valeur centrale : 50% des élèves sont au-dessus">
+                                    data-tooltip="Valeur centrale : 50 % des élèves sont au-dessus">
                                     <span class="detail-value" id="medianGradeOutput">--</span>
                                     <span class="detail-label">Médiane</span>
                                 </div>
@@ -903,7 +907,7 @@
                                     </button>
 
                                     <button type="button" id="focusHistoryNextBtn" class="history-nav-btn disabled tooltip"
-                                        data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" aria-label="Version suivante" aria-disabled="true">
+                                        data-tooltip="Version suivante (Ctrl+Y)" aria-label="Version suivante" aria-disabled="true">
                                         <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
                                     </button>
                                 </div>
@@ -923,19 +927,19 @@
                         <!-- Refinement style buttons -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
-                                data-tooltip="Raccourcir et aller à l'essentiel · Clic droit : aperçu">
+                                data-tooltip="Raccourcir et aller à l'essentiel">
                                 <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
                             </button>
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
-                                data-tooltip="Ton plus bienveillant et valorisant · Clic droit : aperçu">
+                                data-tooltip="Ton plus bienveillant et valorisant">
                                 <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                             </button>
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="demanding"
-                                data-tooltip="Ton plus ferme et exigeant · Clic droit : aperçu">
+                                data-tooltip="Ton plus ferme et exigeant">
                                 <iconify-icon icon="solar:target-linear"></iconify-icon> Exigeante
                             </button>
                             <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
-                                data-tooltip="Corriger et fluidifier la rédaction · Clic droit : aperçu">
+                                data-tooltip="Corriger et fluidifier la rédaction">
                                 <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
                             </button>
                         </div>
@@ -1135,7 +1139,7 @@
                                 <iconify-icon icon="solar:import-linear"></iconify-icon>
                                 Sources acceptées
                             </div>
-                            <p class="guide-text">PDF (Pronote, MBN), fichier CSV ou copier-coller (Excel, Pronote).</p>
+                            <p class="guide-text">PDF Bulletins (Pronote › Saisie des appréciations, MBN), CSV ou copier-coller (Excel, Pronote).</p>
                             <button type="button" class="help-context-trigger" data-action="open-help" data-target-tab="help-data" data-target-section="help-faq-import">
                                 <iconify-icon icon="solar:question-circle-linear"></iconify-icon>
                                 Fichier non reconnu ? Aide
@@ -1409,7 +1413,7 @@
                 </div>
 
                 <!-- Mass Import Card -->
-                <div class="import-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, notes et bilans depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
+                <div class="import-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, moyennes et bilans de bulletins depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                     </div>
@@ -1883,7 +1887,8 @@
                                 Guide
                             </button>
                             <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
-                                class="ui-tabs-action-btn" id="settingsSidebarKofiLink" data-kofi-link>
+                                class="ui-tabs-action-btn tooltip" id="settingsSidebarKofiLink" data-kofi-link
+                                data-tooltip="Don libre reversé directement à l'enseignant créateur (0 % de commission Ko-fi)">
                                 <iconify-icon class="iconify-inline" icon="solar:cup-hot-linear"></iconify-icon>
                                 Soutenir le projet
                             </a>
@@ -2100,7 +2105,7 @@
                                                 <iconify-icon icon="solar:tuning-2-linear" aria-hidden="true"></iconify-icon>
                                                 <span class="advanced-providers-toggle-texts">
                                                     <span class="advanced-providers-toggle-title">Autres moteurs &amp; IA locale</span>
-                                                    <span class="advanced-providers-subtitle">Anthropic, Mistral, OpenAI, OpenRouter, Ollama</span>
+                                                    <span class="advanced-providers-subtitle">Claude, Mistral, OpenAI, OpenRouter (crédits API distincts d'un abonnement chat) · Ollama (local)</span>
                                                 </span>
                                             </span>
                                             <span class="advanced-providers-toggle-right">
@@ -2524,7 +2529,7 @@
                                                 </span>
                                             </label>
                                             <span class="settings-row-desc">
-                                                Active par défaut : remplace le prénom des élèves par une balise neutre <code>[PRÉNOM]</code> avant tout envoi à l'IA et réinjecte le vrai prénom localement au retour (désactivez si vous préférez conserver le prénom pour varier les tournures). Le nom de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont <strong>jamais</strong> transmis.
+                                                Activée par défaut (conseillé) : remplace le prénom par <code>[PRÉNOM]</code> avant l'envoi à l'IA, accorde automatiquement le genre et les élisions françaises (<em>d'Inès</em>) au retour, et ne nécessite d'être désactivée que pour un prénom rare non reconnu. Noms de famille, photos et statuts médico-scolaires (PAI, ULIS, PAP…) ne sont <strong>jamais</strong> transmis.
                                             </span>
                                         </div>
                                         <div class="settings-row-control">
@@ -2751,7 +2756,8 @@
                                 Assistant d'accueil
                             </button>
                             <a href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
-                                class="ui-tabs-action-btn" id="helpSidebarKofiLink" data-kofi-link>
+                                class="ui-tabs-action-btn tooltip" id="helpSidebarKofiLink" data-kofi-link
+                                data-tooltip="Don libre reversé directement à l'enseignant créateur (0 % de commission Ko-fi)">
                                 <iconify-icon class="iconify-inline" icon="solar:cup-hot-linear"></iconify-icon>
                                 Soutenir le projet
                             </a>
@@ -2808,7 +2814,7 @@
                                                 </div>
                                             </div>
                                             <div class="help-step-footer-row">
-                                                <p class="help-step-inline-desc">Glissez un relevé de notes ou trombinoscope PDF : élèves, moyennes et visages sont associés sans écraser&nbsp;l'existant.</p>
+                                                <p class="help-step-inline-desc">Glissez le PDF <strong>Bulletins › Saisie des appréciations</strong> (Pronote / MBN) ou un trombinoscope PDF : élèves, moyennes et visages sont associés sans écraser l'existant.</p>
                                                 <div class="help-btn-row">
                                                     <button type="button" class="btn btn-secondary btn-small" data-action="open-trombi-wizard">
                                                         <iconify-icon class="iconify-inline" icon="solar:camera-linear"></iconify-icon>
@@ -2956,8 +2962,8 @@
                                 <div class="help-pillar-card">
                                     <div class="help-pillar-icon is-amber"><iconify-icon icon="solar:notebook-bold"></iconify-icon></div>
                                     <div class="help-pillar-body">
-                                        <h4>Journal de bord (+/−)</h4>
-                                        <p>Notez les faits marquants du trimestre : l'IA les intègre selon votre seuil.</p>
+                                        <h4>Journal (+/−) &amp; Mémo</h4>
+                                        <p>Le <strong>Journal</strong> par élève nourrit l'IA ; le <strong>Mémo</strong> <iconify-icon icon="solar:bookmark-linear" class="iconify-inline" aria-hidden="true"></iconify-icon> en haut d'écran reste votre pense-bête personnel (non envoyé à l'IA).</p>
                                     </div>
                                 </div>
 
@@ -3066,8 +3072,8 @@
                                     <div class="help-seating-card-top">
                                         <div class="help-feature-icon"><iconify-icon icon="solar:streets-map-point-bold"></iconify-icon></div>
                                         <div>
-                                            <h4>Plan de classe & Mode Activité</h4>
-                                            <p><strong>Cours & Activité :</strong> placez vos élèves en classe ou formez des binômes/groupes (2 à 4 par poste), épinglez les places fixes.</p>
+                                            <h4>Plan de classe &amp; Mode Activité</h4>
+                                            <p><strong>Cours :</strong> modèle <em>En U</em> ou rangées, tracé libre d'allées en 1 glisser et places fixes épinglées. <strong>Activité :</strong> binômes ou îlots de 2 à 4 élèves (aléatoires, équilibrés par niveau ou voisins du cours).</p>
                                             <p><strong>Consultation :</strong> un clic sur un élève ouvre sa fiche (appréciation, notes et Journal <span class="help-nowrap">(+/−)</span>).</p>
                                         </div>
                                     </div>
@@ -3125,12 +3131,12 @@
                                     </div>
                                 </div>
 
-                                <!-- FAQ 2 : Erreur 429 / Quota dépassé -->
+                                <!-- FAQ 2 : Choix d'IA & Quota dépassé -->
                                 <div class="help-accordion" id="help-faq-quota" data-faq-accent="amber">
                                     <button type="button" class="help-accordion-trigger" id="help-faq-quota-trigger" aria-expanded="false" aria-controls="help-faq-quota-panel">
                                         <span class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:bolt-bold" aria-hidden="true"></iconify-icon>
-                                            <span>Erreur 429 « Quota dépassé » ou lenteur de l'IA : que faire ?</span>
+                                            <span>Quelle IA choisir (Albert, Gemini, Claude…) et comment éviter « Quota dépassé » ?</span>
                                         </span>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
                                     </button>
@@ -3138,12 +3144,13 @@
                                         <div class="help-accordion-panel-inner">
                                             <div class="help-accordion-body">
                                                 <ul class="help-detail-list">
-                                                    <li><strong>Relais automatique :</strong> Ajoutez une clé gratuite <strong>Albert API (ProConnect)</strong> ou <strong>Groq Cloud</strong> et activez <em>Relais automatique</em> pour basculer sans coupure, ou changez de modèle dans l'en-tête.</li>
-                                                    <li><strong>100 % hors-ligne :</strong> Utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
+                                                    <li><strong>100 % gratuits sans carte bancaire :</strong> <strong>Albert API</strong> (recommandé Éducation nationale via ProConnect), <strong>Google Gemini</strong> (très fluide en français) et <strong>Groq Cloud</strong> (ultra-rapide). Activez le <em>Relais automatique</em> avec deux clés pour basculer sans erreur 429.</li>
+                                                    <li><strong>Claude, Mistral, OpenAI :</strong> utilisent des <em>crédits API prépayés</em> distincts d'un abonnement grand public (ChatGPT Plus / Claude Pro).</li>
+                                                    <li><strong>100 % hors-ligne :</strong> utilisez <strong>Ollama</strong> en local sur votre ordinateur sans aucune limite de quota.</li>
                                                 </ul>
                                                 <div class="help-btn-row">
                                                     <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-engine" data-target-element="apiStatusSummary">
-                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer l'IA & le Relais
+                                                        <iconify-icon class="iconify-inline" icon="solar:settings-linear"></iconify-icon> Configurer l'IA &amp; le Relais
                                                     </button>
                                                 </div>
                                             </div>
@@ -3172,12 +3179,12 @@
                                     </div>
                                 </div>
 
-                                <!-- FAQ 4 : Import non reconnu -->
+                                <!-- FAQ 4 : Import Bulletins vs Évaluations -->
                                 <div class="help-accordion" id="help-faq-import" data-faq-accent="sky">
                                     <button type="button" class="help-accordion-trigger" id="help-faq-import-trigger" aria-expanded="false" aria-controls="help-faq-import-panel">
                                         <span class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:file-check-bold" aria-hidden="true"></iconify-icon>
-                                            <span>Mon fichier PDF, CSV ou tableau collé est mal découpé à l'import</span>
+                                            <span>Quel fichier Pronote / ENT importer (Bulletins vs Évaluations) ?</span>
                                         </span>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
                                     </button>
@@ -3185,8 +3192,8 @@
                                         <div class="help-accordion-panel-inner">
                                             <div class="help-accordion-body">
                                                 <ul class="help-detail-list">
-                                                    <li><strong>CSV ou tableau collé :</strong> À l'étape 2 (<em>Mapping</em>), changez le <strong>Séparateur</strong> (Tabulation, Point-virgule, Virgule).</li>
-                                                    <li><strong>PDF ou Excel (.xlsx) :</strong> Seuls les PDF texte (Pronote, MBN) sont lus directement. Depuis Excel ou un autre ENT, copiez vos lignes (<kbd class="help-kbd-badge">Ctrl+C</kbd>) et collez-les dans l'Assistant.</li>
+                                                    <li><strong>Pour les bulletins :</strong> Exportez le PDF depuis <strong>Pronote › Bulletins › Saisie des appréciations</strong> (ou <em>Bilan</em> MBN), pas le relevé détaillé de chaque devoir. La moyenne générale suffit au T1 ; les appréciations passées ne servent qu'au T2/T3 pour assurer la continuité.</li>
+                                                    <li><strong>CSV ou tableau collé :</strong> À l'étape 2 (<em>Mapping</em>), changez le <strong>Séparateur</strong> (Tabulation, Point-virgule, Virgule). Depuis Excel (<code>.xlsx</code>), copiez-collez directement vos lignes (<kbd class="help-kbd-badge">Ctrl+C</kbd>).</li>
                                                 </ul>
                                                 <div class="help-btn-row">
                                                     <button type="button" class="btn btn-secondary btn-small" data-action="open-import-wizard">
@@ -3203,7 +3210,7 @@
                                     <button type="button" class="help-accordion-trigger" id="help-faq-privacy-trigger" aria-expanded="false" aria-controls="help-faq-privacy-panel">
                                         <span class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="solar:shield-check-bold" aria-hidden="true"></iconify-icon>
-                                            <span>Quelles données sont envoyées à l'IA ? (Confidentialité & RGPD)</span>
+                                            <span>Pseudonymiser les prénoms &amp; confidentialité (RGPD) : que faut-il choisir ?</span>
                                         </span>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
                                     </button>
@@ -3211,20 +3218,20 @@
                                         <div class="help-accordion-panel-inner">
                                             <div class="help-accordion-body">
                                                 <ul class="help-detail-list">
-                                                    <li><strong>Pseudonymisation par défaut :</strong> Les noms de famille, les photos et les acronymes médico-scolaires (PAI, ULIS, PAP…) ne sont jamais transmis aux modèles d'IA (les statuts sont traduits localement en consignes pédagogiques neutres et les prénoms sont remplacés par <code>[PRÉNOM]</code> par défaut).</li>
-                                                    <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes restent dans la base locale de votre navigateur (IndexedDB) et, en option, sur votre propre Google Drive (sans vos clés API). Pour un traitement 100 % souverain ou hors-ligne, privilégiez <strong>Albert API (DINUM / ProConnect)</strong> ou <em>Ollama</em> (et désactivez le <em>Relais automatique</em> si d'autres clés non européennes sont enregistrées).</li>
+                                                    <li><strong>Laissez la pseudonymisation activée :</strong> Elle remplace le prénom par <code>[PRÉNOM]</code> tout en gérant automatiquement le genre grammatical et les élisions (<em>d'Inès</em>). Ne la désactivez que pour un prénom rare dont le genre ne serait pas reconnu. Les noms de famille, photos et dispositifs (PAI, ULIS, PAP…) ne sont jamais transmis.</li>
+                                                    <li><strong>Stockage local &amp; souveraineté :</strong> Vos classes restent dans votre navigateur (IndexedDB) et, en option, sur votre Google Drive privé (sans vos clés API). Pour un traitement 100 % souverain ou hors-ligne, privilégiez <strong>Albert API (ProConnect)</strong> ou <em>Ollama</em>.</li>
                                                 </ul>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- FAQ 6 : Sauvegardes & Changement de PC -->
+                                <!-- FAQ 6 : Multi-ordinateurs & Sauvegardes -->
                                 <div class="help-accordion" id="help-faq-backup" data-faq-accent="violet">
                                     <button type="button" class="help-accordion-trigger" id="help-faq-backup-trigger" aria-expanded="false" aria-controls="help-faq-backup-panel">
                                         <span class="help-accordion-title">
                                             <iconify-icon class="help-accordion-icon" icon="lucide:cloud-upload" aria-hidden="true"></iconify-icon>
-                                            <span>Sauvegarder mes classes ou changer d'ordinateur</span>
+                                            <span>Ouvrir l'application sur plusieurs ordinateurs ou sauvegarder mes classes</span>
                                         </span>
                                         <iconify-icon class="help-accordion-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
                                     </button>
@@ -3232,8 +3239,8 @@
                                         <div class="help-accordion-panel-inner">
                                             <div class="help-accordion-body">
                                                 <ul class="help-detail-list">
-                                                    <li><strong>Google Drive privé :</strong> Synchronisez vos classes en 1 clic sur votre propre Drive pour passer d'un poste à l'autre.</li>
-                                                    <li><strong>Archive JSON :</strong> Vos classes restant dans ce navigateur, exportez une sauvegarde sur clé USB depuis <em>Paramètres &gt; Données</em> avant de changer d'appareil.</li>
+                                                    <li><strong>Entre vos postes personnels (Google Drive privé) :</strong> Sur le <em>Poste 1</em>, cliquez sur <strong>Sauvegarder</strong> dans <em>Paramètres &gt; Données</em>. Sur le <em>Poste 2</em>, connectez le même compte Google et cliquez sur <strong>Restaurer</strong> (dès l'écran d'accueil si besoin).</li>
+                                                    <li><strong>PC partagé (salle des profs) :</strong> Préférez <strong>Exporter / Importer</strong> une archive <code>.json</code> sur clé USB (aucun compte Google laissé connecté). Vos clés API restent locales à chaque poste par sécurité.</li>
                                                 </ul>
                                                 <div class="help-btn-row">
                                                     <button type="button" class="btn btn-secondary btn-small" data-action="open-settings-tab" data-target-tab="settings-data" data-target-element="backupSection">
@@ -3357,7 +3364,7 @@
                                         <iconify-icon class="iconify-inline" icon="solar:heart-bold"></iconify-icon> Soutenir le projet
                                     </h4>
                                     <p>
-                                        Bulletin AI est un outil indépendant développé bénévolement sur mon temps libre. Si l'application vous fait gagner de précieuses heures à chaque fin de trimestre, vous pouvez soutenir son développement et son hébergement en offrant un café !
+                                        Bulletin AI est 100&nbsp;% gratuit, sans publicité ni compte payant. Développé bénévolement sur mon temps libre par un enseignant, chaque café offert sur Ko-fi (<strong>0&nbsp;% de commission plateforme</strong>, don libre sans abonnement) soutient directement l'auteur et l'hébergement du projet.
                                     </p>
                                 </div>
                                 <a id="linkKofi" href="https://ko-fi.com/profassistant" target="_blank" rel="noopener noreferrer"
@@ -3395,13 +3402,17 @@
                         <img src="./assets/logo.png?v=2" alt="Bulletin AI" class="welcome-app-logo" width="76" height="76">
                         <h3 class="welcome-title-premium">Bienvenue sur Bulletin AI</h3>
                         <p class="welcome-subtitle-premium">Prenez quelques instants pour configurer votre espace.</p>
+                        <button type="button" class="welcome-restore-link" id="welcomeRestoreBtn">
+                            <iconify-icon icon="lucide:cloud-download" aria-hidden="true"></iconify-icon>
+                            <span>Déjà utilisé sur un autre ordinateur ? Restaurer mes données</span>
+                        </button>
                     </div>
                 </div>
                 <div id="welcome-step-2" class="welcome-step">
                     <div class="welcome-step-header">
                         <h3 class="welcome-title-premium">Activez votre Assistant</h3>
                         <p class="welcome-subtitle-premium">
-                            Connectez <strong>Albert</strong> (ProConnect) ou un moteur ci&#8209;dessous. Ollama et d'autres options sont dans les Paramètres.
+                            Choisissez un moteur <strong>100&nbsp;% gratuit et sans carte bancaire</strong>. Claude, Mistral, OpenAI et Ollama sont dans les Paramètres.
                         </p>
                     </div>
 
@@ -3419,11 +3430,6 @@
                                     <iconify-icon class="iconify-inline provider-google" icon="logos:google-icon"></iconify-icon>
                                     <span>Gemini</span>
                                 </label>
-                                <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
-                                <label for="providerMistral" class="ui-segment">
-                                    <iconify-icon class="iconify-inline provider-mistral" icon="solar:cat-bold"></iconify-icon>
-                                    <span>Mistral</span>
-                                </label>
                                 <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
                                 <label for="providerGroq" class="ui-segment">
                                     <iconify-icon class="iconify-inline provider-groq" icon="solar:bolt-circle-bold"></iconify-icon>
@@ -3431,6 +3437,7 @@
                                 </label>
                             </div>
                         </div>
+                        <p class="welcome-provider-hint" id="welcomeProviderHint">Recommandé Éducation nationale · Gratuit &amp; souverain via ProConnect</p>
 
                         <div class="welcome-api-key-group">
                             <div class="api-key-input-container">
@@ -3956,7 +3963,7 @@
                     <p>Saisie manuelle</p>
                 </div>
             </div>
-            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, notes et bilans depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
+            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, moyennes et bilans de bulletins depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                 </div>
@@ -3965,7 +3972,7 @@
                     <p>PDF, CSV ou copier-coller</p>
                 </div>
             </div>
-            <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Créez la classe et associez les photos de vos élèves depuis un PDF Pronote ou une photo de classe">
+            <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Importez vos élèves et associez leurs photos depuis un PDF Pronote ou une photo de classe">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:camera-linear"></iconify-icon>
                 </div>
@@ -4068,19 +4075,19 @@
                         <div class="ai-refinement-toolbar" id="aiRefinementToolbar" style="display: none;" role="group" aria-label="Retouches rapides de l'appréciation de classe">
                             <div class="refinement-pills-group">
                                 <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="concise"
-                                    data-tooltip="Condenser en 1 à 2 phrases · Clic droit : aperçu">
+                                    data-tooltip="Condenser en 1 à 2 phrases">
                                     <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
                                 </button>
                                 <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="encouraging"
-                                    data-tooltip="Ton plus bienveillant et valorisant · Clic droit : aperçu">
+                                    data-tooltip="Ton plus bienveillant et valorisant">
                                     <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
                                 </button>
                                 <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="demanding"
-                                    data-tooltip="Ton plus ferme et exigeant · Clic droit : aperçu">
+                                    data-tooltip="Ton plus ferme et exigeant">
                                     <iconify-icon icon="solar:target-linear"></iconify-icon> Exigeante
                                 </button>
                                 <button type="button" class="btn btn-ai-outline btn-tiny btn-refinement tooltip" data-refine-type="polish"
-                                    data-tooltip="Corriger et fluidifier la rédaction · Clic droit : aperçu">
+                                    data-tooltip="Corriger et fluidifier la rédaction">
                                     <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
                                 </button>
                             </div>

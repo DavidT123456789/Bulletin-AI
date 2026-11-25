@@ -15,6 +15,9 @@ vi.mock('../utils/DOM', () => {
             DOM: {
                 welcomeModal: createElement(),
                 closeWelcomeModalBtn: createElement(),
+                welcomeRestoreBtn: document.createElement('button'),
+                welcomeProviderHint: createElement(),
+                settingsModal: createElement(),
                 welcomeDots: { querySelectorAll: vi.fn(() => [{ classList: { toggle: vi.fn() } }]) },
                 welcomePrevBtn: createElement(),
                 welcomeNextBtn: Object.assign(createElement(), { disabled: false }),
@@ -39,7 +42,8 @@ vi.mock('./UIManager', () => ({
         updatePeriodSystemUI: vi.fn(),
         updateGenerateButtonState: vi.fn(),
         updateHeaderPremiumLook: vi.fn(),
-        updateStats: vi.fn()
+        updateStats: vi.fn(),
+        highlightSettingsElement: vi.fn()
     }
 }));
 
@@ -95,15 +99,16 @@ describe('WelcomeManager', () => {
         appState.generatedResults = [];
 
         document.body.innerHTML = `
-            <div id="welcome-step-1" class="welcome-step active"></div>
+            <div id="welcome-step-1" class="welcome-step active">
+                <button type="button" id="welcomeRestoreBtn">Restaurer mes données</button>
+            </div>
             <div id="welcome-step-2" class="welcome-step">
                 <div id="welcomeProviderSelector">
                     <input type="radio" id="providerAlbert" name="welcomeProvider" value="albert" checked>
                     <input type="radio" id="providerGoogle" name="welcomeProvider" value="google">
                     <input type="radio" id="providerGroq" name="welcomeProvider" value="groq">
-                    <input type="radio" id="providerMistral" name="welcomeProvider" value="mistral">
-                    <input type="radio" id="providerOpenRouter" name="welcomeProvider" value="openrouter">
                 </div>
+                <p id="welcomeProviderHint"></p>
                 <a id="welcomeGetKeyLink" href=""></a>
             </div>
             <div id="welcome-step-3" class="welcome-step">
@@ -392,26 +397,64 @@ describe('WelcomeManager', () => {
             DOM.welcomeApiKeyError.style.display = 'block';
             DOM.welcomeApiKeyError.textContent = 'Clé invalide';
 
-            // Switching to Mistral clears the stale error and keeps Valider disabled on empty field
-            const mistralRadio = document.getElementById('providerMistral');
-            mistralRadio.checked = true;
-            mistralRadio.dispatchEvent(new Event('change', { bubbles: true }));
+            // Switching to Gemini clears the stale error, updates hint and keeps Valider disabled on empty field
+            const googleRadio = document.getElementById('providerGoogle');
+            googleRadio.checked = true;
+            googleRadio.dispatchEvent(new Event('change', { bubbles: true }));
 
             expect(DOM.welcomeApiKeyError.style.display).toBe('none');
             expect(DOM.welcomeApiKeyError.textContent).toBe('');
+            expect(DOM.welcomeProviderHint.textContent).toContain('sans CB');
             expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(true);
+
+            // Switching to Groq updates hint as well
+            const groqRadio = document.getElementById('providerGroq');
+            groqRadio.checked = true;
+            groqRadio.dispatchEvent(new Event('change', { bubbles: true }));
+            expect(DOM.welcomeProviderHint.textContent).toContain('Ultra-rapide');
 
             // Simulate another error, then type in input -> error clears and button becomes ready
             DOM.welcomeApiKeyError.style.display = 'block';
             DOM.welcomeApiKeyError.textContent = 'Erreur réseau';
 
-            DOM.welcomeApiKeyInput.value = 'mistral-key-123';
+            DOM.welcomeApiKeyInput.value = 'gsk_test-key-123';
             DOM.welcomeApiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
 
             expect(DOM.welcomeApiKeyError.style.display).toBe('none');
             expect(DOM.welcomeApiKeyError.textContent).toBe('');
             expect(DOM.welcomeValidateApiKeyBtn.disabled).toBe(false);
             expect(DOM.welcomeValidateApiKeyBtn.classList.contains('ready')).toBe(true);
+        });
+
+        it('should open Data settings via direct modal handoff without demo class injection when clicking welcomeRestoreBtn, and hide it only when a non-demo class exists', async () => {
+            const { DOM } = await import('../utils/DOM');
+            const { UI } = await import('./UIManager');
+            const { ClassManager } = await import('./ClassManager');
+
+            // Case 1: Only a demo class exists -> button stays visible
+            ClassManager.getAllClasses.mockReturnValue([{ id: 'demo_1', isDemo: true }]);
+            WelcomeManager.setupWelcomeModal();
+            expect(DOM.welcomeRestoreBtn.hidden).toBe(false);
+
+            // Case 2: A real user class exists -> button is hidden on relaunch
+            ClassManager.getAllClasses.mockReturnValue([{ id: 'c_real', isDemo: false }]);
+            WelcomeManager.setupWelcomeModal();
+            expect(DOM.welcomeRestoreBtn.hidden).toBe(true);
+
+            // Case 3: First visit (no classes) -> click triggers direct handoff to Settings > Data
+            ClassManager.getAllClasses.mockReturnValue([]);
+            WelcomeManager.setupWelcomeModal();
+            expect(DOM.welcomeRestoreBtn.hidden).toBe(false);
+            DOM.welcomeRestoreBtn.click();
+
+            expect(localStorage.getItem(CONFIG.LS_FIRST_VISIT_KEY)).toBe('true');
+            expect(ClassManager.createClass).not.toHaveBeenCalled();
+            expect(UI.openModal).toHaveBeenCalledWith(DOM.settingsModal);
+            expect(UI.closeModal).not.toHaveBeenCalled();
+            expect(UI.highlightSettingsElement).toHaveBeenCalledWith('cloudSyncCard', {
+                tab: 'settings-data',
+                parentSelector: null
+            });
         });
     });
 

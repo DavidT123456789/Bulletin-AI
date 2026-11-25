@@ -15,6 +15,7 @@ export const SeatingPrintExporter = {
     // ========================================================================
 
     _printChart() {
+        this._closeStatusDotsPopover?.();
         const classData = this._getCurrentClass() || appState.classes?.find(c => c.id === appState.currentClassId);
         const baseClassName = classData?.name || 'Plan de classe';
         const className = this._isVirtualClass(classData) ? `${baseClassName} (Reconstituée)` : baseClassName;

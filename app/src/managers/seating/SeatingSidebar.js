@@ -594,10 +594,7 @@ export const SeatingSidebar = {
                </div>`
             : filtered.map((s, index) => {
                 const badgeInfo = this._getStudentStatusBadgeInfo(s);
-                const badgeParts = badgeInfo ? badgeInfo.label.split(' • ') : [];
-                const chipBadgeLabel = badgeInfo
-                    ? (badgeParts.includes('ULIS') ? 'ULIS' : (badgeParts.includes('AESH') ? 'AESH' : badgeParts[0]))
-                    : '';
+                const chipBadgeLabel = this._getChipBadgeLabel(badgeInfo);
                 const chipBadgeHtml = badgeInfo
                     ? `<span class="sc-chip-badge sc-chip-badge-${badgeInfo.type}">${Utils.escapeHtml(chipBadgeLabel)}</span>`
                     : '';
@@ -639,7 +636,13 @@ export const SeatingSidebar = {
             </div>`
             : '';
 
-        list.innerHTML = activeListHtml + departedHtml;
+        const nextHtml = activeListHtml + departedHtml;
+        if (!isReset && !returningId && list.childElementCount > 0 && list._renderedHtml === nextHtml) {
+            this._applyChipSelectionUI();
+            return;
+        }
+        list._renderedHtml = nextHtml;
+        list.innerHTML = nextHtml;
         FocusPanelManager.bindScrollAffordances?.(list);
 
         const allVisible = [...filtered, ...filteredDeparted];

@@ -457,7 +457,7 @@ export const JournalManager = {
         const isolatedClass = isIsolated ? 'isolated' : '';
 
         const infoIcon = isIsolated
-            ? `<span class="journal-entry-info tooltip" data-tooltip="Tag isolé (&lt; ${threshold}×) — non transmis à l'IA (ajoutez une note ou répétez)"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
+            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (&lt; ${threshold}×) — non transmise à l'IA (ajoutez une note ou répétez)"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
             : '';
 
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));

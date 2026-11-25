@@ -201,7 +201,7 @@ export function buildStepperHTML({
                 <span class="history-count">0</span>
             </button>
             <button type="button" class="history-nav-btn disabled tooltip"${nextAttr}
-                data-tooltip="Version suivante (Ctrl+Y/Shift+Z)" aria-label="Version suivante" aria-disabled="true">
+                data-tooltip="Version suivante (Ctrl+Y)" aria-label="Version suivante" aria-disabled="true">
                 <iconify-icon icon="solar:alt-arrow-right-linear" aria-hidden="true"></iconify-icon>
             </button>
         </div>

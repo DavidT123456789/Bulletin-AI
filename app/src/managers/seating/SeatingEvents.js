@@ -7,7 +7,6 @@
 import { appState } from '../../state/State.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { StorageManager } from '../StorageManager.js';
-import { SettingsUIManager } from '../SettingsUIManager.js';
 import { UI } from '../UIManager.js';
 import { ClassUIManager } from '../ClassUIManager.js';
 import { ListSelectionManager } from '../list/ListSelectionManager.js';
@@ -47,7 +46,7 @@ export const SeatingEvents = {
                 this._isTouchActive = false;
                 this._isMousePointerActive = true;
                 this._lastTouchTime = 0;
-                if (e.button === 0 && !this._isLocked && !e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, button, input, textarea')) {
+                if (e.button === 0 && !this._isLocked && !this._isAislePaintMode && !e.target.closest?.('.sc-chip-profile-btn, .sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, button, input, textarea')) {
                     const dragTarget = e.target.closest?.('.sc-cell.occupied, .sc-cell.sc-cell-special-aesh, .sc-student-chip');
                     if (dragTarget && !dragTarget.classList.contains('pinned')) {
                         this._startMousePointerDrag(e, dragTarget);
@@ -230,6 +229,16 @@ export const SeatingEvents = {
         document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
+        document.getElementById('scFloatingDotsBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this._toggleStatusDotsPopover();
+        });
+        document.getElementById('scStatusDotsPopover')?.addEventListener('change', (e) => {
+            const cb = e.target?.closest?.('input[type="checkbox"][data-dot-category]');
+            if (!cb) return;
+            e.stopPropagation();
+            this._setStatusDot(cb.dataset.dotCategory, cb.checked);
+        });
 
         const randomReadout = document.getElementById('scRandomReadout');
         randomReadout?.addEventListener('mousedown', (e) => e.preventDefault());
@@ -258,6 +267,7 @@ export const SeatingEvents = {
         randomBtn?.addEventListener('mousedown', (e) => e.preventDefault());
         randomBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
+            this._closeStatusDotsPopover();
             this._drawNextRandomStudent?.();
         });
 
@@ -319,6 +329,16 @@ export const SeatingEvents = {
         }
 
         const gridArea = document.getElementById('scGridArea');
+        gridArea?.addEventListener('pointerdown', (e) => {
+            if (!this._isAislePaintMode || this._isLocked) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            const cell = e.target.closest?.('#scGridContainer .sc-cell');
+            if (!cell) return;
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+            this._startAislePaintStroke?.(cell, e.pointerId);
+        }, { passive: false });
+
         gridArea?.addEventListener('dblclick', (e) => {
             if (!e.target.closest('.sc-cell') && !e.target.closest('.sc-desk')) {
                 this._toggleZoom({ clientX: e.clientX, clientY: e.clientY });
@@ -467,6 +487,11 @@ export const SeatingEvents = {
         });
 
         document.getElementById('scConfigPopover')?.addEventListener('click', (e) => {
+            if (e.target.closest('#scPaintAislesBtn')) {
+                e.stopPropagation();
+                this._enterAislePaintMode?.();
+                return;
+            }
             const presetBtn = e.target.closest('.sc-config-preset-pill');
             if (presetBtn && presetBtn.dataset.preset) {
                 e.stopPropagation();
@@ -480,12 +505,9 @@ export const SeatingEvents = {
             }
         });
 
-        document.getElementById('scConfigPopover')?.addEventListener('change', (e) => {
-            const cb = e.target?.closest?.('input[type="checkbox"][data-dot-category]');
-            if (!cb) return;
+        document.getElementById('scAislePaintDoneBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            SettingsUIManager.syncSeatingStatusDotsFromDOM();
-            StorageManager.saveAppState();
+            this._exitAislePaintMode?.();
         });
 
         let isSliding = false;
@@ -530,7 +552,29 @@ export const SeatingEvents = {
             this._onGridConfigChange();
         });
 
-        window.addEventListener('pointerup', () => { isSliding = false; });
+        window.addEventListener('pointermove', (e) => {
+            if (!this._isAislePaintMode || this._aislePaintPointerId === null || e.pointerId !== this._aislePaintPointerId) return;
+            const targetEl = (typeof document.elementFromPoint === 'function'
+                ? document.elementFromPoint(e.clientX, e.clientY)
+                : null) || e.target;
+            const cell = targetEl?.closest?.('#scGridContainer .sc-cell');
+            if (cell) {
+                this._continueAislePaintStroke?.(cell);
+            }
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            isSliding = false;
+            if (this._isAislePaintMode && this._aislePaintPointerId !== null && e.pointerId === this._aislePaintPointerId) {
+                this._finishAislePaintStroke?.();
+            }
+        });
+
+        window.addEventListener('pointercancel', (e) => {
+            if (this._isAislePaintMode && this._aislePaintPointerId !== null && e.pointerId === this._aislePaintPointerId) {
+                this._finishAislePaintStroke?.();
+            }
+        });
 
         document.getElementById('scQuickGroupBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -734,6 +778,9 @@ export const SeatingEvents = {
                 if (this._configPopoverOpen && !e.target.closest('.sc-config-wrapper')) {
                     this._closeConfigPopover();
                 }
+                if (this._statusDotsPopoverOpen && !e.target.closest('#scStatusDotsPopover, #scFloatingDotsBtn')) {
+                    this._closeStatusDotsPopover();
+                }
                 if (this._placementPopoverOpen && !e.target.closest('.sc-placement-wrapper')) {
                     this._closePlacementPopover();
                 }
@@ -878,9 +925,11 @@ export const SeatingEvents = {
                 const hasBlockingOverlay = () => Boolean(
                     ClassUIManager?._isDropdownOpen ||
                     this._isSearchOpen() ||
+                    this._isAislePaintMode ||
                     this._activeMobileSheet ||
                     this._placementPopoverOpen ||
                     this._configPopoverOpen ||
+                    this._statusDotsPopoverOpen ||
                     document.querySelector('.custom-dropdown.open, #actionsDropdown.show, #headerGenWrapper.open, #headerMenuDropdown.open')
                 );
 
@@ -957,11 +1006,21 @@ export const SeatingEvents = {
                         this._handleSearchEscape();
                         return;
                     }
+                    if (this._isAislePaintMode) {
+                        e.preventDefault();
+                        this._exitAislePaintMode?.();
+                        return;
+                    }
                     if (this._activeMobileSheet) {
                         this._closeMobileSheet();
                     }
                     if (this._placementPopoverOpen) this._closePlacementPopover();
                     if (this._configPopoverOpen) this._closeConfigPopover();
+                    if (this._statusDotsPopoverOpen) {
+                        const hadFocusInside = Boolean(document.activeElement?.closest?.('#scStatusDotsPopover'));
+                        this._closeStatusDotsPopover();
+                        if (hadFocusInside) document.getElementById('scFloatingDotsBtn')?.focus();
+                    }
                     if (this._selectedChipIds.length > 0) this._clearSelection();
                     if (this._randomHistoryPopoverOpen) {
                         e.preventDefault();
@@ -977,7 +1036,15 @@ export const SeatingEvents = {
 
             bus.on(EVENTS.STUDENT_UPDATED, () => this.refreshStudents());
             bus.on(EVENTS.STUDENTS_UPDATED, () => this.refreshStudents());
-            bus.on(EVENTS.APP_SETTINGS_CHANGED, () => this.refreshStudents());
+            bus.on(EVENTS.APP_SETTINGS_CHANGED, (payload) => {
+                if (payload?.reason === 'seating-status-dots') {
+                    if (this._isActive) {
+                        this._refreshStatusDotsInPlace?.({ animate: true });
+                    }
+                    return;
+                }
+                this.refreshStudents();
+            });
             bus.on(EVENTS.PERIOD_CHANGED, () => this.refreshStudents());
         }
     }

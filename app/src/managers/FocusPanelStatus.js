@@ -649,8 +649,8 @@ export const FocusPanelStatus = {
         const isOver = limitState === 'over' && Boolean(maxChars);
         conciseBtn.classList.toggle('is-limit-recommended', isOver);
         const tooltipText = isOver
-            ? `Raccourcir sous la limite (${maxChars} car.) · Clic droit : aperçu`
-            : "Raccourcir et aller à l'essentiel · Clic droit : aperçu";
+            ? `Raccourcir sous la limite (${maxChars} car.)`
+            : "Raccourcir et aller à l'essentiel";
         if (conciseBtn.classList.contains('is-generating')) {
             conciseBtn.dataset.baseTooltip = tooltipText;
             return;

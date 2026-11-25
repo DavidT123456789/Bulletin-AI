@@ -512,6 +512,28 @@ export const PDF_PARSERS = [
 ];
 
 /**
+ * Détecte si un PDF ressemble à un relevé de notes / évaluations détaillées
+ * (et non à un bilan d'appréciations de bulletin Pronote / MBN).
+ * @param {string} rawData
+ * @returns {boolean}
+ */
+export function detectDetailedEvaluationsPdf(rawData) {
+    if (!rawData || typeof rawData !== 'string') return false;
+    if (detectMbnBilan(rawData) || detectPronoteReport(rawData)) return false;
+
+    const normalized = normalizeWhitespace(rawData);
+    const evalHeaderMarkers = /(?:relev[eé]\s+de\s+notes|tableau\s+des\s+notes|saisie\s+des\s+notes|liste\s+des\s+(?:[eé]valuations|devoirs)|d[eé]tail\s+des\s+devoirs|cahier\s+de\s+notes|notes\s+par\s+comp[eé]tence|[eé]valuations\s+de\s+la\s+p[eé]riode)/i;
+    const fractionGrades = normalized.match(/\b\d{1,2}(?:[.,]\d{1,2})?\s*\/\s*(?:20|10|5)\b/g) || [];
+    const shortEvalDates = normalized.match(/\b(?:0?[1-9]|[12]\d|3[01])\/(?:0?[1-9]|1[0-2])\b/g) || [];
+    const hasCoeffOrBareme = /\b(?:coeff\.?|coefficient|bar[eè]me|moy\.\s*[eé]l[eè]ve)\b/i.test(normalized);
+
+    if (evalHeaderMarkers.test(normalized) && (fractionGrades.length >= 2 || hasCoeffOrBareme || shortEvalDates.length >= 3)) {
+        return true;
+    }
+    return hasCoeffOrBareme && fractionGrades.length >= 4;
+}
+
+/**
  * Détecte et convertit automatiquement un PDF
  * @returns {{ name: string, data: string } | null}
  */

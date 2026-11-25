@@ -4327,7 +4327,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             appState.currentClassId = classSmall.id;
             userSettings.academic.currentClassId = classSmall.id;
             SeatingChartManager._planMode = 'course';
-            SeatingChartManager._onboardingStep = null;
+            SeatingChartManager._configPopoverOpen = false;
+            SeatingChartManager._placementPopoverOpen = false;
             SeatingChartManager._injectView();
             SeatingChartManager._setupEventListeners();
             SeatingChartManager.switchToView('plan', { immediate: true });
@@ -4346,23 +4347,26 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(capInfo.isShortForMax).toBe(false);
         });
 
-        it('devrait afficher l\'Étape 1 (Configuration de la salle) à la toute première ouverture, puis passer à l\'Étape 2 (Placement) après validation et mémoriser la salle pour les autres classes', () => {
+        it('devrait afficher une carte vide unifiée renvoyant vers le popover Salle & Allées sans jamais superposer les deux panneaux', () => {
             const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
             expect(hint).not.toBeNull();
-            expect(hint.dataset.step).toBe('room');
-            expect(hint.querySelector('#scHintConfirmRoomBtn')).not.toBeNull();
-            expect(appState.seatingGrid).toBeNull();
-
-            // Valider la salle à l'étape 1
-            hint.querySelector('#scHintConfirmRoomBtn').click();
-
-            expect(appState.seatingGrid).not.toBeNull();
-            expect(appState.seatingGrid.rows).toBe(6);
-            expect(appState.seatingGrid.cols).toBe(6);
             expect(hint.dataset.step).toBe('placement');
             expect(hint.querySelector('#scHintAutoBtn')).not.toBeNull();
+            expect(hint.querySelector('#scHintEditRoomBtn')).not.toBeNull();
+            expect(document.getElementById('scConfigBtn')?.classList.contains('sc-has-pulse')).toBe(true);
 
-            // Changement vers la seconde classe vide : passe directement à l'étape 2 sans redemander la salle
+            // Cliquer sur "Salle & Allées" ferme la carte vide et ouvre l'unique popover #scConfigPopover
+            hint.querySelector('#scHintEditRoomBtn').click();
+            expect(SeatingChartManager._configPopoverOpen).toBe(true);
+            expect(document.querySelector('#scGridArea .sc-onboarding-hint:not(.sc-hint-exiting)')).toBeNull();
+            expect(document.getElementById('scConfigBtn')?.classList.contains('sc-has-pulse')).toBe(false);
+
+            // Changer de modèle dans le popover mémorise la salle pour les autres classes
+            SeatingChartManager._applyRoomPreset('center-aisle');
+            expect(appState.seatingGrid?.roomConfigured).toBe(true);
+            expect(appState.seatingGrid?.cols).toBe(7);
+
+            // Changement vers la seconde classe vide : ferme le popover et affiche la carte vide avec la salle conservée
             const secondClass = appState.classes[1];
             appState.currentClassId = secondClass.id;
             userSettings.academic.currentClassId = secondClass.id;
@@ -4371,10 +4375,10 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const hintSecondClass = document.querySelector('#scGridArea .sc-onboarding-hint');
             expect(hintSecondClass).not.toBeNull();
             expect(hintSecondClass.dataset.step).toBe('placement');
+            expect(SeatingChartManager._getCols()).toBe(7);
         });
 
         it('devrait permettre de changer de modèle de salle (2 allées, 1 allée centrale, sans allée) et conserver les élèves déjà placés', () => {
-            SeatingChartManager._confirmRoomSetup();
             SeatingChartManager._autoPlace('alpha-asc');
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
 
@@ -4393,12 +4397,129 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._getCellSpecial(0, 3)).toEqual({ type: 'aisle', scope: 'global' });
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
 
+            // Passer au modèle "En U" (fond rangée 0 sans allée, centre creusé à partir de r >= 1) et conserver les 24 élèves
+            SeatingChartManager._applyRoomPreset('u-shape');
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(1, 3)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+
+            // Ajouter une rangée en U conserve le mur du fond à r = 0 et prolonge l'allée centrale vers le bas
+            const rowsBefore = SeatingChartManager._getRows();
+            SeatingChartManager._stepGridDimension('rows', 1);
+            expect(SeatingChartManager._getRows()).toBe(rowsBefore + 1);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(rowsBefore, 3)).toEqual({ type: 'aisle', scope: 'global' });
+
+            // Ajouter puis retirer une colonne en U décale l'aile droite (classe active + autres classes + Ctrl+Z)
+            const colsBefore = SeatingChartManager._getCols(); // 8 colonnes (uWing = 2 -> aile droite en col 6 et 7)
+            const otherClassStudent = appState.generatedResults.find(r => r.classId === appState.classes[1].id);
+            otherClassStudent.seatingPosition = { row: 2, col: colsBefore - 2, pinned: false };
+            const rightWingStudentId = SeatingChartManager._getCellStudentIds(1, colsBefore - 2)[0];
+            expect(rightWingStudentId).toBeTruthy();
+            SeatingChartManager._stepGridDimension('cols', 1);
+            expect(SeatingChartManager._getCols()).toBe(colsBefore + 1);
+            expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('u-shape');
+            expect(SeatingChartManager._getCellSpecial(1, colsBefore - 2)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellStudentIds(1, colsBefore - 1)).toEqual([rightWingStudentId]);
+            expect(otherClassStudent.seatingPosition.col).toBe(colsBefore - 1);
+
+            // Ctrl+Z ramène aussi l'aile droite de l'autre classe à sa colonne d'origine
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._getCols()).toBe(colsBefore);
+            expect(SeatingChartManager._getCellStudentIds(1, colsBefore - 2)).toEqual([rightWingStudentId]);
+            expect(otherClassStudent.seatingPosition.col).toBe(colsBefore - 2);
+            otherClassStudent.seatingPosition = null;
+
             // Passer au modèle "Sans allée" (6 colonnes continues)
             SeatingChartManager._applyRoomPreset('compact');
             expect(SeatingChartManager._getCols()).toBe(6);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
             expect(Object.keys(appState.seatingGrid.specialLayout || {}).length).toBe(0);
             expect(SeatingChartManager._getPlacedIds().size).toBe(24);
+        });
+
+        it('devrait permettre de tracer des allées en un geste sans écraser élèves/AESH et d\'annuler tout le trait en un seul Ctrl+Z', () => {
+            // Placer 1 élève en (0, 0) et réserver 1 place AESH en (0, 1)
+            SeatingChartManager._gridState[0][0] = SeatingChartManager._students[0].id;
+            SeatingChartManager._savePositionsToState();
+            SeatingChartManager._render();
+            SeatingChartManager._setCellSpecialType(0, 1, 'aesh');
+            SeatingChartManager._undoStack = [];
+
+            // Un clic sur une case vide en mode tracé ne réouvre pas la carte .sc-onboarding-hint même si la salle a 0 élève placé
+            SeatingChartManager._gridState[0][0] = null;
+            SeatingChartManager._savePositionsToState();
+            SeatingChartManager._render();
+            expect(document.querySelector('#scGridArea .sc-onboarding-hint')).not.toBeNull();
+
+            SeatingChartManager._enterAislePaintMode();
+            const getCell = (r, c) => document.querySelector(`#scGridContainer .sc-cell[data-row="${r}"][data-col="${c}"]`);
+            SeatingChartManager._startAislePaintStroke(getCell(0, 2), 1);
+            SeatingChartManager._finishAislePaintStroke();
+            expect(document.querySelector('#scGridArea .sc-onboarding-hint:not(.sc-hint-exiting)')).toBeNull();
+            document.getElementById('scAislePaintDoneBtn')?.click();
+            expect(SeatingChartManager._isAislePaintMode).toBe(false);
+
+            // Remettre élève en (0,0) pour le test multi-cases ci-dessous
+            SeatingChartManager._gridState[0][0] = SeatingChartManager._students[0].id;
+            SeatingChartManager._savePositionsToState();
+            SeatingChartManager._render();
+            SeatingChartManager._undoStack = [];
+            SeatingChartManager._setCellSpecialType(0, 2, null);
+            SeatingChartManager._undoStack = [];
+
+            SeatingChartManager._enterAislePaintMode();
+            const view = document.getElementById('seatingChartView');
+            const banner = document.getElementById('scAislePaintBanner');
+            expect(SeatingChartManager._isAislePaintMode).toBe(true);
+            expect(view?.dataset.aislePaint).toBe('true');
+            expect(banner?.hidden).toBe(false);
+
+            SeatingChartManager._startAislePaintStroke(getCell(0, 2), 1);
+            SeatingChartManager._continueAislePaintStroke(getCell(0, 3));
+            SeatingChartManager._continueAislePaintStroke(getCell(0, 4));
+            // Tentative sur élève occupé (0,0) et AESH (0,1) : doit être ignorée
+            SeatingChartManager._continueAislePaintStroke(getCell(0, 0));
+            SeatingChartManager._continueAislePaintStroke(getCell(0, 1));
+            SeatingChartManager._finishAislePaintStroke();
+
+            expect(SeatingChartManager._getCellSpecial(0, 2)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellSpecial(0, 4)).toEqual({ type: 'aisle', scope: 'global' });
+            expect(SeatingChartManager._getCellSpecial(0, 0)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(0, 1)).toEqual({ type: 'aesh', scope: 'class' });
+            expect(SeatingChartManager._undoStack.length).toBe(1);
+
+            // Un seul _undo() annule les 3 allées du trait continu
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._getCellSpecial(0, 2)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(0, 3)).toBeNull();
+            expect(SeatingChartManager._getCellSpecial(0, 4)).toBeNull();
+
+            document.getElementById('scAislePaintDoneBtn')?.click();
+            expect(SeatingChartManager._isAislePaintMode).toBe(false);
+            expect(view?.dataset.aislePaint).toBeUndefined();
+            expect(banner?.hidden).toBe(true);
+        });
+
+        it('devrait ouvrir le popover d\'agencement complet depuis les passerelles de carte vide Cours et Activité', () => {
+            const courseHint = document.querySelector('#scGridArea .sc-onboarding-hint');
+            const courseBridgeBtn = courseHint?.querySelector('#scHintAutoBtn');
+            expect(courseBridgeBtn).not.toBeNull();
+            courseBridgeBtn.click();
+            expect(SeatingChartManager._placementPopoverOpen).toBe(true);
+
+            SeatingChartManager._closePlacementPopover();
+            SeatingChartManager.switchPlanMode('activity', { animate: false });
+            SeatingChartManager._applyLockState(false, { skipSmartFit: true });
+            SeatingChartManager._maybeShowOnboardingHint();
+            const actHint = document.querySelector('#scGridArea .sc-onboarding-hint');
+            const actBridgeBtn = actHint?.querySelector('#scHintActivityPlaceBtn');
+            expect(actBridgeBtn).not.toBeNull();
+            actBridgeBtn.click();
+            expect(SeatingChartManager._placementPopoverOpen).toBe(true);
         });
 
         it('devrait prolonger automatiquement les allées verticales lors de l\'ajout d\'une rangée via les boutons +/-', () => {
@@ -4439,23 +4560,21 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(hint.querySelector('#scHintAutoExpandRowsBtn')).toBeNull();
         });
 
-        it('devrait permettre d\'annuler les modifications de salle (Retour sans modifier) lorsqu\'on ouvre le réglage depuis l\'étape 2', () => {
-            SeatingChartManager._confirmRoomSetup();
+        it('devrait permettre d\'annuler un changement de disposition de salle via Annuler (Ctrl+Z) depuis le popover unique', () => {
             const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
             expect(hint.dataset.step).toBe('placement');
             expect(SeatingChartManager._getCols()).toBe(6);
 
-            // Cliquer sur "Régler la salle"
+            // Cliquer sur "Salle & Allées" ouvre le popover unique et masque la carte vide
             hint.querySelector('#scHintEditRoomBtn').click();
-            expect(hint.dataset.step).toBe('room');
-            expect(hint.querySelector('#scHintCancelRoomBtn')).not.toBeNull();
+            expect(SeatingChartManager._configPopoverOpen).toBe(true);
+            expect(document.querySelector('#scGridArea .sc-onboarding-hint:not(.sc-hint-exiting)')).toBeNull();
 
-            // Tester le modèle "2 allées" (8 colonnes) puis annuler
+            // Tester le modèle "2 allées" (8 colonnes) puis annuler via _undo()
             SeatingChartManager._applyRoomPreset('double-aisles');
             expect(SeatingChartManager._getCols()).toBe(8);
 
-            hint.querySelector('#scHintCancelRoomBtn').click();
-            expect(hint.dataset.step).toBe('placement');
+            SeatingChartManager._undo();
             expect(SeatingChartManager._getCols()).toBe(6);
             expect(SeatingChartManager._detectCurrentRoomPreset()).toBe('compact');
         });
@@ -4640,6 +4759,102 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // Remise par défaut
             appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
+        });
+
+        it('devrait mettre à jour une seule catégorie de pastilles (repli sur les défauts), émettre APP_SETTINGS_CHANGED et sauvegarder', () => {
+            const prevDots = appState.seatingStatusDots;
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+            const emitSpy = vi.spyOn(bus, 'emit');
+            try {
+                appState.seatingStatusDots = undefined;
+                SeatingChartManager._setStatusDot('devices', true);
+                expect(appState.seatingStatusDots).toEqual({ movements: true, devices: true, delegates: false });
+                expect(emitSpy).toHaveBeenCalledWith(EVENTS.APP_SETTINGS_CHANGED, { settings: appState, reason: 'seating-status-dots' });
+                expect(saveSpy).toHaveBeenCalledTimes(1);
+
+                SeatingChartManager._setStatusDot('movements', false);
+                expect(appState.seatingStatusDots).toEqual({ movements: false, devices: true, delegates: false });
+            } finally {
+                appState.seatingStatusDots = prevDots;
+                emitSpy.mockRestore();
+                saveSpy.mockRestore();
+            }
+        });
+
+        it('devrait mettre à jour les pastilles en place sans reconstruire la grille, la sidebar ni scStatusPill', () => {
+            const prevDots = appState.seatingStatusDots;
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+            const renderSpy = vi.spyOn(SeatingChartManager, '_render');
+            try {
+                appState.seatingStatusDots = { movements: true, devices: false, delegates: false };
+                SeatingChartManager.switchToView('plan', { immediate: true });
+                const firstStudent = SeatingChartManager._students[0];
+                firstStudent.studentData = { ...(firstStudent.studentData || {}), statuses: ['Délégué'] };
+                SeatingChartManager._gridState[0][0] = firstStudent.id;
+                SeatingChartManager._render();
+                renderSpy.mockClear();
+
+                const cellBefore = document.querySelector('#scGridContainer .sc-cell.occupied');
+                const pillBefore = document.getElementById('scStatusPill')?.firstElementChild;
+                expect(cellBefore?.querySelector('.sc-cell-status-badge')).toBeNull();
+
+                SeatingChartManager._setStatusDot('delegates', true);
+
+                expect(renderSpy).not.toHaveBeenCalled();
+                expect(document.querySelector('#scGridContainer .sc-cell.occupied')).toBe(cellBefore);
+                expect(document.getElementById('scStatusPill')?.firstElementChild).toBe(pillBefore);
+                const badge = cellBefore?.querySelector('.sc-cell-status-badge.sc-badge-delegate');
+                expect(badge?.textContent).toBe('Délégué');
+                expect(badge?.classList.contains('sc-dot-pop')).toBe(true);
+
+                SeatingChartManager._setStatusDot('delegates', false);
+                expect(cellBefore?.querySelector('.sc-cell-status-badge')).toBeNull();
+
+                // Même lors d'un _render() complet (ex. swap sur la grille), scStatusPill et scStudentList
+                // conservent leurs nœuds DOM si leur contenu n'a pas changé
+                const sidebarChildBefore = document.getElementById('scStudentList')?.firstElementChild;
+                const statusPillChildBefore = document.getElementById('scStatusPill')?.firstElementChild;
+                SeatingChartManager._render();
+                expect(document.getElementById('scStudentList')?.firstElementChild).toBe(sidebarChildBefore);
+                expect(document.getElementById('scStatusPill')?.firstElementChild).toBe(statusPillChildBefore);
+            } finally {
+                appState.seatingStatusDots = prevDots;
+                renderSpy.mockRestore();
+                saveSpy.mockRestore();
+            }
+        });
+
+        it('devrait bloquer l’ouverture du popover pastilles pendant un tirage au sort et le fermer lors de l’ouverture de la config ou du changement de mode', () => {
+            SeatingChartManager.switchToView('plan', { immediate: true });
+            const prevRandomState = SeatingChartManager._randomPickerState;
+            try {
+                // Garde pendant tirage au sort actif
+                SeatingChartManager._randomPickerState = { active: true, drawnIds: [] };
+                SeatingChartManager._openStatusDotsPopover();
+                expect(SeatingChartManager._statusDotsPopoverOpen).toBe(false);
+
+                // Ouverture nominale hors tirage au sort
+                SeatingChartManager._randomPickerState = null;
+                SeatingChartManager._openStatusDotsPopover();
+                expect(SeatingChartManager._statusDotsPopoverOpen).toBe(true);
+                expect(document.getElementById('scStatusDotsPopover')?.classList.contains('open')).toBe(true);
+                expect(document.getElementById('scFloatingDotsBtn')?.getAttribute('aria-expanded')).toBe('true');
+
+                // Exclusion mutuelle avec #scConfigPopover
+                SeatingChartManager._openConfigPopover();
+                expect(SeatingChartManager._statusDotsPopoverOpen).toBe(false);
+                expect(SeatingChartManager._configPopoverOpen).toBe(true);
+
+                // Fermeture lors du changement de mode
+                SeatingChartManager._openStatusDotsPopover();
+                expect(SeatingChartManager._statusDotsPopoverOpen).toBe(true);
+                SeatingChartManager.switchPlanMode('activity', { animate: false });
+                expect(SeatingChartManager._statusDotsPopoverOpen).toBe(false);
+            } finally {
+                SeatingChartManager._randomPickerState = prevRandomState;
+                SeatingChartManager._closeStatusDotsPopover();
+                SeatingChartManager._closeConfigPopover();
+            }
         });
 
         it('devrait afficher la pastille AESH (et non ULIS) dans la barre latérale pour un élève AESH non placé', () => {

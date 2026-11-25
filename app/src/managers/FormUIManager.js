@@ -9,7 +9,7 @@
  */
 
 import { appState } from '../state/State.js';
-import { DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS, MAX_CHARS_CONFIG } from '../config/Config.js';
+import { DEFAULT_IA_CONFIG, MAX_CHARS_CONFIG } from '../config/Config.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
@@ -80,21 +80,6 @@ export const FormUI = {
         if (DOM.anthropicApiKey) DOM.anthropicApiKey.value = appState.anthropicApiKey;
         if (DOM.mistralApiKey) DOM.mistralApiKey.value = appState.mistralApiKey;
 
-
-        // Synchroniser les pastilles de statut du plan de classe
-        const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
-        if (seatingDotsSelector) {
-            const currentDots = {
-                ...DEFAULT_SEATING_STATUS_DOTS,
-                ...(appState.seatingStatusDots || {})
-            };
-            seatingDotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
-                const cat = cb.getAttribute('data-dot-category');
-                const isChecked = Boolean(currentDots[cat]);
-                cb.checked = isChecked;
-                cb.closest('.seating-dot-option')?.classList.toggle('active', isChecked);
-            });
-        }
 
         // Confidentialité
         if (DOM.settingsPrivacyAnonymizeToggle) {

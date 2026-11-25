@@ -2,7 +2,7 @@
  * @fileoverview Tests for PdfParsers
  */
 import { describe, it, expect } from 'vitest';
-import { detectMbnBilan, convertMbnBilan } from './PdfParsers.js';
+import { detectMbnBilan, convertMbnBilan, detectDetailedEvaluationsPdf } from './PdfParsers.js';
 
 describe('PdfParsers', () => {
     describe('detectMbnBilan()', () => {
@@ -139,6 +139,42 @@ CHEN Luc\tAucune\t\t\tévaluation ce semestre : impossible d'apprécier le nivea
 
             expect(lines).toHaveLength(1);
             expect(lines[0]).toBe("CHEN Luc\t\t\tAucune évaluation ce semestre : impossible d'apprécier le niveau de Luc.");
+        });
+    });
+
+    describe('detectDetailedEvaluationsPdf()', () => {
+        it('should detect a detailed Pronote evaluations gradebook PDF (individual or class table)', () => {
+            const rawData = `Relevé de notes - Trimestre 1
+Élève : MARTIN Lucas Coeff. 2
+DS n°1 14/20
+DM n°2 16,5/20
+Interro orale 8/10`;
+            expect(detectDetailedEvaluationsPdf(rawData)).toBe(true);
+
+            const collectiveTableData = `Tableau des notes - 6ème A - Trimestre 1
+Élève Moy. 12/09 19/09 03/10 17/10
+MARTIN Lucas 14,5 15,0 13,5 16,0 13,5`;
+            expect(detectDetailedEvaluationsPdf(collectiveTableData)).toBe(true);
+        });
+
+        it('should return false for valid MBN or Pronote bulletin bilan PDFs', () => {
+            const mbnData = `Bilan des appréciations du premier semestre
+Élève Dev. Moy. Acquisitions
+MARTIN Lucas 2 15,5 Très bon travail.`;
+            expect(detectDetailedEvaluationsPdf(mbnData)).toBe(false);
+
+            const pronoteData = [
+                'DUPONT Marie315,5',
+                'MARTIN Lucas214,0',
+                'BERNARD Thomas411,5'
+            ].join('\n');
+            expect(detectDetailedEvaluationsPdf(pronoteData)).toBe(false);
+        });
+
+        it('should return false for empty, null, or simple student lists', () => {
+            expect(detectDetailedEvaluationsPdf('')).toBe(false);
+            expect(detectDetailedEvaluationsPdf(null)).toBe(false);
+            expect(detectDetailedEvaluationsPdf('MARTIN Lucas\nDUPONT Marie')).toBe(false);
         });
     });
 });

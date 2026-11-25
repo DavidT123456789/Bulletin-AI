@@ -33,7 +33,7 @@ export const SeatingRenderer = {
             this._syncRandomPickerAfterRefresh?.();
         }
 
-        if (this._getPlacedIds().size > 0 || (this._isLocked && !this._isVirtualClass())) {
+        if (this._getPlacedIds().size > 0 || (this._isLocked && !this._isVirtualClass()) || this._isAislePaintMode) {
             this._dismissOnboardingHint();
         } else {
             this._maybeShowOnboardingHint();
@@ -361,7 +361,7 @@ export const SeatingRenderer = {
             });
 
             cell.addEventListener('click', (e) => {
-                if (e.defaultPrevented || this._wasRecentTouchDrag() || this._isLocked) return;
+                if (this._isAislePaintMode || e.defaultPrevented || this._wasRecentTouchDrag() || this._isLocked) return;
                 if (this._selectedChipIds.length > 0 && !special) {
                     this._placeSelectedAt(row, col);
                 } else if (this._selectedChipIds.length === 0) {
@@ -648,5 +648,84 @@ export const SeatingRenderer = {
         }
 
         return null;
+    },
+
+    _getChipBadgeLabel(badgeInfo) {
+        if (!badgeInfo?.label) return '';
+        const parts = badgeInfo.label.split(' • ');
+        return parts.includes('ULIS') ? 'ULIS' : (parts.includes('AESH') ? 'AESH' : parts[0]);
+    },
+
+    _refreshStatusDotsInPlace({ animate = false } = {}) {
+        const syncGridBadge = (container, badgeInfo) => {
+            if (!container) return;
+            const existing = container.querySelector('.sc-cell-status-badge');
+            if (!badgeInfo) {
+                existing?.remove();
+                return;
+            }
+            if (existing && existing.classList.contains(badgeInfo.className) && existing.textContent === badgeInfo.label) {
+                return;
+            }
+            existing?.remove();
+            const span = document.createElement('span');
+            span.className = `sc-cell-status-badge ${badgeInfo.className}${animate ? ' sc-dot-pop' : ''}`;
+            span.setAttribute('aria-label', badgeInfo.label);
+            span.textContent = badgeInfo.label;
+            if (animate) {
+                span.addEventListener('animationend', () => span.classList.remove('sc-dot-pop'), { once: true });
+            }
+            container.appendChild(span);
+        };
+
+        const grid = document.getElementById('scGridContainer');
+        if (grid) {
+            grid.querySelectorAll('.sc-cell.occupied:not(.sc-cell-stacked)').forEach(cell => {
+                const student = this._studentMap?.get(cell.dataset.resultId);
+                if (!student) return;
+                const badgeInfo = this._getStudentStatusBadgeInfo(student);
+                cell.classList.remove('sc-cell-new', 'sc-cell-ulis', 'sc-cell-device', 'sc-cell-delegate');
+                if (badgeInfo?.cellClass && badgeInfo.cellClass !== 'sc-cell-departed') {
+                    cell.classList.add(badgeInfo.cellClass);
+                }
+                cell.classList.toggle('has-status-badge', Boolean(badgeInfo));
+                syncGridBadge(cell.querySelector('.sc-cell-avatar-wrap'), badgeInfo);
+            });
+
+            grid.querySelectorAll('.sc-cell.sc-cell-stacked .sc-stacked-avatar[data-result-id]').forEach(avatar => {
+                const student = this._studentMap?.get(avatar.dataset.resultId);
+                if (!student) return;
+                syncGridBadge(avatar, this._getStudentStatusBadgeInfo(student));
+            });
+        }
+
+        const list = document.getElementById('scStudentList');
+        if (list) {
+            list.querySelectorAll('.sc-student-chip:not(.sc-chip-departed)[data-result-id]').forEach(chip => {
+                const student = this._studentMap?.get(chip.dataset.resultId);
+                if (!student) return;
+                const badgeInfo = this._getStudentStatusBadgeInfo(student);
+                const existing = chip.querySelector('.sc-chip-badge');
+                if (!badgeInfo) {
+                    if (existing) {
+                        existing.remove();
+                        list._renderedHtml = null;
+                    }
+                    return;
+                }
+                const chipBadgeLabel = this._getChipBadgeLabel(badgeInfo);
+                const nextClass = `sc-chip-badge-${badgeInfo.type}`;
+                if (existing && existing.classList.contains(nextClass) && existing.textContent === chipBadgeLabel) {
+                    return;
+                }
+                existing?.remove();
+                const span = document.createElement('span');
+                span.className = `sc-chip-badge ${nextClass}`;
+                span.textContent = chipBadgeLabel;
+                const profileBtn = chip.querySelector('.sc-chip-profile-btn');
+                chip.insertBefore(span, profileBtn || null);
+                list._renderedHtml = null;
+            });
+        }
     }
 };

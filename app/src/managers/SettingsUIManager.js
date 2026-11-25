@@ -8,7 +8,7 @@
  */
 
 import { appState, UIState } from '../state/State.js';
-import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG, DEFAULT_SEATING_STATUS_DOTS } from '../config/Config.js';
+import { DEFAULT_PROMPT_TEMPLATES, DEFAULT_IA_CONFIG } from '../config/Config.js';
 import { MODEL_SHORT_NAMES, MODEL_SELECTOR_CONFIG, FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, PROVIDER_SHOWCASE_MODELS, OLLAMA_CONFIG, getProviderForModel, buildFallbackQueue } from '../config/models.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
@@ -193,9 +193,6 @@ export const SettingsUIManager = {
                 appState.anonymizeData = DOM.settingsPrivacyAnonymizeToggle.checked;
             }
 
-            // Pastilles de statut du plan de classe
-            this.syncSeatingStatusDotsFromDOM({ dispatchEvent: false });
-
             // Emit event for responsive updates (e.g., FocusPanel badge, SeatingChartManager)
             bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
 
@@ -248,33 +245,6 @@ export const SettingsUIManager = {
             appState.evolutionThresholds.negative = neg;
             appState.evolutionThresholds.veryNegative = Math.round(neg * 4 * 10) / 10;
             FormUI.updateSpinnerBounds(DOM.settingsEvolutionThresholdNegative);
-        }
-    },
-
-    /**
-     * Synchronise les pastilles de statut du plan de classe depuis le DOM vers appState.
-     * Source unique de vérité partagée entre le basculement en direct (change) et la sauvegarde de la modale.
-     * @param {Object} [options={}]
-     * @param {boolean} [options.dispatchEvent=true] - Émettre l'événement `app-settings-changed`
-     */
-    syncSeatingStatusDotsFromDOM({ dispatchEvent = true } = {}) {
-        const seatingDotsSelector = document.getElementById('seatingStatusDotsSelector');
-        if (!seatingDotsSelector) return;
-
-        const nextDots = {
-            ...DEFAULT_SEATING_STATUS_DOTS,
-            ...(appState.seatingStatusDots || {})
-        };
-        seatingDotsSelector.querySelectorAll('input[type="checkbox"][data-dot-category]').forEach(cb => {
-            const cat = cb.getAttribute('data-dot-category');
-            if (!cat) return;
-            nextDots[cat] = cb.checked;
-            cb.closest('.seating-dot-option')?.classList.toggle('active', cb.checked);
-        });
-        appState.seatingStatusDots = nextDots;
-
-        if (dispatchEvent) {
-            bus.emit(EVENTS.APP_SETTINGS_CHANGED, { settings: appState });
         }
     },
 

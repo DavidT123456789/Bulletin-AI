@@ -289,7 +289,7 @@ export const SyncService = {
             connected: {
                 icon: 'lucide:cloud-upload',
                 label: 'Sauvegarder',
-                tooltip: 'Envoyer vos données vers le Cloud'
+                tooltip: 'Envoyer vos données sur Google Drive'
             },
             expired: {
                 icon: 'logos:google-drive',

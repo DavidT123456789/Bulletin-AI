@@ -754,6 +754,21 @@
     color: var(--text-tertiary);
 }
 
+.class-note-popover-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px 10px;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+.class-note-popover-footer iconify-icon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
 .tooltip-note-multiline {
     text-align: left;
 }

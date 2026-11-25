@@ -139,9 +139,7 @@ export const WelcomeManager = {
         const getKeyForProvider = (provider) => ({
             google: appState.googleApiKey,
             albert: appState.albertApiKey,
-            groq: appState.groqApiKey,
-            openrouter: appState.openrouterApiKey,
-            mistral: appState.mistralApiKey
+            groq: appState.groqApiKey
         }[provider] || '');
 
         const syncValidateBtnWithInput = (provider, rawValue) => {
@@ -174,6 +172,7 @@ export const WelcomeManager = {
         };
 
         const providerSelector = document.getElementById('welcomeProviderSelector');
+        const providerHintEl = DOM.welcomeProviderHint || document.getElementById('welcomeProviderHint');
         const getKeyLink = document.getElementById('welcomeGetKeyLink');
         const skipSep = document.getElementById('welcomeSkipApiKeySep');
 
@@ -207,27 +206,20 @@ export const WelcomeManager = {
             google: {
                 placeholder: "Clé API Gemini (AIzaSy...)",
                 linkUrl: "https://aistudio.google.com/app/apikey",
-                linkText: "Obtenir une clé Gemini ↗"
+                linkText: "Obtenir une clé Gemini ↗",
+                hint: "Alternative gratuite sans CB · Très fluide en français (compte Google)"
             },
             albert: {
                 placeholder: "Clé API Albert (sk-...)",
                 linkUrl: "https://albert.playground.etalab.gouv.fr",
-                linkText: "Obtenir une clé Albert (ProConnect) ↗"
+                linkText: "Obtenir une clé Albert (ProConnect) ↗",
+                hint: "Recommandé Éducation nationale · Gratuit & souverain via ProConnect"
             },
             groq: {
                 placeholder: "Clé API Groq (gsk_...)",
                 linkUrl: "https://console.groq.com/keys",
-                linkText: "Obtenir une clé Groq ↗"
-            },
-            mistral: {
-                placeholder: "Clé API Mistral...",
-                linkUrl: "https://console.mistral.ai/api-keys/",
-                linkText: "Obtenir une clé Mistral ↗"
-            },
-            openrouter: {
-                placeholder: "Clé API OpenRouter (sk-or-...)",
-                linkUrl: "https://openrouter.ai/keys",
-                linkText: "Obtenir une clé OpenRouter ↗"
+                linkText: "Obtenir une clé Groq ↗",
+                hint: "Ultra-rapide & gratuit sans CB · Idéal en moteur principal ou en relais"
             }
         };
 
@@ -248,6 +240,10 @@ export const WelcomeManager = {
                 if (getKeyLink) {
                     getKeyLink.href = config.linkUrl;
                     getKeyLink.textContent = config.linkText;
+                }
+
+                if (providerHintEl) {
+                    providerHintEl.textContent = config.hint || '';
                 }
 
                 clearApiKeyError();
@@ -456,8 +452,7 @@ export const WelcomeManager = {
         const initialProviderMap = [
             { key: appState.albertApiKey, provider: 'albert', radioId: 'providerAlbert' },
             { key: appState.googleApiKey, provider: 'google', radioId: 'providerGoogle' },
-            { key: appState.groqApiKey, provider: 'groq', radioId: 'providerGroq' },
-            { key: appState.mistralApiKey, provider: 'mistral', radioId: 'providerMistral' }
+            { key: appState.groqApiKey, provider: 'groq', radioId: 'providerGroq' }
         ];
         const activeEntry = initialProviderMap.find(entry => Boolean(entry.key)) || initialProviderMap[0];
         currentProvider = activeEntry.provider;
@@ -540,6 +535,34 @@ export const WelcomeManager = {
                 completeWelcome({ showLoading: false, skipCloseModal: true });
             }
         }, { signal });
+
+        const welcomeRestoreBtn = DOM.welcomeRestoreBtn || document.getElementById('welcomeRestoreBtn');
+        if (welcomeRestoreBtn) {
+            const existingClasses = ClassManager.getAllClasses?.() || [];
+            const hasNonDemoClass = existingClasses.some(c => c && !c.isDemo && !ClassManager.isDemoClass?.(c.id));
+            welcomeRestoreBtn.hidden = hasNonDemoClass;
+        }
+        addClickListener(welcomeRestoreBtn, () => {
+            if (isWelcomeCompleted) return;
+            isWelcomeCompleted = true;
+            this._syncFinalIllustrationAnimation(false);
+
+            if (HistoryManager.isOpen('welcomeWizardStep')) {
+                HistoryManager.handleManualClose('welcomeWizardStep');
+            }
+
+            SafeStorage.set(CONFIG.LS_FIRST_VISIT_KEY, 'true');
+
+            if (DOM.settingsModal) {
+                UI.openModal(DOM.settingsModal);
+                UI.highlightSettingsElement?.('cloudSyncCard', {
+                    tab: 'settings-data',
+                    parentSelector: null
+                });
+            } else {
+                UI.closeModal(DOM.welcomeModal);
+            }
+        });
 
         addClickListener(DOM.welcomeValidateApiKeyBtn, validateWelcomeApiKey);
 

@@ -57,6 +57,7 @@ export const SeatingChartManager = {
     _lastTouchDragEndTime: 0,
     _configPopoverOpen: false,
     _placementPopoverOpen: false,
+    _statusDotsPopoverOpen: false,
     _activityGroupSize: null,
     _prevPlacedCount: 0,
     _selectedChipIds: [],
@@ -95,7 +96,11 @@ export const SeatingChartManager = {
     _randomSuspenseTimer: null,
     _randomRevealTimer: null,
     _randomRollAnimTimer: null,
-    _onboardingStep: null,
+    _isAislePaintMode: false,
+    _aislePaintPointerId: null,
+    _aislePaintAction: null,
+    _aislePaintTouchedKeys: null,
+    _aislePaintHasMutated: false,
 
     // ========================================================================
     // INITIALIZATION
@@ -226,32 +231,57 @@ export const SeatingChartManager = {
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
-                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Grille et affichage" data-tooltip="Grille &amp; Affichage">
+                                    <button type="button" class="sc-action-btn sc-config-trigger" id="scConfigBtn" aria-label="Grille de la salle" data-tooltip="Grille de la salle">
                                         <iconify-icon icon="solar:settings-linear"></iconify-icon>
                                     </button>
                                     <div class="sc-config-popover" id="scConfigPopover">
                                         <div class="sc-config-presets-section" id="scConfigPresetsSection">
-                                            <div class="sc-config-section-title">Disposition de la salle</div>
+                                            <div class="sc-config-section-header">
+                                                <div class="sc-config-section-title">Disposition de la salle</div>
+                                                <span class="sc-config-section-meta">Toutes vos classes</span>
+                                            </div>
                                             <div class="sc-config-preset-pills" role="group" aria-label="Modèles de salle">
                                                 <button type="button" class="sc-config-preset-pill" data-preset="compact" data-tooltip="Grille continue sans allée">
                                                     <span class="sc-mini-diagram is-compact" aria-hidden="true">
                                                         <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
                                                     </span>
-                                                    <span>Sans allée</span>
+                                                    <span class="sc-config-preset-title">Sans allée</span>
+                                                    <span class="sc-config-preset-sub">6 col. continues</span>
                                                 </button>
-                                                <button type="button" class="sc-config-preset-pill" data-preset="center-aisle" data-tooltip="2 îlots de 3 tables (1 allée centrale)">
+                                                <button type="button" class="sc-config-preset-pill" data-preset="center-aisle" data-tooltip="2 rangées de 3 tables (1 allée centrale)">
                                                     <span class="sc-mini-diagram is-center-aisle" aria-hidden="true">
                                                         <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
                                                     </span>
-                                                    <span>1 allée</span>
+                                                    <span class="sc-config-preset-title">1 allée</span>
+                                                    <span class="sc-config-preset-sub">2 rangées de 3</span>
                                                 </button>
                                                 <button type="button" class="sc-config-preset-pill" data-preset="double-aisles" data-tooltip="3 rangées doubles (2 allées)">
                                                     <span class="sc-mini-diagram is-double-aisles" aria-hidden="true">
                                                         <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
                                                     </span>
-                                                    <span>2 allées</span>
+                                                    <span class="sc-config-preset-title">2 allées</span>
+                                                    <span class="sc-config-preset-sub">3 rangées doubles</span>
+                                                </button>
+                                                <button type="button" class="sc-config-preset-pill" data-preset="u-shape" data-tooltip="Disposition en U (fond + côtés face au centre)">
+                                                    <span class="sc-mini-diagram is-u-shape" aria-hidden="true">
+                                                        <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><b class="aisle-wide"></b><i></i></span>
+                                                        <span class="sc-mini-row"><i></i><b class="aisle-wide"></b><i></i></span>
+                                                    </span>
+                                                    <span class="sc-config-preset-title">En U</span>
+                                                    <span class="sc-config-preset-sub">Fond + côtés</span>
                                                 </button>
                                             </div>
+                                            <button type="button" class="sc-paint-aisles-trigger" id="scPaintAislesBtn">
+                                                <iconify-icon icon="solar:ghost-linear" aria-hidden="true"></iconify-icon>
+                                                <span>Tracer des allées sur mesure</span>
+                                            </button>
                                         </div>
                                         <div class="sc-config-row">
                                             <label class="sc-config-label" for="scColsSlider">Colonnes</label>
@@ -276,29 +306,6 @@ export const SeatingChartManager = {
                                             <span class="sc-config-value" id="scRowsValue">${DEFAULT_ROWS}</span>
                                         </div>
                                         <div class="sc-config-capacity" id="scConfigCapacity"></div>
-                                        <div class="sc-config-dots-section">
-                                            <div class="sc-config-section-title">Pastilles de statut</div>
-                                            <div class="seating-dots-selector sc-config-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Pastilles de statut sur le plan">
-                                                <label class="seating-dot-option active" data-tooltip="Nouveau (bleu) • Départ (ambre)">
-                                                    <input type="checkbox" data-dot-category="movements" checked>
-                                                    <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
-                                                    <span class="seating-dot-label">Mouvements <small>Nouveau, Départ</small></span>
-                                                    <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
-                                                </label>
-                                                <label class="seating-dot-option" data-tooltip="ULIS, AESH (violet) • PAP, PPRE, PAI (rose)">
-                                                    <input type="checkbox" data-dot-category="devices">
-                                                    <span class="seating-dot-preview seating-dot-preview--devices" aria-hidden="true"></span>
-                                                    <span class="seating-dot-label">Dispositifs <small>ULIS, PAP, PPRE</small></span>
-                                                    <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
-                                                </label>
-                                                <label class="seating-dot-option" data-tooltip="Délégué de classe (vert)">
-                                                    <input type="checkbox" data-dot-category="delegates">
-                                                    <span class="seating-dot-preview seating-dot-preview--delegates" aria-hidden="true"></span>
-                                                    <span class="seating-dot-label">Délégués</span>
-                                                    <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
-                                                </label>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                                 <button type="button" class="sc-action-btn sc-reset-btn" id="scClearBtn" aria-label="Réinitialiser" data-tooltip="Réinitialiser">
@@ -330,6 +337,12 @@ export const SeatingChartManager = {
                         </div>
                     </div>
 
+                    <div class="sc-aisle-paint-banner" id="scAislePaintBanner" role="status" aria-live="polite" hidden>
+                        <iconify-icon icon="solar:ghost-linear" class="sc-aisle-paint-icon" aria-hidden="true"></iconify-icon>
+                        <span class="sc-aisle-paint-text">Glissez sur les tables vides pour tracer des allées</span>
+                        <button type="button" class="sc-aisle-paint-done-btn" id="scAislePaintDoneBtn">Terminer</button>
+                    </div>
+
                     <!-- Bottom-Left Status Pill (Consultation mode) -->
                     <div class="sc-status-pill" id="scStatusPill" role="button" tabindex="0"></div>
 
@@ -352,6 +365,9 @@ export const SeatingChartManager = {
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-zoom-btn" id="scFloatingZoomBtn" aria-label="Ajuster la vue" data-tooltip="Ajuster la vue">
                         <iconify-icon icon="solar:magnifer-zoom-in-linear"></iconify-icon>
                     </button>
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-dots-btn" id="scFloatingDotsBtn" aria-label="Pastilles de statut" data-tooltip="Pastilles de statut" aria-haspopup="dialog" aria-expanded="false" aria-controls="scStatusDotsPopover">
+                        <iconify-icon icon="solar:layers-minimalistic-linear"></iconify-icon>
+                    </button>
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </button>
@@ -366,6 +382,29 @@ export const SeatingChartManager = {
                     </button>
                 </div>
                 <div class="sc-random-history-popover" id="scRandomHistoryPopover" role="dialog" aria-label="Élèves tirés au sort" aria-hidden="true"></div>
+                <div class="sc-status-dots-popover" id="scStatusDotsPopover" role="dialog" aria-label="Pastilles de statut" aria-hidden="true">
+                    <div class="sc-config-section-title">Pastilles de statut</div>
+                    <div class="seating-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Pastilles de statut sur le plan">
+                        <label class="seating-dot-option" data-tooltip="Nouveau (bleu) • Départ (ambre)">
+                            <input type="checkbox" data-dot-category="movements" checked>
+                            <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
+                            <span class="seating-dot-label">Mouvements <small>Nouveau, Départ</small></span>
+                            <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                        </label>
+                        <label class="seating-dot-option" data-tooltip="ULIS, AESH (violet) • PAP, PPRE, PAI (rose)">
+                            <input type="checkbox" data-dot-category="devices">
+                            <span class="seating-dot-preview seating-dot-preview--devices" aria-hidden="true"></span>
+                            <span class="seating-dot-label">Dispositifs <small>ULIS, PAP, PPRE</small></span>
+                            <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                        </label>
+                        <label class="seating-dot-option" data-tooltip="Délégué de classe (vert)">
+                            <input type="checkbox" data-dot-category="delegates">
+                            <span class="seating-dot-preview seating-dot-preview--delegates" aria-hidden="true"></span>
+                            <span class="seating-dot-label">Délégués</span>
+                            <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                        </label>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -494,6 +533,7 @@ export const SeatingChartManager = {
         }
 
         if (isList) {
+            this._exitAislePaintMode?.();
             // [UX Mobile] History state cleanup for plan view and sub-modes
             if (HistoryManager.isOpen('viewPlan')) HistoryManager.handleManualClose('viewPlan');
             if (HistoryManager.isOpen('seatingChartEdit')) HistoryManager.handleManualClose('seatingChartEdit');
@@ -503,6 +543,7 @@ export const SeatingChartManager = {
             if (HistoryManager.isOpen('scConfigPopover')) HistoryManager.handleManualClose('scConfigPopover');
             if (HistoryManager.isOpen('scPlacementPopover')) HistoryManager.handleManualClose('scPlacementPopover');
             if (HistoryManager.isOpen('scRandomHistoryPopover')) HistoryManager.handleManualClose('scRandomHistoryPopover');
+            if (HistoryManager.isOpen('scStatusDotsPopover')) HistoryManager.handleManualClose('scStatusDotsPopover');
             if (HistoryManager.isOpen('scRandomPicker')) HistoryManager.handleManualClose('scRandomPicker');
 
             const finishList = (animateEnter = false) => {
@@ -526,7 +567,6 @@ export const SeatingChartManager = {
                 viewEl.style.display = 'none';
                 GlobalListeners?.updateMainScrollAffordances?.();
                 this._isActive = false;
-                this._onboardingStep = null;
                 this._clearSelection();
                 const activeQuery = (appState.searchQuery || this._activeSearchTerm || '').trim();
                 const queryChangedInPlan = wasActive && activeQuery !== this._searchQueryAtPlanEnter;
@@ -552,6 +592,7 @@ export const SeatingChartManager = {
                 this._closeContextMenu?.();
                 this._closeConfigPopover();
                 this._closePlacementPopover();
+                this._closeStatusDotsPopover();
 
                 const activeEl = document.activeElement;
                 if (!activeEl || activeEl === document.body || activeEl.closest?.('#viewToggle, #seatingChartView')) {
@@ -596,7 +637,7 @@ export const SeatingChartManager = {
                 }
                 viewEl.style.display = '';
                 GlobalListeners?.updateMainScrollAffordances?.();
-                this._onboardingStep = null;
+                this._exitAislePaintMode?.();
                 document.querySelector('.sc-onboarding-hint')?.remove();
                 if (this._planMode === 'activity' && !this._hasClassActivityPlan()) {
                     this._planMode = 'course';
@@ -666,12 +707,14 @@ export const SeatingChartManager = {
         this._cleanupModeCarousel();
         this._cleanupFoldContinuum();
         this._clearSelection();
+        this._exitAislePaintMode?.();
         this._closeContextMenu?.();
         this._closeMobileSheet(true);
         this._closeRandomPicker?.();
         this._closeSearch();
         this._closeConfigPopover();
         this._closePlacementPopover();
+        this._closeStatusDotsPopover();
 
         if (!hasResults) {
             this.switchToView('list', { immediate });
@@ -685,7 +728,6 @@ export const SeatingChartManager = {
             this._planMode = 'activity';
         }
 
-        this._onboardingStep = null;
         this._activityGroupSize = null;
         document.querySelector('.sc-onboarding-hint')?.remove();
         this._prevPlacedCount = 0;

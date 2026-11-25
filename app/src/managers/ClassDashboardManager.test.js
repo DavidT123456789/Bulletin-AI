@@ -1615,7 +1615,7 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
                 <button id="generateSynthesisBtn" style="display: inline-flex;"></button>
                 <button id="copyDashboardSynthesisBtn" style="display: inline-flex;"></button>
                 <div id="aiRefinementToolbar">
-                    <button id="btnPolish" class="btn-refinement tooltip" data-refine-type="polish" data-tooltip="Corriger et fluidifier la rédaction · Clic droit : aperçu">Peaufiner</button>
+                    <button id="btnPolish" class="btn-refinement tooltip" data-refine-type="polish" data-tooltip="Corriger et fluidifier la rédaction">Peaufiner</button>
                 </div>
                 <div id="aiSynthesisMeta">
                     <span id="aiSynthesisSourceInfo"></span>
@@ -1660,7 +1660,7 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
 
         expect(saveSpy).not.toHaveBeenCalled();
         expect(document.querySelector('.synthesis-intro-text').textContent).toBe('Synthèse d\'origine stable.');
-        expect(polishBtn.dataset.tooltip).toBe('Corriger et fluidifier la rédaction · Clic droit : aperçu');
+        expect(polishBtn.dataset.tooltip).toBe('Corriger et fluidifier la rédaction');
 
         // 2. Raffinement terminé avec guillemets internes légitimes -> guillemets conservés intacts
         vi.spyOn(UI, 'animateHtmlReveal').mockImplementationOnce(async (el, html) => { el.innerHTML = html; });

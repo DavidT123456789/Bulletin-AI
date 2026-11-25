@@ -155,6 +155,7 @@ export const SeatingContextMenu = {
         this._closeContextMenu({ silentHistory: true });
         this._closeConfigPopover?.();
         this._closePlacementPopover?.();
+        this._closeStatusDotsPopover?.();
         TooltipsUI?.hideAll?.();
 
         const menu = document.createElement('div');

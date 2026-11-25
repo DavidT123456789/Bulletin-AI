@@ -364,6 +364,7 @@ export const SeatingRandomPicker = {
         this._closeContextMenu?.();
         this._closePlacementPopover?.();
         this._closeConfigPopover?.();
+        this._closeStatusDotsPopover?.();
 
         this._randomHistoryPopoverOpen = true;
         this._renderRandomHistoryPopover();

@@ -190,15 +190,16 @@ export const SeatingState = {
         }
 
         this._clearSelection();
+        this._exitAislePaintMode?.();
         this._closeRandomPicker?.();
         this._closeContextMenu?.();
         this._closeMobileSheet(true);
         this._closeConfigPopover();
         this._closePlacementPopover();
+        this._closeStatusDotsPopover?.();
 
         // Remove any existing onboarding hint so the new mode can render its own contextual hint
         document.querySelector('.sc-onboarding-hint')?.remove();
-        this._onboardingStep = null;
 
         this._planMode = mode;
         this._prevPlacedCount = 0;
@@ -310,6 +311,9 @@ export const SeatingState = {
         this._hasChangesSinceUnlock = false;
         this._dragSource = null;
         this._touchSourceInfo = null;
+        if (locked) {
+            this._exitAislePaintMode?.();
+        }
         this._syncLockControlsUI(locked);
         this._updatePlanModeSwitchUI();
         if (!skipDraggabilityUpdate) {
@@ -382,9 +386,11 @@ export const SeatingState = {
         }
 
         this._clearSelection();
+        this._exitAislePaintMode?.();
         this._closeRandomPicker?.();
         this._closeContextMenu?.();
         this._closeMobileSheet();
+        this._closeStatusDotsPopover?.();
         if (this._isLocked) {
             this._closeConfigPopover();
             this._dismissOnboardingHint();
@@ -632,6 +638,54 @@ export const SeatingState = {
         });
     },
 
+    /**
+     * Décale l'aile droite (élèves + places spéciales de classe) des autres classes
+     * lors d'un redimensionnement de colonnes ou d'un Undo/Redo en disposition En U.
+     */
+    _shiftOtherClassesUShapeRightWing(oldCols, newCols, uWing, targetRows = this._getRows()) {
+        const colDelta = newCols - oldCols;
+        if (!colDelta || uWing <= 0) return;
+
+        const posKey = this._getActivePositionKey();
+        const classSpecialKey = this._getActiveClassSpecialKey();
+        const updatedKey = this._getActiveClassUpdatedKey();
+        const currentClassId = this._getCurrentClass()?.id;
+        const currentStudentIds = new Set(this._students.map(s => s.id));
+        const shiftedClassIds = new Set();
+
+        (appState.classes || []).forEach(cls => {
+            if (!cls || cls.id === currentClassId || !cls[classSpecialKey]) return;
+            const nextClassSpecial = {};
+            let mutated = false;
+            for (const [key, type] of Object.entries(cls[classSpecialKey])) {
+                const [r, c] = key.split(',').map(Number);
+                const nextC = (r >= 1 && c >= oldCols - uWing) ? (c + colDelta) : c;
+                if (r >= 0 && r < targetRows && nextC >= 0 && nextC < newCols) {
+                    nextClassSpecial[`${r},${nextC}`] = type;
+                    if (nextC !== c) mutated = true;
+                } else {
+                    mutated = true;
+                }
+            }
+            cls[classSpecialKey] = nextClassSpecial;
+            if (mutated) shiftedClassIds.add(cls.id);
+        });
+
+        (appState.generatedResults || []).forEach(r => {
+            if (!r || currentStudentIds.has(r.id)) return;
+            const pos = r[posKey];
+            if (pos && typeof pos.row === 'number' && typeof pos.col === 'number' && pos.row >= 1 && pos.col >= oldCols - uWing) {
+                r[posKey] = { ...pos, col: pos.col + colDelta };
+                shiftedClassIds.add(r.classId);
+            }
+        });
+
+        const now = Date.now();
+        (appState.classes || []).forEach(cls => {
+            if (cls && shiftedClassIds.has(cls.id)) cls[updatedKey] = now;
+        });
+    },
+
     _undo() {
         if (this._undoStack.length === 0 || this._isLocked) return;
         this._redoStack.push(this._captureSnapshot());
@@ -662,8 +716,16 @@ export const SeatingState = {
         const gridKey = this._getActiveGridKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
         const oldRows = this._gridState?.length || this._getRows();
+        const oldCols = this._gridState?.[0]?.length || this._getCols();
         const targetRows = snapshot.rows || oldRows;
-        const rowOffset = this._isActivityMode() ? 0 : (targetRows - oldRows);
+        const targetCols = snapshot.cols || oldCols;
+        const oldUWing = !this._isActivityMode()
+            ? (this._detectUShapeWingWidth?.(appState[gridKey]?.specialLayout || {}, oldRows, oldCols) || 0)
+            : 0;
+        const targetUWing = !this._isActivityMode()
+            ? (this._detectUShapeWingWidth?.(snapshot.specialLayout || appState[gridKey]?.specialLayout || {}, targetRows, targetCols) || 0)
+            : 0;
+        const rowOffset = (this._isActivityMode() || oldUWing > 0 || targetUWing > 0) ? 0 : (targetRows - oldRows);
 
         this._gridState = snapshot.gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell));
         if (appState[gridKey]) {
@@ -681,7 +743,9 @@ export const SeatingState = {
             }
         }
 
-        if (rowOffset !== 0) {
+        if (oldUWing > 0 && targetUWing > 0 && targetCols !== oldCols) {
+            this._shiftOtherClassesUShapeRightWing?.(oldCols, targetCols, oldUWing, targetRows);
+        } else if (rowOffset !== 0) {
             (appState.classes || []).forEach(cls => {
                 if (!cls || cls.id === currentClass?.id || !cls[classSpecialKey]) return;
                 const nextClassSpecial = {};
@@ -961,6 +1025,7 @@ export const SeatingState = {
         if (!this._isLocked) {
             pill.style.display = 'none';
             pill.innerHTML = '';
+            delete pill.dataset.pillKey;
             return;
         }
 
@@ -970,11 +1035,18 @@ export const SeatingState = {
         if (info.status === 'empty') {
             pill.style.display = 'none';
             pill.innerHTML = '';
+            delete pill.dataset.pillKey;
             return;
         }
 
         pill.className = `sc-status-pill sc-status-${info.status}`;
         pill.style.display = '';
+
+        const nextPillKey = `${info.status}|${info.dateStr || ''}|${info.unplaced || 0}|${info.sourceGroups || ''}`;
+        if (pill.childElementCount > 0 && pill.dataset.pillKey === nextPillKey) {
+            return;
+        }
+        pill.dataset.pillKey = nextPillKey;
 
         const dateText = info.dateStr ? ` · ${info.dateStr}` : '';
         const unplacedWarning = info.unplaced > 0

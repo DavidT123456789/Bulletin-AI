@@ -350,6 +350,61 @@
     margin-bottom: 0;
 }
 
+.welcome-provider-hint {
+    margin: 10px 0 2px;
+    min-height: 1.35em;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.welcome-restore-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    margin-top: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    background: var(--tonal-bg);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.welcome-restore-link[hidden] {
+    display: none;
+}
+
+.welcome-restore-link iconify-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+@media (hover: hover) {
+    .welcome-restore-link:hover {
+        background: var(--item-hover-bg);
+        border-color: var(--border-color-hover);
+        color: var(--text-primary);
+    }
+}
+
+.welcome-restore-link:active {
+    transform: scale(0.98);
+}
+
+@media (max-width: 700px) {
+    .welcome-restore-link {
+        min-height: 44px;
+    }
+}
+
 .welcome-api-setup .error-message {
     width: 100%;
     text-align: center;

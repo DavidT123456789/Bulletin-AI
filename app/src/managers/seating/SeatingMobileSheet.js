@@ -6,7 +6,6 @@
 import { appState } from '../../state/State.js';
 import { StudentPhotoManager } from '../StudentPhotoManager.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
-import { StorageManager } from '../StorageManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
 import { Utils } from '../../utils/Utils.js';
@@ -17,9 +16,6 @@ import { StudentDataManager } from '../StudentDataManager.js';
 import { ListSelectionManager } from '../list/ListSelectionManager.js';
 import { attachSheetPullToDismiss } from '../../utils/TouchGestures.js';
 import {
-    MIN_COLS,
-    MAX_COLS,
-    MIN_ROWS,
     MAX_ROWS,
     MAX_ACTIVITY_GROUP_SIZE
 } from './SeatingState.js';
@@ -82,6 +78,7 @@ export const SeatingMobileSheet = {
             this._cleanupModeCarousel();
             this._closeConfigPopover();
             this._closePlacementPopover();
+            this._closeStatusDotsPopover?.();
             this._closeContextMenu?.();
             this._closeMobileSheet(true);
             TooltipsUI?.hideAll?.();
@@ -764,109 +761,12 @@ export const SeatingMobileSheet = {
     _getEffectiveOnboardingStep() {
         if (this._isVirtualClass()) return 'virtual-empty';
         if (this._isActivityMode()) return 'activity';
-        if (this._onboardingStep === 'room' || this._onboardingStep === 'placement') {
-            return this._onboardingStep;
-        }
-        const isConfigured = this._isRoomConfigured('course');
-        this._onboardingStep = isConfigured ? 'placement' : 'room';
-        return this._onboardingStep;
-    },
-
-    _transitionOnboardingStep(hint, nextStep) {
-        if (!hint) return;
-        const startW = hint.offsetWidth;
-        const startH = hint.offsetHeight;
-
-        hint.dataset.step = nextStep;
-        this._renderOnboardingHintContent(hint, nextStep);
-
-        const endW = hint.offsetWidth;
-        const endH = hint.offsetHeight;
-
-        if (typeof hint.animate === 'function' && startW > 0 && startH > 0 && (startW !== endW || startH !== endH)) {
-            hint.style.overflow = 'hidden';
-            const anim = hint.animate([
-                { width: `${startW}px`, height: `${startH}px` },
-                { width: `${endW}px`, height: `${endH}px` }
-            ], {
-                duration: 240,
-                easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
-            });
-            const cleanup = () => {
-                hint.style.overflow = '';
-            };
-            anim.onfinish = cleanup;
-            anim.oncancel = cleanup;
-        }
-    },
-
-    _confirmRoomSetup() {
-        const gridKey = this._getActiveGridKey();
-        appState[gridKey] = {
-            rows: this._getRows(),
-            cols: this._getCols(),
-            locked: this._isLocked,
-            roomConfigured: true,
-            specialLayout: appState[gridKey]?.specialLayout || {}
-        };
-        document.getElementById('scConfigBtn')?.classList.remove('sc-has-pulse');
-        StorageManager.saveAppState();
-
-        this._roomSetupFromPlacement = false;
-        this._roomSetupSnapshot = null;
-        this._onboardingStep = 'placement';
-        const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
-        if (hint) {
-            this._transitionOnboardingStep(hint, 'placement');
-        }
-    },
-
-    _cancelRoomSetup() {
-        const snap = this._roomSetupSnapshot;
-        const gridKey = this._getActiveGridKey();
-        let hasGridChanged = false;
-
-        if (snap) {
-            const currentSpecialJson = JSON.stringify(appState[gridKey]?.specialLayout || {});
-            const snapSpecialJson = JSON.stringify(snap.gridClone?.specialLayout || {});
-            hasGridChanged = this._getRows() !== snap.rows
-                || this._getCols() !== snap.cols
-                || currentSpecialJson !== snapSpecialJson;
-
-            appState[gridKey] = snap.gridClone ? JSON.parse(JSON.stringify(snap.gridClone)) : null;
-            if (hasGridChanged) {
-                const rowSlider = document.getElementById('scRowsSlider');
-                const colSlider = document.getElementById('scColsSlider');
-                const rowValEl = document.getElementById('scRowsValue');
-                const colValEl = document.getElementById('scColsValue');
-                if (rowSlider) rowSlider.value = String(snap.rows);
-                if (rowValEl) rowValEl.textContent = String(snap.rows);
-                if (colSlider) colSlider.value = String(snap.cols);
-                if (colValEl) colValEl.textContent = String(snap.cols);
-                this._initGrid(snap.rows, snap.cols);
-                this._loadPositionsFromState();
-                StorageManager.saveAppState();
-            }
-        }
-
-        this._roomSetupFromPlacement = false;
-        this._roomSetupSnapshot = null;
-        this._onboardingStep = 'placement';
-
-        if (hasGridChanged) {
-            this._render();
-            this._applySmartFit(true);
-        } else {
-            const hint = document.querySelector('#scGridArea .sc-onboarding-hint');
-            if (hint) {
-                this._transitionOnboardingStep(hint, 'placement');
-            }
-        }
+        return 'placement';
     },
 
     _maybeShowOnboardingHint() {
         const isVirtual = this._isVirtualClass();
-        if (this._getPlacedIds().size > 0 || (this._isLocked && !isVirtual)) return;
+        if (this._getPlacedIds().size > 0 || (this._isLocked && !isVirtual) || this._isAislePaintMode || this._configPopoverOpen || this._placementPopoverOpen) return;
 
         const gridArea = document.getElementById('scGridArea');
         if (!gridArea) return;
@@ -876,10 +776,10 @@ export const SeatingMobileSheet = {
 
         if (hint && !hint.classList.contains('sc-hint-exiting')) {
             if (hint.dataset.step === step) {
-                this._syncOnboardingHintUI(hint);
                 return;
             }
-            this._transitionOnboardingStep(hint, step);
+            hint.dataset.step = step;
+            this._renderOnboardingHintContent(hint, step);
             return;
         }
 
@@ -892,7 +792,7 @@ export const SeatingMobileSheet = {
         gridArea.appendChild(hint);
 
         const gridKey = this._getActiveGridKey();
-        if (!appState[gridKey] && step !== 'room') {
+        if (!appState[gridKey]) {
             document.getElementById('scConfigBtn')?.classList.add('sc-has-pulse');
         }
     },
@@ -924,116 +824,16 @@ export const SeatingMobileSheet = {
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
                     <div class="sc-hint-title">Plan d'activité vide</div>
-                    <div class="sc-hint-subtitle">Créez des binômes, groupes ou postes de travail.</div>
+                    <div class="sc-hint-subtitle">Formez des binômes, îlots de 3 ou groupes de 4 par poste.</div>
                 </div>
                 <div class="sc-onboarding-actions">
-                    <button type="button" class="sc-onboarding-btn secondary" id="scHintPairsRandomBtn">
-                        <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
-                        <span>Binômes aléatoires</span>
-                    </button>
-                    <button type="button" class="sc-onboarding-btn secondary" id="scHintPairsNeighborsBtn">
-                        <iconify-icon icon="solar:transfer-horizontal-linear"></iconify-icon>
-                        <span>Binômes voisins du cours</span>
-                    </button>
-                    <button type="button" class="sc-onboarding-btn secondary" id="scHintGroups4Btn">
-                        <iconify-icon icon="solar:widget-4-linear"></iconify-icon>
-                        <span>Groupes de 4 / Terrains</span>
+                    <button type="button" class="sc-onboarding-btn secondary" id="scHintActivityPlaceBtn">
+                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                        <span>Former des binômes ou îlots</span>
                     </button>
                     <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
                         <span>Placer manuellement</span>
                     </button>
-                </div>
-            `;
-        } else if (step === 'room') {
-            const rows = this._getRows();
-            const cols = this._getCols();
-            const activePreset = this._detectCurrentRoomPreset();
-            const capInfo = this._getRoomCapacityInfo();
-            const isWarning = capInfo.isShortForCurrent || capInfo.isShortForMax;
-            const isEditMode = Boolean(this._roomSetupFromPlacement);
-
-            hint.innerHTML = `
-                <div class="sc-onboarding-hint-text">
-                    ${isEditMode ? '' : '<span class="sc-hint-step-badge">Étape 1 / 2 · Configuration unique</span>'}
-                    <div class="sc-hint-title">${isEditMode ? 'Régler la salle de cours' : 'Configurez votre salle de cours'}</div>
-                    <div class="sc-hint-subtitle">Ce plan de salle s'appliquera à toutes vos classes (modifiable à tout moment).</div>
-                </div>
-
-                <div class="sc-room-preset-grid" role="radiogroup" aria-label="Disposition des tables">
-                    <button type="button" class="sc-room-preset-card ${activePreset === 'compact' ? 'active' : ''}" data-room-preset="compact" role="radio" aria-checked="${activePreset === 'compact'}">
-                        <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-compact">
-                                <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-                                <span class="sc-mini-row"><i></i><i></i><i></i><i></i><i></i><i></i></span>
-                            </span>
-                        </span>
-                        <span class="sc-preset-card-title">Sans allée</span>
-                        <span class="sc-preset-card-sub">6 col. continues</span>
-                    </button>
-                    <button type="button" class="sc-room-preset-card ${activePreset === 'center-aisle' ? 'active' : ''}" data-room-preset="center-aisle" role="radio" aria-checked="${activePreset === 'center-aisle'}">
-                        <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-center-aisle">
-                                <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
-                                <span class="sc-mini-row"><i></i><i></i><i></i><b class="aisle"></b><i></i><i></i><i></i></span>
-                            </span>
-                        </span>
-                        <span class="sc-preset-card-title">1 allée centrale</span>
-                        <span class="sc-preset-card-sub">2 îlots de 3</span>
-                    </button>
-                    <button type="button" class="sc-room-preset-card ${activePreset === 'double-aisles' ? 'active' : ''}" data-room-preset="double-aisles" role="radio" aria-checked="${activePreset === 'double-aisles'}">
-                        <span class="sc-preset-diagram" aria-hidden="true">
-                            <span class="sc-mini-diagram is-double-aisles">
-                                <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
-                                <span class="sc-mini-row"><i></i><i></i><b class="aisle"></b><i></i><i></i><b class="aisle"></b><i></i><i></i></span>
-                            </span>
-                        </span>
-                        <span class="sc-preset-card-title">2 allées</span>
-                        <span class="sc-preset-card-sub">3 rangées doubles</span>
-                    </button>
-                </div>
-
-                <div class="sc-onboarding-dims-bar">
-                    <div class="sc-onboarding-dims-controls">
-                        <div class="sc-onboarding-dim-group">
-                            <span class="sc-onboarding-dim-label">Colonnes</span>
-                            <div class="sc-onboarding-stepper">
-                                <button type="button" class="sc-hint-step-btn" data-dim="cols" data-delta="-1" aria-label="Moins de colonnes" ${cols <= MIN_COLS ? 'disabled' : ''}>−</button>
-                                <span class="sc-hint-dim-val" id="scHintColsVal">${cols}</span>
-                                <button type="button" class="sc-hint-step-btn" data-dim="cols" data-delta="1" aria-label="Plus de colonnes" ${cols >= MAX_COLS ? 'disabled' : ''}>+</button>
-                            </div>
-                        </div>
-                        <span class="sc-onboarding-dim-sep" aria-hidden="true">×</span>
-                        <div class="sc-onboarding-dim-group">
-                            <span class="sc-onboarding-dim-label">Rangées</span>
-                            <div class="sc-onboarding-stepper">
-                                <button type="button" class="sc-hint-step-btn" data-dim="rows" data-delta="-1" aria-label="Moins de rangées" ${rows <= MIN_ROWS ? 'disabled' : ''}>−</button>
-                                <span class="sc-hint-dim-val" id="scHintRowsVal">${rows}</span>
-                                <button type="button" class="sc-hint-step-btn" data-dim="rows" data-delta="1" aria-label="Plus de rangées" ${rows >= MAX_ROWS ? 'disabled' : ''}>+</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="sc-hint-capacity-pill ${isWarning ? 'is-warning' : 'is-ok'}" id="scHintCapacityBadge" role="status">
-                        ${this._getCapacityBadgeInnerHTML(capInfo)}
-                    </div>
-                </div>
-
-                <div class="sc-onboarding-actions">
-                    <button type="button" class="sc-onboarding-btn secondary sc-onboarding-confirm-btn" id="scHintConfirmRoomBtn">
-                        <iconify-icon icon="${isEditMode ? 'solar:check-read-linear' : 'solar:arrow-right-linear'}"></iconify-icon>
-                        <span>${isEditMode ? 'Valider la salle' : 'Continuer vers le placement'}</span>
-                    </button>
-                    <div class="sc-onboarding-footer-links">
-                        ${isEditMode ? `
-                            <button type="button" class="sc-onboarding-btn text-only" id="scHintCancelRoomBtn">
-                                <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
-                                <span>Retour sans modifier</span>
-                            </button>
-                        ` : `
-                            <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
-                                <span>Passer et placer manuellement</span>
-                            </button>
-                        `}
-                    </div>
                 </div>
             `;
         } else {
@@ -1057,21 +857,13 @@ export const SeatingMobileSheet = {
             hint.innerHTML = `
                 <div class="sc-onboarding-hint-text">
                     <div class="sc-hint-title">Plan de classe vide</div>
-                    <div class="sc-hint-subtitle">Placez vos élèves pour commencer.</div>
+                    <div class="sc-hint-subtitle">Placez vos élèves manuellement, ajustez la salle ou lancez un agencement automatique.</div>
                 </div>
                 ${capacityWarningHTML}
                 <div class="sc-onboarding-actions">
                     <button type="button" class="sc-onboarding-btn secondary" id="scHintAutoBtn">
-                        <iconify-icon icon="solar:sort-by-alphabet-linear"></iconify-icon>
-                        <span>Placer (A → Z)</span>
-                    </button>
-                    <button type="button" class="sc-onboarding-btn secondary" id="scHintRandomBtn">
-                        <iconify-icon icon="solar:shuffle-linear"></iconify-icon>
-                        <span>Aléatoire (vers l'avant)</span>
-                    </button>
-                    <button type="button" class="sc-onboarding-btn secondary" id="scHintDisperseBtn">
-                        <iconify-icon icon="solar:maximize-square-minimalistic-linear"></iconify-icon>
-                        <span>Disperser (espacement max.)</span>
+                        <iconify-icon icon="solar:magic-stick-3-linear"></iconify-icon>
+                        <span>Agencer automatiquement</span>
                     </button>
                     <div class="sc-onboarding-footer-links">
                         <button type="button" class="sc-onboarding-btn text-only" id="scHintManualBtn">
@@ -1080,7 +872,7 @@ export const SeatingMobileSheet = {
                         <span class="sc-onboarding-footer-dot" aria-hidden="true">·</span>
                         <button type="button" class="sc-onboarding-btn text-only" id="scHintEditRoomBtn">
                             <iconify-icon icon="solar:settings-minimalistic-linear"></iconify-icon>
-                            <span>Régler la salle</span>
+                            <span>Salle &amp; Allées</span>
                         </button>
                     </div>
                 </div>
@@ -1104,48 +896,10 @@ export const SeatingMobileSheet = {
             });
         });
 
-        hint.querySelectorAll('.sc-room-preset-card').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const preset = btn.dataset.roomPreset;
-                if (preset) {
-                    this._applyRoomPreset(preset);
-                }
-            });
-        });
-
-        hint.querySelectorAll('.sc-hint-step-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const dim = btn.dataset.dim;
-                const delta = parseInt(btn.dataset.delta, 10);
-                if (dim && !Number.isNaN(delta)) {
-                    this._stepGridDimension(dim, delta);
-                }
-            });
-        });
-
-        hint.querySelector('#scHintConfirmRoomBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this._confirmRoomSetup();
-        });
-
-        hint.querySelector('#scHintCancelRoomBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this._cancelRoomSetup();
-        });
-
         hint.querySelector('#scHintEditRoomBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            const gridKey = this._getActiveGridKey();
-            this._roomSetupFromPlacement = true;
-            this._roomSetupSnapshot = {
-                rows: this._getRows(),
-                cols: this._getCols(),
-                gridClone: appState[gridKey] ? JSON.parse(JSON.stringify(appState[gridKey])) : null
-            };
-            this._onboardingStep = 'room';
-            this._transitionOnboardingStep(hint, 'room');
+            this._dismissOnboardingHint();
+            this._openConfigPopover?.();
         });
 
         hint.querySelector('#scHintAutoExpandRowsBtn')?.addEventListener('click', (e) => {
@@ -1157,70 +911,18 @@ export const SeatingMobileSheet = {
 
         hint.querySelector('#scHintAutoBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this._autoPlace('alpha-asc');
+            this._dismissOnboardingHint();
+            this._openPlacementPopover?.();
         });
-        hint.querySelector('#scHintRandomBtn')?.addEventListener('click', (e) => {
+        hint.querySelector('#scHintActivityPlaceBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this._autoPlace('random');
-        });
-        hint.querySelector('#scHintDisperseBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this._autoPlace('random-disperse');
-        });
-        hint.querySelector('#scHintPairsRandomBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this._autoPlace('pairs-random');
-        });
-        hint.querySelector('#scHintPairsNeighborsBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this._autoPlace('pairs-neighbors');
-        });
-        hint.querySelector('#scHintGroups4Btn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this._autoPlace('groups-4');
+            this._dismissOnboardingHint();
+            this._openPlacementPopover?.();
         });
         hint.querySelector('#scHintManualBtn')?.addEventListener('click', (e) => {
             e.stopPropagation();
             this._dismissOnboardingHint();
         });
-    },
-
-    _syncOnboardingHintUI(hint) {
-        if (!hint || hint.dataset.step !== 'room') return;
-
-        const rows = this._getRows();
-        const cols = this._getCols();
-        const activePreset = this._detectCurrentRoomPreset();
-        const capInfo = this._getRoomCapacityInfo();
-        const isWarning = capInfo.isShortForCurrent || capInfo.isShortForMax;
-
-        const colsVal = hint.querySelector('#scHintColsVal');
-        const rowsVal = hint.querySelector('#scHintRowsVal');
-        if (colsVal) colsVal.textContent = cols;
-        if (rowsVal) rowsVal.textContent = rows;
-
-        hint.querySelectorAll('.sc-hint-step-btn').forEach(btn => {
-            const dim = btn.dataset.dim;
-            const delta = parseInt(btn.dataset.delta, 10);
-            if (dim === 'cols') {
-                btn.disabled = (delta < 0 && cols <= MIN_COLS) || (delta > 0 && cols >= MAX_COLS);
-            } else if (dim === 'rows') {
-                btn.disabled = (delta < 0 && rows <= MIN_ROWS) || (delta > 0 && rows >= MAX_ROWS);
-            }
-        });
-
-        hint.querySelectorAll('.sc-room-preset-card').forEach(card => {
-            const isMatch = card.dataset.roomPreset === activePreset;
-            card.classList.toggle('active', isMatch);
-            card.setAttribute('aria-checked', isMatch ? 'true' : 'false');
-        });
-
-        const capBadge = hint.querySelector('#scHintCapacityBadge');
-        if (capBadge) {
-            capBadge.innerHTML = this._getCapacityBadgeInnerHTML(capInfo);
-            capBadge.classList.toggle('is-warning', isWarning);
-            capBadge.classList.toggle('is-ok', !isWarning);
-        }
     },
 
     _dismissOnboardingHint() {

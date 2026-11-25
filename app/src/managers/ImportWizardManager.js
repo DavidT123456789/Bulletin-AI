@@ -8,7 +8,7 @@
 import { appState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { detectSeparator, parseLine, detectVerticalFormat, convertVerticalToTabular, isExcelSpreadsheetFile, EXCEL_UNSUPPORTED_IMPORT_MESSAGE } from '../utils/ImportUtils.js';
-import { autoConvertPdf } from '../utils/PdfParsers.js';
+import { autoConvertPdf, detectDetailedEvaluationsPdf } from '../utils/PdfParsers.js';
 import { extractTextFromPdf, isPdf } from '../utils/PdfUtils.js';
 import { DBService } from '../services/DBService.js';
 import { UI } from './UIManager.js';
@@ -858,7 +858,14 @@ export const ImportWizardManager = {
                 this._animateTextUpdate();
                 setLoading(false);
                 this._processData();
-                // No success notification - badge in footer provides feedback
+                if (!this.state.detectedFormat && detectDetailedEvaluationsPdf(textContent)) {
+                    UI.showNotification(
+                        'Pour remplir les bulletins, exportez plutôt le PDF depuis Pronote › Bulletins › Saisie des appréciations (ou copiez-collez votre tableau de moyennes).',
+                        'warning',
+                        8000,
+                        { title: 'Relevé d\'évaluations détecté' }
+                    );
+                }
             } catch (error) {
                 console.error('Erreur extraction PDF:', error);
                 setLoading(false);

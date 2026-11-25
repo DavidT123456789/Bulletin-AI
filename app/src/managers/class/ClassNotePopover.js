@@ -196,8 +196,8 @@ export const ClassNotePopover = {
 
         const tooltipText = hasNote
             ? this._formatNoteTooltip(noteText)
-            : 'Ajouter un mémo de classe';
-        btn.setAttribute('aria-label', hasNote ? `Mémo de la classe : ${noteText}` : 'Ajouter un mémo de classe');
+            : 'Mémo personnel de la classe (pense-bête)';
+        btn.setAttribute('aria-label', hasNote ? `Mémo de la classe : ${noteText}` : 'Mémo personnel de la classe (pense-bête)');
         btn.setAttribute('data-tooltip', tooltipText);
         TooltipsUI?.updateTooltip?.(btn, tooltipText);
     },
