@@ -608,11 +608,13 @@ export const PromptService = {
      * @private
      */
     _formatLengthInstruction(wordCount) {
-        let sentenceRange = '1 à 3 phrases';
+        let sentenceRange = '2 à 3 phrases';
         if (wordCount <= 15) {
             sentenceRange = '1 phrase courte';
         } else if (wordCount <= 30) {
             sentenceRange = '1 à 2 phrases courtes';
+        } else if (wordCount <= 45) {
+            sentenceRange = '1 à 3 phrases';
         } else if (wordCount > 60) {
             sentenceRange = '2 à 4 phrases';
         }
@@ -1006,7 +1008,7 @@ export const PromptService = {
         styleParts.push(`Réponds uniquement avec le texte de l'appréciation en un seul paragraphe, sans titre, préambule, liste à puces ni guillemets.`);
 
         if (effectiveStyle.styleInstructions) {
-            styleParts.push(`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`);
+            styleParts.push(`Consigne de l'enseignant (prioritaire sur les règles de style ci-dessus en cas de conflit) : ${effectiveStyle.styleInstructions}`);
         }
 
         const recentOpenings = Array.isArray(runtimeOptions?.recentOpenings)

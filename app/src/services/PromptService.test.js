@@ -1050,11 +1050,21 @@ describe('PromptService', () => {
             expect(prompts.appreciationUser).not.toContain('Observations du professeur : Observations:');
             expect(prompts.appreciationUser).not.toMatch(/\n\n$/);
 
-            // Vérification des 4 paliers de fourchettes souples (10 à 90 mots)
+            // Vérification des 5 paliers de fourchettes souples (10 à 90 mots)
             expect(PromptService._formatLengthInstruction(15)).toBe('environ 15 mots (1 phrase courte)');
             expect(PromptService._formatLengthInstruction(25)).toBe('environ 25 mots (1 à 2 phrases courtes)');
             expect(PromptService._formatLengthInstruction(45)).toBe('environ 45 mots (1 à 3 phrases)');
+            expect(PromptService._formatLengthInstruction(55)).toBe('environ 55 mots (2 à 3 phrases)');
             expect(PromptService._formatLengthInstruction(75)).toBe('environ 75 mots (2 à 4 phrases)');
+
+            // Vérification de la priorité explicite des consignes spécifiques sur les règles de style
+            const customPrompts = PromptService.getAllPrompts(
+                { nom: 'DUPONT', prenom: 'Emma', statuses: [], currentPeriod: 'T1', periods: { T1: { grade: 14 } } },
+                { voice: 'default', length: 40, styleInstructions: "Vouvoyer l'élève.", enableStyleInstructions: true }
+            );
+            expect(customPrompts.appreciationSystem).toContain(
+                "Consigne de l'enseignant (prioritaire sur les règles de style ci-dessus en cas de conflit) : Vouvoyer l'élève."
+            );
         });
 
         it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {
