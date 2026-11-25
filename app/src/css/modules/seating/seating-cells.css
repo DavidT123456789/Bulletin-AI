@@ -2203,8 +2203,8 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     padding: 0 11px 0 9px;
     border: none;
     border-radius: var(--radius-pill, 999px);
-    background: var(--primary-color);
-    color: var(--text-on-primary);
+    background: var(--item-hover-bg);
+    color: var(--text-secondary);
     font-family: inherit;
     font-size: 0.76rem;
     font-weight: 600;
@@ -2214,8 +2214,14 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     flex-shrink: 0;
     user-select: none;
     transition: background-color var(--transition-fast),
+                color var(--transition-fast),
                 transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
                 opacity var(--transition-fast);
+}
+
+#seatingChartView[data-all-placed="true"] .sc-validate-btn {
+    background: var(--primary-color);
+    color: var(--text-on-primary);
 }
 
 .sc-validate-btn iconify-icon {
@@ -2226,7 +2232,13 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
 
 @media (hover: hover) {
     .sc-validate-btn:not(.disabled):hover {
+        background: var(--item-hover-bg-elevated);
+        color: var(--text-primary);
+    }
+
+    #seatingChartView[data-all-placed="true"] .sc-validate-btn:not(.disabled):hover {
         background: var(--primary-btn-hover);
+        color: var(--text-on-primary);
     }
 }
 
