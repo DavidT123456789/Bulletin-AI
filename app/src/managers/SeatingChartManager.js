@@ -207,9 +207,10 @@ export const SeatingChartManager = {
                     <div class="sc-sidebar-toolbar" id="scSidebarToolbar">
                         <div class="sc-sidebar-toolbar-header">
                             <span class="sc-toolbar-label">Mode Édition</span>
-                            <div class="sc-toggle-switch" id="scLockBtn" role="switch" tabindex="0" aria-checked="true" aria-label="Mode Édition">
-                                <div class="sc-toggle-knob"></div>
-                            </div>
+                            <button type="button" class="sc-validate-btn" id="scLockBtn" aria-label="Valider et figer le plan">
+                                <iconify-icon icon="ph:check-bold" aria-hidden="true"></iconify-icon>
+                                <span class="sc-validate-btn-label">Valider</span>
+                            </button>
                         </div>
                         <div class="sc-sidebar-actions">
                             <div class="sc-edit-only sc-sidebar-actions-group">

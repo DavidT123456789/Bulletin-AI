@@ -239,22 +239,13 @@ export const SeatingState = {
         const isDisabled = !isVirtual && !locked && count === 0;
         const btnLabel = isVirtual
             ? 'Classe reconstituée en lecture seule'
-            : (isDisabled
-                ? 'Placez au moins un élève pour valider le plan'
-                : (locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan'));
+            : (isDisabled ? 'Placez au moins un élève pour valider le plan' : 'Valider et figer le plan');
 
-        btn.classList.toggle('locked', locked);
         btn.classList.toggle('disabled', isDisabled);
-        btn.setAttribute('aria-checked', (!locked).toString());
         btn.setAttribute('aria-disabled', String(isDisabled));
         btn.setAttribute('aria-label', btnLabel);
         btn.setAttribute('data-tooltip', btnLabel);
         TooltipsUI?.updateTooltip?.(btn, btnLabel);
-
-        const header = btn.closest?.('.sc-sidebar-toolbar-header');
-        if (header) {
-            header.classList.toggle('is-disabled', isDisabled);
-        }
     },
 
     _syncLockControlsUI(locked, options = {}) {
@@ -1240,33 +1231,42 @@ export const SeatingState = {
         }
 
         const isLocked = info.status === 'locked';
-        const iconRest = isLocked ? 'solar:lock-linear' : 'solar:test-tube-linear';
-        const labelRest = isLocked ? 'Validé' : 'En test';
+        const statusLabel = isLocked ? 'Validé' : 'En test';
         const actionLabel = 'Modifier';
 
-        pill.innerHTML = `
-            <div class="sc-status-pill-inner">
-                <div class="sc-status-pill-side sc-status-pill-rest">
-                    <iconify-icon class="sc-status-pill-icon" icon="${iconRest}"></iconify-icon>
-                    <span class="sc-status-pill-text">${labelRest}</span>
-                    ${unplacedWarning}
+        pill.innerHTML = isLocked
+            ? `
+                <div class="sc-status-pill-inner">
+                    <div class="sc-status-pill-side sc-status-pill-rest">
+                        <iconify-icon class="sc-status-pill-icon" icon="solar:pen-linear"></iconify-icon>
+                        <span class="sc-status-pill-text">${actionLabel}</span>
+                        ${unplacedWarning}
+                    </div>
                 </div>
-                <div class="sc-status-pill-side sc-status-pill-hover" aria-hidden="true">
-                    <iconify-icon class="sc-status-pill-icon" icon="solar:pen-linear"></iconify-icon>
-                    <span class="sc-status-pill-text">${actionLabel}</span>
-                    ${dateText ? `<span class="sc-status-pill-date">${dateText}</span>` : ''}
+            `
+            : `
+                <div class="sc-status-pill-inner">
+                    <div class="sc-status-pill-side sc-status-pill-rest">
+                        <iconify-icon class="sc-status-pill-icon" icon="solar:test-tube-linear"></iconify-icon>
+                        <span class="sc-status-pill-text">${statusLabel}</span>
+                        ${unplacedWarning}
+                    </div>
+                    <div class="sc-status-pill-side sc-status-pill-hover" aria-hidden="true">
+                        <iconify-icon class="sc-status-pill-icon" icon="solar:pen-linear"></iconify-icon>
+                        <span class="sc-status-pill-text">${actionLabel}</span>
+                        ${dateText ? `<span class="sc-status-pill-date">${dateText}</span>` : ''}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
         const unplacedSuffix = info.unplaced > 0
             ? ` · ${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}`
             : '';
-        const tooltipMsg = `${labelRest}${dateText}${unplacedSuffix}<br><span class='kbd-hint'>Cliquer pour modifier</span>`;
+        const tooltipMsg = `${statusLabel}${dateText}${unplacedSuffix}<br><span class='kbd-hint'>Cliquer pour modifier</span>`;
 
         pill.removeAttribute('title');
         pill.setAttribute('data-tooltip', tooltipMsg);
-        pill.setAttribute('aria-label', `${labelRest}${dateText}${unplacedSuffix}. Cliquer pour passer en mode édition`);
+        pill.setAttribute('aria-label', `${statusLabel}${dateText}${unplacedSuffix}. Cliquer pour passer en mode édition`);
         TooltipsUI?.updateTooltip?.(pill, tooltipMsg);
     },
     // ========================================================================

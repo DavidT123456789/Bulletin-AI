@@ -639,7 +639,7 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
                     <div class="sc-status-pill" id="scStatusPill"></div>
                     <div class="sc-toolbar-info" id="scFooterInfo"></div>
                 </div>
-                <div id="scLockBtn" class="sc-toggle-switch"></div>
+                <button type="button" id="scLockBtn" class="sc-validate-btn"></button>
                 <div id="scGridContainer"></div>
                 <div id="scSidebarTitle"></div>
             </div>
@@ -719,9 +719,12 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         expect(status.unplaced).toBe(1);
         expect(status.placed).toBe(2);
 
-        // La pilule de statut doit afficher « Validé »
+        // La pilule d'édition affiche l'icône crayon + « Modifier » et le tooltip mentionne « Validé »
         const pill = document.getElementById('scStatusPill');
-        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).toContain('Modifier');
+        expect(pill.querySelector('.sc-status-pill-icon')?.getAttribute('icon')).toBe('solar:pen-linear');
+        expect(pill.querySelector('.sc-status-pill-hover')).toBeNull();
+        expect(pill.getAttribute('data-tooltip')).toContain('Validé');
     });
 
     it('devrait retourner le bon statut de cycle de vie (empty, testing, locked)', () => {
@@ -760,7 +763,8 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         classA.seatingLocked = true;
         SeatingChartManager._updateStatusPill();
         expect(pill.style.display).toBe('');
-        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).toContain('Modifier');
+        expect(pill.getAttribute('data-tooltip')).toContain('Validé');
 
         // Classe vide en mode verrouillé/consultation : pas de pastille "Mode Édition"
         const emptyClass = ClassManager.createClass('6ème Test Empty');
@@ -798,9 +802,10 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
 
         SeatingChartManager._updateStatusPill();
         expect(pill.style.display).toBe('');
-        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).toContain('Modifier');
         expect(pill.textContent).toContain('1 non placé');
         expect(pill.dataset.unplaced).toBe('1');
+        expect(pill.getAttribute('data-tooltip')).toContain('Validé');
         expect(pill.getAttribute('data-tooltip')).toContain('1 non placé');
         expect(pill.getAttribute('data-tooltip')).toContain('Cliquer pour modifier');
 
@@ -808,7 +813,7 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         appState.currentClassId = classB.id;
         classB.seatingLocked = true;
         SeatingChartManager._updateStatusPill();
-        expect(pill.textContent).toContain('Validé');
+        expect(pill.textContent).toContain('Modifier');
         expect(pill.textContent).not.toContain('non placé');
         expect(pill.dataset.unplaced).toBeUndefined();
         expect(pill.getAttribute('data-tooltip')).toContain('Validé');
@@ -879,8 +884,8 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         const pill = document.getElementById('scStatusPill');
         expect(pill.getAttribute('role')).toBe('button');
         expect(pill.getAttribute('tabindex')).toBe('0');
-        expect(pill.textContent).toContain('Validé');
         expect(pill.textContent).toContain('Modifier');
+        expect(pill.getAttribute('data-tooltip')).toContain('Validé');
 
         // Attacher les écouteurs pour ce test
         SeatingChartManager._setupEventListeners();
@@ -934,29 +939,31 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         expect(pill?.parentElement).toBe(topLeftBar);
         expect(modeSwitch?.nextElementSibling).toBe(pill);
 
-        // Sur plan vide : switch désactivé visuellement & sémantiquement, clic bloqué avec notification
+        // Sur plan vide : bouton Valider désactivé visuellement & sémantiquement, clic bloqué avec notification
         const lockBtn = document.getElementById('scLockBtn');
-        const toolbarHeader = lockBtn.closest('.sc-sidebar-toolbar-header');
+        expect(lockBtn.tagName).toBe('BUTTON');
         expect(lockBtn.classList.contains('disabled')).toBe(true);
         expect(lockBtn.getAttribute('aria-disabled')).toBe('true');
         expect(lockBtn.getAttribute('data-tooltip')).toContain('Placez au moins un élève');
-        expect(toolbarHeader.classList.contains('is-disabled')).toBe(true);
 
         const notifSpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
         try {
-            toolbarHeader.click();
+            lockBtn.click();
             expect(SeatingChartManager._isLocked).toBe(false);
             expect(emptyClass.seatingLocked).toBeFalsy();
             expect(notifSpy).toHaveBeenCalledWith('Placez au moins un élève pour valider le plan.', 'info');
 
-            // Dès qu'un élève est placé : switch réactivé et clic sur l'en-tête verrouille exactement une fois
+            // Dès qu'un élève est placé : bouton Valider réactivé et clic verrouille le plan
             SeatingChartManager._gridState[0][0] = 'e1';
             SeatingChartManager._updateFooter();
             expect(lockBtn.classList.contains('disabled')).toBe(false);
             expect(lockBtn.getAttribute('aria-disabled')).toBe('false');
-            expect(toolbarHeader.classList.contains('is-disabled')).toBe(false);
 
-            // Clic directement sur le switch (bulle jusqu'au header sans double déclenchement)
+            // Clic sur le titre "Mode Édition" ne déclenche plus la validation
+            lockBtn.closest('.sc-sidebar-toolbar-header').querySelector('.sc-toolbar-label').click();
+            expect(SeatingChartManager._isLocked).toBe(false);
+
+            // Clic sur le bouton Valider verrouille et valide le plan
             lockBtn.click();
             expect(SeatingChartManager._isLocked).toBe(true);
             expect(emptyClass.seatingLocked).toBe(true);
@@ -1258,7 +1265,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                         <div class="sc-status-pill" id="scStatusPill"></div>
                         <div class="sc-toolbar-info" id="scFooterInfo"></div>
                     </div>
-                    <div id="scLockBtn" class="sc-toggle-switch"></div>
+                    <button type="button" id="scLockBtn" class="sc-validate-btn"></button>
                     <div id="scGridContainer"></div>
                     <div id="scSidebarTitle"></div>
                     <div id="scStudentList"></div>
@@ -1318,13 +1325,14 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(status.shortLabel).toBe('Validé');
         });
 
-        it('doit afficher "Validé" sans avertissement "non placé" dans scStatusPill quand verrouillé', () => {
+        it('doit afficher "Modifier" (tooltip "Validé") sans avertissement "non placé" dans scStatusPill quand verrouillé', () => {
             testClass.seatingLocked = true;
             SeatingChartManager._isLocked = true;
             SeatingChartManager._updateStatusPill();
 
             const pill = document.getElementById('scStatusPill');
-            expect(pill.textContent).toContain('Validé');
+            expect(pill.textContent).toContain('Modifier');
+            expect(pill.getAttribute('data-tooltip')).toContain('Validé');
             expect(pill.textContent).not.toContain('non placé');
             expect(pill.querySelector('.sc-status-pill-unplaced')).toBeNull();
         });
@@ -2945,7 +2953,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                         <button class="ui-segment view-toggle-btn active" data-view="plan"></button>
                     </div>
                     <div id="seatingChartView" data-locked="true">
-                        <div id="scLockBtn" class="locked"></div>
+                        <button type="button" id="scLockBtn"></button>
                         <div id="scPlacementPopover"></div>
                         <div id="scConfigPopover"></div>
                     </div>
@@ -3042,7 +3050,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             document.body.innerHTML = `
                 <div id="seatingChartView" data-locked="true">
-                    <div id="scLockBtn" class="sc-toggle-switch locked"></div>
+                    <button type="button" id="scLockBtn" class="sc-validate-btn"></button>
                     <div id="scGridContainer"></div>
                     <div id="scSidebarTitle"></div>
                     <div id="scFooterInfo"></div>
@@ -3599,7 +3607,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 <div id="seatingChartView" data-locked="false">
                     <div class="sc-sidebar" id="scSidebar">
                         <div class="sc-sidebar-toolbar">
-                            <div id="scLockBtn" class="sc-toggle-switch"></div>
+                            <button type="button" id="scLockBtn" class="sc-validate-btn"></button>
                             <button id="scUndoBtn" disabled></button>
                             <button id="scRedoBtn" disabled></button>
                         </div>

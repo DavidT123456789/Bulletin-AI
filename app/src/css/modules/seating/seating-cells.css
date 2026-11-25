@@ -1775,9 +1775,31 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     }
 
     #seatingChartView .sc-sidebar-toolbar-header {
+        order: 2;
         gap: 0;
         flex-shrink: 0;
-        padding: 0 6px 0 2px;
+        padding: 0 0 0 4px;
+    }
+
+    #seatingChartView .sc-validate-btn {
+        position: relative;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+    }
+
+    #seatingChartView .sc-validate-btn::after {
+        content: '';
+        position: absolute;
+        inset: -6px;
+    }
+
+    #seatingChartView .sc-validate-btn iconify-icon {
+        font-size: 0.95rem;
+    }
+
+    #seatingChartView .sc-validate-btn-label {
+        display: none;
     }
 
     #seatingChartView .sc-sidebar-actions {
@@ -2450,25 +2472,65 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    cursor: pointer;
+    gap: 8px;
     user-select: none;
-}
-
-.sc-sidebar-toolbar-header.is-disabled {
-    cursor: not-allowed;
 }
 
 .sc-toolbar-label {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
-    cursor: inherit;
     user-select: none;
     transition: color var(--transition-fast);
 }
 
-.sc-sidebar-toolbar-header.is-disabled .sc-toolbar-label {
-    color: var(--text-tertiary);
+.sc-validate-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 11px 0 9px;
+    border: none;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--primary-color);
+    color: var(--text-on-primary);
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+    transition: background-color var(--transition-fast),
+                transform 0.15s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity var(--transition-fast);
+}
+
+.sc-validate-btn iconify-icon {
+    font-size: 0.82rem;
+    flex-shrink: 0;
+}
+
+@media (hover: hover) {
+    .sc-validate-btn:not(.disabled):hover {
+        background: var(--primary-btn-hover);
+    }
+}
+
+.sc-validate-btn:not(.disabled):active {
+    transform: scale(0.96);
+}
+
+.sc-validate-btn.disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.sc-validate-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 /* Sidebar Actions */

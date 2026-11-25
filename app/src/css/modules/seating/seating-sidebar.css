@@ -831,13 +831,13 @@
     }
 }
 
-/* Hover & Focus-Visible Morphing interactions */
-.sc-status-pill:not(.sc-status-virtual):focus-visible .sc-status-pill-rest {
+/* Hover & Focus-Visible Morphing interactions (testing alert pill → edit pencil) */
+.sc-status-pill.sc-status-testing:focus-visible .sc-status-pill-rest {
     opacity: 0;
     transform: translateY(-6px);
 }
 
-.sc-status-pill:not(.sc-status-virtual):focus-visible .sc-status-pill-hover {
+.sc-status-pill.sc-status-testing:focus-visible .sc-status-pill-hover {
     opacity: 1;
     max-width: 190px;
     transform: translateY(0);
@@ -858,12 +858,12 @@
         color: var(--color-amber-bright);
     }
 
-    .sc-status-pill:not(.sc-status-virtual):hover .sc-status-pill-rest {
+    .sc-status-pill.sc-status-testing:hover .sc-status-pill-rest {
         opacity: 0;
         transform: translateY(-6px);
     }
 
-    .sc-status-pill:not(.sc-status-virtual):hover .sc-status-pill-hover {
+    .sc-status-pill.sc-status-testing:hover .sc-status-pill-hover {
         opacity: 1;
         max-width: 190px;
         transform: translateY(0);

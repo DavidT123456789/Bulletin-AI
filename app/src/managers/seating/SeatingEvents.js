@@ -203,19 +203,7 @@ export const SeatingEvents = {
         document.getElementById('scShuffleBtn')?.addEventListener('click', () => this._shuffle());
         document.getElementById('scUndoBtn')?.addEventListener('click', () => this._undo());
         document.getElementById('scRedoBtn')?.addEventListener('click', () => this._redo());
-        const lockBtn = document.getElementById('scLockBtn');
-        const toolbarHeader = lockBtn?.closest?.('.sc-sidebar-toolbar-header');
-        if (toolbarHeader) {
-            toolbarHeader.addEventListener('click', () => this._toggleLock());
-        } else {
-            lockBtn?.addEventListener('click', () => this._toggleLock());
-        }
-        lockBtn?.addEventListener('keydown', (e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-                e.preventDefault();
-                this._toggleLock();
-            }
-        });
+        document.getElementById('scLockBtn')?.addEventListener('click', () => this._toggleLock());
         const statusPill = document.getElementById('scStatusPill');
         statusPill?.addEventListener('click', () => {
             if (this._isLocked) {
