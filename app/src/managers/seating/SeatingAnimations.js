@@ -430,7 +430,8 @@ export const SeatingAnimations = {
         document.querySelectorAll('#seatingChartView .sc-board-carousel-ghost').forEach(el => el.remove());
         const board = document.getElementById('scClassroomBoard');
         if (board) {
-            board.classList.remove('sc-mode-carousel-in-right', 'sc-mode-carousel-in-left');
+            board.classList.remove('sc-mode-carousel-in-right', 'sc-mode-carousel-in-left', 'sc-carousel-compact');
+            board.style.removeProperty('--sc-carousel-shift');
             board.querySelectorAll('.sc-cell').forEach(cell => {
                 cell.style.removeProperty('--carousel-col-i');
             });
@@ -597,6 +598,10 @@ export const SeatingAnimations = {
         ghost.style.width = `${unscaledW}px`;
         ghost.style.height = `${unscaledH}px`;
         ghost.style.margin = '0';
+        ghost._carouselBounds = {
+            left: boardRect.left - bodyRect.left,
+            right: boardRect.right - bodyRect.left
+        };
 
         return ghost;
     },
@@ -613,6 +618,26 @@ export const SeatingAnimations = {
 
         const enterClass = isForward ? 'sc-mode-carousel-in-right' : 'sc-mode-carousel-in-left';
         const exitClass = isForward ? 'sc-mode-carousel-out-left' : 'sc-mode-carousel-out-right';
+
+        // Adaptive spatial carousel:
+        // - Compact / mobile viewports: true edge-clearing Android launcher rail (exact viewport clearance)
+        // - Wide desktop viewports: synced central rail (ample glide without colliding with corner pills)
+        const viewportW = bodyEl?.clientWidth || bodyEl?.getBoundingClientRect?.()?.width || window.innerWidth || 1024;
+        const isCompactRail = this._isCompactLayout ? this._isCompactLayout() : (viewportW <= 768);
+        const boardScale = Math.max(0.25, parseFloat(board.style.getPropertyValue('--sc-scale')) || this._zoomScale || 1);
+
+        let enterScreenShift;
+        if (isCompactRail) {
+            const boardVisualW = board.offsetWidth > 0
+                ? (board.offsetWidth * boardScale)
+                : (board.getBoundingClientRect?.()?.width || (viewportW * 0.85));
+            enterScreenShift = Math.ceil((viewportW + boardVisualW) / 2 + 24);
+        } else {
+            enterScreenShift = Math.round(Math.min(150, Math.max(96, viewportW * 0.10)));
+        }
+
+        board.style.setProperty('--sc-carousel-shift', `${Math.round((enterScreenShift / boardScale) * 10) / 10}px`);
+        board.classList.toggle('sc-carousel-compact', isCompactRail);
 
         const rawCols = Math.max(1, this._getCols());
         const rawRows = Math.max(1, this._getRows());
@@ -634,7 +659,19 @@ export const SeatingAnimations = {
         });
 
         if (ghost && bodyEl) {
+            const ghostScale = Math.max(0.25, parseFloat(ghost.style.getPropertyValue('--sc-scale')) || 1);
+            let exitScreenShift = enterScreenShift;
+            if (isCompactRail && ghost._carouselBounds) {
+                const { left, right } = ghost._carouselBounds;
+                const clearDist = isForward ? (right + 24) : ((viewportW - left) + 24);
+                exitScreenShift = Math.ceil(Math.max(120, clearDist));
+            }
+            ghost.style.setProperty('--sc-carousel-shift', `${Math.round((exitScreenShift / ghostScale) * 10) / 10}px`);
+            ghost.classList.toggle('sc-carousel-compact', isCompactRail);
             ghost.classList.add(exitClass);
+            ghost.addEventListener('animationend', (e) => {
+                if (e.target === ghost) ghost.remove();
+            });
             bodyEl.appendChild(ghost);
         }
 

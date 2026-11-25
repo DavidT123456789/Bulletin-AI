@@ -641,7 +641,6 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
                     <div class="sc-toolbar-info" id="scFooterInfo"></div>
                 </div>
                 <div id="scLockBtn" class="sc-toggle-switch"></div>
-                <button id="scUnlockFloatingBtn"></button>
                 <div id="scGridContainer"></div>
                 <div id="scSidebarTitle"></div>
             </div>
@@ -802,6 +801,9 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         expect(pill.style.display).toBe('');
         expect(pill.textContent).toContain('Validé');
         expect(pill.textContent).toContain('1 non placé');
+        expect(pill.dataset.unplaced).toBe('1');
+        expect(pill.getAttribute('data-tooltip')).toContain('1 non placé');
+        expect(pill.getAttribute('data-tooltip')).toContain('Cliquer pour modifier');
 
         // Si tous les élèves sont placés (classe B : 2 sur 2)
         appState.currentClassId = classB.id;
@@ -809,6 +811,9 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         SeatingChartManager._updateStatusPill();
         expect(pill.textContent).toContain('Validé');
         expect(pill.textContent).not.toContain('non placé');
+        expect(pill.dataset.unplaced).toBeUndefined();
+        expect(pill.getAttribute('data-tooltip')).toContain('Validé');
+        expect(pill.getAttribute('data-tooltip')).not.toContain('non placé');
     });
 
     it('devrait comptabiliser comme non placés dans scStatusPill les élèves éjectés hors-grille après réduction de la grille et éviter toute collision au ré-agrandissement', () => {
@@ -894,6 +899,71 @@ describe('SeatingChartManager - Individualisation du verrouillage et cycle de vi
         SeatingChartManager._isLocked = true;
         pill.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
         expect(SeatingChartManager._isLocked).toBe(false);
+    });
+
+    it('devrait refuser de verrouiller un plan vide (0 élève placé), désactiver le switch avec infobulle et réactiver dès le premier placement', () => {
+        const emptyClass = ClassManager.createClass('5ème Vide');
+        appState.currentClassId = emptyClass.id;
+        userSettings.academic.currentClassId = emptyClass.id;
+        appState.generatedResults.push({
+            id: 'e1',
+            classId: emptyClass.id,
+            nom: 'Verne',
+            prenom: 'Jules',
+            seatingPosition: null
+        });
+
+        document.body.innerHTML = `
+            <div class="main-content-wrapper" data-view="plan">
+                <div class="main-content"><section class="output-section"></section></div>
+            </div>
+        `;
+        SeatingChartManager._injectView();
+        SeatingChartManager._setupEventListeners();
+        SeatingChartManager._isActive = true;
+        SeatingChartManager._planMode = 'course';
+        SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+        SeatingChartManager._initGrid(5, 6);
+        SeatingChartManager._loadPositionsFromState();
+        SeatingChartManager._applyLockState(false, { skipSmartFit: true, skipDraggabilityUpdate: true });
+        SeatingChartManager._updateFooter();
+
+        // Vérifier le placement de scStatusPill dans scTopLeftBar juste après scPlanModeSwitch
+        const topLeftBar = document.getElementById('scTopLeftBar');
+        const modeSwitch = document.getElementById('scPlanModeSwitch');
+        const pill = document.getElementById('scStatusPill');
+        expect(pill?.parentElement).toBe(topLeftBar);
+        expect(modeSwitch?.nextElementSibling).toBe(pill);
+
+        // Sur plan vide : switch désactivé visuellement & sémantiquement, clic bloqué avec notification
+        const lockBtn = document.getElementById('scLockBtn');
+        const toolbarHeader = lockBtn.closest('.sc-sidebar-toolbar-header');
+        expect(lockBtn.classList.contains('disabled')).toBe(true);
+        expect(lockBtn.getAttribute('aria-disabled')).toBe('true');
+        expect(lockBtn.getAttribute('data-tooltip')).toContain('Placez au moins un élève');
+        expect(toolbarHeader.classList.contains('is-disabled')).toBe(true);
+
+        const notifSpy = vi.spyOn(UI, 'showNotification').mockImplementation(() => {});
+        try {
+            toolbarHeader.click();
+            expect(SeatingChartManager._isLocked).toBe(false);
+            expect(emptyClass.seatingLocked).toBeFalsy();
+            expect(notifSpy).toHaveBeenCalledWith('Placez au moins un élève pour valider le plan.', 'info');
+
+            // Dès qu'un élève est placé : switch réactivé et clic sur l'en-tête verrouille exactement une fois
+            SeatingChartManager._gridState[0][0] = 'e1';
+            SeatingChartManager._updateFooter();
+            expect(lockBtn.classList.contains('disabled')).toBe(false);
+            expect(lockBtn.getAttribute('aria-disabled')).toBe('false');
+            expect(toolbarHeader.classList.contains('is-disabled')).toBe(false);
+
+            // Clic directement sur le switch (bulle jusqu'au header sans double déclenchement)
+            lockBtn.click();
+            expect(SeatingChartManager._isLocked).toBe(true);
+            expect(emptyClass.seatingLocked).toBe(true);
+        } finally {
+            notifSpy.mockRestore();
+        }
     });
 });
 
@@ -1190,7 +1260,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                         <div class="sc-toolbar-info" id="scFooterInfo"></div>
                     </div>
                     <div id="scLockBtn" class="sc-toggle-switch"></div>
-                    <button id="scUnlockFloatingBtn"></button>
                     <div id="scGridContainer"></div>
                     <div id="scSidebarTitle"></div>
                     <div id="scStudentList"></div>
@@ -2975,7 +3044,6 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             document.body.innerHTML = `
                 <div id="seatingChartView" data-locked="true">
                     <div id="scLockBtn" class="sc-toggle-switch locked"></div>
-                    <button id="scUnlockFloatingBtn"></button>
                     <div id="scGridContainer"></div>
                     <div id="scSidebarTitle"></div>
                     <div id="scFooterInfo"></div>
@@ -4111,20 +4179,30 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600
             });
 
-            // 1. Cours -> Activité : le plateau entrant glisse depuis la droite, le clone sortant vers la gauche, avec onde d'inertie gauche -> droite
+            // 1. Cours -> Activité : sur desktop (800px), carrousel spatial compensé du scale (96px / 1.6 = 60px)
+            board.style.setProperty('--sc-scale', '1.6');
             SeatingChartManager.switchPlanMode('activity', { animate: true });
             expect(board.classList.contains('sc-mode-carousel-in-right')).toBe(true);
+            expect(board.classList.contains('sc-carousel-compact')).toBe(false);
             expect(board.dataset.planMode).toBe('activity');
             const ghostToLeft = document.querySelector('#seatingChartView .sc-board-carousel-ghost');
             expect(ghostToLeft).not.toBeNull();
             expect(ghostToLeft.classList.contains('sc-mode-carousel-out-left')).toBe(true);
+            expect(ghostToLeft.classList.contains('sc-carousel-compact')).toBe(false);
             expect(ghostToLeft.dataset.planMode).toBe('course');
+            expect(parseFloat(ghostToLeft.style.getPropertyValue('--sc-carousel-shift'))).toBeCloseTo(60, 0);
+            expect(parseFloat(board.style.getPropertyValue('--sc-carousel-shift'))).toBeGreaterThan(0);
             expect(document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').length).toBe(0);
             const firstColCellAct = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
             const lastColCellAct = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="4"]');
             expect(parseFloat(firstColCellAct.style.getPropertyValue('--carousel-col-i'))).toBeLessThan(
                 parseFloat(lastColCellAct.style.getPropertyValue('--carousel-col-i'))
             );
+
+            // La fin d'animation du clone sortant retire le ghost immédiatement sans interrompre l'entrée du plateau
+            ghostToLeft.dispatchEvent(new Event('animationend', { bubbles: false }));
+            expect(document.querySelector('#seatingChartView .sc-board-carousel-ghost')).toBeNull();
+            expect(board.classList.contains('sc-mode-carousel-in-right')).toBe(true);
 
             // 2. Activité -> Cours : le plateau entrant glisse depuis la gauche, le clone sortant vers la droite, avec onde d'inertie droite -> gauche
             SeatingChartManager.switchPlanMode('course', { animate: true });
@@ -4141,12 +4219,33 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 parseFloat(firstColCellCourse.style.getPropertyValue('--carousel-col-i'))
             );
 
-            // Un animationend sur une cellule enfant ne doit pas nettoyer prématurément ; seul animationend sur le plateau (ou le fallback 400ms) nettoie
+            // Un animationend sur une cellule enfant ne doit pas nettoyer prématurément ; seul animationend sur le plateau (ou le fallback 500ms) nettoie
             firstColCellCourse.dispatchEvent(new Event('animationend', { bubbles: true }));
             expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(true);
             board.dispatchEvent(new Event('animationend', { bubbles: false }));
             expect(board.classList.contains('sc-mode-carousel-in-left')).toBe(false);
+            expect(board.classList.contains('sc-carousel-compact')).toBe(false);
+            expect(board.style.getPropertyValue('--sc-carousel-shift')).toBe('');
             expect(document.querySelector('#seatingChartView .sc-board-carousel-ghost')).toBeNull();
+
+            // 3. En layout compact / mobile : vrai rail plein écran qui dégage entièrement le bord du viewport (classe .sc-carousel-compact)
+            const compactSpy = vi.spyOn(SeatingChartManager, '_isCompactLayout').mockReturnValue(true);
+            vi.spyOn(bodyEl, 'getBoundingClientRect').mockReturnValue({
+                left: 0, top: 0, width: 390, height: 700, right: 390, bottom: 700
+            });
+            vi.spyOn(board, 'getBoundingClientRect').mockReturnValue({
+                left: 25, top: 80, width: 340, height: 420, right: 365, bottom: 500
+            });
+            board.style.setProperty('--sc-scale', '1');
+            SeatingChartManager.switchPlanMode('activity', { animate: true });
+            const mobileGhost = document.querySelector('#seatingChartView .sc-board-carousel-ghost');
+            expect(mobileGhost).not.toBeNull();
+            expect(mobileGhost.classList.contains('sc-carousel-compact')).toBe(true);
+            expect(board.classList.contains('sc-carousel-compact')).toBe(true);
+            expect(parseFloat(mobileGhost.style.getPropertyValue('--sc-carousel-shift'))).toBeGreaterThanOrEqual(389);
+            compactSpy.mockRestore();
+            board.dispatchEvent(new Event('animationend', { bubbles: false }));
+            expect(board.classList.contains('sc-carousel-compact')).toBe(false);
         });
 
         it('devrait nettoyer le carrousel Cours <-> Activité via le fallback 500ms si animationend ne se déclenche pas', async () => {

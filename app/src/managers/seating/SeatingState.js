@@ -220,7 +220,7 @@ export const SeatingState = {
         this._applySmartFit(true);
         this._scrollToDesk();
 
-        if (animate) {
+        if (shouldAnimateCarousel) {
             this._playModeCarousel(ghost, isForward);
             this._staggerSidebarEntrance(40);
         }
@@ -230,6 +230,32 @@ export const SeatingState = {
     // ========================================================================
     // LOCK
     // ========================================================================
+
+    _syncLockButtonState(locked = this._isLocked, placedCount = null) {
+        const btn = document.getElementById('scLockBtn');
+        if (!btn) return;
+        const isVirtual = this._isVirtualClass();
+        const count = typeof placedCount === 'number' ? placedCount : this._getPlacedIds().size;
+        const isDisabled = !isVirtual && !locked && count === 0;
+        const btnLabel = isVirtual
+            ? 'Classe reconstituée en lecture seule'
+            : (isDisabled
+                ? 'Placez au moins un élève pour valider le plan'
+                : (locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan'));
+
+        btn.classList.toggle('locked', locked);
+        btn.classList.toggle('disabled', isDisabled);
+        btn.setAttribute('aria-checked', (!locked).toString());
+        btn.setAttribute('aria-disabled', String(isDisabled));
+        btn.setAttribute('aria-label', btnLabel);
+        btn.setAttribute('data-tooltip', btnLabel);
+        TooltipsUI?.updateTooltip?.(btn, btnLabel);
+
+        const header = btn.closest?.('.sc-sidebar-toolbar-header');
+        if (header) {
+            header.classList.toggle('is-disabled', isDisabled);
+        }
+    },
 
     _syncLockControlsUI(locked, options = {}) {
         if (this._tooltipSuppressTimer) {
@@ -249,26 +275,7 @@ export const SeatingState = {
         const sidebar = document.getElementById('scSidebar');
         if (sidebar) sidebar.inert = Boolean(locked);
 
-        const btn = document.getElementById('scLockBtn');
-        if (btn) {
-            const btnLabel = isVirtual
-                ? 'Classe reconstituée en lecture seule'
-                : (locked ? 'Déverrouiller pour ajuster' : 'Valider et figer le plan');
-            btn.classList.toggle('locked', locked);
-            btn.setAttribute('aria-checked', (!locked).toString());
-            btn.setAttribute('aria-label', btnLabel);
-            btn.setAttribute('data-tooltip', btnLabel);
-            TooltipsUI?.updateTooltip?.(btn, btnLabel);
-        }
-
-        const floatingUnlockBtn = document.getElementById('scUnlockFloatingBtn');
-        if (floatingUnlockBtn) {
-            floatingUnlockBtn.style.display = isVirtual ? 'none' : '';
-            const floatLabel = locked ? 'Déverrouiller pour ajuster' : 'Mode Édition';
-            floatingUnlockBtn.setAttribute('aria-label', floatLabel);
-            floatingUnlockBtn.setAttribute('data-tooltip', floatLabel);
-            TooltipsUI?.updateTooltip?.(floatingUnlockBtn, floatLabel);
-        }
+        this._syncLockButtonState(locked, options.placedCount);
 
         if (!locked) {
             this._closeRandomPicker?.();
@@ -369,6 +376,13 @@ export const SeatingState = {
         const btn = document.getElementById('scLockBtn');
         if (!view || !btn) return;
 
+        const placedCount = this._getPlacedIds().size;
+        if (!this._isLocked && placedCount === 0) {
+            this._syncLockButtonState(false, 0);
+            UI?.showNotification?.('Placez au moins un élève pour valider le plan.', 'info');
+            return;
+        }
+
         this._cleanupModeCarousel();
         const board = document.getElementById('scClassroomBoard');
         const currentClass = this._getCurrentClass();
@@ -399,25 +413,19 @@ export const SeatingState = {
         }
 
         let shouldPersistValidation = false;
-        const placedCount = this._getPlacedIds().size;
         if (currentClass) {
             if (this._isLocked) {
-                if (placedCount > 0) {
-                    if (this._hasChangesSinceUnlock) {
-                        this._savePositionsToState(false);
-                    }
-                    const wasAlreadyValidated = Boolean(this._wasLockedBeforeEdit && currentClass[lockKey] && currentClass[validatedKey]);
-                    currentClass[lockKey] = true;
-                    shouldPersistValidation = Boolean(this._hasChangesSinceUnlock || !wasAlreadyValidated);
-                    if (shouldPersistValidation) {
-                        currentClass[validatedKey] = Date.now();
-                    }
-                    this._wasLockedBeforeEdit = true;
-                    this._hasChangesSinceUnlock = false;
-                } else {
-                    currentClass[lockKey] = false;
-                    this._wasLockedBeforeEdit = false;
+                if (this._hasChangesSinceUnlock) {
+                    this._savePositionsToState(false);
                 }
+                const wasAlreadyValidated = Boolean(this._wasLockedBeforeEdit && currentClass[lockKey] && currentClass[validatedKey]);
+                currentClass[lockKey] = true;
+                shouldPersistValidation = Boolean(this._hasChangesSinceUnlock || !wasAlreadyValidated);
+                if (shouldPersistValidation) {
+                    currentClass[validatedKey] = Date.now();
+                }
+                this._wasLockedBeforeEdit = true;
+                this._hasChangesSinceUnlock = false;
             } else if (!this._wasLockedBeforeEdit) {
                 currentClass[lockKey] = false;
             }
@@ -1170,21 +1178,18 @@ export const SeatingState = {
         const pill = document.getElementById('scStatusPill');
         if (!pill) return;
 
-        // In edit mode, the left sidebar already clearly indicates "Mode Édition actif"
-        if (!this._isLocked) {
+        // In edit mode or on an empty plan, keep the status pill hidden and clean
+        const info = this._isLocked
+            ? this.getClassSeatingStatus(this._getCurrentClass(), this._planMode)
+            : null;
+
+        if (!info || info.status === 'empty') {
             pill.style.display = 'none';
             pill.innerHTML = '';
             delete pill.dataset.pillKey;
-            return;
-        }
-
-        const currentClass = this._getCurrentClass();
-        const info = this.getClassSeatingStatus(currentClass, this._planMode);
-
-        if (info.status === 'empty') {
-            pill.style.display = 'none';
-            pill.innerHTML = '';
-            delete pill.dataset.pillKey;
+            delete pill.dataset.unplaced;
+            pill.removeAttribute('data-tooltip');
+            pill._tippy?.hide?.();
             return;
         }
 
@@ -1207,6 +1212,7 @@ export const SeatingState = {
             const tooltipMsg = info.sourceGroups
                 ? `Superposition en lecture seule des groupes ${info.sourceGroups}. Modifiez le plan dans chaque groupe.`
                 : 'Classe reconstituée en lecture seule. Modifiez le plan dans chaque groupe.';
+            delete pill.dataset.unplaced;
             pill.removeAttribute('role');
             pill.removeAttribute('tabindex');
             pill.innerHTML = `
@@ -1227,6 +1233,11 @@ export const SeatingState = {
 
         pill.setAttribute('role', 'button');
         pill.setAttribute('tabindex', '0');
+        if (info.unplaced > 0) {
+            pill.dataset.unplaced = String(info.unplaced);
+        } else {
+            delete pill.dataset.unplaced;
+        }
 
         const isLocked = info.status === 'locked';
         const iconRest = isLocked ? 'solar:lock-linear' : 'solar:test-tube-linear';
@@ -1248,9 +1259,15 @@ export const SeatingState = {
             </div>
         `;
 
+        const unplacedSuffix = info.unplaced > 0
+            ? ` · ${info.unplaced} non placé${info.unplaced > 1 ? 's' : ''}`
+            : '';
+        const tooltipMsg = `${labelRest}${dateText}${unplacedSuffix}<br><span class='kbd-hint'>Cliquer pour modifier</span>`;
+
         pill.removeAttribute('title');
-        pill.removeAttribute('data-tooltip');
-        pill.setAttribute('aria-label', `${labelRest}${dateText}. Cliquer pour passer en mode édition`);
+        pill.setAttribute('data-tooltip', tooltipMsg);
+        pill.setAttribute('aria-label', `${labelRest}${dateText}${unplacedSuffix}. Cliquer pour passer en mode édition`);
+        TooltipsUI?.updateTooltip?.(pill, tooltipMsg);
     },
     // ========================================================================
     // PIN

@@ -901,6 +901,7 @@ export const SeatingSidebar = {
         if (prev !== placed && prev !== 0 && !options.deferCounterBump) this._animateCounterBump();
         this._prevPlacedCount = placed;
 
+        this._syncLockButtonState?.(this._isLocked, placed);
         if (!options.skipHistorySync) {
             this._syncEditHistoryState?.(placed);
         }

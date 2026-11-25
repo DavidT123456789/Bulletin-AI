@@ -614,14 +614,10 @@
     transform: scale(1.04);
 }
 
-/* ────────── STATUS PILL (BOTTOM-LEFT, DISCREET ACTIONABLE CAPSULE) ────────── */
+/* ────────── STATUS PILL (TOP-LEFT NEXT TO MODE SWITCH ON DESKTOP, BOTTOM-LEFT ON MOBILE) ────────── */
 .sc-status-pill {
-    position: absolute;
-    bottom: 20px;
-    left: var(--content-padding-x, 24px);
-    right: auto;
-    top: auto;
-    z-index: 100;
+    position: relative;
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -641,7 +637,6 @@
     transition: background var(--transition-fast, 0.2s),
                 color var(--transition-fast, 0.2s),
                 transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-    animation: scToolbarEnter 0.4s var(--ease-spring) 0.15s both;
 }
 
 .sc-status-pill:focus-visible {
@@ -729,14 +724,11 @@
     display: inline-flex;
 }
 
-.sc-status-pill.sc-status-locked {
-    background: rgba(var(--success-rgb, 16, 185, 129), 0.11);
-    color: var(--color-emerald-deep);
-}
-
-[data-theme="dark"] .sc-status-pill.sc-status-locked {
-    background: rgba(var(--success-rgb, 16, 185, 129), 0.16);
-    color: color-mix(in srgb, var(--color-emerald-bright) 80%, var(--text-secondary));
+.sc-status-pill.sc-status-locked,
+.sc-status-pill.sc-status-virtual {
+    background: var(--floating-capsule-bg);
+    color: var(--text-secondary);
+    border: var(--floating-capsule-border);
 }
 
 .sc-status-pill.sc-status-testing {
@@ -754,9 +746,6 @@
 }
 
 .sc-status-pill.sc-status-virtual {
-    background: var(--floating-capsule-bg);
-    color: var(--text-secondary);
-    border: var(--floating-capsule-border);
     cursor: default;
 }
 
@@ -766,6 +755,68 @@
 
 [data-theme="dark"] .sc-status-pill.sc-status-virtual {
     color: var(--text-primary);
+}
+
+@media (min-width: 769px) {
+    .sc-status-pill:not(.sc-status-virtual) {
+        width: 34px;
+        padding: 0;
+    }
+
+    .sc-status-pill:not(.sc-status-virtual) .sc-status-pill-side {
+        gap: 0;
+    }
+
+    .sc-status-pill:not(.sc-status-virtual) :is(.sc-status-pill-text, .sc-status-pill-date, .sc-status-pill-sep, .sc-status-pill-unplaced) {
+        display: none;
+    }
+
+    .sc-status-pill:not(.sc-status-virtual) .sc-status-pill-hover {
+        max-width: none;
+        overflow: visible;
+        transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (pointer: coarse) {
+        .sc-status-pill:not(.sc-status-virtual)::before {
+            content: '';
+            position: absolute;
+            inset: -5px;
+        }
+    }
+
+    .sc-status-pill:not(.sc-status-virtual) iconify-icon {
+        font-size: 1.05rem;
+    }
+
+    .sc-status-pill:not(.sc-status-virtual)[data-unplaced]::after {
+        content: attr(data-unplaced);
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        box-sizing: border-box;
+        border-radius: var(--radius-pill, 999px);
+        background: var(--color-amber-deep);
+        color: var(--surface-color);
+        font-size: 0.62rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 0 2px var(--bg-color);
+        pointer-events: none;
+    }
+
+    [data-theme="dark"] .sc-status-pill:not(.sc-status-virtual)[data-unplaced]::after {
+        background: var(--color-amber);
+        color: var(--bg-color);
+    }
 }
 
 /* Hover & Focus-Visible Morphing interactions */
@@ -782,12 +833,8 @@
 
 @media (hover: hover) {
     .sc-status-pill.sc-status-locked:hover {
-        background: rgba(var(--success-rgb, 16, 185, 129), 0.18);
-    }
-
-    [data-theme="dark"] .sc-status-pill.sc-status-locked:hover {
-        background: rgba(var(--success-rgb, 16, 185, 129), 0.24);
-        color: var(--color-emerald-bright);
+        background: color-mix(in srgb, var(--floating-capsule-bg), var(--text-primary) 7%);
+        color: var(--text-primary);
     }
 
     .sc-status-pill.sc-status-testing:hover {

@@ -1514,6 +1514,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     body[data-print-mode="seating"] .sc-cell-remove,
     body[data-print-mode="seating"] .sc-stacked-member-remove,
     body[data-print-mode="seating"] .sc-top-left-bar,
+    body[data-print-mode="seating"] .sc-plan-mode-switch,
     body[data-print-mode="seating"] .sc-status-pill,
     body[data-print-mode="seating"] .sc-floating-actions,
     body[data-print-mode="seating"] .sc-status-dots-popover,
@@ -2032,18 +2033,20 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     /* ── Floating elements: aligned on mobile, never overlapping ── */
     .sc-top-left-bar,
     #seatingChartView[data-locked="false"] .sc-top-left-bar {
-        top: calc(56px + 10px) !important;
-        left: 12px !important;
-        right: auto !important;
-        translate: none !important;
-        gap: 6px;
-        max-width: calc(100vw - 128px);
+        display: contents !important;
     }
 
     :is(:root, [data-theme="dark"]) .ui-segmented-control.sc-plan-mode-switch {
+        position: absolute;
+        top: calc(56px + 10px);
+        left: 12px;
+        right: auto;
+        z-index: 100;
         --sc-padding: 2px;
         --sc-inactive-w: 28px;
         height: 32px;
+        max-width: calc(100vw - 128px);
+        transition: opacity 0.22s ease, transform 0.25s ease;
     }
 
     .sc-plan-mode-switch .ui-segment {
@@ -2063,6 +2066,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         bottom: 12px !important;
         left: 12px !important;
         right: auto !important;
+        z-index: 100;
         transform: none !important;
         font-size: 0.72rem;
         height: 32px !important;
@@ -2088,13 +2092,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
         max-width: calc(100vw - 24px);
     }
 
-    #seatingChartView.sc-random-active .sc-top-left-bar {
+    #seatingChartView.sc-random-active .sc-plan-mode-switch {
         opacity: 0;
         transform: translateX(-8px);
-        transition: translate var(--sc-drawer-transition), opacity 0.22s ease, transform 0.25s ease;
-    }
-
-    #seatingChartView.sc-random-active .sc-top-left-bar .sc-plan-mode-switch {
         pointer-events: none;
     }
 
@@ -2450,14 +2450,25 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sc-sidebar-toolbar-header.is-disabled {
+    cursor: not-allowed;
 }
 
 .sc-toolbar-label {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
-    cursor: pointer;
+    cursor: inherit;
     user-select: none;
+    transition: color var(--transition-fast);
+}
+
+.sc-sidebar-toolbar-header.is-disabled .sc-toolbar-label {
+    color: var(--text-tertiary);
 }
 
 /* Sidebar Actions */

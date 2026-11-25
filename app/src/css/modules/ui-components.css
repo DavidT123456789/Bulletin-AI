@@ -807,6 +807,11 @@
     pointer-events: none;
 }
 
+.sc-toggle-switch.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 .toggle-switch input:focus-visible + .slider,
 .sc-toggle-switch:focus-visible {
     outline: 2px solid var(--primary-color);
@@ -876,22 +881,22 @@
 }
 
 .toggle-switch.small:active:not(:has(input:disabled)) .slider:before,
-.sc-toggle-switch:active .sc-toggle-knob {
+.sc-toggle-switch:not(.disabled):active .sc-toggle-knob {
     width: calc(var(--toggle-knob-size-small) + 2px);
 }
 
 .toggle-switch.small:active:not(:has(input:disabled)) input:checked + .slider:before,
-.sc-toggle-switch[aria-checked="true"]:active .sc-toggle-knob {
+.sc-toggle-switch:not(.disabled)[aria-checked="true"]:active .sc-toggle-knob {
     transform: translateX(calc(var(--toggle-translate-small) - 2px));
 }
 
 @media (hover: hover) and (pointer: fine) {
     .toggle-switch:hover:not(:has(input:disabled)) .slider,
-    .sc-toggle-switch:hover {
+    .sc-toggle-switch:not(.disabled):hover {
         background-color: var(--toggle-track-off-hover);
     }
     .toggle-switch:hover:not(:has(input:disabled)) input:checked + .slider,
-    .sc-toggle-switch[aria-checked="true"]:hover {
+    .sc-toggle-switch:not(.disabled)[aria-checked="true"]:hover {
         background-color: var(--toggle-track-on-hover);
     }
 }

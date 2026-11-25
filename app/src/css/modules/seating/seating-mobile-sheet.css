@@ -889,7 +889,8 @@
     animation: scSidebarFoldTray 0.44s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-#seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+#seatingChartView.sc-fold-transitioning .sc-plan-mode-switch,
+#seatingChartView.sc-fold-transitioning .sc-status-pill,
 #seatingChartView.sc-fold-transitioning .sc-floating-actions {
     animation: scFloatingFoldSettle 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both;
 }
@@ -899,7 +900,8 @@
     #seatingChartView.sc-fold-transitioning .sc-classroom-board::after,
     #seatingChartView.sc-fold-transitioning .sc-cell.sc-fold-cell-wave,
     #seatingChartView.sc-fold-transitioning .sc-sidebar,
-    #seatingChartView.sc-fold-transitioning .sc-top-left-bar,
+    #seatingChartView.sc-fold-transitioning .sc-plan-mode-switch,
+    #seatingChartView.sc-fold-transitioning .sc-status-pill,
     #seatingChartView.sc-fold-transitioning .sc-floating-actions {
         animation: none !important;
     }

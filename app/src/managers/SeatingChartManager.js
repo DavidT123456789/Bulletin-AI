@@ -323,7 +323,7 @@ export const SeatingChartManager = {
                     <div class="sc-student-list" id="scStudentList"></div>
                 </div>
                 <div class="sc-grid-area" id="scGridArea">
-                    <!-- Top-Left Bar: Plan Mode Switcher (Cours | Activité) -->
+                    <!-- Top-Left Bar: Plan Mode Switcher (Cours | Activité) + Status Pill (Desktop) -->
                     <div class="sc-top-left-bar" id="scTopLeftBar">
                         <div class="ui-segmented-control css-driven sc-plan-mode-switch" id="scPlanModeSwitch" data-active-index="${isActivity ? '1' : '0'}" role="tablist" aria-label="Mode du plan de classe">
                             <div class="ui-glider" aria-hidden="true"></div>
@@ -336,6 +336,7 @@ export const SeatingChartManager = {
                                 <span class="sc-mode-label">Activité</span>
                             </button>
                         </div>
+                        <div class="sc-status-pill" id="scStatusPill" role="button" tabindex="0"></div>
                     </div>
 
                     <div class="sc-aisle-paint-banner" id="scAislePaintBanner" role="status" aria-live="polite" hidden>
@@ -343,9 +344,6 @@ export const SeatingChartManager = {
                         <span class="sc-aisle-paint-text">Glissez sur les tables vides pour tracer des allées</span>
                         <button type="button" class="sc-aisle-paint-done-btn" id="scAislePaintDoneBtn">Terminer</button>
                     </div>
-
-                    <!-- Bottom-Left Status Pill (Consultation mode) -->
-                    <div class="sc-status-pill" id="scStatusPill" role="button" tabindex="0"></div>
 
                     <div class="sc-classroom-board" id="scClassroomBoard" data-plan-mode="${planMode}" data-locked="${this._isLocked ? 'true' : 'false'}">
                         <div class="sc-grid-container" id="scGridContainer"></div>

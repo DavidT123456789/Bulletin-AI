@@ -204,28 +204,32 @@ export const SeatingEvents = {
         document.getElementById('scUndoBtn')?.addEventListener('click', () => this._undo());
         document.getElementById('scRedoBtn')?.addEventListener('click', () => this._redo());
         const lockBtn = document.getElementById('scLockBtn');
-        lockBtn?.addEventListener('click', () => this._toggleLock());
+        const toolbarHeader = lockBtn?.closest?.('.sc-sidebar-toolbar-header');
+        if (toolbarHeader) {
+            toolbarHeader.addEventListener('click', () => this._toggleLock());
+        } else {
+            lockBtn?.addEventListener('click', () => this._toggleLock());
+        }
         lockBtn?.addEventListener('keydown', (e) => {
             if (e.key === ' ' || e.key === 'Enter') {
                 e.preventDefault();
                 this._toggleLock();
             }
         });
-        const toolbarLabel = lockBtn?.parentElement?.querySelector('.sc-toolbar-label');
-        toolbarLabel?.addEventListener('click', () => this._toggleLock());
         const statusPill = document.getElementById('scStatusPill');
         statusPill?.addEventListener('click', () => {
             if (this._isLocked) {
+                statusPill._tippy?.hide?.();
                 this._toggleLock();
             }
         });
         statusPill?.addEventListener('keydown', (e) => {
             if (this._isLocked && (e.key === ' ' || e.key === 'Enter')) {
                 e.preventDefault();
+                statusPill._tippy?.hide?.();
                 this._toggleLock();
             }
         });
-        document.getElementById('scUnlockFloatingBtn')?.addEventListener('click', () => this._toggleLock());
         document.getElementById('scOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingOrientationBtn')?.addEventListener('click', () => this._toggleOrientation());
         document.getElementById('scFloatingZoomBtn')?.addEventListener('click', () => this._toggleZoom());
