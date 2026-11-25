@@ -237,8 +237,9 @@ export const SeatingChartManager = {
                                     <div class="sc-config-popover" id="scConfigPopover">
                                         <div class="sc-config-presets-section" id="scConfigPresetsSection">
                                             <div class="sc-config-section-header">
-                                                <div class="sc-config-section-title">Disposition de la salle</div>
-                                                <span class="sc-config-section-meta">Toutes vos classes</span>
+                                                <div class="sc-config-section-title">Disposition</div>
+                                                <span class="sc-config-section-meta" aria-hidden="true">·</span>
+                                                <span class="sc-config-section-meta">Commune aux classes</span>
                                             </div>
                                             <div class="sc-config-preset-pills" role="group" aria-label="Modèles de salle">
                                                 <button type="button" class="sc-config-preset-pill" data-preset="compact" data-tooltip="Grille continue sans allée">

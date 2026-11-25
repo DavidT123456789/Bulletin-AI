@@ -312,17 +312,32 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
 }
 
-/* Ballistic flight token (suction toward unplaced sidebar) */
+/* Targeted GPU flight token (return toward unplaced sidebar slot) */
 .sc-flight-token {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 0 1.5px var(--highlight-standard-border) !important;
+    box-shadow: var(--shadow-lg), 0 0 0 1.5px var(--highlight-standard-border) !important;
     background: var(--surface-color) !important;
-    border-radius: var(--sc-cell-radius, var(--radius-md)) !important;
+    border-radius: var(--sc-cell-radius, 14px) !important;
+    contain: layout style size;
     will-change: transform, opacity;
 }
 
 [data-theme="dark"] .sc-flight-token {
     background: var(--bg-tertiary) !important;
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.65), 0 0 0 1.5px rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55), 0 0 0 1.5px var(--highlight-standard-border) !important;
+}
+
+.sc-flight-token--avatar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: var(--radius-pill, 9999px) !important;
+    overflow: hidden;
+    padding: 0 !important;
+}
+
+.sc-flight-token--avatar .student-avatar {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .sc-cell:not(.sc-cell-stacked) .student-avatar,
@@ -870,7 +885,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     margin-top: 3px;
     letter-spacing: 0.02em;
     user-select: none;
-    transition: all 0.2s var(--ease-material);
+    transition: background-color 0.2s var(--ease-material), border-color 0.2s var(--ease-material), color 0.2s var(--ease-material);
 }
 
 .sc-cell-scope-badge.scope-class {
@@ -922,7 +937,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     justify-content: center;
     cursor: pointer;
     box-shadow: var(--shadow-sm);
-    transition: all 0.2s var(--ease-spring);
+    transition: background-color 0.2s var(--ease-spring), border-color 0.2s var(--ease-spring), color 0.2s var(--ease-spring), transform 0.2s var(--ease-spring);
     font-size: 0.85rem;
 }
 
@@ -1237,7 +1252,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     font-weight: 600;
     border: none;
     cursor: pointer;
-    transition: all 0.2s var(--ease-spring);
+    transition: background-color 0.2s var(--ease-spring), color 0.2s var(--ease-spring), transform 0.2s var(--ease-spring), opacity 0.2s var(--ease-spring);
     width: 100%;
     outline: none;
     white-space: nowrap;
@@ -2383,6 +2398,9 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     .sc-cell.sc-cell-swapped,
     .sc-cell.sc-auto-placed,
     .sc-student-chip.sc-chip-returning,
+    .sc-student-chip.sc-chip-returning::after,
+    .sc-student-chip.sc-chip-stagger,
+    .sc-dynamic-value.sc-counter-bump,
     .sc-desk.sc-desk-entering,
     .sc-classroom-board.sc-orienting,
     .sc-classroom-board.sc-orienting .sc-desk,
@@ -2474,7 +2492,7 @@ body.sc-drag-over-sidebar .sc-touch-ghost {
     border-radius: 50%;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast);
 }
 
 @media (hover: hover) {

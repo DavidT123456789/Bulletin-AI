@@ -250,21 +250,21 @@
 .sc-config-section-header {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 5px;
 }
 
 .sc-config-section-title {
     font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 
 .sc-config-section-meta {
     font-size: 0.66rem;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-tertiary);
     white-space: nowrap;
 }
@@ -1065,46 +1065,6 @@
         border-top-color: var(--highlight-standard-border) !important;
         box-shadow: 0 -4px 24px var(--highlight-standard-glow),
                     var(--shadow-md) !important;
-    }
-}
-
-/* Sidebar brief welcoming glow when student returns via cross or clear */
-@keyframes scSidebarReceivePulse {
-    0% {
-        border-right-color: var(--highlight-standard-border);
-        box-shadow: 4px 0 24px var(--highlight-standard-glow), var(--shadow-md);
-    }
-    50% {
-        border-right-color: var(--highlight-standard-border);
-        box-shadow: 4px 0 20px var(--highlight-standard-glow), var(--shadow-md);
-    }
-    100% {
-        border-right-color: var(--border-color);
-        box-shadow: var(--shadow-sm);
-    }
-}
-
-.sc-sidebar.sc-sidebar-receiving {
-    animation: scSidebarReceivePulse 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@media (max-width: 768px) {
-    @keyframes scSidebarReceivePulseMobile {
-        0% {
-            border-top-color: var(--highlight-standard-border);
-            box-shadow: 0 -4px 24px var(--highlight-standard-glow), var(--shadow-md);
-        }
-        50% {
-            border-top-color: var(--highlight-standard-border);
-            box-shadow: 0 -4px 20px var(--highlight-standard-glow), var(--shadow-md);
-        }
-        100% {
-            border-top-color: var(--border-color);
-            box-shadow: var(--shadow-sm);
-        }
-    }
-    .sc-sidebar.sc-sidebar-receiving {
-        animation-name: scSidebarReceivePulseMobile;
     }
 }
 

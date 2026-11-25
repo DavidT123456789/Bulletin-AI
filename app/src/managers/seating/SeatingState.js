@@ -742,13 +742,94 @@ export const SeatingState = {
         this._restoreSnapshot(snapshot);
     },
 
+    _collectGridPositions(gridState) {
+        const posMap = new Map();
+        if (!Array.isArray(gridState)) return posMap;
+        for (let r = 0; r < gridState.length; r++) {
+            const row = gridState[r];
+            if (!Array.isArray(row)) continue;
+            for (let c = 0; c < row.length; c++) {
+                const val = row[c];
+                if (Array.isArray(val)) {
+                    for (const id of val) {
+                        if (id) posMap.set(id, { row: r, col: c });
+                    }
+                } else if (val) {
+                    posMap.set(val, { row: r, col: c });
+                }
+            }
+        }
+        return posMap;
+    },
+
     _restoreSnapshot(snapshot) {
         const gridKey = this._getActiveGridKey();
         const posKey = this._getActivePositionKey();
         const classSpecialKey = this._getActiveClassSpecialKey();
         const oldRows = this._gridState?.length || this._getRows();
+        const oldCols = this._gridState?.[0]?.length || this._getCols();
         const targetRows = snapshot.rows || oldRows;
+        const targetCols = snapshot.cols || oldCols;
         const rowOffset = this._isActivityMode() ? 0 : (targetRows - oldRows);
+        const sameDimensions = oldRows === targetRows && oldCols === targetCols;
+
+        // Diff previous vs restored student positions for targeted undo/redo animations
+        const prevPosMap = this._collectGridPositions(this._gridState);
+        const nextPosMap = this._collectGridPositions(snapshot.gridState);
+        const moved = [];
+        const placed = [];
+        const returned = [];
+
+        for (const [id, nextPos] of nextPosMap.entries()) {
+            const prevPos = prevPosMap.get(id);
+            if (!prevPos) {
+                placed.push({ id, row: nextPos.row, col: nextPos.col });
+            } else if (prevPos.row !== nextPos.row || prevPos.col !== nextPos.col) {
+                moved.push({ id, fromRow: prevPos.row, fromCol: prevPos.col, toRow: nextPos.row, toCol: nextPos.col });
+            }
+        }
+        for (const [id, prevPos] of prevPosMap.entries()) {
+            if (!nextPosMap.has(id)) {
+                returned.push({ id, fromRow: prevPos.row, fromCol: prevPos.col });
+            }
+        }
+
+        const totalChanged = moved.length + placed.length + returned.length;
+        const isIncrementalDiff = sameDimensions && totalChanged > 0 && totalChanged <= 6;
+
+        // Capture flight origins BEFORE grid DOM is replaced (grouped per source cell)
+        const returnedFlights = [];
+        if (isIncrementalDiff && returned.length > 0 && !this._prefersReducedMotion?.()) {
+            const byCell = new Map();
+            for (const item of returned) {
+                const key = `${item.fromRow},${item.fromCol}`;
+                if (!byCell.has(key)) {
+                    byCell.set(key, { row: item.fromRow, col: item.fromCol, studentIds: [] });
+                }
+                byCell.get(key).studentIds.push(item.id);
+            }
+            for (const entry of byCell.values()) {
+                if (returnedFlights.length >= 6) break;
+                const cell = document.querySelector(`.sc-cell[data-row="${entry.row}"][data-col="${entry.col}"]`);
+                const nextCellVal = snapshot.gridState?.[entry.row]?.[entry.col];
+                const hasRemainingOccupants = Array.isArray(nextCellVal) ? nextCellVal.length > 0 : Boolean(nextCellVal);
+                let sourceEl = cell;
+                if (cell && hasRemainingOccupants && entry.studentIds.length === 1) {
+                    const safeId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+                        ? CSS.escape(String(entry.studentIds[0]))
+                        : String(entry.studentIds[0]).replace(/"/g, '\\"');
+                    sourceEl = cell.querySelector(`.sc-stacked-avatar[data-result-id="${safeId}"]`) || cell;
+                }
+                const origin = this._captureFlightOrigin?.(sourceEl);
+                if (origin) {
+                    returnedFlights.push({
+                        origin,
+                        studentIds: entry.studentIds,
+                        targetStudentId: entry.studentIds[0]
+                    });
+                }
+            }
+        }
 
         this._gridState = snapshot.gridState.map(row => row.map(cell => Array.isArray(cell) ? [...cell] : cell));
         if (appState[gridKey]) {
@@ -795,7 +876,19 @@ export const SeatingState = {
         }
 
         const savedPositions = this._savePositionsToState();
-        this._render();
+        const returnedIds = returned.map(r => r.id);
+        const pendingFlightIds = returnedFlights.flatMap(f => f.studentIds);
+
+        this._render(isIncrementalDiff ? {
+            returningIds: returnedIds,
+            sidebarOptions: {
+                pendingFlightIds,
+                flipSiblings: returned.length > 0 || placed.length > 0
+            },
+            footerOptions: {
+                deferCounterBump: returnedFlights.length > 0
+            }
+        } : {});
         this._applySmartFit(true);
         const savedGrid = this._saveGridConfig();
         if (!savedPositions && !savedGrid && !this._isVirtualClass()) {
@@ -804,7 +897,38 @@ export const SeatingState = {
             }
             StorageManager.saveAppState();
         }
-        this._staggerCellEntrance();
+
+        if (isIncrementalDiff) {
+            const animatedDestKeys = new Set();
+            for (const m of moved) {
+                const key = `${m.toRow},${m.toCol}`;
+                if (animatedDestKeys.has(key)) continue;
+                animatedDestKeys.add(key);
+                this._animateCellMove(m.fromRow, m.fromCol, m.toRow, m.toCol);
+            }
+            for (const p of placed) {
+                const key = `${p.row},${p.col}`;
+                if (animatedDestKeys.has(key)) continue;
+                animatedDestKeys.add(key);
+                this._animateCellPlaced(p.row, p.col);
+            }
+            let hasBumpedCounter = false;
+            returnedFlights.forEach((flight, idx) => {
+                this._flyStudentToSidebar(flight.origin, null, {
+                    targetStudentId: flight.targetStudentId,
+                    delay: returnedFlights.length > 1 ? idx * 22 : 0,
+                    onArrival: () => {
+                        this._animateSidebarChipReturn(flight.studentIds);
+                        if (!hasBumpedCounter) {
+                            hasBumpedCounter = true;
+                            this._animateCounterBump();
+                        }
+                    }
+                });
+            });
+        } else if (!sameDimensions || totalChanged > 6) {
+            this._staggerCellEntrance();
+        }
     },
 
     _updateUndoRedoButtons() {

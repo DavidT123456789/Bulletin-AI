@@ -860,17 +860,7 @@ export const SeatingAutoPlace = {
 
         UI.showCustomConfirm(modalDesc, () => {
             this._snapshotGrid();
-            this._pulseSidebarReceiving();
-            const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
-
-            occupiedCells.forEach((cell, index) => {
-                cell.style.setProperty('--cell-i', index);
-                cell.classList.add('sc-cell-removing');
-            });
-
-            const animDuration = (occupiedCells.length - 1) * 15 + 300;
-
-            setTimeout(() => {
+            const finishClear = () => {
                 this._initGrid(this._getRows(), this._getCols());
                 this._savePositionsToState();
                 this._updatePlanModeSwitchUI();
@@ -883,7 +873,21 @@ export const SeatingAutoPlace = {
                 this._applySmartFit(true);
                 this._staggerCellEntrance();
                 this._maybeShowOnboardingHint();
-            }, animDuration);
+            };
+
+            const occupiedCells = document.querySelectorAll('#scGridContainer .sc-cell.occupied');
+            if (occupiedCells.length === 0 || this._prefersReducedMotion?.()) {
+                finishClear();
+                return;
+            }
+
+            occupiedCells.forEach((cell, index) => {
+                cell.style.setProperty('--cell-i', Math.min(index, 12));
+                cell.classList.add('sc-cell-removing');
+            });
+
+            const animDuration = Math.min(occupiedCells.length - 1, 12) * 12 + 220;
+            setTimeout(finishClear, animDuration);
         }, null, { title: modalTitle, isDanger: true });
     }
 };

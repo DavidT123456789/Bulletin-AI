@@ -104,63 +104,91 @@
     }
 }
 
-/* Cell placed from sidebar — juicy bounce */
+/* Cell placed from sidebar — lively elastic pop with silky per-segment landing */
 @keyframes scCellPlace {
-    0%   { opacity: 0; transform: scale(0.3); }
-    50%  { opacity: 1; transform: scale(1.12); }
-    75%  { transform: scale(0.95); }
-    100% { transform: scale(1); }
+    0% {
+        opacity: 0;
+        transform: scale(0.68);
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    54% {
+        opacity: 1;
+        transform: scale(1.075);
+        animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    78% {
+        opacity: 1;
+        transform: scale(0.985);
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
-/* Cell removed — directional slide toward sidebar on the left */
+/* Cell removed (mass clear) — crisp directional exit toward left sidebar */
 @keyframes scCellRemove {
-    0%   { opacity: 1; transform: scale(1) translateX(0); }
-    35%  { opacity: 0.85; transform: scale(0.92) translateX(-18px); }
-    100% { opacity: 0; transform: scale(0.6) translateX(-50px); }
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(-26px, 0, 0) scale(0.82);
+    }
 }
 
-/* Cell move / swap — FLIP trajectory from origin desk + juicy landing bounce */
+/* Cell move / swap — GPU-only FLIP trajectory from origin desk + elastic landing pop */
 @keyframes scCellSwap {
     0% {
         opacity: 0.92;
-        transform: translate3d(var(--swap-dx, 0px), var(--swap-dy, 0px), 0) scale(0.86);
-        box-shadow: var(--shadow-lg), 0 0 0 1.5px var(--highlight-standard-border);
-        animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1);
+        transform: translate3d(var(--swap-dx, 0px), var(--swap-dy, 0px), 0) scale(0.88);
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
-    52% {
+    56% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1.12);
-        box-shadow: var(--shadow-md);
+        transform: translate3d(0, 0, 0) scale(1.09);
         animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     }
-    76% {
-        transform: translate3d(0, 0, 0) scale(0.95);
-        box-shadow: var(--shadow-sm);
+    80% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(0.97);
         animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     }
     100% {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
-        box-shadow: var(--shadow-sm);
     }
 }
 
-/* Sidebar chip re-entrance (after removal from grid) — fluid spring entrance */
+/* Sidebar chip re-entrance — directional from board (right -> left on desktop, top -> bottom on mobile), single smooth spring settle */
 @keyframes scChipReturn {
-    0% {
+    from {
         opacity: 0;
-        transform: translateX(-18px) scale(0.92);
-        background-color: var(--highlight-standard-glow, rgba(255, 255, 255, 0.08));
+        transform: translate3d(14px, 0, 0) scale(0.96);
     }
-    60% {
+    to {
         opacity: 1;
-        transform: translateX(4px) scale(1.02);
+        transform: translate3d(0, 0, 0) scale(1);
     }
-    100% {
+}
+
+@keyframes scChipReturnMobile {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -12px, 0) scale(0.95);
+    }
+    to {
         opacity: 1;
-        transform: translateX(0) scale(1);
-        background-color: transparent;
+        transform: translate3d(0, 0, 0) scale(1);
     }
+}
+
+/* GPU-composited arrival wash on returning chip */
+@keyframes scChipReturnWash {
+    0%   { opacity: 0.85; }
+    100% { opacity: 0; }
 }
 
 /* Sidebar chip stagger cascade entrance (on mass reset) */
@@ -184,11 +212,27 @@
 
 
 
-/* Auto-place cascade (staggered via --place-i) */
+/* Auto-place cascade (staggered via --place-i) — playful elastic pop with smooth landing */
 @keyframes scAutoPlaceDrop {
-    0%   { opacity: 0; transform: scale(0) rotate(-8deg); }
-    60%  { opacity: 1; transform: scale(1.08) rotate(1deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0); }
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0) scale(0.55) rotate(-4deg);
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    58% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1.07) rotate(0.8deg);
+        animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    80% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(0.985) rotate(0deg);
+        animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+    }
 }
 
 /* Counter bump */
@@ -221,22 +265,25 @@
 
 /* Cell placed (from sidebar drop or empty-cell drop) */
 .sc-cell.sc-cell-placed {
-    animation: scCellPlace 0.4s var(--ease-bounce) both;
+    animation: scCellPlace 0.38s both;
     z-index: 35;
+    will-change: transform, opacity;
 }
 
-/* Cell remove animation */
+/* Cell remove animation (mass clear) */
 .sc-cell.sc-cell-removing {
-    animation: scCellRemove 0.3s var(--ease-material) forwards;
-    animation-delay: calc(var(--cell-i, 0) * 15ms);
+    animation: scCellRemove 0.22s var(--ease-spring) forwards;
+    animation-delay: calc(var(--cell-i, 0) * 12ms);
     pointer-events: none;
+    will-change: transform, opacity;
 }
 
-/* Cell swap / move (FLIP glide + elastic landing bounce) */
+/* Cell swap / move (GPU-only FLIP glide + elastic landing pop) */
 .sc-cell.sc-cell-swapped {
-    animation: scCellSwap 0.44s var(--ease-spring) both;
+    animation: scCellSwap 0.4s var(--ease-spring) both;
+    box-shadow: var(--shadow-md);
     z-index: 41;
-    will-change: transform, box-shadow;
+    will-change: transform, opacity;
 }
 
 .sc-cell.sc-cell-swapped.sc-cell-swap-secondary {
@@ -245,18 +292,43 @@
 
 /* Dropped cell in a drag-and-drop swap: bounces in place with the same physics as scCellPlace */
 .sc-cell.sc-cell-swapped.sc-cell-swap-dropped {
-    animation: scCellPlace 0.4s var(--ease-bounce) both;
+    animation: scCellPlace 0.38s both;
     z-index: 42;
 }
 
-/* Sidebar chip return (single chip drag back) */
+/* Hidden slot awaiting incoming flight token handoff (zero offset so target rect is pixel-exact) */
+.sc-student-chip.sc-chip-awaiting-flight {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Sidebar chip return (smooth directional settle + GPU arrival sheen) */
 .sc-student-chip.sc-chip-returning {
-    animation: scChipReturn 0.35s var(--ease-bounce) both;
+    animation: scChipReturn 0.24s var(--ease-spring) both;
+    animation-delay: calc(var(--return-i, 0) * 24ms);
+    will-change: transform, opacity;
+}
+
+.sc-student-chip.sc-chip-returning::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--item-hover-bg);
+    pointer-events: none;
+    animation: scChipReturnWash 0.36s var(--ease-spring) both;
+    animation-delay: calc(var(--return-i, 0) * 24ms);
+}
+
+@media (max-width: 768px) {
+    .sc-student-chip.sc-chip-returning {
+        animation-name: scChipReturnMobile;
+    }
 }
 
 /* Sidebar chip stagger entrance on reset (smooth liquid cascade) */
 .sc-student-chip.sc-chip-stagger {
-    animation: scChipStaggerIn 0.4s var(--ease-spring) both;
+    animation: scChipStaggerIn 0.32s var(--ease-spring) both;
     animation-delay: calc(var(--chip-i, 0) * 10ms);
 }
 
@@ -268,8 +340,9 @@
 
 /* Auto-place cascade */
 .sc-cell.sc-auto-placed {
-    animation: scAutoPlaceDrop 0.4s var(--ease-bounce) both;
-    animation-delay: calc(var(--place-i, 0) * 40ms);
+    animation: scAutoPlaceDrop 0.4s both;
+    animation-delay: calc(var(--place-i, 0) * 26ms);
+    will-change: transform, opacity;
 }
 
 /* Footer & sidebar counter bump on change */

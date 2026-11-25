@@ -819,104 +819,240 @@ export const SeatingAnimations = {
         }
     },
 
-    /** Animate cell removal → shrink out, then callback to render */
-    _animateCellRemove(row, col, onComplete) {
-        const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
-        if (!cell) { onComplete(); return; }
+    /**
+     * Capture geometry and visual clone of a cell (or stacked member avatar) BEFORE optimistic grid re-render.
+     * @param {HTMLElement|null} sourceEl
+     * @returns {Object|null}
+     */
+    _captureFlightOrigin(sourceEl) {
+        if (!sourceEl || typeof sourceEl.getBoundingClientRect !== 'function') return null;
+        const startRect = sourceEl.getBoundingClientRect();
+        const isStacked = sourceEl.classList.contains('sc-cell-stacked');
+        const isMemberAvatar = sourceEl.classList.contains('sc-stacked-avatar');
 
-        cell.classList.add('sc-cell-removing');
-        let called = false;
-        const done = () => {
-            if (called) return;
-            called = true;
-            cell.classList.remove('sc-cell-removing');
-            onComplete();
+        const clone = sourceEl.cloneNode(true);
+        clone.className = isMemberAvatar
+            ? 'sc-flight-token sc-flight-token--avatar'
+            : `sc-cell occupied sc-flight-token${isStacked ? ' sc-cell-stacked' : ''}`;
+        clone.removeAttribute('id');
+        clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-cell-status-badge').forEach(el => el.remove());
+
+        const naturalW = sourceEl.offsetWidth || startRect.width || (isMemberAvatar ? 36 : 88);
+        const naturalH = sourceEl.offsetHeight || startRect.height || (isMemberAvatar ? 36 : 96);
+        const startScale = (naturalW > 0 && startRect.width > 0)
+            ? Math.round((startRect.width / naturalW) * 1000) / 1000
+            : (this._zoomScale || this._fitScale || 1);
+        const computedRadius = window.getComputedStyle?.(sourceEl)?.borderRadius;
+
+        return {
+            clone,
+            startRect,
+            naturalW,
+            naturalH,
+            startScale,
+            isMemberAvatar,
+            borderRadius: computedRadius && computedRadius !== '0px' ? computedRadius : ''
         };
-        cell.addEventListener('animationend', done, { once: true });
-        setTimeout(done, 350);
     },
 
-    /** Ballistic flight animation from cell directly toward unplaced sidebar */
-    _flyStudentToSidebar(cell, onComplete) {
+    /**
+     * Resolve exact viewport target (x, y) in the unplaced sidebar for a returning student.
+     * Aims at the student's actual rendered chip avatar when visible inside `#scStudentList`,
+     * clamping smoothly to the list edge if scrolled out of view.
+     */
+    _resolveSidebarFlightTarget(targetStudentId, startCenterY) {
         const sidebar = document.getElementById('scSidebar');
-        if (!sidebar || !cell) {
+        const list = document.getElementById('scStudentList');
+        const destRect = sidebar?.getBoundingClientRect?.();
+        const hasSidebarBounds = Boolean(destRect && (destRect.width > 0 || destRect.height > 0));
+        const isMobile = this._isCompactLayout ? this._isCompactLayout() : this._isMobileView?.();
+
+        if (targetStudentId && list) {
+            const safeId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+                ? CSS.escape(String(targetStudentId))
+                : String(targetStudentId).replace(/"/g, '\\"');
+            const chip = list.querySelector(`.sc-student-chip[data-result-id="${safeId}"]`);
+            const listRect = list.getBoundingClientRect?.();
+            const chipRect = chip?.getBoundingClientRect?.();
+            const hasChipBounds = Boolean(chipRect && (chipRect.width > 0 || chipRect.height > 0));
+            const hasListBounds = Boolean(listRect && (listRect.width > 0 || listRect.height > 0));
+
+            if (hasChipBounds) {
+                const avatarRect = chip.querySelector('.student-avatar')?.getBoundingClientRect?.();
+                const anchorRect = (avatarRect && avatarRect.width > 0) ? avatarRect : chipRect;
+                let tx = anchorRect.left + anchorRect.width / 2;
+                let ty = anchorRect.top + anchorRect.height / 2;
+
+                if (hasListBounds) {
+                    tx = Math.min(Math.max(tx, listRect.left + 28), listRect.right - 28);
+                    ty = Math.min(Math.max(ty, listRect.top + 24), listRect.bottom - 24);
+                }
+                return { x: tx, y: ty, targetAvatarSize: (avatarRect && avatarRect.width > 0) ? avatarRect.width : 40 };
+            }
+        }
+
+        const viewRect = !hasSidebarBounds
+            ? (document.getElementById('seatingChartView')?.getBoundingClientRect?.() || {
+                left: 0,
+                top: 0,
+                right: window.innerWidth || 360,
+                bottom: window.innerHeight || 640,
+                width: window.innerWidth || 360,
+                height: window.innerHeight || 640
+            })
+            : null;
+
+        return {
+            x: hasSidebarBounds
+                ? (isMobile ? destRect.left + destRect.width / 2 : destRect.left + 44)
+                : (isMobile ? viewRect.left + viewRect.width / 2 : viewRect.left + 80),
+            y: hasSidebarBounds
+                ? (isMobile ? destRect.top + 38 : Math.min(Math.max(startCenterY, destRect.top + 88), destRect.bottom - 48))
+                : (isMobile ? viewRect.bottom - 40 : startCenterY),
+            targetAvatarSize: 40
+        };
+    },
+
+    /**
+     * Targeted GPU-composited flight from a classroom seat directly to the student's real slot in the sidebar.
+     * Supports either a live cell element or a pre-captured origin object from `_captureFlightOrigin`.
+     * @param {HTMLElement|Object} source - Live cell element or pre-captured origin object
+     * @param {Function} [onComplete] - Called once token is cleaned up
+     * @param {Object} [options] - `{ targetStudentId, delay, onArrival }`
+     */
+    _flyStudentToSidebar(source, onComplete, options = {}) {
+        const { targetStudentId = null, delay = 0, onArrival = null } = options;
+        const sidebar = document.getElementById('scSidebar');
+        const isPreCaptured = Boolean(source && source.clone && source.startRect);
+        const liveCell = !isPreCaptured ? source : null;
+
+        if (!sidebar || !source) {
+            onArrival?.();
             onComplete?.();
             return;
         }
 
         if (this._prefersReducedMotion()) {
+            onArrival?.();
             onComplete?.();
             return;
         }
 
-        const startRect = cell.getBoundingClientRect();
-        const destRect = sidebar.getBoundingClientRect();
-        const hasSidebarBounds = destRect.width > 0 || destRect.height > 0;
-        const viewRect = !hasSidebarBounds
-            ? (document.getElementById('seatingChartView')?.getBoundingClientRect?.() || { left: 0, top: 0, right: window.innerWidth || 360, bottom: window.innerHeight || 640, width: window.innerWidth || 360, height: window.innerHeight || 640 })
-            : null;
+        const origin = isPreCaptured ? source : this._captureFlightOrigin(liveCell);
+        if (!origin) {
+            onArrival?.();
+            onComplete?.();
+            return;
+        }
 
-        const isMobile = this._isCompactLayout ? this._isCompactLayout() : this._isMobileView();
-        const targetX = hasSidebarBounds
-            ? (isMobile ? destRect.left + destRect.width / 2 : destRect.right - 40)
-            : (isMobile ? viewRect.left + viewRect.width / 2 : viewRect.left + 80);
-        const targetY = hasSidebarBounds
-            ? (isMobile ? destRect.top + 35 : Math.min(Math.max(startRect.top + startRect.height / 2, destRect.top + 80), destRect.bottom - 60))
-            : (isMobile ? viewRect.bottom - 40 : startRect.top + startRect.height / 2);
-
-        const flyer = cell.cloneNode(true);
-        flyer.className = `sc-cell occupied sc-flight-token${cell.classList.contains('sc-cell-stacked') ? ' sc-cell-stacked' : ''}`;
-        flyer.removeAttribute('id');
-        flyer.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge').forEach(el => el.remove());
-
-        // Immediately hide content of the originating cell so it detaches cleanly
-        cell.style.opacity = '0';
-        cell.style.pointerEvents = 'none';
-
-        const naturalW = cell.offsetWidth || startRect.width || 88;
-        const naturalH = cell.offsetHeight || startRect.height || 96;
-        const startScale = (naturalW > 0 && startRect.width > 0)
-            ? Math.round((startRect.width / naturalW) * 1000) / 1000
-            : (this._zoomScale || this._fitScale || 1);
+        const { clone: flyer, startRect, naturalW, naturalH, startScale, isMemberAvatar, borderRadius } = origin;
         const startCenterX = startRect.left + startRect.width / 2;
         const startCenterY = startRect.top + startRect.height / 2;
+        const target = this._resolveSidebarFlightTarget(targetStudentId, startCenterY);
+
+        const dx = target.x - startCenterX;
+        const dy = target.y - startCenterY;
+        const endScale = isMemberAvatar
+            ? 0.92
+            : Math.max(0.42, Math.min(0.62, Math.round(((target.targetAvatarSize + 4) / Math.max(naturalW, 1)) * 100) / 100));
+
+        if (liveCell) {
+            liveCell.style.opacity = '0';
+            liveCell.style.pointerEvents = 'none';
+        }
 
         flyer.style.position = 'fixed';
-        flyer.style.left = `${startCenterX - naturalW / 2}px`;
-        flyer.style.top = `${startCenterY - naturalH / 2}px`;
+        flyer.style.left = `${Math.round((startCenterX - naturalW / 2) * 10) / 10}px`;
+        flyer.style.top = `${Math.round((startCenterY - naturalH / 2) * 10) / 10}px`;
         flyer.style.width = `${naturalW}px`;
         flyer.style.height = `${naturalH}px`;
         flyer.style.margin = '0';
         flyer.style.zIndex = '10001';
         flyer.style.pointerEvents = 'none';
         flyer.style.transformOrigin = 'center center';
-        flyer.style.transform = `translate(0px, 0px) scale(${startScale})`;
-        flyer.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s cubic-bezier(0.4, 0, 1, 1), filter 0.28s ease';
+        if (borderRadius) {
+            flyer.style.borderRadius = borderRadius;
+        }
+        flyer.style.transform = `translate3d(0px, 0px, 0) scale(${startScale})`;
+        flyer.style.opacity = '1';
 
         document.body.appendChild(flyer);
 
-        this._pulseSidebarReceiving();
-
-        const dx = targetX - startCenterX;
-        const dy = targetY - startCenterY;
-
-        requestAnimationFrame(() => {
-            flyer.style.transform = `translate(${dx}px, ${dy}px) scale(0.35) rotate(-10deg)`;
-            flyer.style.opacity = '0';
-            flyer.style.filter = 'blur(1px)';
-        });
-
+        const duration = 240;
+        let arrived = false;
         let finished = false;
+        let handoffTimer = null;
+        let fallbackTimer = null;
+
+        const triggerArrival = () => {
+            if (arrived) return;
+            arrived = true;
+            if (handoffTimer) {
+                clearTimeout(handoffTimer);
+                handoffTimer = null;
+            }
+            onArrival?.();
+        };
+
         const cleanup = () => {
             if (finished) return;
             finished = true;
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = null;
+            }
+            triggerArrival();
             flyer.remove();
-            cell.style.opacity = '';
-            cell.style.pointerEvents = '';
+            if (liveCell) {
+                liveCell.style.opacity = '';
+                liveCell.style.pointerEvents = '';
+            }
             onComplete?.();
         };
 
-        flyer.addEventListener('transitionend', cleanup, { once: true });
-        setTimeout(cleanup, 320);
+        handoffTimer = setTimeout(triggerArrival, delay + Math.round(duration * 0.68));
+
+        if (typeof flyer.animate === 'function') {
+            const anim = flyer.animate([
+                {
+                    transform: `translate3d(0px, 0px, 0) scale(${startScale})`,
+                    opacity: 1
+                },
+                {
+                    transform: `translate3d(${Math.round(dx * 0.86)}px, ${Math.round(dy * 0.86)}px, 0) scale(${Math.round(endScale * 1.08 * 1000) / 1000})`,
+                    opacity: 0.92,
+                    offset: 0.68
+                },
+                {
+                    transform: `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0) scale(${endScale})`,
+                    opacity: 0
+                }
+            ], {
+                duration,
+                delay,
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                fill: 'forwards'
+            });
+            anim.onfinish = cleanup;
+            anim.oncancel = cleanup;
+            fallbackTimer = setTimeout(cleanup, delay + duration + 80);
+        } else {
+            flyer.style.transition = `transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, opacity ${duration}ms cubic-bezier(0.4, 0, 1, 1) ${delay}ms`;
+            void flyer.offsetWidth;
+            flyer.style.transform = `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0) scale(${endScale})`;
+            flyer.style.opacity = '0';
+
+            const onTransitionEnd = (e) => {
+                if (e && e.target !== flyer) return;
+                flyer.removeEventListener('transitionend', onTransitionEnd);
+                cleanup();
+            };
+            flyer.addEventListener('transitionend', onTransitionEnd);
+            fallbackTimer = setTimeout(() => {
+                flyer.removeEventListener('transitionend', onTransitionEnd);
+                cleanup();
+            }, delay + duration + 80);
+        }
     }
 };

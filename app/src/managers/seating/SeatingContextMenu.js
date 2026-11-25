@@ -444,21 +444,31 @@ export const SeatingContextMenu = {
 
     _unplaceSelectedCells(selectedGridCells = []) {
         if (this._isLocked || !Array.isArray(selectedGridCells) || selectedGridCells.length === 0) return;
+
+        const removedIds = [];
+        const flightOrigins = [];
+        for (const cellInfo of selectedGridCells) {
+            if (!this._gridState?.[cellInfo.row]) continue;
+            const cellIds = this._getCellStudentIds(cellInfo.row, cellInfo.col);
+            if (cellIds.length === 0) continue;
+            removedIds.push(...cellIds);
+            if (flightOrigins.length < 6) {
+                const cell = document.querySelector(`.sc-cell[data-row="${cellInfo.row}"][data-col="${cellInfo.col}"]`);
+                const origin = this._captureFlightOrigin?.(cell);
+                if (origin) {
+                    flightOrigins.push({ origin, studentIds: cellIds, targetStudentId: cellIds[0] });
+                }
+            }
+        }
+        if (removedIds.length === 0) return;
+
         this._snapshotGrid();
-        let lastRemovedId = null;
         for (const cellInfo of selectedGridCells) {
             if (this._gridState?.[cellInfo.row]) {
-                if (cellInfo.ids?.[0]) lastRemovedId = cellInfo.ids[0];
                 this._gridState[cellInfo.row][cellInfo.col] = null;
             }
         }
-        this._clearSelection();
-        this._savePositionsToState();
-        this._renderGrid();
-        this._renderSidebar(lastRemovedId);
-        this._updateFooter();
-        this._updateSidebarLockState();
-        this._onRemovalComplete();
+        this._commitReturnToSidebar(removedIds, { flightOrigins, clearSelection: true });
     },
 
     _handleContextMenuKeydown(e) {

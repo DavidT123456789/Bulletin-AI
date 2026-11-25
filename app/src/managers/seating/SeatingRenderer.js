@@ -16,11 +16,12 @@ export const SeatingRenderer = {
     // RENDERING
     // ========================================================================
 
-    _render() {
+    _render(options = {}) {
+        const { returningIds = null, isReset = false, sidebarOptions = {}, footerOptions = {} } = options;
         this._updatePlanModeSwitchUI();
         this._renderGrid();
-        this._renderSidebar();
-        this._updateFooter();
+        this._renderSidebar(returningIds, isReset, sidebarOptions);
+        this._updateFooter(footerOptions);
         this._updateSidebarLockState();
         this._updateUndoRedoButtons();
         this._updateQuickGroupButton();

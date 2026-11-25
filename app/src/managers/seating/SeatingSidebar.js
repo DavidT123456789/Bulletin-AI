@@ -416,7 +416,7 @@ export const SeatingSidebar = {
         this._lastSelectedGridPos = null;
         this._dismissOnboardingHint();
         this._savePositionsToState();
-        this._render();
+        this._render({ sidebarOptions: { flipSiblings: true } });
         this._haptic(15);
         this._updateSelectionAttribute();
 
@@ -501,7 +501,7 @@ export const SeatingSidebar = {
         this._lastSelectedGridPos = null;
         this._dismissOnboardingHint();
         this._savePositionsToState();
-        this._render();
+        this._render({ sidebarOptions: { flipSiblings: true } });
         this._haptic(15);
         this._updateSelectionAttribute();
 
@@ -510,34 +510,84 @@ export const SeatingSidebar = {
         });
     },
 
-    /** Mark new sidebar chips as "returning" for entrance animation */
-    _animateSidebarChipReturn(resultId) {
-        requestAnimationFrame(() => {
-            const chip = document.querySelector(`.sc-student-chip[data-result-id="${resultId}"]`);
+    _cleanupChipReturning(chip) {
+        if (!chip) return;
+        const clear = (e) => {
+            if (e && e.target !== chip) return;
+            if (chip._returnCleanupTimer) {
+                clearTimeout(chip._returnCleanupTimer);
+                chip._returnCleanupTimer = null;
+            }
+            chip.removeEventListener('animationend', clear);
+            chip.classList.remove('sc-chip-returning');
+            chip.style.removeProperty('--return-i');
+        };
+        if (chip._returnCleanupTimer) {
+            clearTimeout(chip._returnCleanupTimer);
+        }
+        chip.addEventListener('animationend', clear);
+        chip._returnCleanupTimer = setTimeout(() => clear(), 480);
+    },
+
+    /** Reveal & settle returning sidebar chip(s) synchronously (no 1-frame flash) */
+    _animateSidebarChipReturn(resultIds, { stagger = false } = {}) {
+        const ids = Array.isArray(resultIds) ? resultIds.filter(Boolean) : (resultIds ? [resultIds] : []);
+        if (ids.length === 0) return;
+
+        const list = document.getElementById('scStudentList');
+        if (!list) return;
+        const reduceMotion = Boolean(this._prefersReducedMotion?.());
+
+        ids.forEach((id, idx) => {
+            const safeId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+                ? CSS.escape(String(id))
+                : String(id).replace(/"/g, '\\"');
+            const chip = list.querySelector(`.sc-student-chip[data-result-id="${safeId}"]`);
             if (!chip) return;
+
+            chip.classList.remove('sc-chip-awaiting-flight');
+            if (reduceMotion) {
+                chip.classList.remove('sc-chip-returning');
+                chip.style.removeProperty('--return-i');
+                return;
+            }
+
+            if (stagger && ids.length > 1) {
+                chip.style.setProperty('--return-i', String(Math.min(idx, 8)));
+            } else {
+                chip.style.removeProperty('--return-i');
+            }
+            chip.classList.remove('sc-chip-returning');
+            void chip.offsetWidth;
             chip.classList.add('sc-chip-returning');
-            chip.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
-            chip.addEventListener('animationend', () => chip.classList.remove('sc-chip-returning'), { once: true });
+            this._cleanupChipReturning(chip);
         });
     },
 
-    /** Brief welcoming pulse on sidebar when student is unassigned */
-    _pulseSidebarReceiving() {
-        const sidebar = document.getElementById('scSidebar');
-        if (!sidebar) return;
-        sidebar.classList.remove('sc-sidebar-receiving');
-        void sidebar.offsetWidth;
-        sidebar.classList.add('sc-sidebar-receiving');
-        sidebar.addEventListener('animationend', () => sidebar.classList.remove('sc-sidebar-receiving'), { once: true });
-    },
-
     _animateCounterBump() {
+        if (this._prefersReducedMotion?.()) return;
         const badge = document.querySelector('#scSidebarTitle .sc-dynamic-value');
         if (!badge) return;
+
+        if (this._counterBumpTimer) {
+            clearTimeout(this._counterBumpTimer);
+            this._counterBumpTimer = null;
+        }
         badge.classList.remove('sc-counter-bump');
         void badge.offsetWidth;
         badge.classList.add('sc-counter-bump');
-        badge.addEventListener('animationend', () => badge.classList.remove('sc-counter-bump'), { once: true });
+
+        const cleanup = (e) => {
+            if (e && e.target !== badge) return;
+            if (this._counterBumpTimer) {
+                clearTimeout(this._counterBumpTimer);
+                this._counterBumpTimer = null;
+            }
+            badge.removeEventListener('animationend', cleanup);
+            badge.classList.remove('sc-counter-bump');
+        };
+        badge.addEventListener('animationend', cleanup);
+        this._counterBumpTimer = setTimeout(() => cleanup(), 340);
     },
 
     /** Track all-placed state for edit-mode sidebar collapse and auto-place disable */
@@ -547,9 +597,19 @@ export const SeatingSidebar = {
         const allPlaced = this._getUnplacedStudents().length === 0;
         view.dataset.allPlaced = allPlaced;
     },
-    _renderSidebar(returningId, isReset = false) {
+    _renderSidebar(returningIds = null, isReset = false, options = {}) {
         const list = document.getElementById('scStudentList');
         if (!list) return;
+
+        const returningList = Array.isArray(returningIds)
+            ? returningIds.filter(Boolean)
+            : (returningIds ? [returningIds] : []);
+        const returningSet = new Set(returningList);
+        const pendingFlightList = Array.isArray(options.pendingFlightIds)
+            ? options.pendingFlightIds.filter(Boolean)
+            : (options.pendingFlightIds ? [options.pendingFlightIds] : []);
+        const pendingFlightSet = new Set(pendingFlightList);
+        const reduceMotion = Boolean(this._prefersReducedMotion?.());
 
         const unplaced = this._getUnplacedStudents(false);
         const departedUnplaced = this._getUnplacedStudents(true)
@@ -564,9 +624,12 @@ export const SeatingSidebar = {
         let searchTerm = (searchInput?.value || this._activeSearchTerm || appState.searchQuery || '').trim();
         const currentClassName = this._getCurrentClass()?.name || Utils.getCurrentClassName();
 
-        if (returningId && searchTerm) {
-            const returnedStudent = this._students.find(s => s.id === returningId);
-            if (returnedStudent && !Utils.matchesStudent(returnedStudent, searchTerm, { currentClassName })) {
+        if (returningList.length > 0 && searchTerm) {
+            const hasHiddenReturn = returningList.some(id => {
+                const returnedStudent = this._students.find(s => s.id === id);
+                return returnedStudent && !Utils.matchesStudent(returnedStudent, searchTerm, { currentClassName });
+            });
+            if (hasHiddenReturn) {
                 CrossClassSearchManager.resetHeaderSearchUI();
                 this._applySearchHighlight('');
                 searchTerm = '';
@@ -580,6 +643,20 @@ export const SeatingSidebar = {
         const filteredDeparted = searchTerm
             ? departedUnplaced.filter(s => Utils.matchesStudent(s, searchTerm, { currentClassName }))
             : departedUnplaced;
+
+        let immediateReturnIdx = 0;
+        const getReturnAttrs = (studentId) => {
+            if (isReset || reduceMotion) return { cls: '', style: '' };
+            if (pendingFlightSet.has(studentId)) {
+                return { cls: ' sc-chip-awaiting-flight', style: '' };
+            }
+            if (returningSet.has(studentId)) {
+                const idx = immediateReturnIdx++;
+                const style = returningList.length > 1 ? ` style="--return-i: ${Math.min(idx, 8)}"` : '';
+                return { cls: ' sc-chip-returning', style };
+            }
+            return { cls: '', style: '' };
+        };
 
         const activeListHtml = filtered.length === 0
             ? `<div class="sc-empty-sidebar ${unplaced.length === 0 ? 'sc-empty-success' : ''}">
@@ -600,8 +677,11 @@ export const SeatingSidebar = {
                     : '';
                 const canDragChip = this._isNativeDraggableAllowed();
                 const safeStudentId = Utils.escapeHtml(String(s.id ?? ''));
+                const ret = getReturnAttrs(s.id);
+                const chipClasses = `${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}${ret.cls}`;
+                const chipStyle = isReset ? ` style="--chip-i: ${index}"` : ret.style;
                 return `
-                <div class="${isReset ? 'sc-student-chip sc-chip-stagger' : 'sc-student-chip'}${s.isNew ? ' sc-chip-new' : ''}" ${isReset ? `style="--chip-i: ${index}"` : ''} draggable="${canDragChip}" data-result-id="${safeStudentId}">
+                <div class="${chipClasses}"${chipStyle} draggable="${canDragChip}" data-result-id="${safeStudentId}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                     <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                     ${chipBadgeHtml}
@@ -621,8 +701,9 @@ export const SeatingSidebar = {
                 <div class="sc-sidebar-departed-list">
                     ${filteredDeparted.map(s => {
                         const safeDepartedId = Utils.escapeHtml(String(s.id ?? ''));
+                        const ret = getReturnAttrs(s.id);
                         return `
-                        <div class="sc-student-chip sc-chip-departed" draggable="${this._isNativeDraggableAllowed()}" data-result-id="${safeDepartedId}">
+                        <div class="sc-student-chip sc-chip-departed${ret.cls}"${ret.style} draggable="${this._isNativeDraggableAllowed()}" data-result-id="${safeDepartedId}">
                             ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
                             <span class="sc-student-chip-name">${Utils.formatStudentName(s.nom, s.prenom, true, '', Utils.getStudentOriginInfo(s, currentClassName))}</span>
                             <span class="sc-chip-badge sc-chip-badge-depart">Départ</span>
@@ -637,10 +718,26 @@ export const SeatingSidebar = {
             : '';
 
         const nextHtml = activeListHtml + departedHtml;
-        if (!isReset && !returningId && list.childElementCount > 0 && list._renderedHtml === nextHtml) {
+        const hasReturnState = returningList.length > 0 || pendingFlightSet.size > 0;
+        if (!isReset && !hasReturnState && list.childElementCount > 0 && list._renderedHtml === nextHtml) {
             this._applyChipSelectionUI();
             return;
         }
+
+        // Capture existing chip coordinates before DOM update for smooth FLIP sibling spacing (on return OR incremental placement)
+        const shouldFlipSiblings = !isReset && (hasReturnState || Boolean(options.flipSiblings)) && !reduceMotion && list.childElementCount > 0;
+        const prevScrollTop = list.scrollTop;
+        const prevScrollLeft = list.scrollLeft;
+        const oldRects = new Map();
+        if (shouldFlipSiblings) {
+            list.querySelectorAll('.sc-student-chip[data-result-id]').forEach(el => {
+                const rect = el.getBoundingClientRect?.();
+                if (rect && (rect.width > 0 || rect.height > 0)) {
+                    oldRects.set(el.dataset.resultId, rect);
+                }
+            });
+        }
+
         list._renderedHtml = nextHtml;
         list.innerHTML = nextHtml;
         FocusPanelManager.bindScrollAffordances?.(list);
@@ -650,6 +747,10 @@ export const SeatingSidebar = {
         // Attach listeners regardless of lock state — sidebar is pointer-events: none when locked anyway
         list.querySelectorAll('.sc-student-chip').forEach((chip, index) => {
             const id = chip.dataset.resultId;
+
+            if (chip.classList.contains('sc-chip-returning')) {
+                this._cleanupChipReturning(chip);
+            }
 
             const profileBtn = chip.querySelector('.sc-chip-profile-btn');
             profileBtn?.addEventListener('click', (e) => {
@@ -703,7 +804,44 @@ export const SeatingSidebar = {
         this._applyChipSelectionUI();
         TooltipsUI?.initTooltips?.(list);
 
-        if (returningId) this._animateSidebarChipReturn(returningId);
+        if (returningList.length > 0 && options.scrollIntoView !== false) {
+            const firstId = returningList[0];
+            const safeFirstId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+                ? CSS.escape(String(firstId))
+                : String(firstId).replace(/"/g, '\\"');
+            const firstChip = list.querySelector(`.sc-student-chip[data-result-id="${safeFirstId}"]`);
+            if (firstChip) {
+                const useInstantScroll = reduceMotion || pendingFlightSet.size > 0;
+                firstChip.scrollIntoView?.({
+                    behavior: useInstantScroll ? 'auto' : 'smooth',
+                    block: 'nearest',
+                    inline: 'nearest'
+                });
+            }
+        }
+
+        // Smooth FLIP slide on existing sibling chips that shifted to make room
+        if (oldRects.size > 0 && list.scrollTop === prevScrollTop && list.scrollLeft === prevScrollLeft) {
+            list.querySelectorAll('.sc-student-chip[data-result-id]').forEach(chip => {
+                const id = chip.dataset.resultId;
+                if (!id || returningSet.has(id) || pendingFlightSet.has(id) || typeof chip.animate !== 'function') return;
+                const oldRect = oldRects.get(id);
+                if (!oldRect) return;
+                const newRect = chip.getBoundingClientRect?.();
+                if (!newRect || (newRect.width === 0 && newRect.height === 0)) return;
+                const dx = Math.round(oldRect.left - newRect.left);
+                const dy = Math.round(oldRect.top - newRect.top);
+                if ((Math.abs(dx) > 1 || Math.abs(dy) > 1) && Math.abs(dx) < 600 && Math.abs(dy) < 600) {
+                    chip.animate([
+                        { transform: `translate3d(${dx}px, ${dy}px, 0)` },
+                        { transform: 'translate3d(0, 0, 0)' }
+                    ], {
+                        duration: 240,
+                        easing: 'cubic-bezier(0.32, 0.72, 0, 1)'
+                    });
+                }
+            });
+        }
     },
 
     _updateFooter(options = {}) {
@@ -739,13 +877,9 @@ export const SeatingSidebar = {
         // --- Sidebar Title Dynamic Progress ---
         const sidebarTitle = document.getElementById('scSidebarTitle');
         if (sidebarTitle) {
-            if (total === 0) {
-                if (sidebarTitle.textContent !== 'Élèves non placés') {
+            if (total === 0 || unplaced === 0) {
+                if (sidebarTitle.querySelector('.sc-dynamic-value') || sidebarTitle.textContent !== 'Élèves non placés') {
                     sidebarTitle.innerHTML = '<span>Élèves non placés</span>';
-                }
-            } else if (unplaced === 0) {
-                if (!sidebarTitle.querySelector('.sc-all-placed-title')) {
-                    sidebarTitle.innerHTML = '<span class="sc-all-placed-title"><iconify-icon icon="solar:check-circle-bold"></iconify-icon><span>Tous les élèves sont placés</span></span>';
                 }
             } else {
                 const existingVal = sidebarTitle.querySelector('.sc-dynamic-value');
@@ -764,7 +898,7 @@ export const SeatingSidebar = {
                 : 'Complet';
         }
 
-        if (prev !== placed && prev !== 0) this._animateCounterBump();
+        if (prev !== placed && prev !== 0 && !options.deferCounterBump) this._animateCounterBump();
         this._prevPlacedCount = placed;
 
         if (!options.skipHistorySync) {

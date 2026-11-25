@@ -967,11 +967,13 @@ export const SeatingEvents = {
                     return;
                 }
 
-                if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping && this._isActive && !this._isLocked && this._getSelectedGridCells?.().length > 0) {
-                    e.preventDefault();
-                    this._dragSource = { type: 'multi-cell', ids: [...this._selectedChipIds] };
-                    this._handleRemoveFromSidebarDrop();
-                    return;
+                if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping && this._isActive && !this._isLocked) {
+                    const selectedCells = this._getSelectedGridCells?.() || [];
+                    if (selectedCells.length > 0) {
+                        e.preventDefault();
+                        this._unplaceSelectedCells(selectedCells);
+                        return;
+                    }
                 }
 
                 if (e.key === ' ' && hasNoModifier && !e.repeat && !isTyping && this._isActive && this._isLocked && this._isRandomPickerActive?.()) {

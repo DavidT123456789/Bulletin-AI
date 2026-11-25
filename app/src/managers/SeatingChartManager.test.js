@@ -597,10 +597,11 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         SeatingChartManager._students[0].seatingPosition = { row: 0, col: 0 };
         SeatingChartManager._students[1].seatingPosition = { row: 0, col: 1 };
 
-        // Tous placés en édition
+        // Tous placés en édition : pas de badge compteur ni de bandeau vert fantôme dans l'en-tête replié
         SeatingChartManager._isLocked = false;
         SeatingChartManager._updateFooter();
-        expect(document.getElementById('scSidebarTitle').textContent).toContain('Tous les élèves sont placés');
+        expect(document.getElementById('scSidebarTitle').querySelector('.sc-dynamic-value')).toBeNull();
+        expect(document.getElementById('scSidebarTitle').querySelector('.sc-all-placed-title')).toBeNull();
         expect(document.getElementById('scFooterInfo').textContent).toBe('7 places libres');
     });
 });
@@ -3581,19 +3582,17 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(document.body.classList.contains('sc-drag-over-sidebar')).toBe(false);
         });
 
-        it('devrait désassigner un élève et le replacer dans la réserve lors du drop sur la sidebar', () => {
+        it('devrait désassigner un élève immédiatement au drop sur la sidebar sans attente artificielle', () => {
             const sidebar = document.getElementById('scSidebar');
             expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
 
             SeatingChartManager._dragSource = { type: 'cell', resultId: 's-drop-1', row: 0, col: 0 };
 
-            vi.useFakeTimers();
             const dropEv = new Event('drop', { bubbles: true, cancelable: true });
             sidebar.dispatchEvent(dropEv);
 
             expect(dropEv.defaultPrevented).toBe(true);
-            vi.advanceTimersByTime(400);
-
+            // Mise à jour immédiate (zéro attente de 300ms)
             expect(SeatingChartManager._gridState[0][0]).toBeNull();
             expect(sidebar.classList.contains('drag-over')).toBe(false);
 
@@ -3601,14 +3600,14 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const studentResult = appState.generatedResults.find(r => r.id === 's-drop-1');
             expect(studentResult.seatingPosition).toBeNull();
 
-            // Vérifier que l'élève apparaît dans la réserve non placée
+            // Vérifier que l'élève apparaît dans la réserve avec animation d'entrée synchrone (zéro flash 1 frame)
             const unplaced = SeatingChartManager._getUnplacedStudents();
             expect(unplaced.some(s => s.id === 's-drop-1')).toBe(true);
-
-            vi.useRealTimers();
+            const returningChip = document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-drop-1"]');
+            expect(returningChip?.classList.contains('sc-chip-returning')).toBe(true);
         });
 
-        it('devrait supporter le drop multi-élèves sur la sidebar pour désassigner plusieurs élèves', () => {
+        it('devrait supporter le drop multi-élèves sur la sidebar immédiatement et animer toutes les puces', () => {
             const sidebar = document.getElementById('scSidebar');
             expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
             expect(SeatingChartManager._gridState[0][1]).toBe('s-drop-2');
@@ -3616,15 +3615,12 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             SeatingChartManager._selectedChipIds = ['s-drop-1', 's-drop-2'];
             SeatingChartManager._dragSource = { type: 'multi-cell', ids: ['s-drop-1', 's-drop-2'] };
 
-            vi.useFakeTimers();
             const dropEv = new Event('drop', { bubbles: true, cancelable: true });
             sidebar.dispatchEvent(dropEv);
 
             expect(dropEv.defaultPrevented).toBe(true);
             expect(SeatingChartManager._gridState[0][0]).toBeNull();
             expect(SeatingChartManager._gridState[0][1]).toBeNull();
-
-            vi.advanceTimersByTime(400);
             expect(SeatingChartManager._selectedChipIds).toEqual([]);
 
             const r1 = appState.generatedResults.find(r => r.id === 's-drop-1');
@@ -3632,7 +3628,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(r1.seatingPosition).toBeNull();
             expect(r2.seatingPosition).toBeNull();
 
-            vi.useRealTimers();
+            expect(document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-drop-1"]')?.classList.contains('sc-chip-returning')).toBe(true);
+            expect(document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-drop-2"]')?.classList.contains('sc-chip-returning')).toBe(true);
         });
 
         it('ne doit pas autoriser le drop sur la sidebar si le plan est verrouillé (Consultation)', () => {
@@ -3647,25 +3644,61 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
         });
 
-        it('devrait déclencher la classe sc-sidebar-receiving lors de l\'appel à _pulseSidebarReceiving', () => {
-            const sidebar = document.getElementById('scSidebar');
-            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(false);
-
-            SeatingChartManager._pulseSidebarReceiving();
-            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(true);
-
-            sidebar.dispatchEvent(new Event('animationend'));
-            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(false);
-        });
-
-        it('devrait déclencher le pulse d\'accueil du volet lors de la désassignation via la croix (_removeFromCell)', () => {
-            const sidebar = document.getElementById('scSidebar');
-            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(false);
+        it('devrait muter l\'état immédiatement et synchroniser le relais puce + compteur à l\'impact lors de _removeFromCell', () => {
+            vi.useFakeTimers();
 
             SeatingChartManager._isLocked = false;
             SeatingChartManager._removeFromCell(0, 0);
 
-            expect(sidebar.classList.contains('sc-sidebar-receiving')).toBe(true);
+            // Mutation optimiste immédiate (anti race-condition)
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(document.querySelector('.sc-flight-token')).not.toBeNull();
+
+            // La puce cible attend le relais du token volant sans flash
+            const chip = document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-drop-1"]');
+            const badge = document.querySelector('#scSidebarTitle .sc-dynamic-value');
+            expect(chip?.classList.contains('sc-chip-awaiting-flight')).toBe(true);
+            expect(badge?.classList.contains('sc-counter-bump')).toBe(false);
+
+            // À l'impact (~163ms), la puce s'installe et le compteur rebondit
+            vi.advanceTimersByTime(180);
+            expect(chip?.classList.contains('sc-chip-awaiting-flight')).toBe(false);
+            expect(chip?.classList.contains('sc-chip-returning')).toBe(true);
+            expect(badge?.classList.contains('sc-counter-bump')).toBe(true);
+
+            // Nettoyage complet en fin de vol
+            vi.advanceTimersByTime(200);
+            expect(document.querySelector('.sc-flight-token')).toBeNull();
+
+            vi.useRealTimers();
+        });
+
+        it('devrait préserver la cohérence de la grille et de l\'historique Undo lors de retraits rapides en rafale', () => {
+            vi.useFakeTimers();
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._undoStack = [];
+
+            // Deux clics × consécutifs avant la fin du premier vol
+            SeatingChartManager._removeFromCell(0, 0);
+            SeatingChartManager._removeFromCell(0, 1);
+
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(SeatingChartManager._gridState[0][1]).toBeNull();
+            expect(document.querySelectorAll('.sc-flight-token').length).toBe(2);
+            expect(SeatingChartManager._undoStack.length).toBe(2);
+
+            // Undo 1 restaure uniquement s-drop-2, Undo 2 restaure s-drop-1
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(SeatingChartManager._gridState[0][1]).toBe('s-drop-2');
+
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
+            expect(SeatingChartManager._gridState[0][1]).toBe('s-drop-2');
+
+            vi.runAllTimers();
+            expect(document.querySelectorAll('.sc-flight-token').length).toBe(0);
+            vi.useRealTimers();
         });
 
         it('devrait exécuter _flyStudentToSidebar et nettoyer le token volant', () => {
@@ -3691,7 +3724,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             cell.remove();
         });
 
-        it('devrait ignorer l\'animation de vol si prefers-reduced-motion est activé', () => {
+        it('devrait ignorer le vol et le rebond compteur si prefers-reduced-motion est activé', () => {
             const originalMatchMedia = window.matchMedia;
             window.matchMedia = vi.fn().mockImplementation(query => ({
                 matches: query === '(prefers-reduced-motion: reduce)',
@@ -3714,6 +3747,57 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(document.querySelector('.sc-flight-token')).toBeNull();
 
             window.matchMedia = originalMatchMedia;
+        });
+
+        it('devrait faire voler l\'élève évincé vers la réserve lorsqu\'un élève non placé le remplace sur sa table', () => {
+            vi.useFakeTimers();
+            const unplacedStudent = { id: 's-drop-3', nom: 'Durand', prenom: 'Chloé', seatingPosition: null, classId: appState.currentClassId };
+            appState.generatedResults.push(unplacedStudent);
+            SeatingChartManager._students = SeatingChartManager._getCurrentClassStudents();
+            SeatingChartManager._render();
+
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._replaceOccupantWithUnplaced(0, 0, 's-drop-3');
+
+            expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-3');
+            expect(document.querySelector('.sc-flight-token')).not.toBeNull();
+
+            const evictedChip = document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-drop-1"]');
+            expect(evictedChip?.classList.contains('sc-chip-awaiting-flight')).toBe(true);
+
+            vi.advanceTimersByTime(180);
+            expect(evictedChip?.classList.contains('sc-chip-awaiting-flight')).toBe(false);
+            expect(evictedChip?.classList.contains('sc-chip-returning')).toBe(true);
+
+            vi.advanceTimersByTime(200);
+            expect(document.querySelector('.sc-flight-token')).toBeNull();
+            vi.useRealTimers();
+        });
+
+        it('devrait animer uniquement la cellule modifiée (sans cascade globale) lors d\'un Annuler/Rétablir incrémental', () => {
+            vi.useFakeTimers();
+            SeatingChartManager._isLocked = false;
+            SeatingChartManager._undoStack = [];
+            SeatingChartManager._redoStack = [];
+
+            // Retirer s-drop-1 puis Annuler -> seule sa cellule doit popper (sc-cell-placed), sans sc-cell-stagger global
+            SeatingChartManager._removeFromCell(0, 0);
+            vi.runAllTimers();
+
+            SeatingChartManager._undo();
+            expect(SeatingChartManager._gridState[0][0]).toBe('s-drop-1');
+            expect(document.querySelector('.sc-cell[data-row="0"][data-col="0"]')?.classList.contains('sc-cell-placed')).toBe(true);
+            expect(document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').length).toBe(0);
+
+            // Rétablir -> s-drop-1 repart en vol ciblé vers la réserve (sans sc-cell-stagger)
+            SeatingChartManager._redo();
+            expect(SeatingChartManager._gridState[0][0]).toBeNull();
+            expect(document.querySelector('.sc-flight-token')).not.toBeNull();
+            expect(document.querySelectorAll('#scGridContainer .sc-cell.sc-cell-stagger').length).toBe(0);
+
+            vi.runAllTimers();
+            expect(document.querySelector('.sc-flight-token')).toBeNull();
+            vi.useRealTimers();
         });
     });
 
@@ -4115,20 +4199,21 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(board.classList.contains('sc-lock-sliding')).toBe(false);
         });
 
-        it('ne doit pas recréer le DOM de #scSidebarTitle ni multiplier les appels _getPlacedIds dans _updateFooter', () => {
+        it('ne doit pas recréer le DOM de #scSidebarTitle ni injecter de bandeau vert redondant quand tous les élèves sont placés', () => {
             SeatingChartManager.switchPlanMode('course', { animate: false });
             SeatingChartManager._isLocked = false;
             SeatingChartManager._autoPlace('alpha-asc');
 
             const titleEl = document.getElementById('scSidebarTitle');
-            const initialCheckEl = titleEl.querySelector('.sc-all-placed-title');
-            expect(initialCheckEl).not.toBeNull();
+            expect(titleEl.querySelector('.sc-all-placed-title')).toBeNull();
+            const initialSpan = titleEl.querySelector('span');
+            expect(initialSpan?.textContent).toBe('Élèves non placés');
 
             const placedSpy = vi.spyOn(SeatingChartManager, '_getPlacedIds');
             SeatingChartManager._updateFooter();
 
             expect(placedSpy).toHaveBeenCalledTimes(1);
-            expect(titleEl.querySelector('.sc-all-placed-title')).toBe(initialCheckEl);
+            expect(titleEl.querySelector('span')).toBe(initialSpan);
             placedSpy.mockRestore();
         });
 
@@ -4868,7 +4953,9 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             // L'étiquette est passée dans la sous-section "Élève parti (1)", la sélection est purgée, et tous les élèves actifs sont placés
             expect(SeatingChartManager._selectedChipIds).toEqual([]);
-            expect(document.getElementById('scSidebarTitle')?.textContent).toContain('Tous les élèves sont placés');
+            expect(document.getElementById('seatingChartView')?.dataset.allPlaced).toBe('true');
+            expect(document.querySelector('#scStudentList .sc-empty-sidebar.sc-empty-success')?.textContent).toContain('Tous les élèves sont placés');
+            expect(document.getElementById('scSidebarTitle')?.querySelector('.sc-dynamic-value')).toBeNull();
 
             const departedChip = document.querySelector('.sc-sidebar-departed-section .sc-student-chip.sc-chip-departed[data-result-id="st-unplaced"]');
             expect(departedChip).not.toBeNull();

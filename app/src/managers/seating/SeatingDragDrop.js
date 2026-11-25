@@ -69,6 +69,22 @@ export const SeatingDragDrop = {
         UI?.showNotification?.(`Groupe complet (${MAX_ACTIVITY_GROUP_SIZE} élèves maximum par poste).`, 'warning');
     },
 
+    _captureEvictedFlight(row, col, incomingId) {
+        const evictedIds = this._getCellStudentIds(row, col).filter(id => id !== incomingId);
+        if (evictedIds.length === 0) return { evictedIds: [], origin: null, canFly: false };
+        const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+        const origin = (cell && !this._prefersReducedMotion?.()) ? this._captureFlightOrigin?.(cell) : null;
+        return { evictedIds, origin, canFly: Boolean(origin) };
+    },
+
+    _launchEvictedFlight({ evictedIds, origin, canFly }) {
+        if (!canFly || !origin || evictedIds.length === 0) return;
+        this._flyStudentToSidebar(origin, null, {
+            targetStudentId: evictedIds[0],
+            onArrival: () => this._animateSidebarChipReturn(evictedIds)
+        });
+    },
+
     _replaceOccupantWithUnplaced(row, col, unplacedId) {
         if (this._isLocked) return;
         if (this._isActivityMode()) {
@@ -82,12 +98,21 @@ export const SeatingDragDrop = {
                 return;
             }
         }
+        const eviction = this._captureEvictedFlight(row, col, unplacedId);
+
         this._snapshotGrid();
         this._gridState[row][col] = unplacedId;
         this._dismissOnboardingHint();
         this._savePositionsToState();
-        this._render();
+        this._render({
+            returningIds: eviction.evictedIds,
+            sidebarOptions: {
+                pendingFlightIds: eviction.canFly ? eviction.evictedIds : [],
+                flipSiblings: true
+            }
+        });
         this._animateCellPlaced(row, col);
+        this._launchEvictedFlight(eviction);
     },
 
     _joinStudentsToCell(row, col, studentIdsToJoin) {
@@ -119,7 +144,7 @@ export const SeatingDragDrop = {
         this._setCellStudentIds(row, col, combined);
         this._dismissOnboardingHint();
         this._savePositionsToState();
-        this._render();
+        this._render({ sidebarOptions: { flipSiblings: true } });
         this._animateCellPlaced(row, col);
         return true;
     },
@@ -454,6 +479,10 @@ export const SeatingDragDrop = {
 
         if ((type === 'cell' || type === 'group-member') && targetRow === srcRow && targetCol === srcCol) return;
 
+        const eviction = (type === 'sidebar' || type === 'group-member')
+            ? this._captureEvictedFlight(targetRow, targetCol, resultId)
+            : { evictedIds: [], origin: null, canFly: false };
+
         this._snapshotGrid();
 
         const isSwap = type === 'cell' && Boolean(targetVal);
@@ -480,7 +509,13 @@ export const SeatingDragDrop = {
         this._lastSelectedGridPos = null;
         this._dismissOnboardingHint();
         this._savePositionsToState();
-        this._render();
+        this._render({
+            returningIds: eviction.evictedIds,
+            sidebarOptions: {
+                pendingFlightIds: eviction.canFly ? eviction.evictedIds : [],
+                flipSiblings: type === 'sidebar' || eviction.evictedIds.length > 0
+            }
+        });
         this._updateSelectionAttribute();
 
         if (isSwap) {
@@ -488,45 +523,91 @@ export const SeatingDragDrop = {
         } else {
             this._animateCellPlaced(targetRow, targetCol);
         }
+
+        this._launchEvictedFlight(eviction);
     },
 
-    _removeStudentFromCell(row, col, studentId) {
+    /**
+     * Unified optimistic commit & animation orchestrator for any student(s) returning to the unplaced sidebar.
+     * - Mutates/renders immediately (zero stale-state race condition on rapid clicks).
+     * - Plays targeted GPU flight + handoff settle when unplacing from the board (`flightOrigins`),
+     *   or instant FLIP + directional settle when dropped directly onto the sidebar (`immediateDrop`).
+     */
+    _commitReturnToSidebar(returnedIds, { flightOrigins = [], immediateDrop = false, clearSelection = false } = {}) {
+        const uniqueIds = [...new Set((Array.isArray(returnedIds) ? returnedIds : [returnedIds]).filter(Boolean))];
+        const cappedFlights = (!immediateDrop && !this._prefersReducedMotion?.())
+            ? flightOrigins.filter(f => f && f.origin).slice(0, 6)
+            : [];
+        const canFly = cappedFlights.length > 0;
+        const pendingFlightIds = canFly ? cappedFlights.flatMap(f => f.studentIds || []).filter(Boolean) : [];
+
+        if (clearSelection) {
+            this._clearSelection();
+        }
+        this._savePositionsToState();
+        this._renderGrid();
+        this._renderSidebar(uniqueIds, false, { pendingFlightIds });
+        this._updateFooter({ deferCounterBump: canFly });
+        this._updateSidebarLockState();
+        this._onRemovalComplete();
+
+        if (canFly) {
+            let hasNotifiedArrival = false;
+            cappedFlights.forEach((flight, idx) => {
+                this._flyStudentToSidebar(flight.origin, null, {
+                    targetStudentId: flight.targetStudentId || flight.studentIds?.[0] || null,
+                    delay: cappedFlights.length > 1 ? idx * 22 : 0,
+                    onArrival: () => {
+                        this._animateSidebarChipReturn(flight.studentIds || [flight.targetStudentId]);
+                        if (!hasNotifiedArrival) {
+                            hasNotifiedArrival = true;
+                            this._animateCounterBump();
+                        }
+                    }
+                });
+            });
+        }
+    },
+
+    _removeStudentFromCell(row, col, studentId, { immediateDrop = false } = {}) {
         if (this._isLocked || !studentId) return;
         const currentIds = this._getCellStudentIds(row, col);
         if (!currentIds.includes(studentId)) return;
 
         if (currentIds.length <= 1) {
-            this._removeFromCell(row, col);
+            this._removeFromCell(row, col, { immediateDrop });
             return;
         }
+
+        const safeId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+            ? CSS.escape(String(studentId))
+            : String(studentId).replace(/"/g, '\\"');
+        const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+        const memberEl = cell?.querySelector(`.sc-stacked-avatar[data-result-id="${safeId}"]`) || cell;
+        const origin = !immediateDrop ? this._captureFlightOrigin?.(memberEl) : null;
 
         this._snapshotGrid();
         const remainingIds = currentIds.filter(id => id !== studentId);
         this._setCellStudentIds(row, col, remainingIds);
-        this._savePositionsToState();
-        this._renderGrid();
-        this._renderSidebar(studentId);
-        this._updateFooter();
-        this._updateSidebarLockState();
-        this._onRemovalComplete();
+        this._commitReturnToSidebar([studentId], {
+            flightOrigins: origin ? [{ origin, studentIds: [studentId], targetStudentId: studentId }] : [],
+            immediateDrop
+        });
     },
 
-    _removeFromCell(row, col) {
+    _removeFromCell(row, col, { immediateDrop = false } = {}) {
         if (this._isLocked) return;
-        this._snapshotGrid();
-
         const removedIds = this._getCellStudentIds(row, col);
-        const primaryRemovedId = removedIds[0] || null;
-        const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+        if (removedIds.length === 0) return;
 
-        this._flyStudentToSidebar(cell, () => {
-            this._gridState[row][col] = null;
-            this._savePositionsToState();
-            this._renderGrid();
-            this._renderSidebar(primaryRemovedId);
-            this._updateFooter();
-            this._updateSidebarLockState();
-            this._onRemovalComplete();
+        const cell = document.querySelector(`.sc-cell[data-row="${row}"][data-col="${col}"]`);
+        const origin = !immediateDrop ? this._captureFlightOrigin?.(cell) : null;
+
+        this._snapshotGrid();
+        this._gridState[row][col] = null;
+        this._commitReturnToSidebar(removedIds, {
+            flightOrigins: origin ? [{ origin, studentIds: removedIds, targetStudentId: removedIds[0] }] : [],
+            immediateDrop
         });
     },
 
@@ -1437,61 +1518,47 @@ export const SeatingDragDrop = {
         this._removeDragClones?.();
 
         const { type, resultId, row, col, ids } = this._dragSource;
+        this._dragSource = null;
 
         if (type === 'group-member') {
-            this._removeStudentFromCell(row, col, resultId);
-            this._dragSource = null;
+            this._removeStudentFromCell(row, col, resultId, { immediateDrop: true });
             return;
         }
 
-        this._snapshotGrid();
-
         if (type === 'cell') {
             const removedIds = this._getCellStudentIds(row, col);
-            this._animateCellRemove(row, col, () => {
-                this._gridState[row][col] = null;
-                this._savePositionsToState();
-                this._renderGrid();
-                this._renderSidebar(resultId || removedIds[0]);
-                this._updateFooter();
-                this._updateSidebarLockState();
-                this._onRemovalComplete();
+            if (removedIds.length === 0) return;
+            this._snapshotGrid();
+            this._gridState[row][col] = null;
+            this._commitReturnToSidebar(removedIds.length > 0 ? removedIds : [resultId], {
+                immediateDrop: true
             });
-        } else if (type === 'multi-cell') {
+            return;
+        }
+
+        if (type === 'multi-cell') {
+            const targetIds = Array.isArray(ids) ? ids : [];
             const rows = this._getRows();
             const cols = this._getCols();
-            let delay = 0;
+            const removedIds = [];
 
+            this._snapshotGrid();
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const cellIds = this._getCellStudentIds(r, c);
-                    const matching = cellIds.filter(id => ids.includes(id));
+                    const matching = cellIds.filter(id => targetIds.includes(id));
                     if (matching.length > 0) {
-                        const remaining = cellIds.filter(id => !ids.includes(id));
-                        if (remaining.length === 0) {
-                            const cell = document.querySelector(`.sc-cell[data-row="${r}"][data-col="${c}"]`);
-                            if (cell) {
-                                cell.style.setProperty('--cell-i', delay);
-                                cell.classList.add('sc-cell-removing');
-                                delay++;
-                            }
-                        }
+                        removedIds.push(...matching);
+                        const remaining = cellIds.filter(id => !targetIds.includes(id));
                         this._setCellStudentIds(r, c, remaining);
                     }
                 }
             }
 
-            setTimeout(() => {
-                this._savePositionsToState();
-                this._renderGrid();
-                this._renderSidebar();
-                this._updateFooter();
-                this._updateSidebarLockState();
-                this._onRemovalComplete();
-                this._clearSelection();
-            }, Math.min(delay * 30 + 300, 600));
+            this._commitReturnToSidebar(removedIds, {
+                immediateDrop: true,
+                clearSelection: true
+            });
         }
-
-        this._dragSource = null;
     }
 };

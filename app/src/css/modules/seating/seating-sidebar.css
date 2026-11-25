@@ -61,19 +61,6 @@
     transition: transform var(--transition-fast), background var(--transition-fast);
 }
 
-.sc-sidebar-title .sc-all-placed-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--success-text);
-    font-weight: 600;
-    animation: scFadeUp 0.3s var(--ease-spring) both;
-}
-
-.sc-sidebar-title .sc-all-placed-title iconify-icon {
-    font-size: 1rem;
-}
-
 .sc-search-clear {
     position: absolute;
     right: 8px;
