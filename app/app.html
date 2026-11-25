@@ -1403,41 +1403,41 @@
             </div>
 
             <div class="import-hub-choices">
-                <!-- Individual Student Card -->
-                <div class="import-hub-card" data-action="individual" tabindex="0" role="button" data-tooltip="Ajoutez un élève manuellement en renseignant son profil et ses notes">
-                    <div class="import-hub-icon">
-                        <svg aria-hidden="true"><use href="#icon-user-plus"></use></svg>
-                    </div>
-                    <h3 class="import-hub-card-title">Individuel</h3>
-                    <p class="import-hub-card-desc">Saisie manuelle</p>
-                </div>
-
                 <!-- Mass Import Card -->
-                <div class="import-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, moyennes et bilans de bulletins depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
+                <button type="button" class="import-hub-card" data-action="mass" data-tooltip="Importez moyennes et appréciations (Pronote, ENT)" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                     </div>
-                    <h3 class="import-hub-card-title">Liste &amp; Notes</h3>
-                    <p class="import-hub-card-desc">PDF, CSV ou copier-coller</p>
-                </div>
+                    <h3 class="import-hub-card-title">Liste &amp; Bulletins</h3>
+                    <p class="import-hub-card-desc">PDF, CSV, copier-coller</p>
+                </button>
 
                 <!-- Trombinoscope Import Card -->
-                <div class="import-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Créez la classe et associez les photos de vos élèves depuis un PDF Pronote ou une photo de classe">
+                <button type="button" class="import-hub-card" data-action="photos" data-tooltip="Importez liste d'élèves et photos automatiquement" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:camera-linear"></iconify-icon>
                     </div>
                     <h3 class="import-hub-card-title">Trombinoscope</h3>
-                    <p class="import-hub-card-desc">PDF ou photo</p>
-                </div>
+                    <p class="import-hub-card-desc">PDF Pronote ou image</p>
+                </button>
+
+                <!-- Individual Student Card -->
+                <button type="button" class="import-hub-card" data-action="individual" data-tooltip="Ajoutez un élève, son profil et ses moyennes" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+                    <div class="import-hub-icon">
+                        <iconify-icon icon="solar:user-plus-linear"></iconify-icon>
+                    </div>
+                    <h3 class="import-hub-card-title">Individuel</h3>
+                    <p class="import-hub-card-desc">Saisie manuelle</p>
+                </button>
 
                 <!-- Existing Classes Picker Card -->
-                <div class="import-hub-card" data-action="existing" tabindex="0" role="button" data-tooltip="Piochez des élèves déjà enregistrés dans vos autres classes (avec leurs photos et statuts)" style="display: none;">
+                <button type="button" class="import-hub-card" data-action="existing" data-tooltip="Reprenez des élèves avec leurs photos et statuts" data-tippy-placement="bottom" data-tippy-delay="[250, 0]" style="display: none;">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </div>
                     <h3 class="import-hub-card-title">Mes classes</h3>
                     <p class="import-hub-card-desc">Élèves existants</p>
-                </div>
+                </button>
             </div>
         </div>
     </div>
@@ -3954,34 +3954,34 @@
 
         <!-- Hub d'import intégré directement -->
         <div class="empty-state-hub">
-            <div class="empty-state-hub-card" data-action="individual" tabindex="0" role="button" data-tooltip="Ajoutez un élève manuellement en renseignant son profil et ses notes">
-                <div class="empty-state-hub-icon">
-                    <svg aria-hidden="true"><use href="#icon-user-plus"></use></svg>
-                </div>
-                <div class="empty-state-hub-text">
-                    <h4>Individuel</h4>
-                    <p>Saisie manuelle</p>
-                </div>
-            </div>
-            <div class="empty-state-hub-card" data-action="mass" tabindex="0" role="button" data-tooltip="Importez vos élèves, moyennes et bilans de bulletins depuis un PDF (Pronote, ENT / MBN), un fichier CSV ou par copier-coller (Excel, Pronote)">
+            <button type="button" class="empty-state-hub-card" data-action="mass" data-tooltip="Importez moyennes et appréciations (Pronote, ENT)" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
-                    <h4>Liste &amp; Notes</h4>
-                    <p>PDF, CSV ou copier-coller</p>
+                    <h4>Liste &amp; Bulletins</h4>
+                    <p>PDF, CSV, copier-coller</p>
                 </div>
-            </div>
-            <div class="empty-state-hub-card" data-action="photos" tabindex="0" role="button" data-tooltip="Importez vos élèves et associez leurs photos depuis un PDF Pronote ou une photo de classe">
+            </button>
+            <button type="button" class="empty-state-hub-card" data-action="photos" data-tooltip="Importez liste d'élèves et photos automatiquement" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:camera-linear"></iconify-icon>
                 </div>
                 <div class="empty-state-hub-text">
                     <h4>Trombinoscope</h4>
-                    <p>PDF ou photo</p>
+                    <p>PDF Pronote ou image</p>
                 </div>
-            </div>
-            <div class="empty-state-hub-card" data-action="existing" tabindex="0" role="button" data-tooltip="Piochez des élèves déjà enregistrés dans vos autres classes (avec leurs photos et statuts)" style="display: none;">
+            </button>
+            <button type="button" class="empty-state-hub-card" data-action="individual" data-tooltip="Ajoutez un élève, son profil et ses moyennes" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+                <div class="empty-state-hub-icon">
+                    <iconify-icon icon="solar:user-plus-linear"></iconify-icon>
+                </div>
+                <div class="empty-state-hub-text">
+                    <h4>Individuel</h4>
+                    <p>Saisie manuelle</p>
+                </div>
+            </button>
+            <button type="button" class="empty-state-hub-card" data-action="existing" data-tooltip="Reprenez des élèves avec leurs photos et statuts" data-tippy-placement="bottom" data-tippy-delay="[250, 0]" style="display: none;">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                 </div>
@@ -3989,7 +3989,7 @@
                     <h4>Mes classes</h4>
                     <p>Élèves existants</p>
                 </div>
-            </div>
+            </button>
         </div>
     </template>
 

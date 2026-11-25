@@ -623,6 +623,9 @@ export const ImportWizardManager = {
             UI.showNotification('Veuillez entrer des données à importer', 'warning');
             return;
         }
+        if (this.currentStep === 2 && !this._canProceedToNextStep()) {
+            return;
+        }
         if (this.currentStep < 3) {
             this.goToStep(this.currentStep + 1);
         }
@@ -684,7 +687,7 @@ export const ImportWizardManager = {
             return this.state.lines && this.state.lines.length > 0;
         }
         if (this.currentStep === 2) {
-            return this.state.columnCount > 0;
+            return this.state.columnCount > 0 && this.state.hasValidMapping !== false;
         }
         return false;
     },
@@ -1087,9 +1090,13 @@ export const ImportWizardManager = {
 
         if (!text) {
             this.state.lines = [];
+            this.state.columnCount = 0;
             this.state.hasHeader = false;
-            // Disable Step 1 Next button when no data
+            this.state.hasValidMapping = false;
+            // Disable Step 1 & Step 2 Next buttons when no data
             if (step1NextBtn) step1NextBtn.disabled = true;
+            const step2NextBtn = document.getElementById('wizardStep2NextBtn');
+            if (step2NextBtn) step2NextBtn.disabled = true;
 
             // Reset step 1 line count indicator (in footer)
             const lineCountContainer = document.getElementById('wizardStep1LineCount');
@@ -1342,12 +1349,10 @@ export const ImportWizardManager = {
                 const rawContent = String(line[i] || '');
                 const isEmpty = !rawContent.trim();
                 const escapedAttr = Utils.escapeHtml(rawContent);
-                const displayText = rawContent.length > 50 ? rawContent.substring(0, 47) + '...' : rawContent;
                 const cellContent = isEmpty
                     ? '<span class="preview-empty-cell">—</span>'
-                    : Utils.escapeHtml(displayText);
-                const needsTooltip = !isEmpty && (rawContent.length > 50 || i === 0);
-                html += `<td data-raw="${escapedAttr}"${needsTooltip ? ` class="has-tooltip" data-tooltip="${escapedAttr}"` : ''}>${cellContent}</td>`;
+                    : escapedAttr;
+                html += `<td data-raw="${escapedAttr}">${cellContent}</td>`;
             }
             html += `</tr>`;
         });
@@ -1384,19 +1389,15 @@ export const ImportWizardManager = {
             () => DropdownManager.closeAll()
         );
 
-        // Initial column classes, validation and preview
+        // Initial column classes (incl. scoped tooltips), validation and preview
         this._applyColumnClasses();
         this._validateMappings();
         this._updatePreview();
-
-        // Initialize custom Tippy.js tooltips for the Step 2 table cells
-        if (UI && UI.initTooltips) {
-            UI.initTooltips();
-        }
     },
 
     /**
-     * Validate mapping selections - detect and highlight duplicates
+     * Validate mapping selections — detect duplicates or missing student name column
+     * Blocks Step 2 → Step 3 progression until mapping is valid
      * @private
      */
     _validateMappings() {
@@ -1411,8 +1412,11 @@ export const ImportWizardManager = {
             }
         });
 
-        // Find duplicates
+        // Find duplicates and verify required student column
         const duplicates = Object.keys(valueCounts).filter(k => valueCounts[k] > 1);
+        const hasNameColumn = (valueCounts['NOM_PRENOM'] || 0) >= 1;
+        const isValid = selects.length > 0 && hasNameColumn && duplicates.length === 0;
+        this.state.hasValidMapping = isValid;
 
         // Apply visual feedback to each select and its custom dropdown wrapper
         selects.forEach(select => {
@@ -1424,51 +1428,56 @@ export const ImportWizardManager = {
             }
         });
 
+        // Resolve warning message
+        let warningMessage = '';
+        if (duplicates.length > 0 && !hasNameColumn) {
+            warningMessage = 'Colonnes en doublon et colonne « Élève » manquante : corrigez le mapping pour continuer';
+        } else if (duplicates.length > 0) {
+            warningMessage = 'Colonnes en doublon : plusieurs colonnes ont le même type';
+        } else if (selects.length > 0 && !hasNameColumn) {
+            warningMessage = 'Colonne « Élève » requise : attribuez le type « Élève » à une colonne pour continuer';
+        }
+
         // Show/hide warning message
         let warningEl = document.getElementById('wizardMappingWarning');
-        if (duplicates.length > 0) {
+        if (warningMessage) {
             if (!warningEl) {
                 warningEl = document.createElement('div');
                 warningEl.id = 'wizardMappingWarning';
                 warningEl.className = 'mapping-warning';
+                warningEl.setAttribute('role', 'alert');
                 const container = document.getElementById('wizardMappingContainer');
                 container?.parentNode.insertBefore(warningEl, container);
             }
-            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> Colonnes en doublon : plusieurs colonnes ont le même type`;
+            warningEl.innerHTML = `<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon> ${warningMessage}`;
             warningEl.style.display = 'flex';
         } else if (warningEl) {
             warningEl.style.display = 'none';
         }
+
+        // Sync Step 2 Next button and stepper clickability
+        const step2NextBtn = document.getElementById('wizardStep2NextBtn');
+        if (step2NextBtn) {
+            step2NextBtn.disabled = !isValid;
+        }
+        this._updateStepper();
     },
 
     /**
-     * Apply semantic col-* CSS classes to th/td based on current select values
-     * Enables column-type-aware styling (color, width, alignment)
+     * Apply semantic col-* CSS classes and aligned tooltips to th/td based on current select values
+     * Enables column-type-aware styling (color, width, alignment, tooltips)
      * @private
      */
     _applyColumnClasses() {
         const table = document.querySelector('.import-mapping-table');
         if (!table) return;
 
-        const tagToClass = {
-            IGNORE: 'col-ignore',
-            NOM_PRENOM: 'col-name',
-            STATUT: 'col-status'
-        };
-        const prefixToClass = {
-            MOY: 'col-grade',
-            DEV: 'col-count',
-            APP: 'col-appreciation',
-            CTX: 'col-context'
-        };
-
         const allClasses = ['col-name', 'col-status', 'col-grade', 'col-count', 'col-appreciation', 'col-context', 'col-ignore'];
         const selects = table.querySelectorAll('.mapping-select');
         const colClasses = [];
 
         selects.forEach((select, i) => {
-            const val = select.value;
-            const cls = tagToClass[val] ?? prefixToClass[val?.split('_')[0]] ?? null;
+            const cls = this._getColClass(select.value) || null;
             colClasses[i] = cls;
 
             const th = select.closest('th');
@@ -1484,17 +1493,28 @@ export const ImportWizardManager = {
                 if (cls) td.classList.add(cls);
 
                 const raw = td.getAttribute('data-raw') || '';
-                const truncated = raw.length > 50 ? raw.substring(0, 47) + '...' : raw;
-                if (!truncated.trim()) {
+                const trimmed = raw.trim();
+                if (!trimmed) {
                     td.innerHTML = '<span class="preview-empty-cell">—</span>';
                 } else if (cls === 'col-status') {
-                    td.innerHTML = this._renderStatusBadgesHtml(truncated, { includeDataAttr: true });
+                    td.innerHTML = this._renderStatusBadgesHtml(raw, { includeDataAttr: true });
                 } else if (td.querySelector('.tag-badge--sm, .preview-empty-cell')) {
-                    td.textContent = truncated;
+                    td.textContent = raw;
+                }
+
+                // Align tooltip eligibility with Step 3 (_formatCellValue): name/text columns or > 25 chars
+                const isTooltipCol = cls === 'col-name' || cls === 'col-appreciation' || cls === 'col-context';
+                const needsTooltip = Boolean(trimmed) && (isTooltipCol || trimmed.length > 25);
+                td.classList.toggle('has-tooltip', needsTooltip);
+                if (needsTooltip) {
+                    td.setAttribute('data-tooltip', raw);
+                } else {
+                    td.removeAttribute('data-tooltip');
                 }
             });
         });
 
+        UI?.initTooltips?.(table);
         FocusPanelManager.updateScrollAffordances(table.closest('.table-scroll-wrapper'));
     },
 
@@ -1925,10 +1945,8 @@ export const ImportWizardManager = {
         // Store columns state (including NOM_PRENOM which is always active)
         this.state._enabledColumns = new Set(['NOM_PRENOM', ...dataColumns.map(c => c.tag)]);
 
-        // Initialize custom Tippy.js tooltips for the new table rows/headers
-        if (UI && UI.initTooltips) {
-            UI.initTooltips();
-        }
+        // Initialize custom Tippy.js tooltips scoped to the preview table container
+        UI?.initTooltips?.(container);
     },
 
     /**
@@ -2201,6 +2219,7 @@ export const ImportWizardManager = {
             departedStudents: [],
             detectedFormat: null,
             hasHeader: false,
+            hasValidMapping: false,
             _formatNotificationShown: false,
             currentSource: null
         };
@@ -2217,8 +2236,10 @@ export const ImportWizardManager = {
         if (departedAction) departedAction.style.display = 'none';
         this._updateStep3RulesVisibility(false, false);
 
-        // Clean up dynamically created warning elements
+        // Clean up dynamically created warning elements and Step 2 Next button state
         document.getElementById('wizardMappingWarning')?.remove();
+        const step2NextBtn = document.getElementById('wizardStep2NextBtn');
+        if (step2NextBtn) step2NextBtn.disabled = true;
 
         // Hide line count
         const lineCount = document.getElementById('wizardStep1LineCount');

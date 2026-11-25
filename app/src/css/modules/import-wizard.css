@@ -1425,6 +1425,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: background-color var(--transition-fast);
 }
 
 /* Delegate ellipsis truncation to the inner span in Step 3 so opacity/grayscale dimming applies to '...' too */
@@ -1487,16 +1488,12 @@
     border-bottom: none;
 }
 
-.import-wizard-modal .import-mapping-table tbody tr:nth-child(even) td,
-.import-preview-table tbody tr:nth-child(even) td {
-    background: var(--item-idle-bg);
-}
-
-/* Row Hover Effect — Harmonized with .student-list-table & .ui-table */
-.import-wizard-modal .import-mapping-table tbody tr:hover td,
-.import-preview-table tbody tr:hover td {
-    background: var(--item-hover-bg);
-    cursor: default;
+/* Row Hover Effect — Harmonized with .student-list-table & .ui-table (no zebra striping) */
+@media (hover: hover) and (pointer: fine) {
+    .import-wizard-modal .import-mapping-table tbody tr:hover td,
+    .import-preview-table tbody tr:hover td {
+        background-color: var(--item-hover-bg);
+    }
 }
 
 /* Mapping custom dropdowns inside table headers */
@@ -1557,10 +1554,6 @@
 
 .import-preview-table td {
     color: var(--text-primary);
-}
-
-.import-preview-table tbody tr {
-    transition: background 0.15s ease;
 }
 
 /* Column checkbox header — full-cell 44px hit target */
@@ -1723,7 +1716,7 @@
     opacity: 0.55;
 }
 
-/* Departed row styling — dim cell contents only to preserve row borders, zebra & hover background */
+/* Departed row styling — dim cell contents only to preserve row borders & hover background */
 .import-preview-table tbody tr.row-departed,
 .import-preview-table tbody tr.row-departed:hover,
 .import-preview-table.delete-departed tbody tr.row-departed {

@@ -34,12 +34,12 @@ export const TrombiPdfLoader = {
         if (isTextOrTable) {
             manager._removeImage();
             const shouldSwitch = await UI.showCustomConfirm(
-                'Ce fichier contient des données texte ou tabulaires sans photos. Souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                'Ce fichier contient des données texte ou tabulaires sans photos. Souhaitez-vous l\'ouvrir dans l\'assistant Liste & Bulletins ?',
                 null,
                 null,
                 {
                     title: 'Fichier liste détecté',
-                    confirmText: 'Ouvrir dans Liste & Notes',
+                    confirmText: 'Ouvrir dans Liste & Bulletins',
                     cancelText: 'Annuler',
                     isDanger: false
                 }
@@ -140,12 +140,12 @@ export const TrombiPdfLoader = {
             if (parsed.students.length === 0) {
                 manager._removeImage();
                 const shouldSwitch = await UI.showCustomConfirm(
-                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un bilan de bulletins ou d\'une liste d\'élèves, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                    'Aucun élève ni photo n\'a été détecté dans ce document PDF. S\'il s\'agit d\'un bilan de bulletins ou d\'une liste d\'élèves, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Bulletins ?',
                     null,
                     null,
                     {
                         title: 'Aucune photo détectée',
-                        confirmText: 'Ouvrir dans Liste & Notes',
+                        confirmText: 'Ouvrir dans Liste & Bulletins',
                         cancelText: 'Annuler',
                         isDanger: false
                     }
@@ -235,12 +235,12 @@ export const TrombiPdfLoader = {
             console.error('[TrombinoscopeManager] Échec parsing PDF:', err);
             manager._removeImage();
             const shouldSwitch = await UI.showCustomConfirm(
-                'Ce document PDF ne correspond pas à un format de trombinoscope avec photos. S\'il s\'agit d\'un bilan de bulletins ou d\'une liste d\'élèves, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Notes ?',
+                'Ce document PDF ne correspond pas à un format de trombinoscope avec photos. S\'il s\'agit d\'un bilan de bulletins ou d\'une liste d\'élèves, souhaitez-vous l\'ouvrir dans l\'assistant Liste & Bulletins ?',
                 null,
                 null,
                 {
                     title: 'Format trombinoscope non reconnu',
-                    confirmText: 'Ouvrir dans Liste & Notes',
+                    confirmText: 'Ouvrir dans Liste & Bulletins',
                     cancelText: 'Annuler',
                     isDanger: false
                 }

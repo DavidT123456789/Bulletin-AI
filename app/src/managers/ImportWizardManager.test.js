@@ -476,3 +476,138 @@ describe('ImportWizardManager — Auto-mapping TSV Pronote/Excel & en-tête (B2,
         }
     });
 });
+
+describe('ImportWizardManager — Validation bloquante & tooltips alignés (Étape 2)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appState.currentPeriod = 'S2';
+        appState.periodSystem = 'semestres';
+        appState.massImportFormats = { trimestres: {}, semestres: {} };
+        document.body.innerHTML = `
+            <div id="importWizardModal" class="modal import-wizard-modal">
+                <div class="ui-stepper-step" data-step="1" role="button"></div>
+                <div class="ui-stepper-step" data-step="2" role="button"></div>
+                <div class="ui-stepper-step" data-step="3" role="button"></div>
+                <div class="guide-content" data-guide-step="1"></div>
+                <div class="guide-content" data-guide-step="2"></div>
+                <div class="guide-content" data-guide-step="3"></div>
+                <div class="import-wizard-body">
+                    <div class="wizard-step-content" id="modalStep1">
+                        <textarea id="wizardDataTextarea"></textarea>
+                    </div>
+                    <div class="wizard-step-content" id="modalStep2">
+                        <div id="wizardMappingContainer"></div>
+                    </div>
+                    <div class="wizard-step-content" id="modalStep3"></div>
+                </div>
+                <button id="wizardStep1NextBtn" disabled></button>
+                <button id="wizardStep2NextBtn" disabled></button>
+                <span id="wizardCountBadge2">0</span>
+                <select id="wizardSeparatorSelect"><option value="|">|</option><option value="tab">Tab</option></select>
+            </div>
+        `;
+        ImportWizardManager.currentStep = 2;
+        ImportWizardManager.state.rawData = 'MARTIN Lucas | 12.5 | Élève sérieux et appliqué.';
+        ImportWizardManager.state.lines = [
+            ['MARTIN Lucas', '12.5', 'Élève sérieux et appliqué.', '']
+        ];
+        ImportWizardManager.state.columnCount = 4;
+        ImportWizardManager.state.hasHeader = false;
+        ImportWizardManager.state.detectedFormat = null;
+        vi.spyOn(ImportWizardManager, '_updatePreview').mockResolvedValue();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        ImportWizardManager._reset();
+    });
+
+    it('conserve le texte complet sans troncature JS à 50 car. et aligne data-tooltip sur l\'Étape 3', () => {
+        const longApp = 'Très bon semestre avec un investissement remarquable et régulier en classe.';
+        ImportWizardManager.state.lines = [
+            ['MARTIN Lucas', '12.5', 'Élève sérieux et appliqué.', longApp]
+        ];
+        vi.spyOn(ImportWizardManager, '_guessTypeTag').mockImplementation(
+            (_, idx) => ['NOM_PRENOM', 'MOY_S2', 'APP_S1', 'APP_S2'][idx]
+        );
+
+        ImportWizardManager._buildMappingTable(true);
+
+        const table = document.querySelector('.import-mapping-table');
+        const cells = table.querySelectorAll('tbody td');
+        // Col 0 (Élève) : tooltip présent
+        expect(cells[0].getAttribute('data-tooltip')).toBe('MARTIN Lucas');
+        expect(cells[0].classList.contains('has-tooltip')).toBe(true);
+        // Col 1 (Moyenne courte) : pas de tooltip
+        expect(cells[1].hasAttribute('data-tooltip')).toBe(false);
+        expect(cells[1].classList.contains('has-tooltip')).toBe(false);
+        // Col 2 (Appréciation 26 car. < 50) : tooltip présent malgré < 50 car.
+        expect(cells[2].textContent).toBe('Élève sérieux et appliqué.');
+        expect(cells[2].getAttribute('data-tooltip')).toBe('Élève sérieux et appliqué.');
+        // Col 3 (Appréciation > 50 car.) : pas tronquée en JS, le CSS gère l'ellipse
+        expect(cells[3].textContent).toBe(longApp);
+        expect(cells[3].getAttribute('data-tooltip')).toBe(longApp);
+        expect(UI.initTooltips).toHaveBeenCalledWith(table);
+
+        // Changement dynamique de type : APP_S1 -> IGNORE retire le tooltip sur texte court (<= 25 car.)
+        ImportWizardManager.state.lines = [['MARTIN Lucas', '12.5', 'Texte court', '']];
+        ImportWizardManager._buildMappingTable(true);
+        const selects = document.querySelectorAll('.mapping-select');
+        const updatedCells = document.querySelectorAll('.import-mapping-table tbody td');
+        expect(updatedCells[2].getAttribute('data-tooltip')).toBe('Texte court');
+        selects[2].value = 'IGNORE';
+        ImportWizardManager._applyColumnClasses();
+        expect(updatedCells[2].hasAttribute('data-tooltip')).toBe(false);
+        expect(updatedCells[3].hasAttribute('data-tooltip')).toBe(false);
+    });
+
+    it('bloque Suivant et le stepper en cas de doublon ou d\'absence de colonne Élève, puis débloque à la correction', () => {
+        vi.spyOn(ImportWizardManager, '_guessTypeTag').mockImplementation(
+            (_, idx) => ['NOM_PRENOM', 'MOY_S2', 'APP_S2', 'IGNORE'][idx]
+        );
+        ImportWizardManager._buildMappingTable(true);
+
+        const nextBtn = document.getElementById('wizardStep2NextBtn');
+        const step3Pill = document.querySelector('.ui-stepper-step[data-step="3"]');
+        const selects = document.querySelectorAll('.mapping-select');
+
+        // 1. Cas nominal valide
+        expect(nextBtn.disabled).toBe(false);
+        expect(ImportWizardManager._canProceedToNextStep()).toBe(true);
+        expect(step3Pill.classList.contains('clickable')).toBe(true);
+
+        // 2. Doublon de colonnes (deux MOY_S2)
+        selects[2].value = 'MOY_S2';
+        ImportWizardManager._validateMappings();
+        expect(nextBtn.disabled).toBe(true);
+        expect(ImportWizardManager._canProceedToNextStep()).toBe(false);
+        expect(step3Pill.classList.contains('clickable')).toBe(false);
+        expect(document.getElementById('wizardMappingWarning')?.textContent).toContain('doublon');
+        ImportWizardManager.nextStep();
+        expect(ImportWizardManager.currentStep).toBe(2);
+
+        // 3. Absence de colonne Élève + doublon
+        selects[0].value = 'IGNORE';
+        ImportWizardManager._validateMappings();
+        expect(nextBtn.disabled).toBe(true);
+        expect(document.getElementById('wizardMappingWarning')?.textContent).toContain('Élève');
+        expect(document.getElementById('wizardMappingWarning')?.textContent).toContain('doublon');
+
+        // 4. Absence de colonne Élève seule
+        selects[2].value = 'APP_S2';
+        ImportWizardManager._validateMappings();
+        expect(nextBtn.disabled).toBe(true);
+        expect(document.getElementById('wizardMappingWarning')?.textContent).toContain('Colonne « Élève » requise');
+        ImportWizardManager.nextStep();
+        expect(ImportWizardManager.currentStep).toBe(2);
+
+        // 5. Reprise valide : restauration de NOM_PRENOM
+        selects[0].value = 'NOM_PRENOM';
+        ImportWizardManager._validateMappings();
+        expect(nextBtn.disabled).toBe(false);
+        expect(step3Pill.classList.contains('clickable')).toBe(true);
+        expect(document.getElementById('wizardMappingWarning')?.style.display).toBe('none');
+        ImportWizardManager.nextStep();
+        expect(ImportWizardManager.currentStep).toBe(3);
+    });
+});
