@@ -129,7 +129,7 @@ export const SeatingChartManager = {
         searchEl.className = 'sc-floating-search header-search';
         searchEl.id = 'scFloatingSearch';
         searchEl.innerHTML = `
-            <button type="button" class="pill-segment sc-action-btn sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
+            <button type="button" class="pill-segment sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
                 <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
             </button>
             <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
@@ -227,7 +227,7 @@ export const SeatingChartManager = {
                                 <button type="button" class="sc-action-btn sc-redo-btn disabled" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" aria-disabled="true">
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
-                                <button type="button" class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
+                                <button type="button" class="sc-action-btn sc-orientation-btn" id="scOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active<br><span class='kbd-hint'>Cliquer pour inverser</span>">
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
@@ -350,7 +350,7 @@ export const SeatingChartManager = {
                     <div class="sc-classroom-board" id="scClassroomBoard" data-plan-mode="${planMode}" data-locked="${this._isLocked ? 'true' : 'false'}">
                         <div class="sc-grid-container" id="scGridContainer"></div>
                         <div class="sc-desk-row">
-                            <div class="sc-desk" id="scDesk" role="button" tabindex="0" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser"><iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
+                            <div class="sc-desk" id="scDesk" role="button" tabindex="0" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active<br><span class='kbd-hint'>Cliquer pour inverser</span>"><iconify-icon class="sc-desk-cap" icon="solar:square-academic-cap-linear"></iconify-icon><span>Tableau</span></div>
                         </div>
                     </div>
                 </div>
@@ -369,7 +369,7 @@ export const SeatingChartManager = {
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-dots-btn" id="scFloatingDotsBtn" aria-label="Pastilles de statut" data-tooltip="Pastilles de statut" aria-haspopup="dialog" aria-expanded="false" aria-controls="scStatusDotsPopover">
                         <iconify-icon icon="solar:layers-minimalistic-linear"></iconify-icon>
                     </button>
-                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active • Inverser">
+                    <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-orientation-btn" id="scFloatingOrientationBtn" aria-label="Vue Prof active (cliquer pour inverser la vue)" data-tooltip="Vue Prof active<br><span class='kbd-hint'>Cliquer pour inverser</span>">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </button>
                     <button type="button" class="sc-action-btn ui-floating-capsule-btn sc-print-btn" id="scFloatingPrintBtn" aria-label="Imprimer le plan" data-tooltip="Imprimer le plan">

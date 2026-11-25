@@ -59,17 +59,8 @@
     transition: color 0.2s ease, transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .header-search .sc-search-toggle-btn:hover {
-        background-color: var(--surface-color);
-        color: var(--text-primary);
-        box-shadow: var(--shadow-elevation);
-    }
-}
-
 .header-search .sc-search-toggle-btn:active {
     transform: scale(0.94);
-    box-shadow: none;
 }
 
 .header-search.open .sc-search-toggle-btn {

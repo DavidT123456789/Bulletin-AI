@@ -598,7 +598,7 @@
     color: var(--text-tertiary);
     cursor: pointer;
     flex-shrink: 0;
-    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .header-class-note-btn.has-note {
@@ -610,14 +610,6 @@
     flex-shrink: 0;
     color: currentColor;
     transition: transform var(--transition-fast);
-}
-
-.header-class-note-btn:hover,
-.header-class-note-btn.active,
-.header-class-note-btn:focus-visible {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
-    outline: none;
 }
 
 .header-class-note-btn:active {
@@ -1103,6 +1095,14 @@
     gap: 8px;
 }
 
+#classManagementModal .modal-subtitle {
+    font-variant-numeric: tabular-nums;
+}
+
+#classManagementModal .modal-header-actions-divider {
+    background: var(--border-color-strong);
+}
+
 #classManageMoreWrapper {
     position: relative;
 }
@@ -1112,31 +1112,8 @@
     min-width: 220px;
 }
 
-.add-class-modal-btn {
-    background: var(--tonal-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    gap: 6px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.add-class-modal-btn iconify-icon {
-    font-size: 1.05em;
-    opacity: 1;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .add-class-modal-btn:hover:not(:disabled) {
-        background: var(--tonal-hover-bg);
-        border-color: var(--border-color-strong);
-    }
-}
-
-.add-class-modal-btn:active:not(:disabled) {
-    background: var(--tonal-active-bg);
-    filter: none;
+#classManagementModal .add-class-modal-btn {
+    height: var(--close-btn-size);
 }
 
 /* ====================================================================
@@ -1146,8 +1123,8 @@
 .class-management-list {
     display: flex;
     flex-direction: column;
-    background: transparent;
-    border: none;
+    background: var(--surface-color);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     padding: 0;
     gap: 0;
@@ -1160,9 +1137,9 @@
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: 16px;
-    padding: 15px 20px;
-    min-height: 74px;
+    gap: 12px;
+    padding: 12px 16px 12px 14px;
+    min-height: 64px;
     background: var(--surface-color);
     border: none;
     border-bottom: 1px solid var(--border-color);
@@ -1180,13 +1157,13 @@
 }
 
 .class-management-item:first-child {
-    border-top-left-radius: var(--radius-md);
-    border-top-right-radius: var(--radius-md);
+    border-top-left-radius: calc(var(--radius-md) - 1px);
+    border-top-right-radius: calc(var(--radius-md) - 1px);
 }
 
 .class-management-item:last-child {
-    border-bottom-left-radius: var(--radius-md);
-    border-bottom-right-radius: var(--radius-md);
+    border-bottom-left-radius: calc(var(--radius-md) - 1px);
+    border-bottom-right-radius: calc(var(--radius-md) - 1px);
     border-bottom: none;
 }
 
@@ -1207,14 +1184,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     color: var(--text-tertiary);
     cursor: grab;
     border-radius: 50%;
     transition: all var(--transition-fast);
     opacity: 0.4;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
 .class-management-item:hover .class-drag-handle {
@@ -1232,7 +1209,7 @@
 .class-management-info {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     flex: 1;
     min-width: 0;
 }
@@ -1246,8 +1223,8 @@
 }
 
 .class-management-name {
-    font-size: 1.02rem;
-    font-weight: 700;
+    font-size: 0.98rem;
+    font-weight: 600;
     color: var(--text-primary);
     letter-spacing: -0.01em;
     line-height: 1.25;
@@ -1266,24 +1243,25 @@
     font-size: 0.78rem;
     font-weight: 600;
     line-height: 1.3;
+    font-variant-numeric: tabular-nums;
     transition: all var(--transition-fast);
 }
 
-/* Grade badge color variables mapped directly to the unified stats range colors (single source of truth) */
+/* Grade badge color variables mapped directly to the unified semantic ink tokens (single source of truth) */
 .class-stat-badge.grade-range-0-4 {
-    color: var(--grade-range-0-4);
+    color: var(--grade-range-0-4-ink);
 }
 .class-stat-badge.grade-range-4-8 {
-    color: var(--grade-range-4-8);
+    color: var(--grade-range-4-8-ink);
 }
 .class-stat-badge.grade-range-8-12 {
-    color: var(--grade-range-8-12);
+    color: var(--grade-range-8-12-ink);
 }
 .class-stat-badge.grade-range-12-16 {
-    color: var(--grade-range-12-16);
+    color: var(--grade-range-12-16-ink);
 }
 .class-stat-badge.grade-range-16-20 {
-    color: var(--grade-range-16-20);
+    color: var(--grade-range-16-20-ink);
 }
 
 .stat-value {
@@ -1336,6 +1314,7 @@
     font-size: 0.79rem;
     color: var(--text-secondary);
     font-weight: 500;
+    font-variant-numeric: tabular-nums;
 }
 
 .meta-item-inline.meta-empty-state {
@@ -1363,25 +1342,40 @@
     color: var(--error-text);
 }
 
-.class-management-meta .class-management-note-meta {
-    max-width: 240px;
+.class-management-note-meta {
+    max-width: 100%;
+    width: fit-content;
     min-width: 0;
+    margin-top: 1px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    text-align: left;
+    border-radius: var(--radius-xs);
     cursor: pointer;
     transition: color var(--transition-fast);
 }
 
-.class-management-meta .class-management-note-meta:hover,
-.class-management-meta .class-management-note-meta:hover iconify-icon {
+.class-management-note-meta:hover,
+.class-management-note-meta:focus-visible {
     color: var(--text-primary);
 }
 
-.class-management-meta .class-management-note-meta iconify-icon {
-    color: var(--text-secondary);
-    opacity: 0.9;
+.class-management-note-meta:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.class-management-note-meta iconify-icon {
+    color: currentColor;
+    opacity: 0.85;
     flex-shrink: 0;
 }
 
-.class-management-meta .class-management-note-text {
+.class-management-note-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1396,12 +1390,19 @@
     align-items: center;
     gap: 4px;
     margin-left: 12px;
-    opacity: 0.75;
-    transition: opacity var(--transition-fast) ease;
+    opacity: 1;
+    transition: opacity var(--transition-fast);
 }
 
-.class-management-item:hover .class-management-actions {
-    opacity: 1;
+@media (hover: hover) and (pointer: fine) {
+    .class-management-actions {
+        opacity: 0.42;
+    }
+
+    .class-management-item:hover .class-management-actions,
+    .class-management-item:focus-within .class-management-actions {
+        opacity: 1;
+    }
 }
 
 .class-management-actions .btn-icon-small {
@@ -1497,12 +1498,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: rgba(var(--error-rgb), 0.1);
     color: var(--error-text);
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     flex-shrink: 0;
 }
 
@@ -1619,8 +1620,8 @@
     100% {
         opacity: 1;
         max-height: 80px;
-        padding-top: 16px;
-        padding-bottom: 16px;
+        padding-top: 12px;
+        padding-bottom: 12px;
         transform: translateY(0);
     }
 }
@@ -1629,8 +1630,8 @@
     0% {
         opacity: 1;
         max-height: 80px;
-        padding-top: 16px;
-        padding-bottom: 16px;
+        padding-top: 12px;
+        padding-bottom: 12px;
         transform: translateY(0);
     }
     100% {
@@ -1654,19 +1655,14 @@
     background: var(--surface-color) !important;
 }
 
-.class-management-item.creating-class-row:first-child {
-    border-top-left-radius: calc(var(--radius-md) - 1px);
-    border-top-right-radius: calc(var(--radius-md) - 1px);
-}
-
 /* Informative non-interactive icon on the left (never mistaken for a button) */
 .class-management-item .creating-icon,
 .class-management-item .editing-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     color: var(--text-tertiary);
     background: transparent !important;
     border: none !important;
@@ -1674,7 +1670,7 @@
     opacity: 0.45;
     cursor: default !important;
     pointer-events: none;
-    font-size: 1.15rem;
+    font-size: 1.1rem;
 }
 
 .class-management-item.creating-class-row .class-management-info {
@@ -1701,6 +1697,7 @@
     border-bottom: 1px solid var(--border-color);
 }
 
+.class-management-item.creating-class-row:last-child,
 .class-management-item.renaming:last-child {
     border-bottom: none;
 }
@@ -1718,7 +1715,8 @@
 
 /* Hide badge & meta during in-situ rename so input and action buttons align on a single axis without row height shift */
 .class-management-item.renaming .class-stat-badge,
-.class-management-item.renaming .class-management-meta {
+.class-management-item.renaming .class-management-meta,
+.class-management-item.renaming .class-management-note-meta {
     display: none !important;
 }
 
@@ -1824,16 +1822,16 @@
     40% {
         opacity: 1;
         max-height: 80px;
-        padding-top: 16px;
-        padding-bottom: 16px;
+        padding-top: 12px;
+        padding-bottom: 12px;
         transform: translateY(0) scale(1);
         filter: brightness(1.15);
     }
     100% {
         opacity: 1;
         max-height: 80px;
-        padding-top: 16px;
-        padding-bottom: 16px;
+        padding-top: 12px;
+        padding-bottom: 12px;
         transform: translateY(0) scale(1);
         filter: brightness(1);
     }
@@ -1911,7 +1909,7 @@
         gap: 4px;
     }
 
-    .add-class-modal-btn {
+    #classManagementModal .add-class-modal-btn {
         padding: 0 10px;
     }
 

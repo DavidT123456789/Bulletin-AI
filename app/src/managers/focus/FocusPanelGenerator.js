@@ -17,6 +17,12 @@ import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 
 const COPY_FEEDBACK_MS = 1500;
 const COPY_BUTTON_ICON = 'solar:copy-linear';
+const PROMPT_PREVIEW_HINT = '<br><span class="kbd-hint">Clic droit : aperçu du prompt</span>';
+const GENERATE_TOOLTIPS = {
+    idle: `Rédiger l'appréciation avec l'IA${PROMPT_PREVIEW_HINT}`,
+    dirty: `Données modifiées · Mettre à jour l'appréciation${PROMPT_PREVIEW_HINT}`,
+    done: `Proposer une nouvelle version${PROMPT_PREVIEW_HINT}`
+};
 
 export const FocusPanelGenerator = {
     /**
@@ -513,7 +519,7 @@ export const FocusPanelGenerator = {
         const generateBtn = document.getElementById('focusGenerateBtn');
         if (!generateBtn || generateBtn.classList.contains('is-loading')) return;
 
-        let tooltipText = 'Clic droit : prévisualiser le prompt';
+        let tooltipText = GENERATE_TOOLTIPS.idle;
 
         if (SpeechRecognitionManager.isRecording?.() && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation') {
             generateBtn.disabled = true;
@@ -530,6 +536,7 @@ export const FocusPanelGenerator = {
 
             const state = !hasAppreciation ? 'idle' : (isDirty ? 'dirty' : 'done');
             UI?.setGenerateButtonState?.(generateBtn, state, { suffixHtml: shortcutKbd });
+            tooltipText = GENERATE_TOOLTIPS[state] || GENERATE_TOOLTIPS.idle;
         }
 
         generateBtn.setAttribute('data-tooltip', tooltipText);

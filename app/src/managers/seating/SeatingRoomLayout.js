@@ -322,8 +322,8 @@ export const SeatingRoomLayout = {
         const isStudent = effectiveOrientation === 'student';
 
         const tooltip = isStudent
-            ? 'Vue Élèves active • Inverser'
-            : 'Vue Prof active • Inverser';
+            ? 'Vue Élèves active<br><span class="kbd-hint">Cliquer pour inverser</span>'
+            : 'Vue Prof active<br><span class="kbd-hint">Cliquer pour inverser</span>';
         const ariaLabel = isStudent
             ? 'Vue Élèves active (cliquer pour inverser la vue)'
             : 'Vue Prof active (cliquer pour inverser la vue)';

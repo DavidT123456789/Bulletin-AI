@@ -265,7 +265,15 @@ describe('TooltipsManager', () => {
             window.tippy = mockTippy;
 
             TooltipsUI.initTooltips();
-            expect(capturedOptions.popperOptions).toEqual({ strategy: 'fixed' });
+            expect(capturedOptions.popperOptions).toEqual({
+                strategy: 'fixed',
+                modifiers: [
+                    {
+                        name: 'arrow',
+                        options: { padding: 8 }
+                    }
+                ]
+            });
 
             const expectedRect = { left: 240, top: 180, width: 110, height: 120 };
             const setPropsSpy = vi.fn();

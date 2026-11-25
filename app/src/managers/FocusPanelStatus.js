@@ -18,12 +18,13 @@ import { bus, EVENTS } from '../core/EventBus.js';
 const COPY_BUTTON_MODES = {
     prompt: {
         label: 'Prompt',
-        tooltip: 'Copier le prompt · Clic droit : aperçu',
+        tooltip: 'Copier le prompt<br><span class="kbd-hint">Clic droit : aperçu</span>',
         ariaLabel: 'Copier le prompt'
     },
     appreciation: {
         label: 'Copier',
-        tooltip: 'Clic droit : copier le prompt',
+        tooltip: 'Copier l\'appréciation<br><span class="kbd-hint">Clic droit : copier le prompt</span>',
+        copiedTooltip: 'Copier l\'appréciation (déjà copiée)<br><span class="kbd-hint">Clic droit : copier le prompt</span>',
         ariaLabel: "Copier l'appréciation"
     }
 };
@@ -691,7 +692,7 @@ export const FocusPanelStatus = {
         const isAlreadyCopied = mode === 'appreciation'
             && Boolean(currentResult && Utils.isAppreciationCopied?.(currentResult, appState.currentPeriod));
         const tooltip = isAlreadyCopied
-            ? `Déjà copiée · ${config.tooltip}`
+            ? config.copiedTooltip
             : config.tooltip;
         const ariaLabel = isAlreadyCopied
             ? 'Copier à nouveau (déjà copiée)'

@@ -207,7 +207,7 @@
                 <div class="header-actions">
                     <!-- Unified Global Search (List & Plan) -->
                     <div class="sc-floating-search header-search" id="scFloatingSearch">
-                        <button type="button" class="pill-segment sc-action-btn sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
+                        <button type="button" class="pill-segment sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
                             <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                         </button>
                         <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
@@ -725,7 +725,7 @@
                     <!-- READ MODE: Full-width Name & Movement Badges -->
                     <div class="focus-header-read">
                         <h2 id="focusStudentName" class="focus-student-name" role="button" tabindex="0"
-                            data-tooltip="Cliquez pour éditer l'identité et les statuts">
+                            data-tooltip="Modifier l'identité et les statuts">
                             Sophie DURAND
                         </h2>
                         <div id="focusStatusBadges" class="focus-status-badges"></div>
@@ -948,13 +948,13 @@
                         <div class="focus-appreciation-actions">
                             <button type="button" id="focusCopyBtn" class="btn btn-neutral tooltip"
                                 data-copy-mode="prompt"
-                                data-tooltip="Copier le prompt · Clic droit : aperçu"
+                                data-tooltip="Copier le prompt<br><span class='kbd-hint'>Clic droit : aperçu</span>"
                                 aria-label="Copier le prompt">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                 <span class="btn-copy-label">Prompt</span>
                             </button>
                             <button type="button" id="focusGenerateBtn" class="btn btn-ai tooltip"
-                                data-tooltip="Clic droit : prévisualiser le prompt">
+                                data-tooltip="Rédiger l'appréciation avec l'IA<br><span class='kbd-hint'>Clic droit : aperçu du prompt</span>">
                                 <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Générer <kbd class="kbd-hint">Ctrl ↵</kbd>
                             </button>
                         </div>
@@ -979,7 +979,7 @@
                     <!-- RIGHT ZONE: Generate + Print + Nav + Close -->
                     <div class="focus-analysis-header-right">
                         <button type="button" id="focusGenerateAnalysisBtn" class="btn btn-ai btn-small focus-analyze-gen-btn tooltip"
-                            data-tooltip="Clic droit : prévisualiser le prompt">
+                            data-tooltip="Générer l'analyse de l'élève avec l'IA<br><span class='kbd-hint'>Clic droit : aperçu du prompt</span>">
                             <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                         </button>
                         <button type="button" id="focusAnalysisPrintBtn" class="focus-nav-btn focus-print-btn tooltip" data-tooltip="Fiche bilan élève (PDF)"
@@ -4057,7 +4057,7 @@
                                 <button type="button" class="btn btn-neutral btn-small tooltip" id="copyDashboardSynthesisBtn" data-tooltip="Copier le bilan complet (4 sections)" style="display: none;">
                                     <iconify-icon icon="solar:copy-linear"></iconify-icon> Tout copier
                                 </button>
-                                <button type="button" class="btn btn-ai btn-small tooltip" id="generateSynthesisBtn" data-tooltip="Clic droit : prévisualiser le prompt" style="display: none;">
+                                <button type="button" class="btn btn-ai btn-small tooltip" id="generateSynthesisBtn" data-tooltip="Générer le bilan de la classe avec l'IA<br><span class='kbd-hint'>Clic droit : aperçu du prompt</span>" style="display: none;">
                                     <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer
                                 </button>
                             </div>
@@ -4067,7 +4067,7 @@
                                 <div class="ai-placeholder-glow"></div>
                                 <h4 class="ai-placeholder-title">Bilan de la classe</h4>
                                 <p class="ai-placeholder-text">Générez le bilan complet de votre classe en un instant. L'IA croise les notes, les évolutions et les appréciations individuelles pour rédiger l'appréciation de classe, les points forts, les points de vigilance et des pistes pédagogiques.</p>
-                                <button type="button" class="btn btn-ai tooltip" id="generateSynthesisPlaceholderBtn" data-tooltip="Clic droit : prévisualiser le prompt">
+                                <button type="button" class="btn btn-ai tooltip" id="generateSynthesisPlaceholderBtn" data-tooltip="Générer le bilan de la classe avec l'IA<br><span class='kbd-hint'>Clic droit : aperçu du prompt</span>">
                                     <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer le bilan
                                 </button>
                             </div>

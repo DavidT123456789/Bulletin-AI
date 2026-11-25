@@ -416,7 +416,7 @@ describe('SpeechRecognitionManager', () => {
             mockRecognition.onend();
             expect(genBtn.disabled).toBe(false);
             expect(genBtn.classList.contains('disabled')).toBe(false);
-            expect(genBtn.getAttribute('data-tooltip')).toBe('Clic droit : prévisualiser le prompt');
+            expect(genBtn.getAttribute('data-tooltip')).toBe("Rédiger l'appréciation avec l'IA<br><span class=\"kbd-hint\">Clic droit : aperçu du prompt</span>");
         });
 
         it('should not disable focusGenerateBtn when dictating in context field', () => {

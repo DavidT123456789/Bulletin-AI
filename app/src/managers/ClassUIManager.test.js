@@ -440,6 +440,7 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
 
     it('devrait marquer la ligne active (.active-switch), mutualiser l\'année dans le sous-titre et épurer les classes vides', async () => {
         const class5A = ClassManager.createClass('5 1', '2026-2027');
+        ClassManager.updateClass(class5A.id, { classNote: 'Eval Binaire Exo fait !' });
         const emptyClass = ClassManager.createClass('Nouvelle classe', '2026-2027');
 
         await ClassManager.switchClass(class5A.id);
@@ -460,11 +461,28 @@ describe('ClassUIManager - Modale Mes classes (UX/UI)', () => {
         expect(activeRow.getAttribute('aria-selected')).toBe('true');
         expect(activeRow.querySelector('.class-active-badge')).toBeNull();
         expect(activeRow.querySelector('.class-management-meta').textContent).toContain('1/1 appréciation');
+        // Le mémo est rendu sur sa propre sous-ligne hors de .class-management-meta (aucun point séparateur • orphelin)
+        expect(activeRow.querySelector('.class-management-meta .class-management-note-meta')).toBeNull();
+        expect(activeRow.querySelectorAll('.class-management-meta .meta-separator')).toHaveLength(1);
+        expect(activeRow.querySelector('.class-management-info > .class-management-note-meta .class-management-note-text')?.textContent).toBe('Eval Binaire Exo fait !');
 
         const emptyRow = modal.querySelector(`.class-management-item[data-class-id="${emptyClass.id}"]`);
         expect(emptyRow.classList.contains('active-switch')).toBe(false);
         expect(emptyRow.querySelector('.class-stat-badge')).toBeNull();
         expect(emptyRow.querySelector('.meta-empty-state')?.textContent.trim()).toBe('Aucun élève');
+
+        // Navigation clavier ArrowDown / ArrowUp entre les lignes de la listbox
+        activeRow.focus();
+        activeRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+        expect(document.activeElement).toBe(emptyRow);
+        emptyRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+        expect(document.activeElement).toBe(activeRow);
+
+        // Remontée du scroll en haut du modal-body lors de l'ajout d'une nouvelle classe
+        const modalBody = modal.querySelector('.modal-body');
+        modalBody.scrollTop = 180;
+        modal.querySelector('#addClassFromModalBtn').click();
+        expect(modalBody.scrollTop).toBe(0);
     });
 
     it('devrait gérer les gardes .disabled / aria-disabled (sans attribut disabled natif) lors du renommage et de la création en ligne', async () => {

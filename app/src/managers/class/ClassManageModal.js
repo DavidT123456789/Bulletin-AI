@@ -45,7 +45,7 @@ export const ClassManageModal = {
                         </div>
                     </div>
                     <div class="modal-header-actions">
-                        <button type="button" class="btn btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
+                        <button type="button" class="btn btn-neutral btn-small add-class-modal-btn" id="addClassFromModalBtn" data-tooltip="Créer une nouvelle classe">
                             <iconify-icon icon="ph:plus-bold" aria-hidden="true"></iconify-icon> <span>Nouvelle classe</span>
                         </button>
                         <div class="modal-header-actions-divider" aria-hidden="true"></div>
@@ -123,6 +123,7 @@ export const ClassManageModal = {
             // Check if row already exists
             const existingRow = modalEl.querySelector('.creating-class-row');
             if (existingRow) {
+                if (modalBody) modalBody.scrollTop = 0;
                 existingRow.querySelector('input')?.focus();
                 return;
             }
@@ -173,6 +174,9 @@ export const ClassManageModal = {
 
             if (listEl) {
                 listEl.insertAdjacentHTML('afterbegin', rowHtml);
+            }
+            if (modalBody) {
+                modalBody.scrollTop = 0;
             }
             updateModalScroll();
 
@@ -288,11 +292,26 @@ export const ClassManageModal = {
             });
 
             list.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter' && e.key !== ' ') return;
                 const item = e.target.closest('.class-management-item');
                 if (!item || e.target !== item || item.classList.contains('editing')) return;
-                e.preventDefault();
-                item.click();
+
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    item.click();
+                    return;
+                }
+
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    const items = [...list.querySelectorAll('.class-management-item[data-class-id]:not(.editing)')];
+                    if (items.length === 0) return;
+                    e.preventDefault();
+                    const idx = items.indexOf(item);
+                    const nextIdx = e.key === 'ArrowDown'
+                        ? (idx + 1) % items.length
+                        : (idx - 1 + items.length) % items.length;
+                    items[nextIdx]?.focus();
+                    items[nextIdx]?.scrollIntoView?.({ block: 'nearest' });
+                }
             });
 
             // ========== Drag & Drop Reorder (Rail-Style) ==========
@@ -836,6 +855,8 @@ export const ClassManageModal = {
                 return;
             }
 
+            const periodLabel = Utils.getPeriodLabel?.(appState.currentPeriod, true) || 'Période active';
+
             const listHtml = `
                 <div class="class-management-list" role="listbox" aria-label="Liste des classes">
                     ${currentClasses.map(cls => {
@@ -857,7 +878,7 @@ export const ClassManageModal = {
                                 const trend = pedagoStats.avgEvolution;
                                 const trendClass = trend > 0.5 ? 'positive' : trend < -0.5 ? 'negative' : 'neutral';
                                 const trendArrow = trend > 0.5 ? '↗' : trend < -0.5 ? '↘' : '→';
-                                trendIcon = `<span class="trend-indicator ${trendClass}" data-tooltip="Évolution trimestrielle">${trendArrow}</span>`;
+                                trendIcon = `<span class="trend-indicator ${trendClass}" data-tooltip="Évolution sur la période">${trendArrow}</span>`;
                             }
 
                             averageBadge = `
@@ -879,11 +900,10 @@ export const ClassManageModal = {
 
                         const trimmedNote = typeof cls.classNote === 'string' ? cls.classNote.trim() : '';
                         const noteMetaHtml = trimmedNote ? `
-                            <span class="meta-separator">•</span>
-                            <span class="meta-item-inline class-management-note-meta tooltip" data-tooltip="${this._formatNoteTooltip(trimmedNote)}">
-                                <iconify-icon icon="solar:bookmark-bold"></iconify-icon>
+                            <button type="button" class="meta-item-inline class-management-note-meta tooltip" data-tooltip="${this._formatNoteTooltip(trimmedNote)}" aria-label="Ouvrir le mémo de la classe">
+                                <iconify-icon icon="solar:bookmark-bold" aria-hidden="true"></iconify-icon>
                                 <span class="class-management-note-text">${this._escapeHtml(trimmedNote)}</span>
-                            </span>
+                            </button>
                         ` : '';
 
                         const metaContentHtml = stats.total === 0
@@ -893,7 +913,6 @@ export const ClassManageModal = {
                                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                                     <span>Aucun élève</span>
                                 </span>
-                                ${noteMetaHtml}
                             `
                             : `
                                 ${yearMetaHtml}
@@ -902,11 +921,10 @@ export const ClassManageModal = {
                                     <span>${stats.total} élève${stats.total > 1 ? 's' : ''}</span>
                                 </span>
                                 <span class="meta-separator">•</span>
-                                <span class="meta-item-inline ${stats.statusClass}" data-tooltip="Appréciations complétées (Trimestre actif)">
+                                <span class="meta-item-inline ${stats.statusClass}" data-tooltip="Appréciations complétées (${this._escapeHtml(periodLabel)})">
                                     <iconify-icon icon="${stats.icon}"></iconify-icon>
                                     <span>${stats.completed}/${stats.total} appréciation${stats.total > 1 ? 's' : ''}</span>
                                 </span>
-                                ${noteMetaHtml}
                             `;
 
                         const isNew = highlightClassId && cls.id === highlightClassId;
@@ -932,6 +950,7 @@ export const ClassManageModal = {
                                     <div class="class-management-meta">
                                         ${metaContentHtml}
                                     </div>
+                                    ${noteMetaHtml}
                                 </div>
 
                                 <div class="class-management-actions">

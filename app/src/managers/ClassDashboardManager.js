@@ -27,6 +27,12 @@ const DEFAULT_HIGHLIGHT_LIMIT = 5;
 const SYNTHESIS_HISTORY_POPOVER_ID = 'synthesisHistoryPopover';
 const SYNTHESIS_HISTORY_KEY = 'synthesisHistoryPopover';
 const INTRO_EDIT_DEBOUNCE_MS = 450;
+const PROMPT_PREVIEW_HINT = '<br><span class="kbd-hint">Clic droit : aperçu du prompt</span>';
+const SYNTHESIS_GENERATE_TOOLTIPS = {
+    idle: `Générer le bilan de la classe avec l'IA${PROMPT_PREVIEW_HINT}`,
+    dirty: `Données modifiées · Mettre à jour le bilan${PROMPT_PREVIEW_HINT}`,
+    done: `Proposer une nouvelle version du bilan${PROMPT_PREVIEW_HINT}`
+};
 
 /**
  * Configuration déclarative des 3 cartes de liste de la synthèse de classe (SSOT rendu/édition)
@@ -1252,7 +1258,7 @@ export const ClassDashboardManager = {
         generateBtn.style.display = hasSynthesis ? 'inline-flex' : 'none';
         UI.setGenerateButtonState(generateBtn, hasSynthesis ? 'done' : 'idle');
         if (hasSynthesis) {
-            TooltipsUI.updateTooltip(generateBtn, 'Clic droit : prévisualiser le prompt');
+            TooltipsUI.updateTooltip(generateBtn, SYNTHESIS_GENERATE_TOOLTIPS.done);
             this._checkStaleData();
         }
     },
@@ -1635,7 +1641,7 @@ export const ClassDashboardManager = {
                     <div class="ai-placeholder-glow"></div>
                     <h4 class="ai-placeholder-title">Bilan de la classe</h4>
                     <p class="ai-placeholder-text">Générez le bilan complet de votre classe en un instant. L'IA croise les notes, les évolutions et les appréciations individuelles pour rédiger l'appréciation de classe, les points forts, les points de vigilance et des pistes pédagogiques.</p>
-                    <button type="button" class="btn btn-ai tooltip" id="generateSynthesisPlaceholderBtn" data-tooltip="Clic droit : prévisualiser le prompt">
+                    <button type="button" class="btn btn-ai tooltip" id="generateSynthesisPlaceholderBtn" data-tooltip="Générer le bilan de la classe avec l'IA<br><span class='kbd-hint'>Clic droit : aperçu du prompt</span>">
                         <iconify-icon class="iconify-inline" icon="solar:stars-bold-duotone"></iconify-icon> Générer le bilan
                     </button>
                 </div>
@@ -1785,13 +1791,10 @@ export const ClassDashboardManager = {
 
         if (dataChanged) {
             UI.setGenerateButtonState(generateBtn, 'dirty');
-            TooltipsUI.updateTooltip(
-                generateBtn,
-                'Les données (notes ou appréciations) ont changé depuis la dernière génération.<br><span class="kbd-hint">Clic droit : prévisualiser le prompt</span>'
-            );
+            TooltipsUI.updateTooltip(generateBtn, SYNTHESIS_GENERATE_TOOLTIPS.dirty);
         } else {
             UI.setGenerateButtonState(generateBtn, 'done');
-            TooltipsUI.updateTooltip(generateBtn, 'Clic droit : prévisualiser le prompt');
+            TooltipsUI.updateTooltip(generateBtn, SYNTHESIS_GENERATE_TOOLTIPS.done);
         }
     },
 
@@ -2369,7 +2372,7 @@ export const ClassDashboardManager = {
             generateBtn.style.display = 'inline-flex';
             UI.setGenerateButtonState(generateBtn, 'done');
             generateBtn.removeAttribute('title');
-            TooltipsUI.updateTooltip(generateBtn, 'Clic droit : prévisualiser le prompt');
+            TooltipsUI.updateTooltip(generateBtn, SYNTHESIS_GENERATE_TOOLTIPS.done);
         }
 
         // Toggle copy button display next to generate button

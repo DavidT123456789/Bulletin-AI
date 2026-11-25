@@ -41,6 +41,8 @@ const sanitizeTooltipContent = (content) => {
 
 const resolveTooltipContent = (reference) => sanitizeTooltipContent(reference.getAttribute('data-tooltip'));
 
+const TOOLTIP_ARROW_SVG = '<svg width="12" height="6" viewBox="0 0 12 6" aria-hidden="true"><path d="M1 6V5L5.4 0.6Q6 0 6.6 0.6L11 5V6Z"/></svg>';
+
 /**
  * Génère la configuration commune pour Tippy
  * pour assurer la cohérence et gérer le tactile.
@@ -51,7 +53,8 @@ const getCommonTippyConfig = () => {
         appendTo: () => document.body,
         theme: 'custom-theme',
         animation: 'organic-scale',
-        arrow: false,
+        arrow: TOOLTIP_ARROW_SVG,
+        offset: [0, 8],
         delay: [150, 0],
         duration: [250, 150],
         allowHTML: true,
@@ -61,7 +64,13 @@ const getCommonTippyConfig = () => {
         touch: ['hold', 500],
         zIndex: 10001,
         popperOptions: {
-            strategy: 'fixed'
+            strategy: 'fixed',
+            modifiers: [
+                {
+                    name: 'arrow',
+                    options: { padding: 8 }
+                }
+            ]
         },
         onCreate(instance) {
             if (instance && typeof instance.setContent === 'function' && !instance._setContentSanitized) {

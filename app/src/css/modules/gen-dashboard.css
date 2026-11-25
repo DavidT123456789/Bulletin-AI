@@ -17,32 +17,16 @@
     padding: 3px;
     position: relative;
     transition:
-        background-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-        box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast),
         transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
         opacity 0.2s ease;
     cursor: pointer;
     height: 38px;
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .header-gen-dashboard:not(.generating):hover {
-        background-color: var(--surface-color);
-        border-color: transparent;
-        box-shadow: var(--shadow-elevation);
-    }
-}
-
-.header-gen-wrapper.open .header-gen-dashboard {
-    background-color: var(--surface-color);
-    border-color: transparent;
-    box-shadow: var(--shadow-elevation);
-}
-
 .header-gen-dashboard:not(.generating):active {
     transform: scale(0.97);
-    background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.08));
-    box-shadow: none;
 }
 
 /* ====================================================================

@@ -658,7 +658,7 @@ export const SpeechRecognitionManager = {
                 this._activeButton.innerHTML = this._activeButton.dataset.originalSvg;
                 delete this._activeButton.dataset.originalSvg;
             }
-            this._setButtonTooltip(this._activeButton, 'Dictée vocale<br><span class="kbd-hint">Démarrer</span>');
+            this._setButtonTooltip(this._activeButton, 'Dictée vocale');
         }
 
         if (this._activeTarget === 'appreciation') {

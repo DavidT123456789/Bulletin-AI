@@ -447,7 +447,7 @@ describe('FocusPanelStatus', () => {
             UI.updateTooltip.mockClear();
             FocusPanelStatus.syncCopyButton({ isEmpty: false, isGenerating: false });
 
-            expect(UI.updateTooltip).toHaveBeenCalledWith(copyBtn, 'Déjà copiée · Clic droit : copier le prompt');
+            expect(UI.updateTooltip).toHaveBeenCalledWith(copyBtn, "Copier l'appréciation (déjà copiée)<br><span class=\"kbd-hint\">Clic droit : copier le prompt</span>");
             expect(copyBtn.getAttribute('aria-label')).toBe('Copier à nouveau (déjà copiée)');
         });
 

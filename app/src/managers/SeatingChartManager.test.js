@@ -555,13 +555,13 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
         // Clic sur le tableau
         desk.click();
         expect(SeatingChartManager._orientation).toBe('student');
-        expect(desk.getAttribute('data-tooltip')).toBe('Vue Élèves active • Inverser');
+        expect(desk.getAttribute('data-tooltip')).toBe('Vue Élèves active<br><span class="kbd-hint">Cliquer pour inverser</span>');
         expect(desk.getAttribute('aria-label')).toBe('Vue Élèves active (cliquer pour inverser la vue)');
 
         // Touche Entrée sur le tableau
         desk.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         expect(SeatingChartManager._orientation).toBe('teacher');
-        expect(desk.getAttribute('data-tooltip')).toBe('Vue Prof active • Inverser');
+        expect(desk.getAttribute('data-tooltip')).toBe('Vue Prof active<br><span class="kbd-hint">Cliquer pour inverser</span>');
         expect(desk.getAttribute('aria-label')).toBe('Vue Prof active (cliquer pour inverser la vue)');
 
         // Touche Espace sur le tableau
@@ -574,12 +574,12 @@ describe('SeatingChartManager - Orientation (Vue Enseignant ⇄ Vue Élèves / P
 
         SeatingChartManager._applyOrientation('student');
         expect(floatingBtn.classList.contains('active')).toBe(true);
-        expect(floatingBtn.getAttribute('data-tooltip')).toBe('Vue Élèves active • Inverser');
+        expect(floatingBtn.getAttribute('data-tooltip')).toBe('Vue Élèves active<br><span class="kbd-hint">Cliquer pour inverser</span>');
         expect(floatingBtn.getAttribute('aria-label')).toBe('Vue Élèves active (cliquer pour inverser la vue)');
 
         SeatingChartManager._applyOrientation('teacher');
         expect(floatingBtn.classList.contains('active')).toBe(false);
-        expect(floatingBtn.getAttribute('data-tooltip')).toBe('Vue Prof active • Inverser');
+        expect(floatingBtn.getAttribute('data-tooltip')).toBe('Vue Prof active<br><span class="kbd-hint">Cliquer pour inverser</span>');
         expect(floatingBtn.getAttribute('aria-label')).toBe('Vue Prof active (cliquer pour inverser la vue)');
     });
 

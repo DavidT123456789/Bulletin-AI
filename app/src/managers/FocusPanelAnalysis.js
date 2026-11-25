@@ -17,6 +17,13 @@ import { FocusPanelRefinement } from './FocusPanelRefinement.js';
 /** @type {import('./AppreciationsManager.js').AppreciationsManager|null} */
 let AppreciationsManager = null;
 
+const PROMPT_PREVIEW_HINT = '<br><span class="kbd-hint">Clic droit : aperçu du prompt</span>';
+const ANALYSIS_GENERATE_TOOLTIPS = {
+    idle: `Générer l'analyse de l'élève avec l'IA${PROMPT_PREVIEW_HINT}`,
+    dirty: `Données modifiées · Mettre à jour l'analyse${PROMPT_PREVIEW_HINT}`,
+    done: `Proposer une nouvelle analyse${PROMPT_PREVIEW_HINT}`
+};
+
 /**
  * Configuration déclarative des 3 cartes d'analyse individuelle (SSOT DOM/rendu)
  * @type {Array<{key: 'strengths'|'weaknesses'|'nextSteps', contentId: string, emptyIcon: string, idleText: string, emptyText: string}>}
@@ -373,6 +380,12 @@ export const FocusPanelAnalysis = {
         const isDirty = hasAnalysis && this._checkAnalysisDirtyState(result, analysis, currentPeriod);
         const state = !hasAnalysis ? 'idle' : (isDirty ? 'dirty' : 'done');
         UI.setGenerateButtonState(generateBtn, state);
+        const tooltipText = ANALYSIS_GENERATE_TOOLTIPS[state] || ANALYSIS_GENERATE_TOOLTIPS.idle;
+        if (typeof UI?.updateTooltip === 'function') {
+            UI.updateTooltip(generateBtn, tooltipText);
+        } else {
+            generateBtn.setAttribute('data-tooltip', tooltipText);
+        }
     },
 
     /**
