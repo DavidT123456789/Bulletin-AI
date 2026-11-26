@@ -14,6 +14,7 @@ import { Utils } from '../utils/Utils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
+import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
 import { PromptService } from '../services/PromptService.js';
 
 const JOURNAL_NOTE_MAX_LENGTH = 280;
@@ -350,6 +351,11 @@ export const SpeechRecognitionManager = {
      */
     _startRecording(btn, target) {
         try {
+            // Coupe-circuit mutuel : arrêter la lecture vocale avant d'ouvrir le micro
+            if (SpeechSynthesisManager.isPlaying?.()) {
+                SpeechSynthesisManager.cancel();
+            }
+
             this._activeTarget = target;
             this._activeButton = btn;
 

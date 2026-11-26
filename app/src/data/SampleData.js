@@ -23,17 +23,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '15',
                 app: 'Très bon travail, résultats excellents.',
-                ctx: 'Maintien des efforts, félicitations.'
+                ctx: 'Travail sérieux et régulier, interventions pertinentes à l\'oral.'
             },
             P2: {
                 moy: '15.2',
                 app: 'Une grande régularité dans les résultats, il faut poursuivre ainsi.',
-                ctx: 'Toujours aussi investi et pertinent à l\'oral.'
+                ctx: 'Très investi en classe, approfondit volontiers les exercices.'
             },
             P3: {
                 moy: '16',
                 app: 'Excellente année scolaire, travail exemplaire de bout en bout.',
-                ctx: 'Bilan très positif, félicitations pour cette année.'
+                ctx: 'Grande autonomie et rigueur toute l\'année, souligner sa régularité.'
             }
         }
     },
@@ -47,17 +47,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '9',
                 app: 'Difficultés persistantes mais efforts visibles.',
-                ctx: 'Accompagnement suivi, encourager les petits progrès.'
+                ctx: 'Fragilités à l\'écrit mais élève volontaire, encourager ses efforts.'
             },
             P2: {
                 moy: '10.5',
                 app: 'Des progrès encourageants grâce à un travail plus régulier.',
-                ctx: 'Les efforts portent leurs fruits, gagne en confiance.'
+                ctx: 'Travail plus régulier, gagne en confiance à l\'oral, valoriser les progrès.'
             },
             P3: {
                 moy: '11.5',
                 app: 'Belle progression tout au long de l\'année, bravo pour la persévérance.',
-                ctx: 'Objectifs du PPRE atteints, attitude très positive.'
+                ctx: 'Persévérante toute l\'année, méthodes mieux maîtrisées.'
             }
         }
     },
@@ -71,17 +71,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '11',
                 app: 'Moyen mais bon potentiel à exploiter.',
-                ctx: 'Bon potentiel à exploiter pleinement.'
+                ctx: 'De bonnes capacités mais travail irrégulier, insister sur la méthode.'
             },
             P2: {
                 moy: '12.5',
                 app: 'En nette progression, l\'investissement est plus soutenu.',
-                ctx: 'Meilleure implication en classe, continuer sur cette lancée.'
+                ctx: 'Bien plus impliqué en classe et à l\'oral, l\'encourager à poursuivre.'
             },
             P3: {
                 moy: '13.5',
                 app: 'Un troisième trimestre très satisfaisant qui confirme les progrès.',
-                ctx: 'Belle évolution, travail sérieux en fin d\'année.'
+                ctx: 'Participation active, travail devenu rigoureux en fin d\'année.'
             }
         }
     },
@@ -95,17 +95,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '12.5',
                 app: 'Élève sérieux et appliqué.',
-                ctx: 'Participation active, élève moteur de la classe.'
+                ctx: 'Sérieux et appliqué, participe activement en classe.'
             },
             P2: {
                 moy: '14',
                 app: 'Belle évolution des résultats, participation toujours dynamique.',
-                ctx: 'Rôle moteur à l\'oral, travail approfondi.'
+                ctx: 'Élève moteur à l\'oral, travail personnel approfondi.'
             },
             P3: {
                 moy: '14.5',
                 app: 'Ensemble très solide et attitude irréprochable toute l\'année.',
-                ctx: 'Élève curieux et impliqué jusqu\'au bout.'
+                ctx: 'Attitude constructive et curiosité constante, valoriser son implication.'
             }
         }
     },
@@ -119,17 +119,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '17',
                 app: 'Excellent travail, félicitations.',
-                ctx: 'Toujours au top, bravo !'
+                ctx: 'Excellente maîtrise et grande autonomie en classe.'
             },
             P2: {
                 moy: '18',
                 app: 'Des résultats remarquables et un investissement sans faille.',
-                ctx: 'Rôle moteur et attitude exemplaire en tant que déléguée.'
+                ctx: 'Rôle moteur comme déléguée, souligner la qualité de ses raisonnements.'
             },
             P3: {
                 moy: '18.5',
                 app: 'Année brillante à tous points de vue, toutes mes félicitations.',
-                ctx: 'Excellente maîtrise des attendus, bravo !'
+                ctx: 'Investissement exemplaire et entraide constante avec ses camarades.'
             }
         }
     },
@@ -143,17 +143,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '12',
                 app: 'Convenable, peut mieux faire avec plus de régularité.',
-                ctx: 'Travail régulier et soigné.'
+                ctx: 'Travail soigné mais participation trop discrète, l\'encourager à l\'oral.'
             },
             P2: {
                 moy: '10',
                 app: 'Ensemble en baisse, le travail personnel est devenu trop irrégulier.',
-                ctx: 'Relâchement notable sur la période, il faut se remobiliser.'
+                ctx: 'Relâchement dans le travail personnel, insister sur la régularité.'
             },
             P3: {
                 moy: '11.5',
                 app: 'Un bon rebond au dernier trimestre grâce à des efforts retrouvés.',
-                ctx: 'A su tenir compte des conseils pour redresser la barre.'
+                ctx: 'Bons efforts de remobilisation, a tenu compte des conseils.'
             }
         }
     },
@@ -167,17 +167,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '10',
                 app: 'Doit travailler davantage pour progresser.',
-                ctx: 'Manque de travail, doit se ressaisir.'
+                ctx: 'Manque de concentration en classe, insister sur le travail personnel.'
             },
             P2: {
                 moy: '8.5',
                 app: 'Résultats en recul, l\'attention en classe est trop fluctuante.',
-                ctx: 'Trop de bavardages et travail personnel insuffisant.'
+                ctx: 'Bavardages fréquents et devoirs irréguliers, besoin de plus de rigueur.'
             },
             P3: {
                 moy: '9.5',
                 app: 'Quelques efforts en fin d\'année mais l\'ensemble demeure fragile.',
-                ctx: 'Du mieux dans l\'attitude, consolider les bases.'
+                ctx: 'Attitude plus calme en fin d\'année, consolider les bases.'
             }
         }
     },
@@ -191,17 +191,17 @@ export const SAMPLE_STUDENTS = [
             P1: {
                 moy: '14',
                 app: 'Bien intégrée, travail de qualité.',
-                ctx: 'Élève en progression constante, félicitations.'
+                ctx: 'Bien intégrée dans la classe, travail appliqué et soigné.'
             },
             P2: {
                 moy: '16',
                 app: 'Progression spectaculaire sur la période, le travail est très soigné.',
-                ctx: 'Beaucoup de sérieux et d\'autonomie, félicitations !'
+                ctx: 'Gagne nettement en autonomie, valoriser sa rigueur et ses progrès.'
             },
             P3: {
                 moy: '16.5',
                 app: 'Un parcours exemplaire et des résultats de grande qualité.',
-                ctx: 'Investissement remarquable toute l\'année, bravo.'
+                ctx: 'Travail de grande qualité et investissement constant toute l\'année.'
             }
         }
     }
@@ -234,8 +234,31 @@ export function getSampleImportData(period = 'T1') {
 }
 
 /**
+ * Realistic sample journal entries injected only into the onboarding demo class
+ * (`getDemoClassData`) to illustrate tag thresholds, written notes, and private reminders.
+ */
+const DEMO_JOURNAL_TEMPLATES = {
+    durand: [
+        { daysAgo: 10, tags: ['progres'], note: 'Méthode bien appliquée lors de l\'exercice en autonomie.' },
+        { daysAgo: 2, tags: ['remarque'], note: 'Point parents prévu vendredi.', isPrivate: true }
+    ],
+    martin: [
+        { daysAgo: 12, tags: ['participation+'], note: '' },
+        { daysAgo: 4, tags: ['participation+'], note: 'Explication claire au tableau devant la classe.' }
+    ],
+    moreau: [
+        { daysAgo: 6, tags: ['attitude+'], note: 'A aidé une camarade en difficulté sur l\'exercice.' }
+    ],
+    robert: [
+        { daysAgo: 14, tags: ['bavardage'], note: '' },
+        { daysAgo: 7, tags: ['travail-'], note: 'Devoir maison non rendu.' },
+        { daysAgo: 3, tags: ['bavardage'], note: '' }
+    ]
+};
+
+/**
  * Builds a complete demo class dataset ready for direct injection during onboarding.
- * Creates student result objects with P1 data filled (grades, statuses, context),
+ * Creates student result objects with P1 data filled (grades, statuses, context, sample journal entries),
  * no appreciations (left pending for AI generation).
  * 
  * @param {string} periodSystem - 'trimestres' or 'semestres'
@@ -246,6 +269,8 @@ export function getDemoClassData(periodSystem = 'trimestres') {
     const allPeriods = periodSystem === 'semestres'
         ? ['S1', 'S2']
         : ['T1', 'T2', 'T3'];
+    const now = Date.now();
+    const DAY_MS = 24 * 60 * 60 * 1000;
 
     const students = SAMPLE_STUDENTS.map(s => {
         const grade = parseFloat(s.periods.P1.moy);
@@ -258,6 +283,19 @@ export function getDemoClassData(periodSystem = 'trimestres') {
                 : { grade: null, appreciation: '' };
         }
 
+        const journal = (DEMO_JOURNAL_TEMPLATES[s.id] || []).map((entry, idx) => {
+            const ts = now - entry.daysAgo * DAY_MS;
+            return {
+                id: `demo_j_${s.id}_${idx + 1}`,
+                date: new Date(ts).toISOString(),
+                tags: [...entry.tags],
+                note: entry.note,
+                period: currentPeriod,
+                ...(entry.isPrivate ? { isPrivate: true } : {}),
+                _lastModified: ts
+            };
+        });
+
         return {
             nom: s.nom,
             prenom: s.prenom,
@@ -265,7 +303,8 @@ export function getDemoClassData(periodSystem = 'trimestres') {
             periods,
             currentPeriod,
             subject: 'Générique',
-            photoFile: s.photo
+            photoFile: s.photo,
+            journal
         };
     });
 

@@ -12,6 +12,7 @@ import { PromptService } from '../../services/PromptService.js';
 import { ResultsUIManager } from '../ResultsUIManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
+import { resolveStudentStatus, STUDENT_STATUS_REGISTRY } from '../../config/academicConstants.js';
 
 export const ListViewRenderer = {
 
@@ -1063,10 +1064,12 @@ export const ListViewRenderer = {
         // Statuts élève (PPRE, Délégué, Nouveau, ULIS, etc.) actifs sur la période courante
         const studentStatuses = Utils.getActiveStatuses(result, appState.currentPeriod);
         const getStatusPriority = (s) => {
-            const lower = String(s || '').toLowerCase();
-            if (lower.includes('départ') || lower.includes('depart')) return 0;
-            if (lower.includes('nouveau')) return 1;
-            return 2;
+            const meta = resolveStudentStatus(s);
+            if (meta?.id === STUDENT_STATUS_REGISTRY.DEPART.id) return 0;
+            if (meta?.id === STUDENT_STATUS_REGISTRY.NOUVEAU.id) return 1;
+            if (meta?.isDevice) return 2;
+            if (meta?.id === STUDENT_STATUS_REGISTRY.DELEGUE.id) return 3;
+            return 4;
         };
         const uniqueStatuses = [...new Set(studentStatuses.filter(Boolean))]
             .sort((a, b) => getStatusPriority(a) - getStatusPriority(b));

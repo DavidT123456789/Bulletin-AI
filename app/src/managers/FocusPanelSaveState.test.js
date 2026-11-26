@@ -467,22 +467,16 @@ describe('FocusPanelManager and Save State integrity', () => {
 
         it('échappe le libellé et le data-tooltip dans FocusPanelHeader.renderStatusBadges (protection XSS)', async () => {
             const { FocusPanelHeader } = await import('./FocusPanelHeader.js');
-            const headerBadges = document.getElementById('focusStatusBadges');
-            const contextBadges = document.getElementById('focusContextStatusBadges');
+            let headerBadges = document.getElementById('focusStatusBadges');
             if (!headerBadges) {
-                const el = document.createElement('div');
-                el.id = 'focusStatusBadges';
-                document.body.appendChild(el);
-            }
-            if (!contextBadges) {
-                const el = document.createElement('div');
-                el.id = 'focusContextStatusBadges';
-                document.body.appendChild(el);
+                headerBadges = document.createElement('div');
+                headerBadges.id = 'focusStatusBadges';
+                document.body.appendChild(headerBadges);
             }
 
             FocusPanelHeader.renderStatusBadges(['" onmouseover="alert(1)"><img src=x onerror=alert(2)>']);
 
-            const container = document.getElementById('focusContextStatusBadges');
+            const container = document.getElementById('focusStatusBadges');
             expect(container.querySelector('img')).toBeNull();
             const badge = container.querySelector('.status-badge-clickable');
             expect(badge).not.toBeNull();

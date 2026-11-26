@@ -989,8 +989,11 @@
         padding-right: 12px;
     }
 
-    .modal-prompt-preview .modal-body:is(.can-scroll-top, .can-scroll-bottom) {
+    /* Largeur constante via scrollbar-gutter : évite toute boucle ResizeObserver ↔ retour à la ligne */
+    .modal-prompt-preview .modal-body {
+        margin-right: 2px;
         padding-right: 17px;
+        scrollbar-gutter: stable;
     }
 }
 

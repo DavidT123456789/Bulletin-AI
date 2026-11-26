@@ -51,6 +51,7 @@ vi.mock('../utils/Utils.js', () => ({
         translateErrorMessage: vi.fn(msg => msg),
         detectGender: vi.fn(() => 'M'),
         escapeHtml: vi.fn(str => str),
+        isPendingForPeriod: vi.fn(() => false),
         formatStudentName: vi.fn((nom, prenom, html = false) => html ? `<strong>${nom.toUpperCase()}</strong> <span class="student-prenom">${prenom}</span>` : `${nom.toUpperCase()} ${prenom}`)
     }
 }));

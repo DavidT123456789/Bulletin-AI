@@ -129,5 +129,25 @@ describe('SampleData', () => {
             expect(demo.students[1].periods.S1.grade).toBe(9);
             expect(demo.students[1].periods.S2.grade).toBeNull();
         });
+
+        it('should populate realistic sample journal entries on a subset of demo students for the active period', () => {
+            const demo = getDemoClassData('semestres');
+            const withJournal = demo.students.filter(s => s.journal.length > 0);
+            const withoutJournal = demo.students.filter(s => s.journal.length === 0);
+
+            expect(withJournal.map(s => s.nom)).toEqual(['DURAND', 'MARTIN', 'MOREAU', 'ROBERT']);
+            expect(withoutJournal).toHaveLength(4);
+
+            for (const student of withJournal) {
+                for (const entry of student.journal) {
+                    expect(entry.period).toBe('S1');
+                    expect(entry.tags.length).toBeGreaterThan(0);
+                    expect(Date.parse(entry.date)).not.toBeNaN();
+                }
+            }
+
+            const sophie = demo.students.find(s => s.nom === 'DURAND');
+            expect(sophie.journal.some(e => e.isPrivate === true)).toBe(true);
+        });
     });
 });

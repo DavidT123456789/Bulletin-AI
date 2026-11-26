@@ -9,6 +9,7 @@ import { FocusPanelManager } from '../FocusPanelManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { Utils } from '../../utils/Utils.js';
 import { STUDENT_STATUS_REGISTRY, resolveStudentStatus } from '../../config/academicConstants.js';
+import { JournalManager } from '../JournalManager.js';
 import { MAX_ACTIVITY_GROUP_SIZE } from './SeatingState.js';
 
 export const SeatingRenderer = {
@@ -168,6 +169,10 @@ export const SeatingRenderer = {
             const statusBadgeHTML = badgeInfo
                 ? `<span class="sc-cell-status-badge ${badgeInfo.className}" aria-label="${Utils.escapeHtml(badgeInfo.label)}">${Utils.escapeHtml(badgeInfo.label)}</span>`
                 : '';
+            const journalInfo = this._getStudentJournalBadgeInfo(student);
+            const journalBadgeHTML = journalInfo
+                ? `<span class="sc-cell-journal-badge" aria-label="${Utils.escapeHtml(journalInfo.label)}">${journalInfo.count}</span>`
+                : '';
             const groupBadgeHTML = (classInfo?.isVirtual && classInfo.shortLabel)
                 ? `<span class="sc-stacked-group-tag" aria-label="${Utils.escapeHtml(classInfo.tooltipLabel)}">${Utils.escapeHtml(classInfo.shortLabel)}</span>`
                 : '';
@@ -177,6 +182,7 @@ export const SeatingRenderer = {
             cell.innerHTML = `
                 <div class="sc-cell-avatar-wrap">
                     ${StudentPhotoManager.getAvatarHTML(student, 'sm')}
+                    ${journalBadgeHTML}
                     ${statusBadgeHTML}
                 </div>
                 <span class="sc-cell-name${nameInfo.modifierClass}${groupBadgeHTML ? ' has-group-tag' : ''}">${groupBadgeHTML ? `<span class="sc-cell-name-text${nameInfo.modifierClass}">${nameInfo.html}</span>${groupBadgeHTML}` : nameInfo.html}</span>
@@ -226,10 +232,15 @@ export const SeatingRenderer = {
                 const memberDotHtml = memberBadge
                     ? `<span class="sc-cell-status-badge ${memberBadge.className}" aria-label="${Utils.escapeHtml(memberBadge.label)}">${Utils.escapeHtml(memberBadge.label)}</span>`
                     : '';
+                const memberJournal = this._getStudentJournalBadgeInfo(s);
+                const memberJournalHtml = memberJournal
+                    ? `<span class="sc-cell-journal-badge" aria-label="${Utils.escapeHtml(memberJournal.label)}">${memberJournal.count}</span>`
+                    : '';
                 const safeMemberId = Utils.escapeHtml(String(s.id ?? ''));
                 return `
                 <div class="sc-stacked-avatar${isMemberDeparted ? ' sc-member-departed' : ''}" style="--stack-index: ${idx}; z-index: ${students.length - idx};" data-result-id="${safeMemberId}" draggable="${canExtractMember}" data-tooltip="${Utils.escapeHtml(tooltip)}">
                     ${StudentPhotoManager.getAvatarHTML(s, 'sm')}
+                    ${memberJournalHtml}
                     ${memberDotHtml}
                 </div>
             `;
@@ -609,6 +620,31 @@ export const SeatingRenderer = {
         };
     },
 
+    _getStudentJournalBadgeInfo(studentResult, activePeriod = appState.currentPeriod || 'T1') {
+        if (!studentResult || !appState.seatingStatusDots?.journal) return null;
+        const rawEntries = Array.isArray(studentResult.journal)
+            ? studentResult.journal
+            : (Array.isArray(studentResult.studentData?.journal) ? studentResult.studentData.journal : JournalManager.getEntries(studentResult.id));
+        if (!Array.isArray(rawEntries) || rawEntries.length === 0) return null;
+
+        const periodEntries = activePeriod
+            ? rawEntries.filter(e => !e?.period || e.period === activePeriod)
+            : rawEntries;
+        if (periodEntries.length === 0) return null;
+
+        const aggregated = JournalManager.getAggregatedCounts(periodEntries, null, { excludePrivate: false });
+        const topTags = aggregated.slice(0, 3).map(t => t.count > 1 ? `${t.label} (×${t.count})` : t.label);
+        const summaryText = topTags.length > 0
+            ? topTags.join(', ')
+            : `${periodEntries.length} note${periodEntries.length > 1 ? 's' : ''}`;
+
+        return {
+            count: periodEntries.length,
+            label: `${periodEntries.length} observation${periodEntries.length > 1 ? 's' : ''} journal`,
+            summaryText
+        };
+    },
+
     _getStudentTooltipText(studentResult, activePeriod = appState.currentPeriod || 'T1', classInfo = undefined) {
         if (!studentResult) return '';
         const baseName = Utils.formatStudentFirstLastName(studentResult.nom, studentResult.prenom);
@@ -618,6 +654,10 @@ export const SeatingRenderer = {
             labels.push(resolvedClassInfo.tooltipLabel);
         }
         labels.push(...this._getStudentStatusLabels(studentResult, activePeriod));
+        const journalInfo = this._getStudentJournalBadgeInfo(studentResult, activePeriod);
+        if (journalInfo) {
+            labels.push(`Journal : ${journalInfo.summaryText}`);
+        }
         return labels.length > 0 ? `${baseName} • ${labels.join(' • ')}` : baseName;
     },
 
@@ -679,24 +719,64 @@ export const SeatingRenderer = {
             container.appendChild(span);
         };
 
+        const syncJournalBadge = (container, journalInfo) => {
+            if (!container) return;
+            const existing = container.querySelector('.sc-cell-journal-badge');
+            if (!journalInfo) {
+                existing?.remove();
+                return;
+            }
+            const countText = String(journalInfo.count);
+            if (existing && existing.textContent === countText) {
+                existing.setAttribute('aria-label', journalInfo.label);
+                return;
+            }
+            existing?.remove();
+            const span = document.createElement('span');
+            span.className = `sc-cell-journal-badge${animate ? ' sc-dot-pop' : ''}`;
+            span.setAttribute('aria-label', journalInfo.label);
+            span.textContent = countText;
+            if (animate) {
+                span.addEventListener('animationend', () => span.classList.remove('sc-dot-pop'), { once: true });
+            }
+            container.appendChild(span);
+        };
+
+        const syncTooltip = (el, student) => {
+            if (!el || !student) return;
+            const tooltip = this._getStudentTooltipText(student);
+            el.setAttribute('data-tooltip', tooltip);
+            el._tippy?.setContent?.(tooltip);
+        };
+
         const grid = document.getElementById('scGridContainer');
         if (grid) {
             grid.querySelectorAll('.sc-cell.occupied:not(.sc-cell-stacked)').forEach(cell => {
                 const student = this._studentMap?.get(cell.dataset.resultId);
                 if (!student) return;
                 const badgeInfo = this._getStudentStatusBadgeInfo(student);
+                const journalInfo = this._getStudentJournalBadgeInfo(student);
                 cell.classList.remove('sc-cell-new', 'sc-cell-ulis', 'sc-cell-device', 'sc-cell-delegate');
                 if (badgeInfo?.cellClass && badgeInfo.cellClass !== 'sc-cell-departed') {
                     cell.classList.add(badgeInfo.cellClass);
                 }
                 cell.classList.toggle('has-status-badge', Boolean(badgeInfo));
-                syncGridBadge(cell.querySelector('.sc-cell-avatar-wrap'), badgeInfo);
+                const avatarWrap = cell.querySelector('.sc-cell-avatar-wrap');
+                syncJournalBadge(avatarWrap, journalInfo);
+                syncGridBadge(avatarWrap, badgeInfo);
+                syncTooltip(cell, student);
             });
 
             grid.querySelectorAll('.sc-cell.sc-cell-stacked .sc-stacked-avatar[data-result-id]').forEach(avatar => {
                 const student = this._studentMap?.get(avatar.dataset.resultId);
                 if (!student) return;
+                syncJournalBadge(avatar, this._getStudentJournalBadgeInfo(student));
                 syncGridBadge(avatar, this._getStudentStatusBadgeInfo(student));
+                syncTooltip(avatar, student);
+                const stackedCell = avatar.closest('.sc-cell.sc-cell-stacked');
+                const safeId = CSS.escape ? CSS.escape(String(student.id)) : String(student.id);
+                const nameEl = stackedCell?.querySelector(`.sc-stacked-name[data-result-id="${safeId}"]`);
+                syncTooltip(nameEl, student);
             });
         }
 

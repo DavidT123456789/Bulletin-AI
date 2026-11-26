@@ -1305,8 +1305,9 @@
     white-space: nowrap;
 }
 
-/* In compact view (default), show first badge and +N micro-counter, hide other badges */
-.status-badges-container .tag-more-count {
+/* In compact view (default), show first badge and +N micro-counter, hide other badges
+   Mutualized with .journal-count-badge overflow pill in Focus Panel */
+:is(.status-badges-container, .journal-count-badge) .tag-more-count {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1332,7 +1333,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .status-badges-container .tag-more-count:hover {
+    :is(.status-badges-container, .journal-count-badge) .tag-more-count:hover {
         background: var(--tonal-hover-bg);
         color: var(--text-primary);
         border-color: transparent;
@@ -1340,7 +1341,7 @@
     }
 }
 
-.status-badges-container .tag-more-count:active {
+:is(.status-badges-container, .journal-count-badge) .tag-more-count:active {
     transform: scale(0.95);
     background: var(--tonal-active-bg);
 }

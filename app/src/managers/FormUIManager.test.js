@@ -34,7 +34,7 @@ vi.mock('../config/Config.js', () => ({
     DEFAULT_IA_CONFIG: { length: 50, styleInstructions: '', voice: 'default', discipline: '' },
     MAX_CHARS_CONFIG: { min: 50, max: 2000, defaultValue: 400, nearRatio: 0.92, presets: [255, 400, 500] },
     APP_VERSION: '4.3.0',
-    DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false }
+    DEFAULT_SEATING_STATUS_DOTS: { movements: true, devices: false, delegates: false, journal: false }
 }));
 
 vi.mock('../utils/DOM.js', () => ({

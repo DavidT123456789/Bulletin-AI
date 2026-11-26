@@ -8,6 +8,7 @@ import { appState } from '../state/State.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { Utils } from '../utils/Utils.js';
+import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Predefined tags for quick observation categorization
@@ -94,9 +95,10 @@ export const JournalManager = {
      * @param {Object} entryData - Entry data
      * @param {string[]} entryData.tags - Array of tag IDs
      * @param {string} [entryData.note] - Optional note text
+     * @param {boolean} [entryData.isPrivate=false] - Exclude entry from AI synthesis (personal reminder)
      * @returns {JournalEntry|null} Created entry or null if failed
      */
-    addEntry(studentId, { tags = [], note = '' }) {
+    addEntry(studentId, { tags = [], note = '', isPrivate = false }) {
         const trimmedNote = (note || '').trim().slice(0, 280);
         let finalTags = Array.isArray(tags) ? [...tags] : [];
 
@@ -124,6 +126,7 @@ export const JournalManager = {
             tags: finalTags,
             note: trimmedNote,
             period: appState.currentPeriod || 'T1',
+            ...(isPrivate ? { isPrivate: true } : {}),
             _lastModified: now // For sync conflict resolution
         };
 
@@ -140,6 +143,7 @@ export const JournalManager = {
 
         // Trigger status refresh to detect dirty state
         FocusPanelStatus.refreshAppreciationStatus();
+        bus.emit(EVENTS.JOURNAL_UPDATED, { studentId });
 
         return entry;
     },
@@ -165,6 +169,7 @@ export const JournalManager = {
 
         // Trigger status refresh to detect dirty state
         FocusPanelStatus.refreshAppreciationStatus();
+        bus.emit(EVENTS.JOURNAL_UPDATED, { studentId });
 
         return true;
     },
@@ -184,10 +189,10 @@ export const JournalManager = {
      * Update a journal entry
      * @param {string} studentId
      * @param {string} entryId
-     * @param {Object} updates - { tags, note }
+     * @param {Object} updates - { tags, note, isPrivate }
      * @returns {JournalEntry|null} Updated entry or null
      */
-    updateEntry(studentId, entryId, { tags, note }) {
+    updateEntry(studentId, entryId, { tags, note, isPrivate }) {
         const studentIndex = appState.generatedResults?.findIndex(s => s.id === studentId);
         if (studentIndex === -1 || studentIndex === undefined) return null;
 
@@ -208,29 +213,40 @@ export const JournalManager = {
 
         entry.tags = finalTags;
         entry.note = trimmedNote;
+        if (isPrivate !== undefined) {
+            if (isPrivate) {
+                entry.isPrivate = true;
+            } else {
+                delete entry.isPrivate;
+            }
+        }
         entry._lastModified = Date.now(); // Update timestamp for sync
 
         StorageManager.saveAppState();
 
         // Trigger status refresh to detect dirty state
         FocusPanelStatus.refreshAppreciationStatus();
+        bus.emit(EVENTS.JOURNAL_UPDATED, { studentId });
 
         return entry;
     },
 
     /**
      * Count tags for a student (for synthesis)
-     * @param {string} studentId - Student ID
-     * @param {string} [period] - Optional period filter
+     * @param {string|JournalEntry[]} studentId - Student ID or entries array
+     * @param {string|null} [period] - Optional period filter
+     * @param {Object} [options={}]
+     * @param {boolean} [options.excludePrivate=false] - Ignore private entries
      * @returns {Object} Tag counts { tagId: count }
      */
-    countTags(studentId, period = null) {
+    countTags(studentId, period = null, { excludePrivate = false } = {}) {
         const entries = Array.isArray(studentId) ? studentId : (period
             ? this.getEntriesForPeriod(studentId, period)
             : this.getEntries(studentId));
 
         const counts = {};
         entries.forEach(entry => {
+            if (excludePrivate && entry?.isPrivate === true) return;
             if (Array.isArray(entry?.tags)) {
                 entry.tags.forEach(tagId => {
                     counts[tagId] = (counts[tagId] || 0) + 1;
@@ -244,11 +260,12 @@ export const JournalManager = {
     /**
      * Get aggregated tag counts by icon/color for header display
      * @param {string} studentId
-     * @param {string} period
+     * @param {string|null} period
+     * @param {Object} [options={}]
      * @returns {Array<{icon: string, color: string, count: number, label: string}>}
      */
-    getAggregatedCounts(studentId, period = null) {
-        const tagCounts = this.countTags(studentId, period);
+    getAggregatedCounts(studentId, period = null, options = {}) {
+        const tagCounts = this.countTags(studentId, period, options);
 
         const aggregated = [];
         Object.entries(tagCounts).forEach(([tagId, count]) => {
@@ -330,64 +347,125 @@ export const JournalManager = {
 
     /**
      * Get significant tag IDs (meeting threshold) for a student on a period, sorted by frequency
+     * Excludes private entries.
      * @param {string|Object} studentOrId - Student ID or student object
      * @param {string|null} [period=null] - Optional period filter
      * @returns {string[]} Array of significant tag IDs
      */
     getSignificantTagIds(studentOrId, period = null) {
         const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
-        if (entries.length === 0 || !this.isIncludedInAI(classId)) return [];
+        const aiEntries = entries.filter(e => !e.isPrivate);
+        if (aiEntries.length === 0 || !this.isIncludedInAI(classId)) return [];
         const threshold = this.getThreshold(classId);
-        const tagCounts = this.countTags(entries);
+        const tagCounts = this.countTags(aiEntries);
         return Object.entries(tagCounts)
-            .filter(([tagId, count]) => count >= threshold && Array.isArray(entries))
+            .filter(([, count]) => count >= threshold)
             .sort((a, b) => b[1] - a[1])
             .map(([tagId]) => tagId);
+    },
+
+    /**
+     * Build structured AI synthesis summary for UI transparency and prompt injection (SSOT).
+     * Excludes private entries; includes all written non-private notes up to 12 notes / 1200 chars.
+     * @param {string|Object} studentOrId - Student ID or student object
+     * @param {string|null} [period=null] - Optional period filter
+     * @returns {{ includedInAI: boolean, threshold: number, tags: Array<{id: string, label: string, count: number}>, notes: Array<{text: string, extraTagLabels: string[]}>, privateCount: number, totalCount: number, displayText: string }}
+     */
+    getAISummary(studentOrId, period = null) {
+        const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
+        const includedInAI = this.isIncludedInAI(classId);
+        const threshold = this.getThreshold(classId);
+        const privateCount = entries.filter(e => e.isPrivate === true).length;
+        const totalCount = entries.length;
+
+        if (!includedInAI) {
+            return {
+                includedInAI: false,
+                threshold,
+                tags: [],
+                notes: [],
+                privateCount,
+                totalCount,
+                displayText: ''
+            };
+        }
+
+        const aiEntries = entries.filter(e => !e.isPrivate);
+        const tagCounts = this.countTags(aiEntries);
+        const tags = Object.entries(tagCounts)
+            .filter(([, count]) => count >= threshold)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([tagId, count]) => {
+                const tag = this.getTag(tagId);
+                return { id: tagId, label: tag ? tag.label : tagId, count };
+            });
+
+        const significantSet = new Set(tags.map(t => t.id));
+        const rawNotes = aiEntries
+            .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
+            .slice(-12);
+
+        const notes = [];
+        let totalNoteChars = 0;
+        for (let i = rawNotes.length - 1; i >= 0; i--) {
+            const e = rawNotes[i];
+            const text = e.note.trim();
+            if (notes.length > 0 && totalNoteChars + text.length > 1200) break;
+            totalNoteChars += text.length;
+            const extraTagLabels = (Array.isArray(e.tags) ? e.tags : [])
+                .filter(tagId => tagId && tagId !== 'remarque' && !significantSet.has(tagId))
+                .map(tagId => this.getTag(tagId)?.label || tagId);
+            notes.unshift({ text, extraTagLabels });
+        }
+
+        const displayParts = [
+            ...tags.map(t => t.label),
+            ...notes.map(n => {
+                const short = n.text.length > 42 ? `${n.text.slice(0, 42).trimEnd()}…` : n.text;
+                return n.extraTagLabels.length > 0
+                    ? `« [${n.extraTagLabels.join(', ')}] ${short} »`
+                    : `« ${short} »`;
+            })
+        ];
+
+        return {
+            includedInAI: true,
+            threshold,
+            tags,
+            notes,
+            privateCount,
+            totalCount,
+            displayText: displayParts.join(' · ')
+        };
     },
 
     /**
      * Synthesize journal entries for prompt injection
      * Creates a compact summary suitable for the AI prompt.
      * - Returns '' when journal is set to personal notepad mode (Hors IA).
+     * - Excludes private entries.
      * - Tag-only entries require meeting the threshold (default 2).
-     * - Written notes (entry.note.trim().length > 0) are ALWAYS included (up to 3 most recent).
+     * - Written notes (entry.note.trim().length > 0) are included (up to 12 notes / 1200 chars).
      * @param {string|Object} studentId - Student ID or student object
      * @param {string} [period] - Optional period filter (defaults to active period)
      * @returns {string} Synthesized text for prompt (empty if no entries or Hors IA)
      */
     synthesizeForPrompt(studentId, period = null) {
-        const { entries, classId } = this._resolveStudentPeriodEntries(studentId, period);
-        if (entries.length === 0 || !this.isIncludedInAI(classId)) return '';
+        const summary = this.getAISummary(studentId, period);
+        if (!summary.includedInAI) return '';
 
-        const significantTagIdsList = this.getSignificantTagIds(studentId, period).slice(0, 5);
         const parts = [];
-
-        if (significantTagIdsList.length > 0) {
-            const tagLabels = significantTagIdsList.map(tagId => {
-                const tag = this.tags.find(t => t.id === tagId);
-                return tag ? tag.label : tagId;
-            });
-            parts.push(`Observations: ${tagLabels.join(', ')}`);
+        if (summary.tags.length > 0) {
+            parts.push(`Observations: ${summary.tags.map(t => t.label).join(', ')}`);
         }
 
-        // Always include written notes (up to 3 most recent), regardless of tag threshold.
-        // If an entry carries an explicit tag (not generic 'remarque') below threshold, prefix its label so AI keeps the context.
-        const significantSet = new Set(significantTagIdsList);
-        const writtenNotes = entries
-            .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
-            .slice(-3)
-            .map(e => {
-                const text = e.note.trim();
-                const extraTags = (Array.isArray(e.tags) ? e.tags : [])
-                    .filter(tagId => tagId && tagId !== 'remarque' && !significantSet.has(tagId))
-                    .map(tagId => this.getTag(tagId)?.label || tagId);
-                return extraTags.length > 0
-                    ? `"[${extraTags.join(', ')}] ${text}"`
-                    : `"${text}"`;
-            })
-            .join(' | ');
-
-        if (writtenNotes) {
+        if (summary.notes.length > 0) {
+            const writtenNotes = summary.notes
+                .map(n => (n.extraTagLabels.length > 0
+                    ? `"[${n.extraTagLabels.join(', ')}] ${n.text}"`
+                    : `"${n.text}"`))
+                .join(' | ');
             parts.push(`Notes: ${writtenNotes}`);
         }
 
@@ -396,7 +474,7 @@ export const JournalManager = {
 
     /**
      * Check if an entry is "isolated" (tag-only entry whose tags are all below threshold)
-     * Written notes and entries in personal notepad mode (Hors IA) are never dimmed as isolated.
+     * Written notes, private entries, and entries in personal notepad mode (Hors IA) are never dimmed as isolated.
      * @param {Object} entry - Journal entry object
      * @param {Object} tagCounts - Pre-computed tag counts { tagId: count }
      * @param {number} [threshold] - Threshold value (optional, computed if not provided)
@@ -404,7 +482,7 @@ export const JournalManager = {
      * @returns {boolean} True if tag-only entry is below threshold and AI transmission is active
      */
     isEntryIsolated(entry, tagCounts, threshold = null, classId = null) {
-        if (!entry || !this.isIncludedInAI(classId)) return false;
+        if (!entry || entry.isPrivate === true || !this.isIncludedInAI(classId)) return false;
         // Written observations are always transmitted to AI -> never isolated
         if (typeof entry.note === 'string' && entry.note.trim().length > 0) return false;
         const limit = threshold ?? this.getThreshold(classId || appState.currentClassId);
@@ -453,6 +531,12 @@ export const JournalManager = {
             </span>`;
         }).join('');
 
+        const isPrivate = entry.isPrivate === true;
+        const privateClass = isPrivate ? 'is-private' : '';
+        const privateBadge = isPrivate
+            ? `<span class="journal-private-badge tooltip" data-tooltip="Note personnelle (non transmise à l'IA)"><iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon> Privé</span>`
+            : '';
+
         const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
         const isolatedClass = isIsolated ? 'isolated' : '';
 
@@ -463,11 +547,12 @@ export const JournalManager = {
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
 
         return `
-            <div class="journal-entry ${extraClass} ${isolatedClass}" data-entry-id="${safeEntryId}">
+            <div class="journal-entry ${extraClass} ${isolatedClass} ${privateClass}" data-entry-id="${safeEntryId}">
                 <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
                 <div class="journal-entry-content">
                     <div class="journal-entry-tags">
                         ${tagsHTML}
+                        ${privateBadge}
                         ${infoIcon}
                     </div>
                     ${entry.note ? `<div class="journal-entry-note">${Utils.escapeHtml(entry.note)}</div>` : ''}
@@ -534,8 +619,8 @@ export const JournalManager = {
             `;
         }
 
-        // Compute tag counts for threshold check (visual feedback)
-        const tagCounts = this.countTags(studentId, period);
+        // Compute tag counts for threshold check (visual feedback — exclude private entries)
+        const tagCounts = this.countTags(studentId, period, { excludePrivate: true });
         const threshold = this.getThreshold(classId);
 
         // Sort by date (newest first)
@@ -571,6 +656,7 @@ export const JournalManager = {
         const selectedTags = isEdit && Array.isArray(entry.tags)
             ? entry.tags.filter(tagId => tagId !== 'remarque')
             : [];
+        const isPrivate = Boolean(isEdit && entry?.isPrivate);
         const canSave = isEdit && (selectedTags.length > 0 || noteValue.trim().length > 0);
         const showCharCount = noteValue.length >= 200;
 
@@ -610,6 +696,12 @@ export const JournalManager = {
                 </div>
 
                 <div class="journal-draft-actions-footer">
+                    <button type="button" class="journal-private-toggle${isPrivate ? ' is-active' : ''} tooltip"
+                        id="journalDraftPrivateBtn" aria-pressed="${isPrivate ? 'true' : 'false'}"
+                        data-tooltip="Note personnelle : exclue de l'IA">
+                        <iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon>
+                        <span>Privé</span>
+                    </button>
                     <button type="button" class="journal-footer-btn journal-cancel-btn" id="journalDraftCancelFooterBtn">
                         Annuler
                     </button>

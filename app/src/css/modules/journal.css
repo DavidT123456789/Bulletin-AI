@@ -33,6 +33,44 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+}
+
+.journal-empty-inline-hint {
+    display: none;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.journal-empty-inline-hint::before {
+    content: '·';
+    margin-right: 6px;
+    opacity: 0.7;
+}
+
+/* Compact 1-line state when journal is empty and not actively drafting/editing */
+.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-header {
+    border-bottom: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-header:hover {
+    background: var(--item-hover-bg);
+}
+
+.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-empty-inline-hint {
+    display: inline;
+}
+
+.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-content,
+.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-ai-footer {
+    display: none;
 }
 
 .journal-header-right {
@@ -46,7 +84,7 @@
 .journal-count-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     background: transparent;
     padding: 0;
     font-size: inherit;
@@ -56,12 +94,31 @@
     display: none !important;
 }
 
-.journal-count-tag {
+.journal-tag.journal-count-tag {
     margin-right: 0;
-    height: 26px;
-    padding: 0 8px;
+    height: 24px;
+    padding: 0 6px;
+    gap: 4px;
     font-size: 11.5px;
-    font-weight: 500;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: help;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.journal-tag.journal-count-tag iconify-icon {
+    font-size: 13px;
+}
+
+.journal-tag.journal-count-tag:hover {
+    background: var(--item-hover-bg);
+}
+
+.journal-count-badge .tag-more-count {
+    height: 24px;
+    min-width: 24px;
+    padding: 0 7px;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
     cursor: help;
 }
@@ -170,59 +227,117 @@
     font-weight: 600;
 }
 
-/* Threshold button - Harmonized capsule (26px height, matching context & history chips) */
-.journal-threshold-btn {
-    background: var(--tonal-bg);
-    border: 1px solid transparent;
-    border-radius: var(--radius-pill);
-    color: var(--text-secondary);
-    padding: 0 9px;
-    height: 26px;
-    font-size: 11.5px;
-    white-space: nowrap;
+/* === Journal AI Transparency Footer Bar === */
+.journal-ai-footer {
+    border-top: 1px solid var(--border-color);
+    background: var(--item-idle-bg);
+    border-bottom-left-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+}
+
+.journal-ai-footer .journal-threshold-control {
+    display: block;
+    width: 100%;
+    position: relative;
+}
+
+.journal-ai-footer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    min-height: 34px;
+    height: auto;
+    padding: 7px 14px 7px 16px;
+    border: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 400;
+    cursor: pointer;
     box-shadow: none;
-    transition: all var(--transition-fast);
+    text-align: left;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.journal-threshold-btn iconify-icon {
-    font-size: 13px;
-    width: 13px;
-    height: 13px;
+.journal-ai-footer-btn iconify-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+    transition: color var(--transition-fast);
 }
 
-.journal-threshold-btn span:not(.tooltip-text) {
-    font-weight: 500;
+.journal-ai-footer-btn.has-ai-signal #journalThresholdIcon {
+    color: var(--text-secondary);
+}
+
+.journal-ai-footer-text {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 400;
     font-variant-numeric: tabular-nums;
 }
 
-.journal-threshold-btn:hover {
-    background: var(--tonal-hover-bg);
-    border-color: transparent;
-    color: var(--text-primary);
-    box-shadow: none;
-}
-
-.journal-threshold-control.open .journal-threshold-btn {
-    background: var(--tonal-active-bg) !important;
-    border-color: transparent;
-    color: var(--text-primary);
-}
-
-.journal-threshold-control.open .journal-threshold-btn i,
-.journal-threshold-control.open .journal-threshold-btn iconify-icon {
-    color: var(--text-primary);
-}
-
-.journal-threshold-btn.is-ai-excluded {
+.journal-ai-footer-prefix {
     color: var(--text-tertiary);
-    background: transparent;
-    border-color: var(--border-color);
+    transition: color var(--transition-fast);
 }
 
-.journal-threshold-btn.is-ai-excluded:hover {
+.journal-ai-footer-value {
+    color: var(--text-primary-soft);
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.journal-ai-footer-chevron {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--text-tertiary);
+}
+
+.journal-ai-footer-btn:hover,
+.journal-threshold-control.open .journal-ai-footer-btn {
     background: var(--item-hover-bg);
     color: var(--text-primary);
-    border-color: var(--border-color-hover);
+}
+
+.journal-ai-footer-btn:hover .journal-ai-footer-prefix,
+.journal-threshold-control.open .journal-ai-footer-btn .journal-ai-footer-prefix,
+.journal-ai-footer-btn:hover .journal-ai-footer-value,
+.journal-threshold-control.open .journal-ai-footer-btn .journal-ai-footer-value {
+    color: var(--text-primary);
+}
+
+.journal-ai-footer-btn:hover iconify-icon,
+.journal-threshold-control.open .journal-ai-footer-btn iconify-icon {
+    color: var(--text-primary);
+}
+
+.journal-ai-footer-btn.is-ai-excluded {
+    color: var(--text-tertiary);
+}
+
+.journal-ai-footer-btn.is-ai-excluded:hover {
+    color: var(--text-primary);
+}
+
+/* Anchor popover above footer so it never clips near bottom of Focus Panel */
+.journal-ai-footer .journal-threshold-popover {
+    top: auto;
+    bottom: calc(100% + 8px);
+    right: 12px;
+    transform: translateY(8px);
+}
+
+.journal-ai-footer .journal-threshold-control.open .journal-threshold-popover {
+    transform: translateY(0);
 }
 
 /* Threshold Popover */
@@ -528,7 +643,7 @@
     outline-offset: 1px;
 }
 
-/* Selected state — Clear semantic fill & border (dashed reserved for below-threshold timeline tags) */
+/* Selected state — Clear semantic fill & border */
 .journal-pill-direct.selected {
     background: color-mix(in srgb, var(--pill-color) 16%, transparent);
     border-color: color-mix(in srgb, var(--pill-ink, var(--pill-color)) 48%, transparent);
@@ -587,6 +702,49 @@
     justify-content: flex-end;
     gap: 10px;
     width: 100%;
+}
+
+/* Private note toggle in draft editor */
+.journal-private-toggle {
+    margin-right: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.journal-private-toggle iconify-icon {
+    font-size: 13px;
+}
+
+.journal-private-toggle:hover {
+    background: var(--item-hover-bg);
+    color: var(--text-primary);
+}
+
+.journal-private-toggle.is-active {
+    background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.14);
+    border-color: rgba(var(--color-amber-rgb, 245, 158, 11), 0.35);
+    color: var(--color-amber-deep, var(--warning-text));
+    font-weight: 600;
+}
+
+[data-theme="dark"] .journal-private-toggle.is-active {
+    background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.18);
+    color: var(--color-amber, var(--warning-text));
+}
+
+.journal-section.is-ai-excluded .journal-private-toggle {
+    display: none;
 }
 
 .journal-footer-btn {
@@ -659,9 +817,9 @@
 
 /* === Journal Content === */
 .journal-content {
-    padding: 12px 14px 12px 16px;
+    padding: 8px 8px;
     margin-right: 2px;
-    max-height: 180px;
+    max-height: 184px;
     overflow-y: auto;
     transition:
         max-height 0.35s var(--ease-spring),
@@ -670,7 +828,7 @@
 }
 
 .journal-content::-webkit-scrollbar-track {
-    margin-block: 6px 14px;
+    margin-block: 6px 8px;
 }
 
 .journal-section.collapsed .journal-content {
@@ -707,7 +865,7 @@
     flex-direction: row;
     align-items: center;
     gap: 12px;
-    margin: -4px -6px -4px -8px;
+    margin: 0;
     padding: 6px 8px;
     min-height: 44px;
     box-sizing: border-box;
@@ -866,13 +1024,13 @@
 .journal-entry {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    background: rgba(0, 0, 0, 0.02);
+    gap: 10px;
+    padding: 7px 8px;
+    margin-bottom: 4px;
+    background: var(--item-idle-bg);
     border-radius: var(--radius-control);
     position: relative;
-    transition: background 0.2s ease, transform 0.2s ease;
+    transition: background-color var(--transition-fast), transform 0.2s ease;
 }
 
 .journal-entry:last-child {
@@ -880,7 +1038,7 @@
 }
 
 .journal-entry:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--item-hover-bg);
     cursor: pointer;
 }
 
@@ -890,21 +1048,14 @@
     transition: opacity 0.3s ease;
 }
 
-[data-theme="dark"] .journal-entry {
-    background: rgba(255, 255, 255, 0.04);
-}
-
-[data-theme="dark"] .journal-entry:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
-
 .journal-entry-date {
     flex-shrink: 0;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
     color: var(--text-tertiary);
-    min-width: 45px;
-    padding-top: 2px;
+    min-width: 44px;
+    line-height: 22px;
 }
 
 .journal-entry-content {
@@ -915,7 +1066,8 @@
 .journal-entry-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    align-items: center;
+    gap: 4px 12px;
     /* FIX: Remove margin-bottom to ensure vertical centering when no note exists */
     margin-bottom: 0;
 }
@@ -923,27 +1075,41 @@
 .journal-tag {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border: 1px solid transparent;
+    gap: 4.5px;
+    height: 22px;
+    padding: 0;
+    border: none;
     border-radius: var(--radius-pill);
-    font-size: 11px;
-    font-weight: 500;
-    background: color-mix(in srgb, var(--tag-color) 12%, transparent);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1;
+    background: transparent;
     color: var(--tag-ink, var(--tag-color));
     box-sizing: border-box;
+    white-space: nowrap;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
-.journal-tag.below-threshold {
-    opacity: 0.85;
-    background: transparent !important;
-    border: 1px dashed var(--tag-ink, var(--tag-color)) !important;
-    box-shadow: none !important;
-    /* Lighter appearance matching isolated entries in the card */
+.journal-tag iconify-icon {
+    font-size: 12.5px;
+    flex-shrink: 0;
 }
 
 .journal-tag i {
     font-size: 10px;
+}
+
+/* Off state (below threshold, not transmitted to AI) — Neutral gray ink;
+   only transmitted tags keep their semantic color */
+.journal-tag.below-threshold,
+.journal-entry.isolated .journal-tag {
+    color: var(--text-tertiary);
+    font-weight: 500;
+}
+
+.journal-tag.journal-count-tag.below-threshold:hover,
+.journal-entry.isolated:hover .journal-tag {
+    color: var(--text-secondary);
 }
 
 .journal-entry-note {
@@ -951,7 +1117,33 @@
     color: var(--text-secondary);
     line-height: 1.4;
     /* FIX: Increase top margin to compensate for removed tag bottom margin */
-    margin-top: 8px;
+    margin-top: 6px;
+}
+
+/* Private entry indicator (only rendered on entries marked private) */
+.journal-private-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: var(--radius-pill);
+    font-size: 10.5px;
+    font-weight: 600;
+    background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.12);
+    color: var(--color-amber-deep, var(--warning-text));
+    cursor: help;
+    box-sizing: border-box;
+}
+
+[data-theme="dark"] .journal-private-badge {
+    background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.16);
+    color: var(--color-amber, var(--warning-text));
+}
+
+.journal-entry.is-private {
+    border-left: 2px solid rgba(var(--color-amber-rgb, 245, 158, 11), 0.45);
+    padding-left: 6px;
 }
 
 /* Info Icon for Isolated Entries (inline badge with tags) */
@@ -959,20 +1151,24 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     color: var(--text-tertiary);
-    font-size: 12px;
-    opacity: 0.6;
-    transition: all var(--transition-fast);
+    font-size: 13px;
+    opacity: 0;
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
     cursor: help;
     flex-shrink: 0;
-    margin-left: 2px;
+}
+
+.journal-entry.isolated:hover .journal-entry-info,
+.journal-entry.isolated:focus-within .journal-entry-info {
+    opacity: 0.85;
 }
 
 .journal-entry-info:hover {
-    opacity: 1;
+    opacity: 1 !important;
     color: var(--text-primary);
     background: var(--item-hover-bg);
 }
@@ -982,6 +1178,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    height: 22px;
     flex-shrink: 0;
     margin-left: auto;
     opacity: 0;
@@ -989,6 +1186,7 @@
 }
 
 .journal-entry:hover .journal-entry-actions,
+.journal-entry:focus-within .journal-entry-actions,
 .journal-entry-actions.has-confirm-delete,
 .journal-entry-actions:has(.confirm-delete) {
     opacity: 1;
@@ -1012,83 +1210,76 @@
     align-items: center;
     justify-content: center;
     font-size: 13px;
-    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast), transform 0.16s var(--ease-spring);
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast), transform 0.16s var(--ease-spring);
     padding: 0;
     flex-shrink: 0;
 }
 
-.journal-entry-action-btn:hover {
-    background: var(--item-hover-bg);
-    color: var(--text-primary);
+.journal-entry-action-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
 }
 
 .journal-entry-action-btn:active {
     transform: scale(0.92);
 }
 
-.journal-entry-delete:not(.confirm-delete):hover {
-    background: rgba(var(--error-rgb), 0.1);
-    color: var(--error-text);
-}
-
-/* 2-step Delete Confirmation State */
+/* 2-step Delete Confirmation State — Matte solid danger pill aligned with .btn-danger */
 .journal-entry-delete.confirm-delete {
-    opacity: 1 !important;
-    background: rgba(var(--error-rgb), 0.12);
-    color: var(--error-text);
-    border: 1px solid rgba(var(--error-rgb), 0.28);
+    opacity: 1;
+    background: var(--error-color);
+    color: #ffffff;
+    border: none;
+    box-shadow: none;
     width: auto;
-    height: 24px;
+    height: 26px;
     padding: 0 10px;
+    gap: 5px;
     border-radius: var(--radius-pill);
-    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), padding 0.18s var(--ease-spring), transform 0.16s var(--ease-spring);
+    transition: background-color var(--transition-fast), color var(--transition-fast), padding 0.18s var(--ease-spring), transform 0.16s var(--ease-spring);
 }
 
 .journal-entry-delete.confirm-delete::after {
     content: "Supprimer ?";
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    margin-left: 4px;
+    letter-spacing: -0.01em;
+    line-height: 1;
     white-space: nowrap;
 }
 
 .journal-entry-delete.confirm-delete iconify-icon,
 .journal-entry-delete.confirm-delete i,
 .journal-entry-delete.confirm-delete svg {
-    font-size: 11px;
+    font-size: 12px;
     color: inherit;
+    flex-shrink: 0;
 }
 
-.journal-entry-delete.confirm-delete:hover {
-    background: var(--error-color) !important;
-    color: var(--text-on-primary, #fff) !important;
-    border-color: var(--error-color) !important;
-    box-shadow: 0 2px 8px rgba(var(--error-rgb), 0.35);
+@media (hover: hover) and (pointer: fine) {
+    .journal-entry-action-btn:hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    .journal-entry-delete.confirm-delete:hover {
+        background: color-mix(in srgb, var(--error-color), white 9%);
+        color: #ffffff;
+        box-shadow: none;
+    }
+}
+
+.journal-entry-delete.confirm-delete:focus-visible {
+    outline: 2px solid var(--error-color);
+    outline-offset: 2px;
 }
 
 .journal-entry-delete.confirm-delete:active {
     transform: scale(0.96);
+    background: color-mix(in srgb, var(--error-color), black 8%);
 }
 
 /* === Isolated Entry (below threshold) === */
-/* Visual indicator that this entry won't influence AI - "droit à l'erreur" */
-.journal-entry.isolated {
-    opacity: 0.6;
-}
-
-/* Cleaner "Ghost" indication for tags instead of the whole card */
-.journal-entry.isolated .journal-tag {
-    background: transparent;
-    border: 1px dashed var(--tag-ink, var(--tag-color));
-    box-shadow: none;
-    opacity: 0.85;
-}
-
-.journal-entry.isolated:hover {
-    opacity: 0.9;
-}
-
-/* Tooltip for isolated entries */
 .journal-entry.isolated .journal-entry-date {
     cursor: help;
 }
@@ -1107,9 +1298,9 @@
     to {
         opacity: 1;
         max-height: 200px;
-        padding-top: 10px;
-        padding-bottom: 10px;
-        margin-bottom: 8px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+        margin-bottom: 4px;
         transform: translateY(0) scale(1);
     }
 }
@@ -1145,12 +1336,12 @@
 
     /* Elimination of nested scrollbar on mobile */
     .journal-content {
-        padding: 10px 14px;
+        padding: 8px 8px;
         max-height: 480px;
     }
 
     .journal-empty {
-        margin: -4px -6px;
+        margin: 0;
         padding: 6px;
         min-height: 44px;
         gap: 12px;
@@ -1165,7 +1356,7 @@
     }
 
     .journal-entry {
-        padding: 8px 10px;
+        padding: 7px 8px;
         gap: 8px;
     }
 
@@ -1175,8 +1366,7 @@
     }
 
     .journal-tag {
-        font-size: 10px;
-        padding: 2px 6px;
+        font-size: 11px;
     }
 
     .journal-entry-note {
@@ -1208,10 +1398,26 @@
         margin-top: 12px;
     }
 
+    .journal-draft-actions-footer .journal-private-toggle {
+        grid-column: 1 / -1;
+        justify-self: start;
+        margin-right: 0;
+        min-height: 38px;
+    }
+
     .journal-footer-btn {
         width: 100%;
         height: 44px;
         font-size: 13px;
+    }
+
+    .journal-ai-footer-btn {
+        padding: 9px 14px;
+    }
+
+    .journal-ai-footer .journal-threshold-popover {
+        right: 10px;
+        width: min(262px, calc(100% - 20px));
     }
 }
 
@@ -1235,6 +1441,11 @@
     }
 
     .journal-footer-btn {
+        min-height: 44px;
+    }
+
+    .journal-draft-actions-footer .journal-private-toggle,
+    .journal-ai-footer-btn {
         min-height: 44px;
     }
 

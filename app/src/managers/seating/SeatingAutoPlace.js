@@ -738,7 +738,7 @@ export const SeatingAutoPlace = {
             clone.removeAttribute('data-tooltip');
             clone.removeAttribute('data-tooltip-anchor');
             clone.removeAttribute('draggable');
-            clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn, .sc-cell-special-tools').forEach(el => el.remove());
+            clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-chip-badge, .sc-chip-profile-btn, .sc-cell-special-tools, .sc-cell-journal-badge').forEach(el => el.remove());
             clone.querySelectorAll('[id], [data-result-id], [data-tooltip], [data-tooltip-anchor], [draggable]').forEach(el => {
                 el.removeAttribute('id');
                 el.removeAttribute('data-result-id');

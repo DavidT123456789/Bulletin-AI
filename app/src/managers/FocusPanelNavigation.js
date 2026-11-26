@@ -398,6 +398,7 @@ export const FocusPanelNavigation = {
         const CSS_STYLED_CLONE_IDS = new Set([
             'focusAppreciationTitle',
             'focusWordCount',
+            'focusAiDataBtn',
             'focusCopyBtn',
             'focusGenerateBtn',
             'focusAppreciationText',

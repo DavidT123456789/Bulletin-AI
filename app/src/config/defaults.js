@@ -67,5 +67,6 @@ export const DEFAULT_PRIVACY_SETTINGS = {
 export const DEFAULT_SEATING_STATUS_DOTS = {
     movements: true,
     devices: false,
-    delegates: false
+    delegates: false,
+    journal: false
 };

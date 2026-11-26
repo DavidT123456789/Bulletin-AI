@@ -117,12 +117,18 @@ export const FocusPanelRefinement = {
 
     /**
      * Helper partagé pour afficher une modale de prévisualisation de prompt
+     * (avec résumé lisible optionnel des données transmises à l'IA).
      * @param {string} promptText - Le texte du prompt à afficher
      * @param {string} [title='Prévisualisation du prompt'] - Le titre de la modale
+     * @param {Object} [options={}]
+     * @param {string} [options.summaryHtml=''] - HTML structuré du résumé humain affiché au-dessus du prompt brut
      */
-    async displayPromptModal(promptText, title = 'Prévisualisation du prompt') {
+    async displayPromptModal(promptText, title = 'Prévisualisation du prompt', options = {}) {
         const escapedText = Utils.escapeHtml(promptText);
         const escapedTitle = Utils.escapeHtml(title);
+        const summaryHtml = typeof options?.summaryHtml === 'string' ? options.summaryHtml : '';
+        const copyLabel = summaryHtml ? 'Copier le prompt' : 'Copier';
+        const headerIcon = summaryHtml ? 'solar:eye-linear' : 'solar:code-square-linear';
 
         const modalId = 'promptPreviewModal';
         let modal = document.getElementById(modalId);
@@ -135,11 +141,22 @@ export const FocusPanelRefinement = {
         modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('aria-labelledby', 'promptPreviewModalTitle');
 
+        const bodyHtml = summaryHtml
+            ? `${summaryHtml}
+               <details class="prompt-raw-details">
+                   <summary class="prompt-raw-toggle">
+                       <iconify-icon icon="solar:code-square-linear" aria-hidden="true"></iconify-icon>
+                       <span>Voir le prompt complet envoyé au modèle</span>
+                   </summary>
+                   <div class="prompt-preview-content">${escapedText}</div>
+               </details>`
+            : `<div class="prompt-preview-content">${escapedText}</div>`;
+
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title" id="promptPreviewModalTitle">
-                        <span class="modal-title-icon"><iconify-icon icon="solar:code-square-linear"></iconify-icon></span>
+                        <span class="modal-title-icon"><iconify-icon icon="${headerIcon}"></iconify-icon></span>
                         <span class="modal-title-text">${escapedTitle}</span>
                     </h2>
                     <button type="button" class="close-button" aria-label="Fermer">
@@ -147,13 +164,13 @@ export const FocusPanelRefinement = {
                     </button>
                 </div>
                 <div class="modal-body" tabindex="0">
-                    <div class="prompt-preview-content">${escapedText}</div>
+                    ${bodyHtml}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="promptPreviewCloseBtn">Fermer</button>
                     <button type="button" class="btn btn-primary" id="promptPreviewCopyBtn">
                         <iconify-icon icon="solar:copy-linear"></iconify-icon>
-                        Copier
+                        ${copyLabel}
                     </button>
                 </div>
             </div>
@@ -187,7 +204,7 @@ export const FocusPanelRefinement = {
                     copyBtn.classList.replace('btn-primary', 'btn-success');
                     copyResetTimer = setTimeout(() => {
                         copyResetTimer = null;
-                        copyBtn.innerHTML = '<iconify-icon icon="solar:copy-linear"></iconify-icon> Copier';
+                        copyBtn.innerHTML = `<iconify-icon icon="solar:copy-linear"></iconify-icon> ${copyLabel}`;
                         copyBtn.classList.replace('btn-success', 'btn-primary');
                     }, 2000);
                 } catch (err) {

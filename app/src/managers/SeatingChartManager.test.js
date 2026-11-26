@@ -5166,12 +5166,12 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             try {
                 appState.seatingStatusDots = undefined;
                 SeatingChartManager._setStatusDot('devices', true);
-                expect(appState.seatingStatusDots).toEqual({ movements: true, devices: true, delegates: false });
+                expect(appState.seatingStatusDots).toEqual({ movements: true, devices: true, delegates: false, journal: false });
                 expect(emitSpy).toHaveBeenCalledWith(EVENTS.APP_SETTINGS_CHANGED, { settings: appState, reason: 'seating-status-dots' });
                 expect(saveSpy).toHaveBeenCalledTimes(1);
 
                 SeatingChartManager._setStatusDot('movements', false);
-                expect(appState.seatingStatusDots).toEqual({ movements: false, devices: true, delegates: false });
+                expect(appState.seatingStatusDots).toEqual({ movements: false, devices: true, delegates: false, journal: false });
             } finally {
                 appState.seatingStatusDots = prevDots;
                 emitSpy.mockRestore();
@@ -5215,6 +5215,43 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 SeatingChartManager._render();
                 expect(document.getElementById('scStudentList')?.firstElementChild).toBe(sidebarChildBefore);
                 expect(document.getElementById('scStatusPill')?.firstElementChild).toBe(statusPillChildBefore);
+            } finally {
+                appState.seatingStatusDots = prevDots;
+                renderSpy.mockRestore();
+                saveSpy.mockRestore();
+            }
+        });
+
+        it('devrait afficher le compteur Journal en place uniquement quand le calque journal est activé et enrichir le tooltip', () => {
+            const prevDots = appState.seatingStatusDots;
+            const saveSpy = vi.spyOn(StorageManager, 'saveAppState').mockImplementation(() => {});
+            const renderSpy = vi.spyOn(SeatingChartManager, '_render');
+            try {
+                appState.seatingStatusDots = { movements: true, devices: false, delegates: false, journal: false };
+                SeatingChartManager.switchToView('plan', { immediate: true });
+                const firstStudent = SeatingChartManager._students[0];
+                firstStudent.journal = [
+                    { id: 'j-1', period: appState.currentPeriod, tags: ['participation+'], note: '' },
+                    { id: 'j-2', period: appState.currentPeriod, tags: ['participation+'], note: 'Bon oral' }
+                ];
+                SeatingChartManager._gridState[0][0] = firstStudent.id;
+                SeatingChartManager._render();
+                renderSpy.mockClear();
+
+                const cell = document.querySelector('#scGridContainer .sc-cell.occupied');
+                expect(cell?.querySelector('.sc-cell-journal-badge')).toBeNull();
+                expect(cell?.getAttribute('data-tooltip')).not.toContain('Journal :');
+
+                SeatingChartManager._setStatusDot('journal', true);
+
+                expect(renderSpy).not.toHaveBeenCalled();
+                const journalBadge = cell?.querySelector('.sc-cell-journal-badge');
+                expect(journalBadge?.textContent).toBe('2');
+                expect(cell?.getAttribute('data-tooltip')).toContain('Journal : Participe (×2)');
+
+                SeatingChartManager._setStatusDot('journal', false);
+                expect(cell?.querySelector('.sc-cell-journal-badge')).toBeNull();
+                expect(cell?.getAttribute('data-tooltip')).not.toContain('Journal :');
             } finally {
                 appState.seatingStatusDots = prevDots;
                 renderSpy.mockRestore();

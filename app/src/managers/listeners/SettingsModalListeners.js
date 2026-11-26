@@ -782,7 +782,7 @@ export const SettingsModalListeners = {
                 ${statusBadges ? `<div class="preview-statuses">${statusBadges}</div>` : ''}
                 ${instructions ? `
                     <div class="preview-context-callout">
-                        <span class="preview-context-tag"><iconify-icon icon="solar:notes-linear"></iconify-icon> Contexte</span>
+                        <span class="preview-context-tag"><iconify-icon icon="solar:notes-linear"></iconify-icon> Indications</span>
                         <span class="preview-context-text">${instructions}</span>
                     </div>
                 ` : ''}

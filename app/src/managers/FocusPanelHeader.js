@@ -730,6 +730,7 @@ export const FocusPanelHeader = {
                 <span class="focus-name-prenom">
                     <span class="focus-prenom-text">${Utils.escapeHtml(prenom)}</span>
                     ${originBadgeHtml}
+                    <span id="focusInlineStatusDots" class="focus-inline-status-dots"></span>
                 </span>
             </span>
         `;
@@ -774,49 +775,68 @@ export const FocusPanelHeader = {
     },
 
     /**
-     * Renders status badges logically split between panels
-     * @param {Array} statuses 
+     * Renders all active status badges unified in the student identity header,
+     * sorted by category priority (Départ -> Nouveau -> Accompagnement -> Rôle).
+     * @param {Array} statuses
      */
     renderStatusBadges(statuses) {
         const headerContainer = document.getElementById('focusStatusBadges');
-        const contextContainer = document.getElementById('focusContextStatusBadges');
+        if (!headerContainer) return;
 
-        let headerHtml = '';
-        let contextHtml = '';
-
-        Utils.getActiveStatuses(statuses || [], appState.currentPeriod).forEach(s => {
-            const badgeInfo = Utils.getStatusBadgeInfo(s);
-            const tooltip = getStatusDescription(s);
-            const html = `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
-                          data-tooltip="${Utils.escapeHtml(tooltip)}" 
-                          role="button" 
-                          tabindex="0">${Utils.escapeHtml(badgeInfo.label)}</span>`;
-
-            // "Nouveau" and "Départ" are general/administrative, they stay in main header
-            // Everything else moves to the Contexte card where it belongs logically
-            if (resolveStudentStatus(s)?.category === 'movement') {
-                headerHtml += html;
-            } else {
-                contextHtml += html;
+        const getStatusPriority = (raw) => {
+            const meta = resolveStudentStatus(raw);
+            if (meta?.category === 'movement') {
+                return meta.movementKind === 'depart' ? 0 : 1;
             }
+            if (meta?.category === 'role') return 3;
+            return 2;
+        };
+
+        const activeStatuses = [...Utils.getActiveStatuses(statuses || [], appState.currentPeriod)]
+            .sort((a, b) => getStatusPriority(a) - getStatusPriority(b));
+
+        const badgeItems = activeStatuses.map(s => {
+            const badgeInfo = Utils.getStatusBadgeInfo(s);
+            const description = getStatusDescription(s);
+            const tooltip = description && description.toLowerCase() !== badgeInfo.label.toLowerCase()
+                ? `${badgeInfo.label} — ${description}`
+                : badgeInfo.label;
+            const modifierClass = badgeInfo.className
+                .split(/\s+/)
+                .filter(cls => cls && cls !== 'tag-badge')
+                .join(' ');
+            return { badgeInfo, tooltip, modifierClass };
         });
 
-        if (headerContainer) headerContainer.innerHTML = headerHtml;
-        if (contextContainer) contextContainer.innerHTML = contextHtml;
+        TooltipsUI.cleanupTooltipsIn?.(headerContainer);
+        headerContainer.innerHTML = badgeItems.map(({ badgeInfo, tooltip }) => (
+            `<span class="${badgeInfo.className} tooltip status-badge-clickable" 
+                          data-tooltip="${Utils.escapeHtml(tooltip)}" 
+                          aria-label="${Utils.escapeHtml(tooltip)}" 
+                          role="button" 
+                          tabindex="0">${Utils.escapeHtml(badgeInfo.label)}</span>`
+        )).join('');
+        TooltipsUI.initTooltips?.(headerContainer);
 
-        // Add click listeners to all generated badges
-        [headerContainer, contextContainer].forEach(container => {
-            if (container) {
-                container.querySelectorAll('.status-badge-clickable').forEach(badge => {
-                    badge.addEventListener('click', () => this.toggleEditMode(true));
-                    badge.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            this.toggleEditMode(true);
-                        }
-                    });
-                });
-            }
+        const inlineDotsContainer = document.getElementById('focusInlineStatusDots');
+        if (inlineDotsContainer) {
+            TooltipsUI.cleanupTooltipsIn?.(inlineDotsContainer);
+            inlineDotsContainer.innerHTML = badgeItems.map(({ modifierClass, tooltip }) => (
+                `<span class="focus-status-dot${modifierClass ? ` ${modifierClass}` : ''} tooltip" 
+                              data-tooltip="${Utils.escapeHtml(tooltip)}" 
+                              aria-hidden="true"></span>`
+            )).join('');
+            TooltipsUI.initTooltips?.(inlineDotsContainer);
+        }
+
+        headerContainer.querySelectorAll('.status-badge-clickable').forEach(badge => {
+            badge.addEventListener('click', () => this.toggleEditMode(true));
+            badge.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.toggleEditMode(true);
+                }
+            });
         });
 
         this.syncHeaderOffset();

@@ -279,7 +279,7 @@ describe('AppreciationService', () => {
     });
 
     describe('getAllPrompts()', () => {
-        it('should return object with appreciation, sw, ns prompts', () => {
+        it('should return object with appreciation and analysis prompts', () => {
             const studentData = {
                 nom: 'Dupont',
                 prenom: 'Marie',
@@ -291,8 +291,9 @@ describe('AppreciationService', () => {
             const result = AppreciationService.getAllPrompts(studentData);
 
             expect(result).toHaveProperty('appreciation');
-            expect(result).toHaveProperty('sw');
-            expect(result).toHaveProperty('ns');
+            expect(result).toHaveProperty('analysis');
+            expect(result).toHaveProperty('appreciationSystem');
+            expect(result).toHaveProperty('appreciationUser');
         });
 
         it('should include student identifier in appreciation prompt', () => {
@@ -333,11 +334,11 @@ describe('AppreciationService', () => {
                 statuses: []
             };
 
-            const overrideConfig = { tone: 1, voice: 'je', length: 80 };
+            const overrideConfig = { voice: 'je', length: 80 };
             const result = AppreciationService.getAllPrompts(studentData, overrideConfig);
 
             expect(result.appreciation).toContain('80 mots');
-            expect(result.appreciation).toContain('très encourageant');
+            expect(result.appreciation).toContain('première personne du singulier');
         });
 
         it('should include context from periods if provided', () => {

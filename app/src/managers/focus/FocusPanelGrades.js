@@ -21,7 +21,7 @@ export const FocusPanelGrades = {
         textarea.rows = 1;
         textarea.style.height = 'auto';
 
-        const maxHeight = 200;
+        const maxHeight = 140;
         const targetHeight = textarea.scrollHeight;
 
         if (targetHeight > maxHeight) {
@@ -78,9 +78,10 @@ export const FocusPanelGrades = {
      * @param {number|string|null} gradeVal
      * @param {number|undefined} evalCount
      * @param {boolean} [isCurrent=false]
+     * @param {string} [appreciation='']
      * @returns {string}
      */
-    getTooltipText(period, gradeVal, evalCount, isCurrent = false) {
+    getTooltipText(period, gradeVal, evalCount, isCurrent = false, appreciation = '') {
         const periodLabel = Utils.getPeriodLabel(period, true);
         const hasGrade = (gradeVal !== undefined && gradeVal !== null && gradeVal !== '');
         const displayGrade = hasGrade
@@ -90,6 +91,19 @@ export const FocusPanelGrades = {
         let tooltip = `${periodLabel}${suffix} : ${hasGrade ? displayGrade : (isCurrent ? 'En attente de note' : 'Non communiqué')}`;
         if (typeof evalCount === 'number') {
             tooltip += ` (Moyenne sur ${evalCount} évaluation${evalCount > 1 ? 's' : ''})`;
+        }
+        if (!isCurrent && typeof appreciation === 'string' && appreciation.trim()) {
+            const rawText = typeof Utils.stripMarkdown === 'function'
+                ? Utils.stripMarkdown(appreciation.trim())
+                : appreciation.trim();
+            const normalized = rawText.replace(/\s+/g, ' ').trim();
+            if (normalized) {
+                const maxLen = 180;
+                const preview = normalized.length > maxLen
+                    ? `${normalized.slice(0, maxLen).trimEnd()}…`
+                    : normalized;
+                tooltip += `<br><span class="grade-tooltip-appreciation">« ${Utils.escapeHtml(preview)} »</span>`;
+            }
         }
         return tooltip;
     },
@@ -104,7 +118,7 @@ export const FocusPanelGrades = {
         if (gradeLabel) gradeLabel.textContent = Utils.getPeriodLabel(currentPeriod, false);
 
         const appreciationTitle = document.getElementById('focusAppreciationTitle');
-        if (appreciationTitle) appreciationTitle.textContent = `Appréciation ${Utils.getPeriodLabel(currentPeriod, false)}`;
+        if (appreciationTitle) appreciationTitle.textContent = `Bulletin ${Utils.getPeriodLabel(currentPeriod, false)}`;
 
         const gradeInput = document.getElementById('focusCurrentGradeInput');
         if (gradeInput) {
@@ -184,8 +198,9 @@ export const FocusPanelGrades = {
                     ? Utils.getGradeClass(parseFloat(grade))
                     : '';
 
-                const tooltipText = this.getTooltipText(period, grade, evalCount, false);
+                const tooltipText = this.getTooltipText(period, grade, evalCount, false, periodData.appreciation);
                 chip.classList.add('tooltip');
+                chip.classList.toggle('has-appreciation', Boolean(typeof periodData.appreciation === 'string' && periodData.appreciation.trim()));
                 chip.setAttribute('data-tooltip', tooltipText);
 
                 const shortPeriod = Utils.getPeriodLabel(period, false);

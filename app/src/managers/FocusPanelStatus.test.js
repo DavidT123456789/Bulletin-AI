@@ -52,6 +52,7 @@ vi.mock('../services/PromptService.js', () => ({
 
 vi.mock('./SpeechSynthesisManager.js', () => ({
     SpeechSynthesisManager: {
+        isSupported: vi.fn(() => true),
         isPlaying: vi.fn(() => false),
         cancel: vi.fn()
     }

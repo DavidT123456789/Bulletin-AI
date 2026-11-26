@@ -18,7 +18,7 @@ import { bus, EVENTS } from '../core/EventBus.js';
 const COPY_BUTTON_MODES = {
     prompt: {
         label: 'Prompt',
-        tooltip: 'Copier le prompt<br><span class="kbd-hint">Clic droit : aperçu</span>',
+        tooltip: 'Copier le prompt',
         ariaLabel: 'Copier le prompt'
     },
     appreciation: {
@@ -141,21 +141,22 @@ export const FocusPanelStatus = {
         const currentIncludedInAI = JournalManager.isIncludedInAI?.() !== false;
         const currentThreshold = JournalManager.getThreshold();
 
-        // Helper to get tags that meet threshold
+        // Helper to get tags that meet threshold (excluding private entries)
         const getActiveTags = (entries, thresh, included = true) => {
             if (!included) return [];
             const counts = {};
             entries.forEach(e => {
+                if (e?.isPrivate) return;
                 if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
             });
             return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
         };
 
-        // Helper to get relevant written notes (all written notes are transmitted when AI inclusion is active)
+        // Helper to get relevant written notes (non-private written notes transmitted when AI inclusion is active)
         const getRelevantNotes = (entries, included = true) => {
             if (!included) return '';
             return entries
-                .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
+                .filter(e => !e?.isPrivate && typeof e.note === 'string' && e.note.trim().length > 0)
                 .map(e => e.note.trim())
                 .sort()
                 .join('||');
@@ -562,9 +563,10 @@ export const FocusPanelStatus = {
 
             const speakBtn = document.getElementById('focusAppreciationSpeakBtn');
             if (speakBtn) {
-                speakBtn.disabled = shouldDisable;
-                speakBtn.classList.toggle('disabled', shouldDisable);
-                speakBtn.style.display = isEmpty ? 'none' : 'inline-flex';
+                const canSpeak = SpeechSynthesisManager.isSupported?.() ?? true;
+                speakBtn.disabled = shouldDisable || !canSpeak;
+                speakBtn.classList.toggle('disabled', shouldDisable || !canSpeak);
+                speakBtn.style.display = (isEmpty || !canSpeak) ? 'none' : 'inline-flex';
             }
 
             const micBtn = document.getElementById('focusAppreciationMicBtn');

@@ -873,7 +873,7 @@ export const SeatingAnimations = {
             : `sc-cell occupied sc-flight-token${isStacked ? ' sc-cell-stacked' : ''}`;
         clone.removeAttribute('id');
         clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-cell-status-badge').forEach(el => el.remove());
+        clone.querySelectorAll('.sc-cell-remove, .sc-cell-pin, .sc-stacked-member-remove, .sc-station-badge, .sc-cell-status-badge, .sc-cell-journal-badge').forEach(el => el.remove());
 
         const naturalW = sourceEl.offsetWidth || startRect.width || (isMemberAvatar ? 36 : 88);
         const naturalH = sourceEl.offsetHeight || startRect.height || (isMemberAvatar ? 36 : 96);

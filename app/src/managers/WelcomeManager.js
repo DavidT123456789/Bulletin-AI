@@ -628,9 +628,14 @@ export const WelcomeManager = {
         const results = [];
         for (const studentData of students) {
             const photoFile = studentData.photoFile;
+            const journal = studentData.journal;
             delete studentData.photoFile;
+            delete studentData.journal;
 
             const result = StudentDataManager.createPendingResult(studentData);
+            if (Array.isArray(journal) && journal.length > 0) {
+                result.journal = journal;
+            }
             results.push({ result, photoFile });
             appState.generatedResults.push(result);
         }

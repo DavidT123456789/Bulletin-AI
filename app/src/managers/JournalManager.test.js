@@ -306,5 +306,90 @@ describe('JournalManager', () => {
             expect(synth2).toContain('Notes: "avec son voisin"');
             expect(synth2).not.toContain('[Bavardage]');
         });
+
+        it('exclut les entrées privées (isPrivate) de la synthèse IA et des compteurs tout en les affichant en timeline', () => {
+            const priv = JournalManager.addEntry('student-1', {
+                tags: ['bavardage'],
+                note: 'Incident confidentiel famille',
+                isPrivate: true
+            });
+            JournalManager.addEntry('student-1', {
+                tags: ['bavardage'],
+                note: ''
+            });
+            const pub = JournalManager.addEntry('student-1', {
+                tags: ['participation+'],
+                note: 'Bonne intervention orale',
+                isPrivate: false
+            });
+
+            expect(priv.isPrivate).toBe(true);
+            expect(pub.isPrivate).toBeUndefined();
+
+            // 1 seule occurrence non-privée de bavardage -> ne franchit pas le seuil 2
+            expect(JournalManager.getSignificantTagIds('student-1', 'T1')).toEqual([]);
+            const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
+            expect(synth).not.toContain('Incident confidentiel famille');
+            expect(synth).toContain('Bonne intervention orale');
+
+            // Une entrée privée n'est jamais marquée "isolée" pour l'IA
+            const counts = JournalManager.countTags('student-1', 'T1', { excludePrivate: true });
+            expect(JournalManager.isEntryIsolated(priv, counts, 2)).toBe(false);
+
+            // Bascule de privé à public via updateEntry -> devient visible pour l'IA
+            JournalManager.updateEntry('student-1', priv.id, { isPrivate: false });
+            expect(JournalManager.getSignificantTagIds('student-1', 'T1')).toEqual(['bavardage']);
+            expect(JournalManager.synthesizeForPrompt('student-1', 'T1')).toContain('Incident confidentiel famille');
+
+            // Re-marquer privé -> ré-apparaît avec le badge Privé dans la timeline HTML
+            JournalManager.updateEntry('student-1', priv.id, { isPrivate: true });
+            const html = JournalManager.renderTimeline('student-1', 'T1');
+            expect(html).toContain('journal-private-badge');
+            expect(html).toContain('is-private');
+        });
+
+        it('transmet plus de 3 notes rédigées non-privées sans troncature silencieuse à 3', () => {
+            for (let i = 1; i <= 5; i++) {
+                JournalManager.addEntry('student-1', {
+                    tags: [],
+                    note: `Observation numéro ${i}`
+                });
+            }
+            const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
+            for (let i = 1; i <= 5; i++) {
+                expect(synth).toContain(`Observation numéro ${i}`);
+            }
+        });
+
+        it('calcule getAISummary en mode Hors IA, sous le seuil et combiné tags + notes', () => {
+            // Hors IA
+            appState.journalIncludeInAI = false;
+            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: 'Bavarde' });
+            const offSummary = JournalManager.getAISummary('student-1', 'T1');
+            expect(offSummary.includedInAI).toBe(false);
+            expect(offSummary.displayText).toBe('');
+
+            // Actif, tag seul sous le seuil (threshold = 2), note privée exclue
+            appState.journalIncludeInAI = true;
+            appState.generatedResults[0].journal = [];
+            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: '' });
+            JournalManager.addEntry('student-1', { tags: [], note: 'Note perso', isPrivate: true });
+            const belowSummary = JournalManager.getAISummary('student-1', 'T1');
+            expect(belowSummary.includedInAI).toBe(true);
+            expect(belowSummary.tags).toEqual([]);
+            expect(belowSummary.notes).toEqual([]);
+            expect(belowSummary.privateCount).toBe(1);
+            expect(belowSummary.displayText).toBe('');
+
+            // Seuil atteint + note écrite -> résumé combiné exact
+            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: '' });
+            JournalManager.addEntry('student-1', { tags: ['participation+'], note: 'Aide ses camarades' });
+            const combined = JournalManager.getAISummary('student-1', 'T1');
+            expect(combined.tags.map(t => t.label)).toEqual(['Bavardage']);
+            expect(combined.notes).toHaveLength(1);
+            expect(combined.displayText).toContain('Bavardage');
+            expect(combined.displayText).not.toContain('(×2)');
+            expect(combined.displayText).toContain('Aide ses camarades');
+        });
     });
 });

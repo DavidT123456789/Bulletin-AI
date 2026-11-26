@@ -41,12 +41,12 @@ export const ImportUI = {
             { v: 'IGNORE', t: 'Ignorer' },
             { v: 'NOM_PRENOM', t: 'Nom & Prénom' },
             { v: 'STATUT', t: 'Statut' },
-            { v: 'INSTRUCTIONS', t: 'Contexte (global)' },
+            { v: 'INSTRUCTIONS', t: 'Indications (global)' },
             ...Utils.getPeriods().flatMap(p => [
                 { v: `MOY_${p}`, t: `Moy. ${p}` },
                 { v: `DEV_${p}`, t: `Nb éval. ${p}` },
                 { v: `APP_${p}`, t: `Appr. ${p}` },
-                { v: `CTX_${p}`, t: `Contexte ${p}` }
+                { v: `CTX_${p}`, t: `Indications ${p}` }
             ])
         ];
     },
@@ -77,13 +77,13 @@ export const ImportUI = {
             const headerKeywordMap = {
                 'NOM_PRENOM': ['nom', 'prénom', 'eleve', 'élève'],
                 'STATUT': ['statut'],
-                'INSTRUCTIONS': ['instructions', 'contexte', 'remarque'],
+                'INSTRUCTIONS': ['indication', 'instructions', 'contexte', 'remarque'],
             };
             const periodKeywordMap = {
                 'MOY_': ['moy', 'note', 'moyenne'],
                 'DEV_': ['dev', 'nb', 'eval', 'devoir', 'devoirs'],
                 'APP_': ['app', 'appréciation', 'commentaire'],
-                'CTX_': ['contexte', 'ctx', 'observation', 'remarque']
+                'CTX_': ['indication', 'contexte', 'ctx', 'observation', 'remarque']
             };
             const guesses = Array(selects.length).fill('IGNORE');
             const assigned = new Set();
@@ -327,7 +327,7 @@ export const ImportUI = {
                 return { label: 'Note', cssClass: 'type-grade' };
             }
             if (isLongText(data)) {
-                return { label: 'Contexte', cssClass: 'type-context' };
+                return { label: 'Indications', cssClass: 'type-context' };
             }
             return { label: 'Ignoré', cssClass: 'type-ignored' };
         });

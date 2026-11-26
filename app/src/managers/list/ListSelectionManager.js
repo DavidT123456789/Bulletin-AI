@@ -737,10 +737,10 @@ export const ListSelectionManager = {
             },
             {
                 id: 'context',
-                label: 'Notes de contexte',
+                label: 'Indications',
                 sublabel: withContext > 0
-                    ? `Efface le texte du champ « Contexte » (${withContext} élève${withContext > 1 ? 's' : ''}).`
-                    : 'Aucune note de contexte.',
+                    ? `Efface le texte du champ « Indications » (${withContext} élève${withContext > 1 ? 's' : ''}).`
+                    : 'Aucune indication à effacer.',
                 checked: false,
                 disabled: withContext === 0
             },
@@ -918,8 +918,8 @@ export const ListSelectionManager = {
             }
             if (counts.context > 0) {
                 const s = counts.context > 1 ? 's' : '';
-                parts.push(`${counts.context} contexte${s}`);
-                singleMessages.push(`${counts.context} contexte${s} effacé${s}.`);
+                parts.push(`${counts.context} indication${s}`);
+                singleMessages.push(`${counts.context} indication${s} effacée${s}.`);
             }
             if (counts.photo > 0) {
                 const s = counts.photo > 1 ? 's' : '';

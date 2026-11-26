@@ -27,6 +27,9 @@ export const FocusPanelJournal = {
     /** Currently editing entry ID (null if creating new) */
     _editingJournalEntryId: null,
 
+    /** Whether active draft/edit entry is marked as private (excluded from AI) */
+    _isDraftPrivate: false,
+
     /**
      * Callback functions set by parent manager
      * @private
@@ -202,21 +205,33 @@ export const FocusPanelJournal = {
             });
         }
 
-        // Note button in header (Ajouter une note)
+        // Note button in header & empty-header click (Ajouter une observation)
+        const openQuickAdd = () => {
+            const draftPreview = document.getElementById('journalDraftPreview');
+            if (draftPreview) {
+                draftPreview.classList.add('visible');
+                const journalContent = document.getElementById('focusJournalContent');
+                if (journalContent) {
+                    requestAnimationFrame(() => {
+                        journalContent.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                }
+            }
+            this.toggleQuickAdd(true, true);
+        };
+
         const noteBtn = document.getElementById('focusJournalNoteBtn');
         if (noteBtn) {
-            noteBtn.addEventListener('click', () => {
-                const draftPreview = document.getElementById('journalDraftPreview');
-                if (draftPreview) {
-                    draftPreview.classList.add('visible');
-                    const journalContent = document.getElementById('focusJournalContent');
-                    if (journalContent) {
-                        requestAnimationFrame(() => {
-                            journalContent.scrollTo({ top: 0, behavior: 'smooth' });
-                        });
-                    }
-                }
-                this.toggleQuickAdd(true, true);
+            noteBtn.addEventListener('click', openQuickAdd);
+        }
+
+        const journalHeader = document.getElementById('focusJournalHeader');
+        if (journalHeader) {
+            journalHeader.addEventListener('click', (e) => {
+                const section = document.getElementById('focusJournalSection');
+                if (!section?.classList.contains('is-empty') || section.classList.contains('editing')) return;
+                if (e.target.closest('#journalThresholdControl, #focusJournalNoteBtn')) return;
+                openQuickAdd();
             });
         }
 
@@ -318,8 +333,33 @@ export const FocusPanelJournal = {
             SpeechRecognitionManager.setupButton(micBtn, 'journal');
         }
 
+        // Private toggle button
+        const privateBtn = container.querySelector('#journalDraftPrivateBtn');
+        if (privateBtn) {
+            privateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._isDraftPrivate = !this._isDraftPrivate;
+                privateBtn.classList.toggle('is-active', this._isDraftPrivate);
+                privateBtn.setAttribute('aria-pressed', this._isDraftPrivate ? 'true' : 'false');
+            }, { signal });
+        }
+
         this._updatePillDirectStates();
         this._setupDraftPillButtons(container, signal);
+    },
+
+    /**
+     * Update inline empty-state hint text based on AI inclusion mode
+     * @param {string|null} [classId=null]
+     * @private
+     */
+    _updateEmptyHint(classId = null) {
+        const hintEl = document.getElementById('focusJournalEmptyHint');
+        if (!hintEl) return;
+        hintEl.textContent = JournalManager.isIncludedInAI(classId)
+            ? 'Aucune observation'
+            : 'Bloc-notes vide · Hors IA';
     },
 
     /**
@@ -331,21 +371,31 @@ export const FocusPanelJournal = {
         if (!result?.id) {
             // Hide journal section in creation mode
             const section = document.getElementById('focusJournalSection');
-            if (section) section.style.display = 'none';
+            if (section) {
+                section.classList.remove('is-empty');
+                section.style.display = 'none';
+            }
             return;
         }
 
         const section = document.getElementById('focusJournalSection');
         if (section) section.style.display = '';
 
+        const titleEl = document.getElementById('focusJournalTitle');
+        if (titleEl) {
+            const periodLabel = appState.currentPeriod ? Utils.getPeriodLabel(appState.currentPeriod, false) : '';
+            titleEl.textContent = periodLabel ? `Journal ${periodLabel}` : 'Journal';
+        }
+
         // Update threshold UI (button label + popover value)
-        this._updateThresholdUI();
+        this._updateThresholdUI(result);
 
         const contentEl = document.getElementById('focusJournalContent');
         if (!contentEl) return;
 
         // If editing an entry inline, render the inline editor in full
         if (this._editingJournalEntryId) {
+            section?.classList.remove('is-empty');
             TooltipsUI.cleanupTooltipsIn(contentEl);
             contentEl.innerHTML = JournalManager.renderTimeline(
                 result.id,
@@ -384,6 +434,8 @@ export const FocusPanelJournal = {
 
         const entries = JournalManager.getEntriesForPeriod(result.id, appState.currentPeriod);
         const isNewEmpty = entries.length === 0;
+        section?.classList.toggle('is-empty', isNewEmpty);
+        this._updateEmptyHint(result.classId);
         const existingEmpty = timelineContainer.querySelector('.journal-empty');
 
         if (isNewEmpty && existingEmpty) {
@@ -470,6 +522,7 @@ export const FocusPanelJournal = {
             const resetConfirm = () => {
                 btn.classList.remove('confirm-delete');
                 btn.closest('.journal-entry-actions')?.classList.remove('has-confirm-delete');
+                btn.setAttribute('aria-label', "Supprimer l'observation");
                 if (deleteTimeout) {
                     clearTimeout(deleteTimeout);
                     deleteTimeout = null;
@@ -491,11 +544,15 @@ export const FocusPanelJournal = {
                 // First click: ask confirmation
                 if (!btn.classList.contains('confirm-delete')) {
                     // Reset any other active buttons first
-                    contentEl.querySelectorAll('.confirm-delete').forEach(b => b.classList.remove('confirm-delete'));
+                    contentEl.querySelectorAll('.confirm-delete').forEach(b => {
+                        b.classList.remove('confirm-delete');
+                        b.setAttribute('aria-label', "Supprimer l'observation");
+                    });
                     contentEl.querySelectorAll('.has-confirm-delete').forEach(a => a.classList.remove('has-confirm-delete'));
 
                     btn.classList.add('confirm-delete');
                     btn.closest('.journal-entry-actions')?.classList.add('has-confirm-delete');
+                    btn.setAttribute('aria-label', "Confirmer la suppression de l'observation");
                     btn._tippy?.hide();
 
                     outsideClickListener = (ev) => {
@@ -546,22 +603,36 @@ export const FocusPanelJournal = {
     _updateCountBadge(result) {
         const countBadge = document.getElementById('focusJournalCount');
         if (countBadge) {
-            const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod);
+            const includeInAI = JournalManager.isIncludedInAI(result.classId);
+            const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod, { excludePrivate: includeInAI });
 
             if (aggregated.length > 0) {
-                const includeInAI = JournalManager.isIncludedInAI(result.classId);
                 const threshold = JournalManager.getThreshold(result.classId);
+                // Show up to 4 tags directly; when 5+, show top 3 + "+N" (never a "+1" replacing a single tag)
+                const maxVisible = aggregated.length <= 4 ? 4 : 3;
+                const visibleItems = aggregated.slice(0, maxVisible);
+                const overflowItems = aggregated.slice(maxVisible);
 
-                // Render detailed counts with icons using standard journal-tag class for consistency
-                const html = aggregated.map(item => {
+                // Render top 3 tag counts + neutral +N overflow pill to keep header compact
+                let html = visibleItems.map(item => {
                     const isBelow = includeInAI && item.count < threshold;
                     const belowClass = isBelow ? 'below-threshold' : '';
                     const escapedLabel = Utils.escapeHtml(item.label);
+                    const tooltipText = isBelow
+                        ? `${escapedLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`
+                        : `${escapedLabel} : ${item.count}`;
                     return `
-                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${escapedLabel} : ${item.count}">
+                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${tooltipText}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
+
+                if (overflowItems.length > 0) {
+                    const overflowTooltip = overflowItems
+                        .map(item => `${Utils.escapeHtml(item.label)} : ${item.count}`)
+                        .join(' • ');
+                    html += `<span class="tag-more-count tooltip" data-tooltip="${overflowTooltip}">+${overflowItems.length}</span>`;
+                }
 
                 TooltipsUI.cleanupTooltipsIn(countBadge);
                 countBadge.innerHTML = html;
@@ -609,23 +680,47 @@ export const FocusPanelJournal = {
     },
 
     /**
-     * Update threshold & AI inclusion UI (button label, icon, scope, segmented control + popover state)
+     * Update threshold & AI inclusion UI (plain-language AI footer line + popover state)
+     * @param {Object|null} [result=null]
      * @private
      */
-    _updateThresholdUI() {
-        const threshold = JournalManager.getThreshold();
-        const includeInAI = JournalManager.isIncludedInAI();
-        const currentClassId = appState.currentClassId;
-        const currentClass = currentClassId ? ClassManager.getClassById(currentClassId) : null;
+    _updateThresholdUI(result = null) {
+        const targetResult = result || (this._getCurrentStudentId()
+            ? appState.generatedResults?.find(r => r.id === this._getCurrentStudentId())
+            : null);
+        const targetClassId = targetResult?.classId || appState.currentClassId || null;
+        const threshold = JournalManager.getThreshold(targetClassId);
+        const includeInAI = JournalManager.isIncludedInAI(targetClassId);
+        const currentClass = targetClassId ? ClassManager.getClassById(targetClassId) : null;
+        const summary = targetResult
+            ? JournalManager.getAISummary(targetResult, appState.currentPeriod)
+            : null;
 
-        // Update button label & icon
+        const hasAISignal = Boolean(includeInAI && summary?.displayText);
+        let footerText = '';
+        if (!includeInAI) {
+            footerText = 'Journal personnel · Non transmis à l\'IA';
+        } else if (hasAISignal) {
+            footerText = `Transmis à l'IA : ${summary.displayText}`;
+        } else if (summary && summary.totalCount > 0 && summary.privateCount === summary.totalCount) {
+            const plural = summary.privateCount > 1 ? 's' : '';
+            footerText = `Transmis à l'IA : aucune (${summary.privateCount} note${plural} privée${plural})`;
+        } else {
+            footerText = `Transmis à l'IA : aucune (tags < ${threshold}×)`;
+        }
+
+        // Update footer label & icon
         const btnValue = document.getElementById('journalThresholdValue');
         if (btnValue) {
-            btnValue.textContent = includeInAI ? `IA · ≥${threshold}` : 'Hors IA';
+            if (hasAISignal) {
+                btnValue.innerHTML = `<span class="journal-ai-footer-prefix">Transmis à l'IA :</span> <span class="journal-ai-footer-value">${Utils.escapeHtml(summary.displayText)}</span>`;
+            } else {
+                btnValue.textContent = footerText;
+            }
         }
         const btnIcon = document.getElementById('journalThresholdIcon');
         if (btnIcon) {
-            btnIcon.setAttribute('icon', includeInAI ? 'solar:stars-minimalistic-linear' : 'solar:eye-closed-linear');
+            btnIcon.setAttribute('icon', includeInAI ? 'solar:stars-line-duotone' : 'solar:lock-keyhole-minimalistic-linear');
         }
 
         // Update scope subtitle in popover
@@ -639,6 +734,7 @@ export const FocusPanelJournal = {
         if (includeAIToggle) {
             includeAIToggle.checked = includeInAI;
         }
+        this._updateEmptyHint(targetClassId);
         const stepperBlock = document.getElementById('journalThresholdStepperBlock');
         if (stepperBlock) {
             stepperBlock.classList.toggle('is-disabled', !includeInAI);
@@ -649,6 +745,10 @@ export const FocusPanelJournal = {
         }
 
         // Update segmented control (1, 2, 3) & glider index
+        const section = document.getElementById('focusJournalSection');
+        if (section) {
+            section.classList.toggle('is-ai-excluded', !includeInAI);
+        }
         const thresholdControl = document.getElementById('journalThresholdControl');
         const segmented = document.getElementById('journalThresholdSegmented');
         if (thresholdControl) {
@@ -670,24 +770,27 @@ export const FocusPanelJournal = {
         const hintEl = document.getElementById('thresholdHintText');
         if (hintEl) {
             if (threshold <= 1) {
-                hintEl.textContent = 'Chaque tag et chaque note écrite est transmis à l\'IA.';
+                hintEl.textContent = 'Chaque tag et chaque note écrite non privée sont transmis.';
             } else if (threshold === 2) {
-                hintEl.textContent = 'Tags répétés (≥2) et toutes les notes écrites transmis.';
+                hintEl.textContent = 'Tags répétés (≥2) et notes écrites non privées transmis.';
             } else if (threshold === 3) {
-                hintEl.textContent = 'Uniquement les tendances fréquentes (≥3) et notes écrites.';
+                hintEl.textContent = 'Tendances fréquentes (≥3) et notes écrites non privées transmis.';
             } else {
-                hintEl.textContent = `Tags répétés (≥${threshold}) et toutes les notes écrites transmis.`;
+                hintEl.textContent = `Tags répétés (≥${threshold}) et notes écrites non privées transmis.`;
             }
         }
 
-        // Update tooltip on button
+        // Update tooltip on button (only repeat full sentence if truncated in footer bar)
         const btn = document.getElementById('journalThresholdBtn');
         if (btn) {
             btn.classList.toggle('is-ai-excluded', !includeInAI);
+            btn.classList.toggle('has-ai-signal', hasAISignal);
             const contextLabel = currentClass ? `(Classe : ${currentClass.name})` : '(Global)';
+            const isTruncated = Boolean(btnValue && btnValue.scrollWidth > btnValue.clientWidth);
+            const linePrefix = isTruncated ? `${Utils.escapeHtml(footerText)}<br>` : '';
             const tooltip = includeInAI
-                ? `Journal transmis à l'IA · Seuil ≥${threshold} ${contextLabel}<br>Notes écrites toujours incluses<br><span class="kbd-hint">Cliquer pour régler</span>`
-                : `Bloc-notes personnel (Hors IA) ${contextLabel}<br><span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
+                ? `${linePrefix}Seuil tags ≥${threshold} ${Utils.escapeHtml(contextLabel)} · <span class="kbd-hint">Cliquer pour régler</span>`
+                : `Réglage ${Utils.escapeHtml(contextLabel)} · <span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
             TooltipsUI.updateTooltip(btn, tooltip);
         }
     },
@@ -718,6 +821,7 @@ export const FocusPanelJournal = {
             const finishClose = () => {
                 this._editingJournalEntryId = null;
                 this._selectedJournalTags = [];
+                this._isDraftPrivate = false;
                 section?.classList.remove('editing');
                 const draft = document.getElementById('journalDraftPreview');
                 if (draft) {
@@ -728,6 +832,11 @@ export const FocusPanelJournal = {
                     if (charCount) {
                         charCount.textContent = '0';
                         charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+                    }
+                    const privateBtn = draft.querySelector('#journalDraftPrivateBtn');
+                    if (privateBtn) {
+                        privateBtn.classList.remove('is-active');
+                        privateBtn.setAttribute('aria-pressed', 'false');
                     }
                     const saveBtn = draft.querySelector('#journalDraftSaveBtn');
                     if (saveBtn) saveBtn.disabled = true;
@@ -786,6 +895,7 @@ export const FocusPanelJournal = {
             if (reset) {
                 // Reset state
                 this._selectedJournalTags = [];
+                this._isDraftPrivate = false;
                 // Reset edit mode
                 this._editingJournalEntryId = null;
 
@@ -798,6 +908,11 @@ export const FocusPanelJournal = {
                 if (charCount) {
                     charCount.textContent = '0';
                     charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+                }
+                const privateBtn = document.getElementById('journalDraftPrivateBtn');
+                if (privateBtn) {
+                    privateBtn.classList.remove('is-active');
+                    privateBtn.setAttribute('aria-pressed', 'false');
                 }
 
                 if (noteInput) noteInput.value = '';
@@ -865,9 +980,10 @@ export const FocusPanelJournal = {
         const entry = JournalManager.getEntry(studentId, entryId);
         if (!entry) return;
 
-        // 1. Set editing state and sync tags (exclude implicit 'remarque' auto-tag)
+        // 1. Set editing state and sync tags & privacy (exclude implicit 'remarque' auto-tag)
         this._editingJournalEntryId = entryId;
         this._selectedJournalTags = (Array.isArray(entry.tags) ? entry.tags : []).filter(t => t !== 'remarque');
+        this._isDraftPrivate = Boolean(entry.isPrivate);
 
         // 2. Re-render journal to show inline editor
         const result = appState.generatedResults.find(r => r.id === studentId);
@@ -935,13 +1051,15 @@ export const FocusPanelJournal = {
                 // Update existing
                 entry = JournalManager.updateEntry(studentId, wasEditingId, {
                     tags: [...this._selectedJournalTags],
-                    note: note
+                    note: note,
+                    isPrivate: this._isDraftPrivate
                 });
             } else {
                 // Create new
                 entry = JournalManager.addEntry(studentId, {
                     tags: [...this._selectedJournalTags],
-                    note: note
+                    note: note,
+                    isPrivate: this._isDraftPrivate
                 });
             }
 
@@ -952,6 +1070,7 @@ export const FocusPanelJournal = {
                 // Reset editing state
                 this._editingJournalEntryId = null;
                 this._selectedJournalTags = [];
+                this._isDraftPrivate = false;
                 const section = document.getElementById('focusJournalSection');
                 section?.classList.remove('editing');
 
@@ -964,6 +1083,11 @@ export const FocusPanelJournal = {
                     if (charCount) {
                         charCount.textContent = '0';
                         charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+                    }
+                    const privateBtn = draft.querySelector('#journalDraftPrivateBtn');
+                    if (privateBtn) {
+                        privateBtn.classList.remove('is-active');
+                        privateBtn.setAttribute('aria-pressed', 'false');
                     }
                     const saveBtn = draft.querySelector('#journalDraftSaveBtn');
                     if (saveBtn) saveBtn.disabled = true;

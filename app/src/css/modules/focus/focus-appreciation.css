@@ -3,7 +3,7 @@
    ============================ */
 
 /* Main Appreciation Card - Harmonized Style */
-/* .focus-appreciation uses shared styles defined above with .grades-timeline and .focus-context-group for harmonization */
+/* .focus-appreciation uses shared styles defined in focus-grades.css (.focus-grades-strip, .journal-section) */
 
 /* Appreciation Header - Compact Style (matching Journal/Context) */
 .focus-appreciation-header {
@@ -39,13 +39,83 @@
     gap: 12px;
 }
 
+/* Integrated Teacher Indications Band (Indications) inside Bulletin card */
+.focus-consigne-band {
+    background: color-mix(in srgb, var(--item-idle-bg) 55%, transparent);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition-fast);
+}
+
+.focus-consigne-band:focus-within {
+    background: color-mix(in srgb, var(--item-idle-bg) 85%, transparent);
+}
+
+.focus-consigne-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 12px 9px 16px;
+}
+
+.focus-consigne-label {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--text-tertiary);
+    padding-top: 1px;
+    padding-right: 10px;
+    border-right: 1px solid var(--border-color);
+    white-space: nowrap;
+    cursor: help;
+    user-select: none;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.focus-consigne-band:focus-within .focus-consigne-label {
+    color: var(--text-secondary);
+    border-right-color: var(--border-color-strong);
+}
+
+.focus-consigne-row .focus-mic-btn {
+    margin-top: -1px;
+}
+
+/* Appreciation Text + Right-Aligned Audio Controls (symmetrical with Consigne mic) */
+.focus-appreciation-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding-right: 12px;
+}
+
+.focus-appreciation-body .focus-audio-group {
+    padding-top: 12px;
+    flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-consigne-row #focusMicBtn,
+    .focus-appreciation-body #focusAppreciationMicBtn {
+        opacity: 0.45;
+    }
+
+    .focus-consigne-band:is(:hover, :focus-within) #focusMicBtn,
+    .focus-appreciation-body:is(:hover, :focus-within) #focusAppreciationMicBtn,
+    #focusMicBtn.recording,
+    #focusAppreciationMicBtn.recording {
+        opacity: 1;
+    }
+}
+
 /* Main Appreciation Text Area - ContentEditable */
 .focus-appreciation-text {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     min-height: 52px;
     max-height: 500px;
     height: auto;
-    padding: 14px 16px;
+    padding: 14px 0 14px 16px;
     /* Harmonized with context-textarea */
     font-size: 14px;
     line-height: 1.5;
@@ -83,6 +153,7 @@
 .appreciation-status-badge {
     height: 26px;
     width: 26px;
+    flex-shrink: 0;
     border-radius: 50%;
     /* CRITICAL FIX: Use display:none instead of opacity:0 to remove from layout */
     display: none;
@@ -834,7 +905,7 @@
     overflow: hidden;
 }
 
-.focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn) {
+.focus-appreciation-actions :is(.focus-ai-data-btn, #focusCopyBtn, #focusGenerateBtn) {
     height: 40px;
     min-width: 0;
     border-radius: 0;
@@ -848,7 +919,17 @@
     filter: none !important;
 }
 
-/* Copy/Prompt segment — 1/3 left cell with vertical hairline divider */
+/* AI Data Inspector button — compact left cell with vertical hairline divider */
+.focus-appreciation-actions #focusAiDataBtn {
+    flex: 0 0 42px;
+    padding: 0;
+    border-right: 1px solid var(--border-color);
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast);
+}
+
+/* Copy/Prompt segment — left-middle cell with vertical hairline divider */
 .focus-appreciation-actions #focusCopyBtn {
     flex: 1;
     padding: 0 14px;
@@ -865,7 +946,7 @@
     text-overflow: ellipsis;
 }
 
-.focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn.btn-neutral:not(.is-loading)) iconify-icon {
+.focus-appreciation-actions :is(.focus-ai-data-btn, #focusCopyBtn, #focusGenerateBtn.btn-neutral:not(.is-loading)) iconify-icon {
     font-size: 15px;
     flex-shrink: 0;
     color: var(--text-tertiary);
@@ -874,17 +955,17 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn):hover:not(:disabled):not(.disabled):not(.is-loading):not(:has(.loading-spinner-svg)) {
+    .focus-appreciation-actions :is(.focus-ai-data-btn, #focusCopyBtn, #focusGenerateBtn):hover:not(:disabled):not(.disabled):not(.is-loading):not(:has(.loading-spinner-svg)) {
         background: var(--item-hover-bg);
         color: var(--text-primary);
     }
 
-    .focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn.btn-neutral):hover:not(:disabled):not(.disabled):not(.is-loading):not(:has(.loading-spinner-svg)) iconify-icon {
+    .focus-appreciation-actions :is(.focus-ai-data-btn, #focusCopyBtn, #focusGenerateBtn.btn-neutral):hover:not(:disabled):not(.disabled):not(.is-loading):not(:has(.loading-spinner-svg)) iconify-icon {
         color: var(--text-primary);
     }
 }
 
-.focus-appreciation-actions :is(#focusCopyBtn, #focusGenerateBtn):active:not(:disabled):not(.disabled):not(.is-loading) {
+.focus-appreciation-actions :is(.focus-ai-data-btn, #focusCopyBtn, #focusGenerateBtn):active:not(:disabled):not(.disabled):not(.is-loading) {
     background: var(--item-active-bg);
 }
 

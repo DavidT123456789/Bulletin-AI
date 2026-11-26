@@ -379,25 +379,32 @@ export const SeatingChartManager = {
                     </button>
                 </div>
                 <div class="sc-random-history-popover" id="scRandomHistoryPopover" role="dialog" aria-label="Élèves tirés au sort" aria-hidden="true"></div>
-                <div class="sc-status-dots-popover" id="scStatusDotsPopover" role="dialog" aria-label="Pastilles de statut" aria-hidden="true">
-                    <div class="sc-config-section-title">Pastilles de statut</div>
-                    <div class="seating-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Pastilles de statut sur le plan">
+                <div class="sc-status-dots-popover" id="scStatusDotsPopover" role="dialog" aria-label="Calques d'affichage" aria-hidden="true">
+                    <div class="sc-config-section-title">Calques d'affichage</div>
+                    <div class="seating-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Calques sur le plan">
                         <label class="seating-dot-option" data-tooltip="Nouveau (bleu) • Départ (ambre)">
                             <input type="checkbox" data-dot-category="movements" checked>
                             <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
-                            <span class="seating-dot-label">Mouvements <small>Nouveau, Départ</small></span>
+                            <span class="seating-dot-label">Parcours <small>Nouveau, Départ</small></span>
                             <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
                         </label>
                         <label class="seating-dot-option" data-tooltip="ULIS, AESH (violet) • PAP, PPRE, PAI (rose)">
                             <input type="checkbox" data-dot-category="devices">
                             <span class="seating-dot-preview seating-dot-preview--devices" aria-hidden="true"></span>
-                            <span class="seating-dot-label">Dispositifs <small>ULIS, PAP, PPRE</small></span>
+                            <span class="seating-dot-label">Accompagnement <small>ULIS, PAP, PPRE</small></span>
                             <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
                         </label>
                         <label class="seating-dot-option" data-tooltip="Délégué de classe (vert)">
                             <input type="checkbox" data-dot-category="delegates">
                             <span class="seating-dot-preview seating-dot-preview--delegates" aria-hidden="true"></span>
-                            <span class="seating-dot-label">Délégués</span>
+                            <span class="seating-dot-label">Rôle <small>Délégué</small></span>
+                            <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
+                        </label>
+                        <div class="seating-dots-divider" aria-hidden="true"></div>
+                        <label class="seating-dot-option" data-tooltip="Nombre d'observations du journal sur la période">
+                            <input type="checkbox" data-dot-category="journal">
+                            <span class="seating-dot-preview seating-dot-preview--journal" aria-hidden="true"></span>
+                            <span class="seating-dot-label">Journal <small>Observations période</small></span>
                             <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
                         </label>
                     </div>

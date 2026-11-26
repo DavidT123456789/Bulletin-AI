@@ -264,7 +264,7 @@ export const FocusPanelManager = {
         const appreciationTitle = document.getElementById('focusAppreciationTitle');
         if (appreciationTitle) {
             const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
-            appreciationTitle.textContent = `Appréciation ${periodLabel}`;
+            appreciationTitle.textContent = `Bulletin ${periodLabel}`;
         }
         this._renderAppreciationText(result);
 
@@ -640,7 +640,7 @@ export const FocusPanelManager = {
         const appreciationTitle = document.getElementById('focusAppreciationTitle');
         if (appreciationTitle) {
             const periodLabel = Utils.getPeriodLabel(currentPeriod, false);
-            appreciationTitle.textContent = `Appréciation ${periodLabel}`;
+            appreciationTitle.textContent = `Bulletin ${periodLabel}`;
         }
         this._renderAppreciationText(result);
         this._updateGenerateButton(result);
@@ -903,6 +903,6 @@ export const FocusPanelManager = {
 
     // --- Délégations vers FocusPanelRefinement ---
     _showRefinementPreview(refineType) { return FocusPanelRefinement.showPreview(refineType); },
-    _displayPromptModal(promptText, title) { return FocusPanelRefinement.displayPromptModal(promptText, title); },
+    _displayPromptModal(promptText, title, options) { return FocusPanelRefinement.displayPromptModal(promptText, title, options); },
     _refineAppreciation(refineType) { return FocusPanelRefinement.apply(refineType); }
 };

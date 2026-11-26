@@ -1021,6 +1021,11 @@ export const SeatingEvents = {
                 this.refreshStudents();
             });
             bus.on(EVENTS.PERIOD_CHANGED, () => this.refreshStudents());
+            bus.on(EVENTS.JOURNAL_UPDATED, () => {
+                if (this._isActive && appState.seatingStatusDots?.journal) {
+                    this._refreshStatusDotsInPlace?.({ animate: false });
+                }
+            });
         }
     }
 };

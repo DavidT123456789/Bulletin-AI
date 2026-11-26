@@ -15,7 +15,6 @@
 
 
 /* Common Card Style - Elevated surface harmonized with header nav buttons */
-.focus-context-group,
 .focus-appreciation,
 .journal-section {
     background: var(--surface-color);
@@ -33,7 +32,6 @@
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .focus-context-group,
 [data-theme="dark"] .focus-appreciation,
 [data-theme="dark"] .journal-section {
     border-color: var(--border-color);
@@ -42,7 +40,6 @@
 
 
 /* Fix header corners matching card radius - Explicit radius to prevent clipping issues */
-.focus-context-group> :first-child,
 .focus-appreciation> :first-child,
 .journal-section> :first-child {
     border-top-left-radius: var(--radius-md);
@@ -50,39 +47,35 @@
 }
 
 /* Fix footer corners */
-.focus-context-group> :last-child,
 .focus-appreciation> :last-child,
 .journal-section> :last-child {
     border-bottom-left-radius: var(--radius-md);
     border-bottom-right-radius: var(--radius-md);
 }
 
-/* (Dark mode overrides removed - fully reliant on CSS variables) */
-
-
 /* ============================
-   4. CONTEXT CARD - Compact Header Style (matching Journal)
+   3. GRADES STRIP - Boxless Metadata Row
    ============================ */
-.focus-context-label {
-    font-size: 13.5px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--text-primary);
-    margin: 0;
+.focus-grades-strip {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px 12px;
+    padding: 2px 4px;
+    margin: -4px 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    flex-shrink: 0;
 }
 
-.inline-context-badges {
-    margin-left: 8px;
-}
-
-.focus-context-info-trigger {
-    display: inline-flex;
-    align-items: center;
-    cursor: help;
+.focus-grades-strip-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--text-tertiary);
+    user-select: none;
 }
 
 /* === Voice Dictation (Mic) & Audio Synthesis (Speaker) - iOS 2026 Style === */
@@ -225,18 +218,19 @@
 }
 
 .focus-context-textarea {
-    width: 100%;
-    min-height: 52px;
-    max-height: 200px;
+    flex: 1;
+    min-width: 0;
+    min-height: 22px;
+    max-height: 140px;
     height: auto;
-    padding: 14px 16px;
+    padding: 1px 0;
     margin: 0;
     background: transparent;
     border: none;
     outline: none;
-    border-radius: 0 0 var(--radius-md) var(--radius-md);
-    font-size: 14px;
-    line-height: 1.5;
+    border-radius: 0;
+    font-size: 13.5px;
+    line-height: 1.45;
     color: var(--text-primary);
     caret-color: var(--primary-color);
     resize: none;
@@ -246,30 +240,18 @@
     display: block;
 }
 
+.focus-context-textarea::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.78;
+}
+
 [data-theme="dark"] .focus-context-textarea {
     caret-color: var(--text-primary);
 }
 
-/* Track offset for Context Textarea (scrollbar style inherited from base.css) */
+/* Track offset for Indications Textarea (scrollbar style inherited from base.css) */
 .focus-context-textarea::-webkit-scrollbar-track {
-    margin-block: 8px 16px;
-}
-
-
-/* Context Header with Grade Input - Compact Style (matching Journal) */
-.focus-context-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 16px;
-    background: var(--item-idle-bg);
-    border-bottom: 1px solid var(--border-color);
-}
-
-[data-theme="dark"] .focus-context-header {
-    background: var(--item-idle-bg);
+    margin-block: 4px;
 }
 
 
@@ -381,6 +363,26 @@
 .previous-grade-chip .prev-grade-value:not([class*="grade-range-"]) {
     color: var(--text-tertiary);
     opacity: 0.7;
+}
+
+.previous-grade-chip.has-appreciation {
+    cursor: help;
+}
+
+.previous-grade-chip.has-appreciation .prev-grade-value {
+    text-decoration: underline dotted var(--border-color-strong);
+    text-underline-offset: 3px;
+}
+
+.grade-tooltip-appreciation {
+    display: block;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    font-style: italic;
+    opacity: 0.92;
+    line-height: 1.4;
+    white-space: normal;
 }
 
 .context-grade-input {

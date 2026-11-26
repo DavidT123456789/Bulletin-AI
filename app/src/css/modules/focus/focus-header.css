@@ -283,6 +283,67 @@
     display: none !important;
 }
 
+/* Inline status dots (visible only in scrolled capsule, anchored right after first name) */
+.focus-inline-status-dots {
+    display: none;
+    align-items: center;
+    gap: 4.5px;
+    padding-right: 2px;
+    flex-shrink: 0;
+    transform: translateY(0.5px);
+}
+
+.focus-inline-status-dots:empty {
+    display: none !important;
+}
+
+.focus-header.scrolled:not(.editing) .focus-inline-status-dots {
+    display: inline-flex;
+}
+
+.focus-status-dot {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+}
+
+.focus-status-dot::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+}
+
+.focus-status-dot.tag-badge--new {
+    background: var(--color-sky);
+}
+
+.focus-status-dot.tag-badge--depart {
+    background: var(--color-amber);
+}
+
+.focus-status-dot.tag-badge--ulis {
+    background: var(--color-violet);
+}
+
+.focus-status-dot.tag-badge--device {
+    background: var(--color-rose);
+}
+
+.focus-status-dot.tag-badge--delegate {
+    background: var(--color-emerald);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-status-dot:hover {
+        transform: scale(1.25);
+    }
+}
+
 /* Student name & details in read mode */
 .focus-header:not(.editing) .focus-header-content {
     align-self: center;
@@ -607,16 +668,8 @@
     height: 0 !important;
 }
 
-/* Badges de mouvement de l'entête : héritent de la pilule .tag-badge (cards.css) */
+/* Badges de statut de l'entête : héritent de la pilule .tag-badge (cards.css) */
 .focus-header-read .focus-status-badges .tag-badge {
-    white-space: nowrap;
-}
-
-/* Styling des badges contextuels (taille standard) */
-.inline-context-badges .tag-badge {
-    padding: 3px 8px;
-    font-size: 10px;
-    letter-spacing: 0.3px;
     white-space: nowrap;
 }
 

@@ -44,6 +44,7 @@ export const FocusPanelEvents = {
         const analysisNextBtn = document.getElementById('focusAnalysisNextBtn');
         const generateBtn = document.getElementById('focusGenerateBtn');
         const copyBtn = document.getElementById('focusCopyBtn');
+        const aiDataBtn = document.getElementById('focusAiDataBtn');
 
         // Progressive scroll-driven Dynamic Island morphing (desktop) + hysteresis capsule (mobile 2-tier)
         const focusContent = panelEl?.querySelector('.focus-main-page .focus-content');
@@ -255,6 +256,14 @@ export const FocusPanelEvents = {
                 }
                 panel._showPromptPreview();
                 generateBtn.blur();
+            });
+        }
+
+        if (aiDataBtn) {
+            aiDataBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                panel._showPromptPreview();
+                blurOnPointerClick(aiDataBtn, e);
             });
         }
 

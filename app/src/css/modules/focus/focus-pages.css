@@ -469,12 +469,40 @@
     font-weight: 500;
 }
 
-/* Status Selection in Header (Chips) — wrap cleanly so all statuses remain visible */
+/* Status Selection in Header (Categorized groups) */
 .focus-status-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 0;
+}
+
+.focus-status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.focus-status-group-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.focus-status-group-note {
+    font-weight: 400;
+    color: var(--text-tertiary);
+    opacity: 0.85;
+}
+
+.focus-status-group-pills {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding-bottom: 0;
 }
 
 .focus-status-selection::-webkit-scrollbar {

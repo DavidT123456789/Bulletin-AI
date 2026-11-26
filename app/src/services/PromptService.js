@@ -646,13 +646,13 @@ export const PromptService = {
         }
 
         const periodEntries = studentData.journal.filter(
-            e => e && (!e.period || e.period === currentPeriod)
+            e => e && !e.isPrivate && (!e.period || e.period === currentPeriod)
         );
         if (periodEntries.length === 0) return '';
 
         const notes = periodEntries
             .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
-            .slice(-3)
+            .slice(-12)
             .map(e => `"${e.note.trim()}"`)
             .join(' | ');
 
@@ -939,7 +939,7 @@ export const PromptService = {
                     ? ''
                     : " Si la période courante n'a pas de moyenne, le signaler factuellement sans inventer de résultats.";
                 coherenceNotes.push(
-                    `L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne${evolutionClause}, tout en tenant compte du contexte fourni sur l'élève.${missingCurrentGradeNote}`
+                    `L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne${evolutionClause}, tout en respectant les indications de l'enseignant.${missingCurrentGradeNote}`
                 );
                 if (hasCurrentGrade) {
                     if (currentEvalCount === 1) {
@@ -953,7 +953,7 @@ export const PromptService = {
                 }
                 coherenceNotes.push("Appuie-toi uniquement sur les données fournies : n'invente ni attitude, ni participation, ni méthode de travail qui n'y figurent pas.");
             } else {
-                coherenceNotes.push("Aucune moyenne chiffrée n'est disponible : appuie-toi uniquement sur le contexte et les observations fournis, sans suggérer de niveau chiffré ni inventer d'attitude, de participation ou de méthode de travail absentes du dossier.");
+                coherenceNotes.push("Aucune moyenne chiffrée n'est disponible : appuie-toi uniquement sur les indications et les observations fournies, sans suggérer de niveau chiffré ni inventer d'attitude, de participation ou de méthode de travail absentes du dossier.");
             }
             systemParts.push(coherenceNotes.join(' '));
         }
@@ -1055,7 +1055,7 @@ export const PromptService = {
         const statusInstructions = this.getStatusInstructions(statuses, currentPeriod);
         const statusLine = statusInstructions ? `\nConsignes d'accompagnement : ${statusInstructions}` : '';
 
-        const specificInfoLine = periodContext ? `\nContexte : "${periodContext}"` : '';
+        const specificInfoLine = periodContext ? `\nIndications de l'enseignant : "${periodContext}"` : '';
 
         // === JOURNAL DE BORD: Synthesis for prompt ===
         // Injects tag counts and recent notes to enrich AI context (strip redundant leading "Observations:" prefix)
@@ -1118,7 +1118,7 @@ export const PromptService = {
             analysisHeaderParts.push(`Consignes d'accompagnement : ${statusInstructions}`);
         }
         if (periodContext) {
-            analysisHeaderParts.push(`Contexte : "${periodContext}"`);
+            analysisHeaderParts.push(`Indications de l'enseignant : "${periodContext}"`);
         }
         if (formattedJournalSynthesis) {
             analysisHeaderParts.push(`Observations : ${formattedJournalSynthesis}`);
@@ -1148,7 +1148,7 @@ Réponds UNIQUEMENT par un objet JSON valide (sans bloc markdown ni texte autour
 }
 
 RÈGLES STRICTES DE FIABILITÉ :
-1. Ancrage factuel : appuie-toi UNIQUEMENT sur les données fournies (notes, écarts élève/classe pré-calculés, évolutions, appréciation, contexte, observations). N'invente jamais un comportement, une compétence ou un travail absents du dossier.
+1. Ancrage factuel : appuie-toi UNIQUEMENT sur les données fournies (notes, écarts élève/classe pré-calculés, évolutions, appréciation, indications de l'enseignant, observations). N'invente jamais un comportement, une compétence ou un travail absents du dossier.
 2. Cohérence arithmétique : respecte strictement le signe de « Écart élève/classe » (positif = au-dessus, négatif = en dessous) et le sens des évolutions.
 3. Cardinalité adaptative (0 à 3 items maximum par liste) : aucun remplissage générique si le dossier est succinct. S'il n'y a aucune fragilité objective, renvoie "vigilances": [].
 4. Lien causal et valeur ajoutée : chaque item de "nextSteps" doit proposer un levier concret et réaliste (méthode de travail, entraînement ciblé ou défi d'approfondissement si "vigilances" est vide), sans jamais paraphraser un point fort ou un point de vigilance par une formule vague (« Maintenir les efforts », « Continuer ainsi »). Si le dossier est trop succinct, laisse "nextSteps": [].
@@ -1163,6 +1163,174 @@ RÈGLES STRICTES DE FIABILITÉ :
             appreciationUser,
             analysisSystem,
             analysisUser
+        };
+    },
+
+    /**
+     * Retourne un résumé structuré et lisible de toutes les données réellement transmises à l'IA
+     * pour l'élève courant (identique au contenu injecté dans `getAllPrompts`).
+     * @param {Object} studentData
+     * @param {Object|null} [overrideConfig=null]
+     * @param {boolean} [excludeClassStats=false]
+     * @param {Object|null} [runtimeOptions=null]
+     * @returns {Object|null}
+     */
+    getPromptSummary(studentData, overrideConfig = null, excludeClassStats = false, runtimeOptions = null) {
+        if (!studentData) return null;
+
+        const { nom, prenom, statuses, periods, currentPeriod } = studentData;
+        const allPeriods = Utils.getPeriods();
+        const currentPeriodIndex = allPeriods.indexOf(currentPeriod);
+        const relevantPeriods = currentPeriodIndex >= 0
+            ? allPeriods.slice(0, currentPeriodIndex + 1)
+            : [currentPeriod].filter(Boolean);
+
+        const isAnonymous = appState.anonymizeData ?? true;
+        const isDemoProfile = Boolean(studentData?.isDemo || runtimeOptions?.isDemo);
+        const effectiveExcludeClassStats = Boolean(excludeClassStats || isDemoProfile);
+        const classId = isDemoProfile ? null : (studentData.classId || appState.currentClassId || null);
+        const studentIdentity = { id: studentData.id ?? null, prenom, nom, classId };
+        const classmates = isDemoProfile ? [] : this._resolveClassmates(studentIdentity, classId);
+        const scrubOptions = {
+            anonymizePrenom: isAnonymous,
+            classId,
+            studentId: studentIdentity.id,
+            classmates,
+            scrubSensitive: true
+        };
+
+        const iaConfig = this._resolveIaConfig(overrideConfig);
+        const effectiveStyle = this._getEffectiveStyle(iaConfig);
+        const isNeutralVoice = effectiveStyle.voice === 'neutre';
+        const gender = Utils.detectGender(prenom);
+
+        let className = '';
+        let levelLabel = '';
+        if (!isDemoProfile && classId) {
+            const currentClass = appState.classes?.find(c => c.id === classId);
+            const resolvedClassName = currentClass?.name
+                || (typeof classId === 'string' && classId.startsWith('virtual_') ? Utils.getCurrentClassName(classId) : '');
+            if (resolvedClassName) {
+                let classLevel = currentClass?.level || detectLevelFromName(resolvedClassName);
+                if (classLevel === '3eme') classLevel = 'college';
+                const levelMeta = LEVELS[classLevel] || LEVELS.generique;
+                if (!GDPR_SENSITIVE_STATUS_PATTERN.test(resolvedClassName)) {
+                    className = resolvedClassName;
+                }
+                if (classLevel && classLevel !== 'generique') {
+                    levelLabel = levelMeta.label;
+                }
+            }
+        }
+
+        const gradeItems = [];
+        const previousAppreciations = [];
+        let classStatsIncluded = false;
+        let classAverageFormatted = null;
+
+        for (const p of relevantPeriods) {
+            const d = periods?.[p] || {};
+            const gradeVal = this._parseGrade(d.grade);
+            const hasGrade = !isNaN(gradeVal);
+            const gradeFormatted = hasGrade ? `${gradeVal.toFixed(1).replace('.', ',')}/20` : null;
+            const evalCount = typeof d.evaluationCount === 'number' ? d.evaluationCount : null;
+            const classSummary = effectiveExcludeClassStats ? null : this._getClassGradeSummary(classId, p);
+            if (classSummary) {
+                classStatsIncluded = true;
+                if (p === currentPeriod) {
+                    classAverageFormatted = `${classSummary.average.toFixed(1).replace('.', ',')}/20`;
+                }
+            }
+            if (hasGrade || p === currentPeriod) {
+                gradeItems.push({
+                    period: p,
+                    periodLabel: Utils.getPeriodLabel(p, false) || p,
+                    gradeFormatted,
+                    evalCount,
+                    isCurrent: p === currentPeriod
+                });
+            }
+            if (p !== currentPeriod && d.appreciation && d.appreciation.trim() && d.appreciation.trim() !== 'N/A') {
+                const scrubbed = this.scrubStudentIdentity(d.appreciation.trim(), studentIdentity, scrubOptions);
+                previousAppreciations.push({
+                    period: p,
+                    periodLabel: Utils.getPeriodLabel(p, false) || p,
+                    preview: scrubbed
+                });
+            }
+        }
+
+        const allEvolutions = StatsService.analyserEvolution(periods) || [];
+        const filteredEvolutions = allEvolutions.filter(e => {
+            const targetPeriod = e.periode.split('-')[1];
+            const targetIndex = allPeriods.indexOf(targetPeriod);
+            return targetIndex >= 0 && targetIndex <= currentPeriodIndex;
+        });
+        const evolutionText = this._formatEvolutions(filteredEvolutions);
+
+        const activeStatuses = Utils.getActiveStatuses(Array.isArray(statuses) ? statuses : [], currentPeriod);
+        const statusItems = activeStatuses.map(raw => {
+            const trimmed = String(raw || '').trim();
+            const meta = resolveStudentStatus(trimmed);
+            const isGdprSensitive = Boolean(meta?.isGdprSensitive || GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed));
+            const instruction = this.getStatusInstructions([trimmed], currentPeriod);
+            return {
+                raw: trimmed,
+                label: meta?.label || trimmed,
+                isGdprSensitive,
+                instruction
+            };
+        }).filter(item => item.raw);
+
+        const rawPeriodContext = periods?.[currentPeriod]?.context;
+        const contextText = rawPeriodContext
+            ? this.scrubStudentIdentity(rawPeriodContext.trim(), studentIdentity, scrubOptions)
+            : '';
+
+        const resolvedJournalClassId = studentData.classId
+            || (studentData.id ? appState.generatedResults?.find(s => s.id === studentData.id)?.classId : null)
+            || classId;
+        const journalSummary = JournalManager.getAISummary(
+            { ...studentData, classId: resolvedJournalClassId },
+            currentPeriod
+        );
+
+        const voiceLabels = {
+            je: '1re personne (je)',
+            nous: '1re personne du pluriel (nous)',
+            neutre: 'Impersonnelle (neutre)',
+            il: '3e personne'
+        };
+
+        return {
+            identity: {
+                label: isNeutralVoice
+                    ? 'Anonyme (style neutre)'
+                    : (isAnonymous
+                        ? `${this.PRENOM_PLACEHOLDER} (nom masqué)`
+                        : `${prenom || 'Élève'} (nom masqué)`),
+                isAnonymous: isAnonymous || isNeutralVoice,
+                gender: gender === 'féminin' || gender === 'masculin' ? gender : 'non déterminé',
+                className,
+                levelLabel
+            },
+            grades: {
+                items: gradeItems,
+                evolutionText,
+                classStatsIncluded,
+                classAverageFormatted
+            },
+            previousAppreciations,
+            statuses: statusItems,
+            journal: journalSummary,
+            context: contextText,
+            style: {
+                voiceLabel: voiceLabels[effectiveStyle.voice] || '3e personne',
+                length: effectiveStyle.length,
+                maxChars: effectiveStyle.maxChars,
+                discipline: effectiveStyle.discipline,
+                hasCustomInstructions: Boolean(effectiveStyle.styleInstructions)
+            }
         };
     },
 

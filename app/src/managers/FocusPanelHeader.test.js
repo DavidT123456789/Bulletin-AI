@@ -38,9 +38,7 @@ describe('FocusPanelHeader — Layout Offset Sync & Identity Rendering', () => {
                 </div>
                 <div class="focus-pages-container">
                     <div class="focus-main-page">
-                        <div class="focus-content">
-                            <div id="focusContextStatusBadges"></div>
-                        </div>
+                        <div class="focus-content"></div>
                     </div>
                 </div>
             </div>
@@ -131,13 +129,28 @@ describe('FocusPanelHeader — Layout Offset Sync & Identity Rendering', () => {
             expect(document.querySelector('.focus-origin-class-badge')).toBeNull();
         });
 
-        it('splits movement badges into #focusStatusBadges and academic badges into context, then syncs offset', () => {
+        it('renders all active status badges unified in #focusStatusBadges sorted by priority and syncs offset', () => {
+            FocusPanelHeader.updateHeaderName({
+                id: 's-3',
+                nom: 'Bernard',
+                prenom: 'Thomas',
+                studentData: { statuses: [] }
+            });
             const syncSpy = vi.spyOn(FocusPanelHeader, 'syncHeaderOffset');
 
-            FocusPanelHeader.renderStatusBadges(['Nouveau S2', 'PAP']);
+            FocusPanelHeader.renderStatusBadges(['Délégué', 'PAP', 'Nouveau S2', 'Départ S2']);
 
-            expect(document.getElementById('focusStatusBadges')?.textContent).toContain('Nouveau S2');
-            expect(document.getElementById('focusContextStatusBadges')?.textContent).toContain('PAP');
+            const headerBadges = document.getElementById('focusStatusBadges');
+            const labels = Array.from(headerBadges.querySelectorAll('.status-badge-clickable')).map(el => el.textContent);
+            expect(labels).toEqual(['Départ S2', 'Nouveau S2', 'PAP', 'Délégué']);
+
+            const inlineDots = Array.from(document.querySelectorAll('#focusInlineStatusDots .focus-status-dot'));
+            expect(inlineDots.map(el => el.className)).toEqual([
+                'focus-status-dot tag-badge--depart tooltip',
+                'focus-status-dot tag-badge--new tooltip',
+                'focus-status-dot tag-badge--device tooltip',
+                'focus-status-dot tag-badge--delegate tooltip'
+            ]);
             expect(syncSpy).toHaveBeenCalledTimes(1);
         });
     });

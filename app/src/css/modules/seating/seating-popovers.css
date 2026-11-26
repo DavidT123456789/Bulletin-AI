@@ -612,6 +612,16 @@
     background: var(--color-emerald, #10b981);
 }
 
+.seating-dots-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 6px;
+}
+
+.seating-dot-preview--journal {
+    background: var(--text-secondary);
+}
+
 .seating-dot-label {
     display: inline-flex;
     align-items: baseline;

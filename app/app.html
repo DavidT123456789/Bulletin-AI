@@ -740,16 +740,31 @@
                                 autocomplete="off" autocapitalize="characters" enterkeyhint="done">
                         </div>
                         <div class="focus-status-selection status-checkboxes">
-                            <label class="status-pill-check"><input type="checkbox" value="Nouveau">
-                                Nouveau</label>
-                            <label class="status-pill-check"><input type="checkbox" value="Départ">
-                                Départ</label>
-                            <label class="status-pill-check"><input type="checkbox" value="PPRE"> PPRE</label>
-                            <label class="status-pill-check"><input type="checkbox" value="PAP"> PAP</label>
-                            <label class="status-pill-check"><input type="checkbox" value="PAI"> PAI</label>
-                            <label class="status-pill-check"><input type="checkbox" value="AESH"> AESH</label>
-                            <label class="status-pill-check"><input type="checkbox" value="ULIS"> ULIS</label>
-                            <label class="status-pill-check"><input type="checkbox" value="Délégué"> Délégué</label>
+                            <div class="focus-status-group">
+                                <span class="focus-status-group-label">Parcours</span>
+                                <div class="focus-status-group-pills">
+                                    <label class="status-pill-check"><input type="checkbox" value="Nouveau">
+                                        Nouveau</label>
+                                    <label class="status-pill-check"><input type="checkbox" value="Départ">
+                                        Départ</label>
+                                </div>
+                            </div>
+                            <div class="focus-status-group">
+                                <span class="focus-status-group-label">Accompagnement <span class="focus-status-group-note">· neutralisé pour l'IA</span></span>
+                                <div class="focus-status-group-pills">
+                                    <label class="status-pill-check"><input type="checkbox" value="PPRE"> PPRE</label>
+                                    <label class="status-pill-check"><input type="checkbox" value="PAP"> PAP</label>
+                                    <label class="status-pill-check"><input type="checkbox" value="PAI"> PAI</label>
+                                    <label class="status-pill-check"><input type="checkbox" value="AESH"> AESH</label>
+                                    <label class="status-pill-check"><input type="checkbox" value="ULIS"> ULIS</label>
+                                </div>
+                            </div>
+                            <div class="focus-status-group">
+                                <span class="focus-status-group-label">Rôle</span>
+                                <div class="focus-status-group-pills">
+                                    <label class="status-pill-check"><input type="checkbox" value="Délégué"> Délégué</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -760,52 +775,28 @@
             <!-- PAGE 1: Main Content (édition) -->
             <div class="focus-page focus-main-page" id="focusMainPage">
                 <div class="focus-content">
-                    <!-- Section historique supprimée - le contexte précédent est visible en chips inline -->
-
-                    <!-- 2. HISTORY GRADES & CONTEXT -->
-                    <div class="focus-context-group">
-                        <div class="focus-context-header">
-                            <div class="focus-context-label">
-                                <span class="tooltip focus-context-info-trigger"
-                                    data-tooltip="Synthèse libre ou consigne ponctuelle directement transmise à l'IA pour ce bulletin.">
-                                    Contexte
-                                </span>
-                                <!-- Voice Dictation Button -->
-                                <button type="button" id="focusMicBtn" class="focus-mic-btn tooltip"
-                                    data-tooltip="Dictée vocale" aria-label="Dicter le contexte">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
-                                        stroke-linejoin="round" width="15" height="15">
-                                        <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
-                                        <rect width="6" height="13" x="9" y="2" rx="3"></rect>
-                                    </svg>
-                                </button>
-                                <div id="focusContextStatusBadges" class="focus-status-badges inline-context-badges">
-                                </div>
+                    <!-- 1. MOYENNES (bande dédiée) -->
+                    <div class="focus-grades-strip" id="focusGradesStrip">
+                        <span class="focus-grades-strip-label">Moyennes</span>
+                        <div class="grades-wrapper">
+                            <div id="focusPreviousGrades" class="previous-grades-inline">
+                                <!-- Populated by JS: T1: 12, T2: 14 -->
                             </div>
-
-                            <!-- NEW: Previous Grades next to Current Grade -->
-                            <div class="grades-wrapper">
-                                <div id="focusPreviousGrades" class="previous-grades-inline">
-                                    <!-- Populated by JS: T1: 12, T2: 14 -->
-                                </div>
-                                <div class="context-grade-group">
-                                    <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">S1</label>
-                                    <input type="text" id="focusCurrentGradeInput" class="context-grade-input custom-input grade-value"
-                                        placeholder="--" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                                </div>
+                            <div class="context-grade-group">
+                                <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">S1</label>
+                                <input type="text" id="focusCurrentGradeInput" class="context-grade-input custom-input grade-value"
+                                    placeholder="--" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                             </div>
                         </div>
-                        <textarea id="focusContextInput" class="focus-context-textarea"
-                            placeholder="Synthèse libre ou consigne pour l'IA (ex. Valoriser l'oral, insister sur la méthode, encourager l'autonomie…)"></textarea>
                     </div>
 
-                    <!-- 3. JOURNAL DE BORD - Observation notes -->
+                    <!-- 2. JOURNAL DE BORD - Observation notes -->
                     <div class="journal-section" id="focusJournalSection">
                         <div class="journal-header" id="focusJournalHeader">
                             <div class="journal-header-left">
                                 <div class="journal-title-group">
-                                    <span>Journal de bord</span>
+                                    <span id="focusJournalTitle">Journal</span>
+                                    <span id="focusJournalEmptyHint" class="journal-empty-inline-hint">Aucune observation</span>
                                 </div>
                                 <!-- Manual note button (Add observation icon) -->
                                 <button type="button" class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
@@ -815,81 +806,63 @@
                             </div>
                             <div class="journal-header-right">
                                 <span class="journal-count-badge is-hidden" id="focusJournalCount">0</span>
-
-                                <!-- Threshold & AI inclusion quick control -->
-                                <div class="journal-threshold-control" id="journalThresholdControl">
-                                    <button type="button" class="journal-threshold-btn journal-header-btn tooltip"
-                                        id="journalThresholdBtn" data-tooltip="Réglage de transmission du journal à l'IA">
-                                        <iconify-icon id="journalThresholdIcon" icon="solar:stars-minimalistic-linear"></iconify-icon>
-                                        <span id="journalThresholdValue">IA · ≥2</span>
-                                    </button>
-                                    <div class="journal-threshold-popover" id="journalThresholdPopover">
-                                        <div class="threshold-popover-toggle-row">
-                                            <div class="threshold-toggle-text">
-                                                <label class="threshold-toggle-label" for="journalIncludeAIToggle">Transmettre à l'IA</label>
-                                                <span class="threshold-scope-label" id="journalThresholdScope">Réglage de la classe</span>
-                                            </div>
-                                            <label class="toggle-switch small">
-                                                <input type="checkbox" id="journalIncludeAIToggle" checked>
-                                                <span class="slider"></span>
-                                            </label>
-                                        </div>
-                                        <div class="threshold-stepper-block" id="journalThresholdStepperBlock">
-                                            <div class="threshold-popover-header">Seuil des tags rapides</div>
-                                            <div class="ui-segmented-control css-driven journal-threshold-segmented"
-                                                id="journalThresholdSegmented" role="radiogroup"
-                                                aria-label="Seuil des tags rapides" data-active-index="1">
-                                                <div class="ui-glider" aria-hidden="true"></div>
-                                                <button type="button" class="ui-segment journal-threshold-option" role="radio"
-                                                    aria-checked="false" data-threshold="1">Dès 1</button>
-                                                <button type="button" class="ui-segment journal-threshold-option active" role="radio"
-                                                    aria-checked="true" data-threshold="2">Dès 2</button>
-                                                <button type="button" class="ui-segment journal-threshold-option" role="radio"
-                                                    aria-checked="false" data-threshold="3">Dès 3</button>
-                                            </div>
-                                            <div class="threshold-popover-hint">
-                                                <span id="thresholdHintText">Tags répétés (≥2) et toutes les notes écrites transmis.</span>
-                                            </div>
-                                        </div>
-                                        <div class="threshold-popover-hint threshold-ai-off-hint is-hidden" id="journalAiOffHint">
-                                            Mode bloc-notes personnel : rien n'est transmis à l'IA.
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <div class="journal-content" id="focusJournalContent">
                             <!-- Draft preview (when editing) + Timeline rendered by JS -->
                         </div>
+                        <div class="journal-ai-footer" id="focusJournalAiFooter">
+                            <!-- Threshold & AI inclusion transparency bar -->
+                            <div class="journal-threshold-control" id="journalThresholdControl">
+                                <button type="button" class="journal-threshold-btn journal-ai-footer-btn tooltip"
+                                    id="journalThresholdBtn" data-tooltip="Réglage de transmission du journal à l'IA">
+                                    <iconify-icon id="journalThresholdIcon" icon="solar:stars-line-duotone" aria-hidden="true"></iconify-icon>
+                                    <span class="journal-ai-footer-text" id="journalThresholdValue">Transmis à l'IA : aucune</span>
+                                    <iconify-icon class="journal-ai-footer-chevron" icon="solar:tuning-2-linear" aria-hidden="true"></iconify-icon>
+                                </button>
+                                <div class="journal-threshold-popover" id="journalThresholdPopover">
+                                    <div class="threshold-popover-toggle-row">
+                                        <div class="threshold-toggle-text">
+                                            <label class="threshold-toggle-label" for="journalIncludeAIToggle">Transmettre à l'IA</label>
+                                            <span class="threshold-scope-label" id="journalThresholdScope">Réglage de la classe</span>
+                                        </div>
+                                        <label class="toggle-switch small">
+                                            <input type="checkbox" id="journalIncludeAIToggle" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div class="threshold-stepper-block" id="journalThresholdStepperBlock">
+                                        <div class="threshold-popover-header">Seuil des tags rapides</div>
+                                        <div class="ui-segmented-control css-driven journal-threshold-segmented"
+                                            id="journalThresholdSegmented" role="radiogroup"
+                                            aria-label="Seuil des tags rapides" data-active-index="1">
+                                            <div class="ui-glider" aria-hidden="true"></div>
+                                            <button type="button" class="ui-segment journal-threshold-option" role="radio"
+                                                aria-checked="false" data-threshold="1">Dès 1</button>
+                                            <button type="button" class="ui-segment journal-threshold-option active" role="radio"
+                                                aria-checked="true" data-threshold="2">Dès 2</button>
+                                            <button type="button" class="ui-segment journal-threshold-option" role="radio"
+                                                aria-checked="false" data-threshold="3">Dès 3</button>
+                                        </div>
+                                        <div class="threshold-popover-hint">
+                                            <span id="thresholdHintText">Tags répétés (≥2) et notes écrites non privées transmis.</span>
+                                        </div>
+                                    </div>
+                                    <div class="threshold-popover-hint threshold-ai-off-hint is-hidden" id="journalAiOffHint">
+                                        Mode bloc-notes personnel : rien n'est transmis à l'IA.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Appréciation - Now editable with refinement options -->
+                    <!-- 3. BULLETIN - Indications + Appréciation éditable -->
                     <div class="focus-appreciation">
                         <div class="focus-appreciation-header">
                             <div class="focus-appreciation-label">
-                                <span id="focusAppreciationTitle">Appréciation</span>
-                                <!-- Voice Dictation & Audio Synthesis Group -->
-                                <div class="focus-audio-group">
-                                    <button type="button" id="focusAppreciationMicBtn" class="focus-mic-btn tooltip"
-                                        data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
-                                            stroke-linejoin="round" width="15" height="15">
-                                            <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
-                                            <rect width="6" height="13" x="9" y="2" rx="3"></rect>
-                                        </svg>
-                                    </button>
-                                    <!-- Speech Synthesis (Speak) Button for Appreciation -->
-                                    <button type="button" id="focusAppreciationSpeakBtn" class="focus-speaker-btn tooltip"
-                                        data-tooltip="Écouter l'appréciation" aria-label="Écouter l'appréciation" disabled>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
-                                            stroke-linejoin="round" width="15" height="15">
-                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                                        </svg>
-                                    </button>
-                                </div>
+                                <span id="focusAppreciationTitle">Bulletin</span>
+                                <!-- Status Badge: Shows freshness state (generated, modified, pending) -->
+                                <span id="focusAppreciationBadge" class="appreciation-status-badge tooltip"></span>
                             </div>
                             <div class="focus-appreciation-meta">
                                 <!-- History Navigation Group (Segmented Stepper Pill) -->
@@ -916,13 +889,53 @@
                                 <span id="focusAiIndicator" class="ai-indicator tooltip" style="display: none;">
                                     <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>
                                 </span>
-                                <!-- Status Badge: Shows freshness state (generated, modified, pending) -->
-                                <span id="focusAppreciationBadge" class="appreciation-status-badge tooltip"></span>
                             </div>
                         </div>
-                        <div id="focusAppreciationText" class="focus-appreciation-text empty" contenteditable="true"
-                            role="textbox" aria-multiline="true" aria-label="Appréciation de l'élève"
-                            data-placeholder="Saisissez, collez ou générez une appréciation."></div>
+                        <div class="focus-consigne-band" id="focusConsigneBand">
+                            <div class="focus-consigne-row">
+                                <label for="focusContextInput" class="focus-consigne-label tooltip"
+                                    data-tooltip="Constats sur l'élève ou points à souligner, transmis à l'IA pour ce bulletin.">
+                                    Indications
+                                </label>
+                                <textarea id="focusContextInput" class="focus-context-textarea" rows="1"
+                                    placeholder="Ex. : bavarde mais participe, insister sur la méthode…"></textarea>
+                                <button type="button" id="focusMicBtn" class="focus-mic-btn tooltip"
+                                    data-tooltip="Dictée vocale" aria-label="Dicter les indications">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                        stroke-linejoin="round" width="15" height="15">
+                                        <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
+                                        <rect width="6" height="13" x="9" y="2" rx="3"></rect>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="focus-appreciation-body">
+                            <div id="focusAppreciationText" class="focus-appreciation-text empty" contenteditable="true"
+                                role="textbox" aria-multiline="true" aria-label="Appréciation de l'élève"
+                                data-placeholder="Saisissez, collez ou générez une appréciation."></div>
+                            <!-- Voice Dictation & Audio Synthesis Group (aligned with Consigne mic) -->
+                            <div class="focus-audio-group">
+                                <button type="button" id="focusAppreciationSpeakBtn" class="focus-speaker-btn tooltip"
+                                    data-tooltip="Écouter l'appréciation" aria-label="Écouter l'appréciation" disabled>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                        stroke-linejoin="round" width="15" height="15">
+                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                    </svg>
+                                </button>
+                                <button type="button" id="focusAppreciationMicBtn" class="focus-mic-btn tooltip"
+                                    data-tooltip="Dictée vocale" aria-label="Dicter l'appréciation">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                        stroke-linejoin="round" width="15" height="15">
+                                        <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
+                                        <rect width="6" height="13" x="9" y="2" rx="3"></rect>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
 
                         <!-- Refinement style buttons -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
@@ -944,17 +957,22 @@
                             </button>
                         </div>
 
-                        <!-- Inline actions: Adaptive Copy/Prompt + Generate -->
+                        <!-- Inline actions: AI Data Inspector + Adaptive Copy/Prompt + Generate -->
                         <div class="focus-appreciation-actions">
+                            <button type="button" id="focusAiDataBtn" class="btn btn-neutral focus-ai-data-btn tooltip"
+                                data-tooltip="Voir les données transmises à l'IA"
+                                aria-label="Voir les données transmises à l'IA">
+                                <iconify-icon icon="solar:eye-linear" aria-hidden="true"></iconify-icon>
+                            </button>
                             <button type="button" id="focusCopyBtn" class="btn btn-neutral tooltip"
                                 data-copy-mode="prompt"
-                                data-tooltip="Copier le prompt<br><span class='kbd-hint'>Clic droit : aperçu</span>"
+                                data-tooltip="Copier le prompt"
                                 aria-label="Copier le prompt">
                                 <iconify-icon icon="solar:copy-linear"></iconify-icon>
                                 <span class="btn-copy-label">Prompt</span>
                             </button>
                             <button type="button" id="focusGenerateBtn" class="btn btn-ai tooltip"
-                                data-tooltip="Rédiger l'appréciation avec l'IA<br><span class='kbd-hint'>Clic droit : aperçu du prompt</span>">
+                                data-tooltip="Rédiger l'appréciation avec l'IA">
                                 <iconify-icon icon="solar:stars-bold-duotone"></iconify-icon> Générer <kbd class="kbd-hint">Ctrl ↵</kbd>
                             </button>
                         </div>

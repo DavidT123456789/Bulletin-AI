@@ -17,11 +17,10 @@ import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 
 const COPY_FEEDBACK_MS = 1500;
 const COPY_BUTTON_ICON = 'solar:copy-linear';
-const PROMPT_PREVIEW_HINT = '<br><span class="kbd-hint">Clic droit : aperçu du prompt</span>';
 const GENERATE_TOOLTIPS = {
-    idle: `Rédiger l'appréciation avec l'IA${PROMPT_PREVIEW_HINT}`,
-    dirty: `Données modifiées · Mettre à jour l'appréciation${PROMPT_PREVIEW_HINT}`,
-    done: `Proposer une nouvelle version${PROMPT_PREVIEW_HINT}`
+    idle: 'Rédiger l\'appréciation avec l\'IA',
+    dirty: 'Données modifiées · Mettre à jour l\'appréciation',
+    done: 'Proposer une nouvelle version'
 };
 
 export const FocusPanelGenerator = {
@@ -93,14 +92,14 @@ export const FocusPanelGenerator = {
     },
 
     /**
-     * Résout le prompt d'appréciation de l'élève courant (retourne null si contexte invalide)
+     * Résout les données et le prompt d'appréciation de l'élève courant
      * @param {Object} panel - Instance FocusPanelManager
      * @param {Object} [options]
      * @param {boolean} [options.notifyIfMissingStudent=false]
-     * @returns {string|null}
+     * @returns {{ studentData: Object, promptText: string }|null}
      * @private
      */
-    _resolveCurrentPrompt(panel, { notifyIfMissingStudent = false } = {}) {
+    _resolveCurrentPromptContext(panel, { notifyIfMissingStudent = false } = {}) {
         if (!this._commitEditingHeaderIfNeeded(panel)) return null;
         if (!panel.currentStudentId) {
             if (notifyIfMissingStudent) UI.showNotification('Aucun élève sélectionné', 'warning');
@@ -114,18 +113,134 @@ export const FocusPanelGenerator = {
         studentData.generatedAppreciation = '';
 
         const prompts = panel.appreciationsManager?.getAllPrompts(studentData) || {};
-        return prompts.appreciation || '';
+        return {
+            studentData,
+            promptText: prompts.appreciation || ''
+        };
     },
 
     /**
-     * Affiche une prévisualisation du prompt qui serait envoyé à l'IA
+     * Construit le résumé HTML échappé des données réellement transmises à l'IA
+     * @param {Object} summary - Sortie de PromptService.getPromptSummary()
+     * @returns {string}
+     * @private
+     */
+    _buildPromptSummaryHtml(summary) {
+        if (!summary) return '';
+        const esc = (v) => Utils.escapeHtml(String(v ?? ''));
+
+        const identityParts = [esc(summary.identity.label), `genre : ${esc(summary.identity.gender)}`];
+        if (summary.identity.className) identityParts.push(`classe : ${esc(summary.identity.className)}`);
+        if (summary.identity.levelLabel) identityParts.push(esc(summary.identity.levelLabel));
+
+        const periodGradeParts = (summary.grades.items || []).map(item => {
+            const val = item.gradeFormatted || 'Non renseignée';
+            const evalSuffix = item.evalCount ? ` (${item.evalCount} éval.)` : '';
+            return `${esc(item.periodLabel)} : <strong>${esc(val)}</strong>${esc(evalSuffix)}`;
+        });
+        const gradeMetaParts = [];
+        if (summary.grades.evolutionText) {
+            gradeMetaParts.push(esc(summary.grades.evolutionText.replace(/\n/g, ' · ')));
+        }
+        if (summary.grades.classStatsIncluded) {
+            const avgSuffix = summary.grades.classAverageFormatted ? ` (moy. ${esc(summary.grades.classAverageFormatted)})` : '';
+            gradeMetaParts.push(`repères de classe inclus${avgSuffix}`);
+        }
+        let gradesHtml = '<span class="ai-data-muted">Aucune moyenne renseignée</span>';
+        if (periodGradeParts.length > 0 || gradeMetaParts.length > 0) {
+            const topLine = periodGradeParts.length > 0 ? `<span>${periodGradeParts.join(' · ')}</span>` : '';
+            const subLine = gradeMetaParts.length > 0 ? `<div class="ai-data-subitem">${gradeMetaParts.join(' · ')}</div>` : '';
+            gradesHtml = `${topLine}${subLine}`;
+        }
+
+        const prevAppsHtml = summary.previousAppreciations?.length > 0
+            ? summary.previousAppreciations.map(a => {
+                const raw = a.preview.length > 140 ? `${a.preview.slice(0, 140).trimEnd()}…` : a.preview;
+                return `<div class="ai-data-subitem"><strong>${esc(a.periodLabel)} :</strong> « ${esc(raw)} »</div>`;
+            }).join('')
+            : '<span class="ai-data-muted">Aucune</span>';
+
+        const statusesHtml = summary.statuses?.length > 0
+            ? `<div class="ai-data-status-list">${summary.statuses.map(st => `
+                <div class="ai-data-status-item">
+                    <span class="ai-data-badge ${st.isGdprSensitive ? 'is-rgpd' : 'is-included'}">${esc(st.label)}${st.isGdprSensitive ? ' · neutre RGPD' : ''}</span>
+                    <span class="ai-data-status-desc">${esc(st.instruction)}</span>
+                </div>`).join('')}</div>`
+            : '<span class="ai-data-muted">Aucun</span>';
+
+        let journalHtml = '';
+        const j = summary.journal;
+        if (!j?.includedInAI) {
+            journalHtml = `<span class="ai-data-badge is-excluded">Hors IA</span> <span class="ai-data-muted">Journal personnel non transmis</span>`;
+        } else if (j.displayText) {
+            const privSuffix = j.privateCount > 0 ? ` <span class="ai-data-muted">(${j.privateCount} privée${j.privateCount > 1 ? 's' : ''} exclue${j.privateCount > 1 ? 's' : ''})</span>` : '';
+            journalHtml = `${esc(j.displayText)}${privSuffix}`;
+        } else if (j.totalCount > 0 && j.privateCount === j.totalCount) {
+            journalHtml = `<span class="ai-data-muted">Aucune observation transmise (${j.privateCount} note${j.privateCount > 1 ? 's' : ''} privée${j.privateCount > 1 ? 's' : ''})</span>`;
+        } else {
+            journalHtml = `<span class="ai-data-muted">Aucune observation retenue (tags &lt; ${esc(j.threshold)}×)</span>`;
+        }
+
+        const contextHtml = summary.context
+            ? `« ${esc(summary.context)} »`
+            : '<span class="ai-data-muted">Aucune</span>';
+
+        const styleParts = [esc(summary.style.voiceLabel)];
+        if (summary.style.discipline) styleParts.push(esc(summary.style.discipline));
+        if (summary.style.maxChars) styleParts.push(`max ${esc(summary.style.maxChars)} car.`);
+        else if (summary.style.length) styleParts.push(`~${esc(summary.style.length)} mots`);
+        if (summary.style.hasCustomInstructions) styleParts.push('consigne de style perso');
+
+        return `
+            <div class="ai-data-summary">
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Identité</span>
+                    <div class="ai-data-row-value">
+                        <span class="ai-data-badge ${summary.identity.isAnonymous ? 'is-rgpd' : 'is-included'}">${summary.identity.isAnonymous ? 'Anonymisé' : 'Prénom seul'}</span>
+                        <span>${identityParts.join(' · ')}</span>
+                    </div>
+                </div>
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Moyennes</span>
+                    <div class="ai-data-row-value">${gradesHtml}</div>
+                </div>
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Appr. passées</span>
+                    <div class="ai-data-row-value">${prevAppsHtml}</div>
+                </div>
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Statuts</span>
+                    <div class="ai-data-row-value">${statusesHtml}</div>
+                </div>
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Journal</span>
+                    <div class="ai-data-row-value">${journalHtml}</div>
+                </div>
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Indications</span>
+                    <div class="ai-data-row-value">${contextHtml}</div>
+                </div>
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">Style actif</span>
+                    <div class="ai-data-row-value">${styleParts.join(' · ')}</div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Affiche un récapitulatif clair des données transmises à l'IA et le prompt complet
      * @param {Object} panel - Instance FocusPanelManager
      */
     async showPromptPreview(panel) {
-        const promptText = this._resolveCurrentPrompt(panel);
-        if (promptText === null) return;
+        const ctx = this._resolveCurrentPromptContext(panel);
+        if (!ctx) return;
 
-        await panel._displayPromptModal(promptText);
+        const summary = PromptService.getPromptSummary?.(ctx.studentData) || null;
+        const summaryHtml = summary ? this._buildPromptSummaryHtml(summary) : '';
+        const title = summaryHtml ? 'Données transmises à l\'IA' : 'Prévisualisation du prompt';
+
+        await panel._displayPromptModal(ctx.promptText, title, summaryHtml ? { summaryHtml } : {});
     },
 
     /**
@@ -133,8 +248,9 @@ export const FocusPanelGenerator = {
      * @param {Object} panel - Instance FocusPanelManager
      */
     async copyPromptToClipboard(panel) {
-        const promptText = this._resolveCurrentPrompt(panel, { notifyIfMissingStudent: true });
-        if (promptText === null) return;
+        const ctx = this._resolveCurrentPromptContext(panel, { notifyIfMissingStudent: true });
+        if (!ctx) return;
+        const { promptText } = ctx;
 
         if (!promptText) {
             UI.showNotification('Impossible de générer le prompt', 'warning');

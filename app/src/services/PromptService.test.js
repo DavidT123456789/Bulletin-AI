@@ -1084,11 +1084,13 @@ describe('PromptService', () => {
             expect(fidelityIdx).toBeGreaterThan(-1);
             expect(styleHeaderIdx).toBeGreaterThan(fidelityIdx);
 
-            // Période à évaluer regroupée avec les métadonnées élève avant le contexte
+            // Période à évaluer regroupée avec les métadonnées élève avant les indications
             const periodIdx = customPrompts.appreciationUser.indexOf('Période à évaluer : S2');
-            const contextIdx = customPrompts.appreciationUser.indexOf('Contexte :');
+            const contextIdx = customPrompts.appreciationUser.indexOf("Indications de l'enseignant :");
             expect(periodIdx).toBeGreaterThan(-1);
             expect(contextIdx).toBeGreaterThan(periodIdx);
+            expect(customPrompts.appreciationSystem).toContain("respectant les indications de l'enseignant");
+            expect(customPrompts.analysisUser).toContain("Indications de l'enseignant :");
         });
 
         it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {
@@ -1284,6 +1286,93 @@ describe('PromptService', () => {
             } finally {
                 appState.classes = prevClasses;
                 appState.currentClassId = prevClassId;
+                appState.journalIncludeInAI = prevInclude;
+            }
+        });
+    });
+
+    describe('getPromptSummary & isPrivate', () => {
+        it('synthétise fidèlement les données envoyées à l\'IA (anonymisation, statuts RGPD, journal hors privé, consigne)', () => {
+            const prevAnon = appState.anonymizeData;
+            const prevClasses = appState.classes;
+            const prevClassId = appState.currentClassId;
+            const prevInclude = appState.journalIncludeInAI;
+
+            try {
+                Utils.getPeriods.mockReturnValue(['T1', 'T2', 'T3']);
+                appState.anonymizeData = true;
+                appState.classes = [{ id: 'c1', name: '3A', journalIncludeInAI: true }];
+                appState.currentClassId = 'c1';
+                appState.journalIncludeInAI = true;
+
+                const student = {
+                    id: 'stu-sum',
+                    classId: 'c1',
+                    nom: 'Durand',
+                    prenom: 'Sophie',
+                    currentPeriod: 'T2',
+                    statuses: ['PAP', 'delegue'],
+                    periods: {
+                        T1: { grade: '11.0', appreciation: 'Trimestre correct pour Sophie.' },
+                        T2: { grade: '13.5', context: 'Encourager Sophie à participer davantage.' }
+                    },
+                    journal: [
+                        { id: 'e1', period: 'T2', tags: ['bavardage'], note: 'Note confidentielle prof', isPrivate: true },
+                        { id: 'e2', period: 'T2', tags: ['participation+'], note: 'Exposé réussi' }
+                    ]
+                };
+
+                const summaryAnon = PromptService.getPromptSummary(student);
+                expect(summaryAnon.identity.isAnonymous).toBe(true);
+                expect(summaryAnon.identity.label).toContain('[PRÉNOM]');
+                expect(summaryAnon.grades.items.map(i => i.period)).toEqual(['T1', 'T2']);
+                expect(summaryAnon.previousAppreciations).toHaveLength(1);
+                expect(summaryAnon.previousAppreciations[0].preview).toContain('[PRÉNOM]');
+                expect(summaryAnon.statuses.find(s => s.raw === 'PAP').isGdprSensitive).toBe(true);
+                expect(summaryAnon.statuses.find(s => s.raw === 'delegue').isGdprSensitive).toBe(false);
+                expect(summaryAnon.journal.notes).toHaveLength(1);
+                expect(summaryAnon.journal.notes[0].text).toBe('Exposé réussi');
+                expect(summaryAnon.journal.privateCount).toBe(1);
+                expect(summaryAnon.context).toContain('[PRÉNOM]');
+
+                // Mode non anonymisé (hors style neutre) : prénom affiché
+                appState.anonymizeData = false;
+                const summaryNamed = PromptService.getPromptSummary(student, { voice: 'je' });
+                expect(summaryNamed.identity.isAnonymous).toBe(false);
+                expect(summaryNamed.identity.label).toContain('Sophie');
+            } finally {
+                appState.anonymizeData = prevAnon;
+                appState.classes = prevClasses;
+                appState.currentClassId = prevClassId;
+                appState.journalIncludeInAI = prevInclude;
+            }
+        });
+
+        it('modifie getPromptHash lorsqu\'une entrée du journal bascule isPrivate', () => {
+            const prevInclude = appState.journalIncludeInAI;
+            try {
+                appState.journalIncludeInAI = true;
+                const baseStudent = {
+                    id: 'stu-hash',
+                    nom: 'Martin',
+                    prenom: 'Lucas',
+                    currentPeriod: 'T1',
+                    statuses: [],
+                    periods: { T1: { moy: '12.0', context: '' } },
+                    journal: [
+                        { id: 'e1', period: 'T1', tags: ['participation+'], note: 'Très actif', isPrivate: false }
+                    ]
+                };
+                const hashPublic = PromptService.getPromptHash(baseStudent);
+
+                const privateStudent = {
+                    ...baseStudent,
+                    journal: [{ ...baseStudent.journal[0], isPrivate: true }]
+                };
+                const hashPrivate = PromptService.getPromptHash(privateStudent);
+
+                expect(hashPrivate).not.toBe(hashPublic);
+            } finally {
                 appState.journalIncludeInAI = prevInclude;
             }
         });

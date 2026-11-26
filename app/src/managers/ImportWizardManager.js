@@ -1222,7 +1222,7 @@ export const ImportWizardManager = {
      */
     _detectHeader(line) {
         if (!line || line.length === 0) return false;
-        const keywords = ['nom', 'prénom', 'eleve', 'élève', 'moy', 'note', 'app', 'statut', 'contexte'];
+        const keywords = ['nom', 'prénom', 'eleve', 'élève', 'moy', 'note', 'app', 'statut', 'contexte', 'indication'];
         return line.some(cell => {
             const low = cell.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             return keywords.some(kw => low.includes(kw));
@@ -1280,7 +1280,7 @@ export const ImportWizardManager = {
                 { v: `DEV_${currentPeriod}`, t: `Nb notes ${currentPeriod}` },
                 { v: `MOY_${currentPeriod}`, t: `Moy. ${currentPeriod}` },
                 { v: `APP_${currentPeriod}`, t: `Appréciation ${currentPeriod}` },
-                { v: `CTX_${currentPeriod}`, t: `Contexte ${currentPeriod}` }
+                { v: `CTX_${currentPeriod}`, t: `Indications ${currentPeriod}` }
             ];
 
             // Add separator for clarity
@@ -1697,7 +1697,7 @@ export const ImportWizardManager = {
         const periodPrefixes = {
             'DEV_': ['nb note', 'nb eval', 'devoir', 'eval'],
             'MOY_': ['moy', 'note'],
-            'CTX_': ['contexte', 'ctx', 'instruction', 'observation'],
+            'CTX_': ['indication', 'contexte', 'ctx', 'instruction', 'observation'],
             'APP_': ['app', 'com', 'obs']
         };
 
@@ -1994,7 +1994,7 @@ export const ImportWizardManager = {
         if (tag.startsWith('MOY_')) return `Moy. ${p}`;
         if (tag.startsWith('DEV_')) return `Nb notes ${p}`;
         if (tag.startsWith('APP_')) return `Appréciation ${p}`;
-        if (tag.startsWith('CTX_')) return `Contexte ${p}`;
+        if (tag.startsWith('CTX_')) return `Indications ${p}`;
         return tag;
     },
 
