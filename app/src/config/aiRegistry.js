@@ -111,7 +111,7 @@ export const API_KEY_PROVIDER_IDS = ['google', 'albert', 'groq', 'openrouter', '
 export const FALLBACK_PROVIDER_ORDER = ['albert', 'google', 'groq', 'openrouter', 'mistral', 'ollama', 'openai', 'anthropic'];
 
 /**
- * Registre unifié des modèles IA (30 modèles actifs dans le sélecteur + 17 alias historiques).
+ * Registre unifié des modèles IA (30 modèles actifs dans le sélecteur + 18 alias historiques).
  */
 export const AI_MODELS = {
     // 1. GOOGLE GEMINI
@@ -221,7 +221,7 @@ export const AI_MODELS = {
         costs: { input: 1.25, output: 10.00 },
     },
 
-    // 1b. ALBERT API (GOUV.FR / DINUM — OPENWEIGHT ALIASES)
+    // 1b. ALBERT API (GOUV.FR / DINUM)
     'albert-openweight-medium': {
         id: 'albert-openweight-medium',
         providerId: 'albert',
@@ -234,19 +234,29 @@ export const AI_MODELS = {
         timeoutMs: 25000,
         costs: { input: 0, output: 0 },
     },
+    'albert-gemma-4-31b': {
+        id: 'albert-gemma-4-31b',
+        providerId: 'albert',
+        apiModelId: 'gemma-4-31b-it',
+        shortName: 'Gemma 4 31B',
+        qualifier: 'Rédaction',
+        selectorGroup: 'Albert API (Gouv.fr) — QUOTA GRATUIT',
+        inSelector: true,
+        isReasoning: false,
+        timeoutMs: 30000,
+        costs: { input: 0, output: 0 },
+    },
+    // Alias rétrocompatibles Albert
     'albert-openweight-large': {
         id: 'albert-openweight-large',
         providerId: 'albert',
         apiModelId: 'openweight-large',
         shortName: 'GPT-OSS 120B',
-        qualifier: 'Synthèses',
-        selectorGroup: 'Albert API (Gouv.fr) — QUOTA GRATUIT',
-        inSelector: true,
+        inSelector: false,
         isReasoning: true,
         timeoutMs: 40000,
         costs: { input: 0, output: 0 },
     },
-    // Alias rétrocompatible Albert
     'albert-openweight-small': {
         id: 'albert-openweight-small',
         providerId: 'albert',
@@ -813,7 +823,7 @@ export const PROVIDER_DEFAULT_MODELS = {
 
 export const PROVIDER_SHOWCASE_MODELS = {
     google: ['gemini-4-hydrogen', 'gemini-3.6-flash', 'gemini-3.8-flash'],
-    albert: ['albert-openweight-medium', 'albert-openweight-large'],
+    albert: ['albert-openweight-medium', 'albert-gemma-4-31b'],
     groq: ['groq-gpt-oss-120b', 'groq-gpt-oss-20b'],
     anthropic: ['anthropic-claude-sonnet-5-5', 'anthropic-claude-haiku-5-5', 'anthropic-claude-opus-5-5'],
     mistral: ['mistral-direct-small-latest', 'mistral-direct-large-latest'],
@@ -862,6 +872,7 @@ export const LEGACY_MODEL_MIGRATIONS = Object.freeze({
     'groq-llama-3.1-8b': 'groq-gpt-oss-20b',
     'groq-gemma-2-9b': 'groq-gpt-oss-20b',
     'albert-openweight-small': 'albert-openweight-medium',
+    'albert-openweight-large': 'albert-gemma-4-31b',
 });
 
 /**

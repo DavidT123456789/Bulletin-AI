@@ -49,12 +49,12 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         });
     });
 
-    it('expose les 30 modèles actifs du sélecteur et les 17 alias de rétrocompatibilité', () => {
+    it('expose les 30 modèles actifs du sélecteur et les 18 alias de rétrocompatibilité', () => {
         const selectorModels = MODEL_SELECTOR_CONFIG.flatMap(g => g.models);
         expect(selectorModels).toHaveLength(30);
 
         const allModelIds = Object.keys(AI_MODELS);
-        expect(allModelIds).toHaveLength(47);
+        expect(allModelIds).toHaveLength(48);
 
         selectorModels.forEach(({ id, qualifier }) => {
             const meta = getModelMeta(id);
@@ -95,6 +95,7 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(getModelTimeout('groq-llama-3.1-8b')).toBe(40000);
         expect(getModelTimeout('mistral-direct-large-latest')).toBe(30000);
         expect(getModelTimeout('mistral-large')).toBe(30000);
+        expect(getModelTimeout('albert-gemma-4-31b')).toBe(30000);
         expect(getModelTimeout('anthropic-claude-opus-5-5')).toBe(40000);
         expect(getModelTimeout('anthropic-claude-sonnet-5-5')).toBe(22000);
         expect(getModelTimeout('deepseek-v4-flash')).toBe(22000);
@@ -124,8 +125,8 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(getModelMeta('gemini-3.6-flash').thinkingLevel).toBeUndefined();
         expect(PROVIDER_SHOWCASE_MODELS.anthropic).toEqual(['anthropic-claude-sonnet-5-5', 'anthropic-claude-haiku-5-5', 'anthropic-claude-opus-5-5']);
         expect(PROVIDER_SHOWCASE_MODELS.openai).toEqual(['openai-gpt-6-luna', 'openai-gpt-6.1-terra', 'openai-gpt-6.1-sol']);
-        expect(PROVIDER_SHOWCASE_MODELS.albert).toEqual(['albert-openweight-medium', 'albert-openweight-large']);
-        expect(FALLBACK_CONFIG.albert).toEqual(['albert-openweight-medium', 'albert-openweight-large']);
+        expect(PROVIDER_SHOWCASE_MODELS.albert).toEqual(['albert-openweight-medium', 'albert-gemma-4-31b']);
+        expect(FALLBACK_CONFIG.albert).toEqual(['albert-openweight-medium', 'albert-gemma-4-31b']);
         expect(PROVIDER_SHOWCASE_MODELS.groq).toEqual(['groq-gpt-oss-120b', 'groq-gpt-oss-20b']);
         expect(buildFallbackQueue('groq-gpt-oss-120b')[0]).toBe('groq-gpt-oss-120b');
         expect(FALLBACK_CONFIG.providerOrder).toHaveLength(8);
@@ -140,6 +141,7 @@ describe('aiRegistry (SSOT Fournisseurs & Modèles IA)', () => {
         expect(migrateLegacyModelId('openai-gpt-4o-mini')).toBe('openai-gpt-6-luna');
         expect(migrateLegacyModelId('groq-llama-3.3-70b')).toBe('groq-gpt-oss-120b');
         expect(migrateLegacyModelId('albert-openweight-small')).toBe('albert-openweight-medium');
+        expect(migrateLegacyModelId('albert-openweight-large')).toBe('albert-gemma-4-31b');
         expect(migrateLegacyModelId('ollama-qwen3:8b')).toBe('ollama-qwen3:8b');
         expect(migrateLegacyModelId('ollama-qwen3:4b')).toBe('ollama-qwen3:4b');
         expect(migrateLegacyModelId('ollama-gemma3:4b')).toBe('ollama-gemma3:4b');

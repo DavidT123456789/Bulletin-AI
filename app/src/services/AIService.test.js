@@ -241,6 +241,14 @@ describe('AIService', () => {
                 { role: 'user', content: 'Test prompt' }
             ]);
 
+            const gemmaConfig = AIService._getApiConfig('Test prompt', {
+                modelOverride: 'albert-gemma-4-31b',
+                taskType: 'analysis'
+            });
+            expect(gemmaConfig.payload.model).toBe('gemma-4-31b-it');
+            expect(gemmaConfig.payload.temperature).toBe(0.2);
+            expect(gemmaConfig.payload.max_tokens).toBe(1024);
+
             const analysisConfig = AIService._getApiConfig('Test prompt', {
                 modelOverride: 'albert-openweight-large',
                 taskType: 'analysis'
@@ -1136,7 +1144,7 @@ describe('AIService', () => {
 
             expect(result.text).toBe('Réponse rapide');
             expect(result.modelUsed).toBe('gemini-3.6-flash');
-            // Albert 401 court-circuite albert-openweight-large et bascule directement sur Google ; retryOnTimeout=false
+            // Albert 401 court-circuite albert-gemma-4-31b et bascule directement sur Google ; retryOnTimeout=false
             expect(calls).toEqual([
                 { model: 'albert-openweight-medium', retryOnTimeout: false },
                 { model: 'gemini-4-hydrogen', retryOnTimeout: false },
@@ -1161,7 +1169,7 @@ describe('AIService', () => {
         it('should reject truncated JSON responses on class-synthesis and automatically fallback to the next model', async () => {
             const { appState } = await import('../state/State.js');
             resetAllProviderKeys(appState);
-            appState.currentAIModel = 'albert-openweight-large';
+            appState.currentAIModel = 'albert-gemma-4-31b';
             appState.albertApiKey = 'sk-albert-valid-key';
             appState.googleApiKey = 'AIzaSy-valid-google-key';
 

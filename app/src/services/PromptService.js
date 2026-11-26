@@ -961,7 +961,7 @@ export const PromptService = {
         const hasPastAppreciations = relevantPeriods.some(p => { const app = periods?.[p]?.appreciation?.trim(); return p !== currentPeriod && !!app && app !== 'N/A'; });
         const styleParts = [
             ...(hasPastAppreciations && !hasNoData ? [`Utilise les appréciations des périodes précédentes comme repères de continuité en renouvelant la formulation, sans les recopier ni les paraphraser.`] : []),
-            `Écris dans un style naturel, précis et varié, sans formules scolaires toutes faites ni éloge excessif.`
+            `Écris dans un style naturel et précis, sans formules scolaires toutes faites ni éloge excessif.`
         ];
 
         const voiceInstruction = {

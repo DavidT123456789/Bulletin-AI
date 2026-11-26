@@ -189,8 +189,9 @@ describe('models.js configuration & helpers', () => {
     });
 
     describe('getApiModelName()', () => {
-        it('should map Albert API models to their perennial openweight aliases', () => {
+        it('should map Albert API models to their API identifiers', () => {
             expect(getApiModelName('albert-openweight-medium')).toBe('openweight-medium');
+            expect(getApiModelName('albert-gemma-4-31b')).toBe('gemma-4-31b-it');
             expect(getApiModelName('albert-openweight-small')).toBe('openweight-small');
             expect(getApiModelName('albert-openweight-large')).toBe('openweight-large');
         });
