@@ -589,8 +589,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     border-radius: var(--radius-pill);
     border: none;
@@ -626,14 +626,23 @@
     }
 
     .header-class-note-btn {
-        width: 32px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
+    }
+
+    .header-class-note-btn .header-class-note-icon {
+        font-size: 17px;
     }
 }
 
 @media (max-width: 480px) {
     .header-class-note-btn {
-        width: 26px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .header-class-note-btn .header-class-note-icon {
+        font-size: 16px;
     }
 }
 
