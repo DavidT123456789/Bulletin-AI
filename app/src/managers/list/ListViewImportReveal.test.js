@@ -377,4 +377,115 @@ describe('ListView - Empty filter state transitions (1 <-> 0)', () => {
 
         vi.useRealTimers();
     });
+
+    it('restores canonical appreciation wrapper (quick-copy button, badges) after animated updateRow collapse', async () => {
+        vi.useFakeTimers();
+        try {
+            const { UI } = await import('../UIManager.js');
+            vi.spyOn(UI, 'fadeOutSkeleton').mockResolvedValue();
+            vi.spyOn(UI, 'animateHtmlReveal').mockImplementation(async (el, html) => {
+                el.innerHTML = html;
+                return true;
+            });
+
+            appState.currentPeriod = 'T1';
+            const student = {
+                id: 's-anim',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                appreciation: 'Très bon trimestre.',
+                generationPeriod: 'T1',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                studentData: { periods: { T1: { grade: 16, appreciation: 'Très bon trimestre.' } } }
+            };
+            appState.generatedResults = [student];
+
+            document.body.innerHTML = `
+                <table>
+                    <tbody>
+                        <tr class="student-row" data-student-id="s-anim">
+                            <td class="status-cell"></td>
+                            <td class="appreciation-cell"><div class="appreciation-skeleton compact"></div></td>
+                            <td><button class="btn-action-menu" disabled></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+
+            await ListViewManager.updateRow('s-anim', student, true);
+            const cell = document.querySelector('[data-student-id="s-anim"] .appreciation-cell');
+            expect(cell.querySelector('.appreciation-preview.expanded')).not.toBeNull();
+
+            // Advance past 2000ms display + 400ms fade + 900ms collapse cleanup
+            vi.advanceTimersByTime(3400);
+
+            expect(cell.querySelector('.appreciation-preview-wrapper')).not.toBeNull();
+            expect(cell.querySelector('.btn-row-quick-copy')).not.toBeNull();
+            expect(cell.querySelector('.appreciation-preview')?.textContent).toContain('Très bon trimestre.');
+            expect(cell.style.height).toBe('');
+        } finally {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
+        }
+    });
+
+    it('skips collapse cycle in appreciation-full-view mode and preserves active collapse during updateRowContent', async () => {
+        vi.useFakeTimers();
+        try {
+            const { UI } = await import('../UIManager.js');
+            const { ListViewRenderer } = await import('./ListViewRenderer.js');
+            vi.spyOn(UI, 'fadeOutSkeleton').mockResolvedValue();
+            vi.spyOn(UI, 'animateHtmlReveal').mockImplementation(async (el, html) => {
+                el.innerHTML = html;
+                return true;
+            });
+
+            appState.currentPeriod = 'T1';
+            const student = {
+                id: 's-full',
+                nom: 'DUPONT',
+                prenom: 'Emma',
+                appreciation: 'Travail sérieux et régulier.',
+                generationPeriod: 'T1',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                studentData: { periods: { T1: { grade: 15, appreciation: 'Travail sérieux et régulier.' } } }
+            };
+            appState.generatedResults = [student];
+
+            // 1. In appreciation-full-view, canonical wrapper is restored immediately without _collapseTimer
+            document.body.innerHTML = `
+                <table class="student-list-table appreciation-full-view">
+                    <tbody>
+                        <tr class="student-row" data-student-id="s-full">
+                            <td class="status-cell"></td>
+                            <td class="appreciation-cell"><div class="appreciation-skeleton compact"></div></td>
+                            <td><button class="btn-action-menu" disabled></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+
+            await ListViewManager.updateRow('s-full', student, true);
+            const fullCell = document.querySelector('[data-student-id="s-full"] .appreciation-cell');
+            expect(fullCell._collapseTimer).toBeFalsy();
+            expect(fullCell.querySelector('.appreciation-preview-wrapper')).not.toBeNull();
+            expect(fullCell.querySelector('.btn-row-quick-copy')).not.toBeNull();
+
+            // 2. In compact view, updateRowContent preserves active collapse when text is unchanged
+            const table = document.querySelector('.student-list-table');
+            table.classList.remove('appreciation-full-view');
+            await ListViewManager.updateRow('s-full', student, true);
+            expect(fullCell._collapseTimer).toBeTruthy();
+
+            const row = document.querySelector('[data-student-id="s-full"]');
+            ListViewRenderer.updateRowContent(row, student);
+            expect(fullCell._collapseTimer).toBeTruthy();
+            expect(fullCell.querySelector('.appreciation-preview.expanded')).not.toBeNull();
+        } finally {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
+        }
+    });
 });

@@ -29,6 +29,7 @@ export const ListSelectionManager = {
     // Callbacks to avoid circular dependencies
     callbacks: {
         updateStudentRow: () => { },
+        updateRow: null,
         setRowStatus: () => { },
         renderList: () => { },
         clearSelections: () => { }
@@ -568,10 +569,7 @@ export const ListSelectionManager = {
                 newResult.classId = originalResult.classId ?? batchClassId;
                 newResult.generationPeriod = batchPeriod;
 
-                // Reset history state only after successful regeneration
-                originalResult.historyState = null;
-
-                // Update State (promptHash and copied=false handled by updateResult)
+                // Update State (promptHash, copied=false, legacy history migration and version history handled by updateResult)
                 const updatedResult = StudentDataManager.updateResult(
                     appState.generatedResults[resultIndex],
                     newResult
@@ -583,16 +581,25 @@ export const ListSelectionManager = {
                     appState.filteredResults[filteredIndex] = updatedResult;
                 }
 
-                // Update UI Row and Focus Panel only if still on the same class/period
-                if (isSameBatchContext()) {
-                    this.callbacks.updateStudentRow(id);
-                    await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
-                }
                 successCount++;
+
+                // Update UI Row (with animated reveal) and Focus Panel in parallel if still on the same class/period
+                if (isSameBatchContext()) {
+                    const rowPromise = typeof this.callbacks.updateRow === 'function'
+                        ? this.callbacks.updateRow(id, updatedResult, true)
+                        : Promise.resolve(this.callbacks.updateStudentRow(id));
+                    await Promise.all([
+                        rowPromise,
+                        FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true)
+                    ]);
+                }
 
             } catch (e) {
                 if (e.name === 'AbortError' || signal.aborted) {
                     wasAborted = true;
+                    if (isSameBatchContext()) {
+                        FocusPanelManager?.handleExternalGenerationComplete?.(id, originalResult, false, { cancelled: true });
+                    }
                     break;
                 }
 

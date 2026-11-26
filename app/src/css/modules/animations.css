@@ -358,52 +358,6 @@ iconify-icon.icon-spin,
     animation: copy-success-pulse 0.6s ease-out;
 }
 
-/* Card generation success glow */
-@keyframes card-success-glow {
-    0% {
-        box-shadow: 0 0 0 0 rgba(var(--primary-color-rgb), 0.6), var(--shadow-sm);
-    }
-
-    30% {
-        box-shadow: 0 0 30px 8px rgba(var(--primary-color-rgb), 0.4), 0 0 60px 16px rgba(var(--primary-color-rgb), 0.15), var(--shadow-lg);
-    }
-
-    60% {
-        box-shadow: 0 0 20px 4px rgba(var(--primary-color-rgb), 0.25), var(--shadow-md);
-    }
-
-    100% {
-        box-shadow: var(--shadow-sm);
-    }
-}
-
-.appreciation-result.just-generated .card-content-wrapper {
-    animation: card-success-glow 1.2s ease-out;
-}
-
-/* Card error glow */
-@keyframes card-error-glow {
-    0% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4), var(--shadow-sm);
-    }
-
-    50% {
-        box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.2), var(--shadow-md);
-    }
-
-    100% {
-        box-shadow: var(--shadow-sm);
-    }
-}
-
-.appreciation-result.just-errored .card-content-wrapper {
-    animation: card-error-glow 1s ease-out;
-}
-
-.appreciation-result.just-errored {
-    animation: error-shake 0.5s ease-out;
-}
-
 @keyframes fadein {
     from {
         opacity: 0;

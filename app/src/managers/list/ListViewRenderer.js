@@ -207,12 +207,31 @@ export const ListViewRenderer = {
 
     updateRowContent(row, result) {
         // Update appreciation cell (cleanup Tippy instances before replacing DOM)
+        // Preserve active post-generation collapse animation if the underlying text hasn't changed
         const appreciationCell = row.querySelector('.appreciation-cell');
         if (appreciationCell) {
-            this.clearCellCollapseTimers(appreciationCell);
-            TooltipsUI.cleanupTooltipsIn?.(appreciationCell);
-            appreciationCell.innerHTML = this.getAppreciationCell(result);
-            TooltipsUI.initTooltips?.(appreciationCell);
+            const hasActiveCollapse = Boolean(
+                appreciationCell._collapseTimer ||
+                appreciationCell._collapseInnerTimer ||
+                appreciationCell._collapseCleanupTimer
+            );
+            let preserveActiveCollapse = false;
+            const hasCurrentPeriodError = Boolean(result?.errorMessage && result?.errorPeriod === appState.currentPeriod);
+            if (hasActiveCollapse && !hasCurrentPeriodError) {
+                const currentPreviewText = appreciationCell.querySelector('.appreciation-preview')?.textContent?.trim() || '';
+                const rawApp = result?.studentData?.periods?.[appState.currentPeriod]?.appreciation || result?.appreciation || '';
+                const targetCleanText = rawApp ? Utils.decodeHtmlEntities(rawApp).replace(/<[^>]*>/g, '').trim() : '';
+                preserveActiveCollapse = Boolean(currentPreviewText) && (
+                    currentPreviewText === targetCleanText ||
+                    currentPreviewText === Utils.stripMarkdown(targetCleanText)
+                );
+            }
+            if (!preserveActiveCollapse) {
+                this.clearCellCollapseTimers(appreciationCell);
+                TooltipsUI.cleanupTooltipsIn?.(appreciationCell);
+                appreciationCell.innerHTML = this.getAppreciationCell(result);
+                TooltipsUI.initTooltips?.(appreciationCell);
+            }
         }
 
         // Update status cell

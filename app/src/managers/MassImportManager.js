@@ -11,6 +11,7 @@ import { StorageManager } from './StorageManager.js';
 import { ClassManager } from './ClassManager.js';
 import { NotificationCoalescer } from './NotificationManager.js';
 import { PromptService } from '../services/PromptService.js';
+import { FocusPanelManager } from './FocusPanelManager.js';
 import * as HistoryUtils from '../utils/HistoryUtils.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
@@ -42,6 +43,11 @@ export const MassImportManager = {
         // Créer les cartes pré-remplies avec skeleton sur l'appréciation
         const pendingCards = this._createPendingCards(studentsToProcess, batchClassId);
 
+        // Afficher "En file" sur toutes les lignes du lot pour harmoniser avec Actualiser / Régénérer
+        if ((appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
+            pendingCards.forEach(resultId => ListViewManager.setRowStatus(resultId, 'pending-skeleton'));
+        }
+
         const failedImports = [];
         const recentOpenings = [];
         let successCount = 0;
@@ -69,6 +75,9 @@ export const MassImportManager = {
 
                 if ((appState.currentClassId ?? null) === (batchClassId ?? null)) {
                     ListViewManager.setRowStatus(resultId, 'generating');
+                    if (appState.currentPeriod === batchPeriod) {
+                        FocusPanelManager?.handleExternalGenerationStart?.(resultId);
+                    }
                 }
 
                 let newResultObject;
@@ -93,6 +102,10 @@ export const MassImportManager = {
                         wasAborted = true;
                         if ((appState.currentClassId ?? null) === (batchClassId ?? null)) {
                             ListViewManager.setRowStatus(resultId, 'pending'); // Revert skeleton
+                            if (appState.currentPeriod === batchPeriod) {
+                                const abortedRecord = appState.generatedResults.find(r => r.id === resultId);
+                                FocusPanelManager?.handleExternalGenerationComplete?.(resultId, abortedRecord, false, { cancelled: true });
+                            }
                         }
                         break;
                     }
@@ -154,12 +167,16 @@ export const MassImportManager = {
                     if (!existingResult.studentData.periods) {
                         existingResult.studentData.periods = {};
                     }
+                    const existingPeriodAppreciation = existingResult.studentData.periods[batchPeriod]?.appreciation || '';
                     if (newResultObject.studentData?.periods) {
                         for (const [pKey, pVal] of Object.entries(newResultObject.studentData.periods)) {
                             existingResult.studentData.periods[pKey] = {
                                 ...(existingResult.studentData.periods[pKey] || {}),
                                 ...pVal
                             };
+                            if (hasError && pKey === batchPeriod && existingPeriodAppreciation && !pVal?.appreciation) {
+                                existingResult.studentData.periods[pKey].appreciation = existingPeriodAppreciation;
+                            }
                         }
                     }
                     if (!hasError && newResultObject.appreciation) {
@@ -169,7 +186,9 @@ export const MassImportManager = {
                         };
                     }
 
-                    existingResult.appreciation = newResultObject.appreciation;
+                    if (!hasError || !existingResult.appreciation) {
+                        existingResult.appreciation = newResultObject.appreciation;
+                    }
                     existingResult.studentData.currentPeriod = batchPeriod;
                     existingResult.studentData.subject = newResultObject.studentData.subject;
 
@@ -226,10 +245,14 @@ export const MassImportManager = {
                     appState.generatedResults.unshift(newResultObject);
                 }
 
-                // Mettre à jour la ligne et le compteur du bouton uniquement si la vue n'a pas changé
+                // Mettre à jour la ligne, le volet Focus et le compteur du bouton uniquement si la vue n'a pas changé
                 if (newResultObject && (appState.currentClassId ?? null) === (batchClassId ?? null) && appState.currentPeriod === batchPeriod) {
                     ResultsUIManager?.updateGenerateButtonState?.();
-                    await ListViewManager.updateRow(resultId, newResultObject, true);
+                    const targetRecord = existingResultIndex > -1 ? appState.generatedResults[existingResultIndex] : newResultObject;
+                    await Promise.all([
+                        ListViewManager.updateRow(resultId, targetRecord, true),
+                        FocusPanelManager?.handleExternalGenerationComplete?.(resultId, targetRecord, !hasError)
+                    ]);
                 }
             }
 

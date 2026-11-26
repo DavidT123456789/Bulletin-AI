@@ -40,6 +40,7 @@ export const ListViewManager = {
     initSelectionManager() {
         ListSelectionManager?.init?.({
             updateStudentRow: (id, options) => this.updateStudentRow(id, options),
+            updateRow: (id, result, animate) => this.updateRow(id, result, animate),
             setRowStatus: (id, status) => this.setRowStatus(id, status),
             renderList: () => this.render(appState.filteredResults, document.getElementById('outputList'))
         });
@@ -336,59 +337,84 @@ export const ListViewManager = {
             // Remove title attribute to avoid unwanted tooltips
             targetEl.removeAttribute('title');
 
-            // Add "just generated" flash effect to the row
-            row.classList.add('just-generated');
-            setTimeout(() => row.classList.remove('just-generated'), 1000);
+            // Skip collapse cycle if table is already in full view or user prefers reduced motion
+            const isFullView = Boolean(row.closest('.student-list-table')?.classList.contains('appreciation-full-view'));
+            const prefersReducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 
-            // Smooth collapse - animate the CELL height for smooth row transition
-            appreciationCell._collapseTimer = setTimeout(() => {
-                appreciationCell._collapseTimer = null;
-                if (!targetEl.isConnected) return;
-                // 1. Capture current cell height (determines row height)
-                const cellExpandedHeight = appreciationCell.offsetHeight;
-                appreciationCell.style.height = cellExpandedHeight + 'px';
-                appreciationCell.style.overflow = 'hidden';
-                appreciationCell.style.boxSizing = 'border-box';
-
-                // 2. Fade out content
-                targetEl.style.opacity = '0.3';
-                targetEl.style.transition = 'opacity 0.4s ease-out';
-
-                // 3. After fade, switch content to compact and animate cell height
-                appreciationCell._collapseInnerTimer = setTimeout(() => {
-                    appreciationCell._collapseInnerTimer = null;
+            if (isFullView || prefersReducedMotion) {
+                const latestResult = appState.generatedResults.find(r => r.id === studentId) || result;
+                TooltipsUI.cleanupTooltipsIn?.(appreciationCell);
+                appreciationCell.innerHTML = this._getAppreciationCell(latestResult);
+                TooltipsUI.initTooltips?.(appreciationCell);
+            } else {
+                // Smooth collapse - animate the CELL height for smooth row transition
+                appreciationCell._collapseTimer = setTimeout(() => {
+                    appreciationCell._collapseTimer = null;
                     if (!targetEl.isConnected) return;
-                    // Switch to compact mode
-                    targetEl.classList.remove('expanded');
-                    targetEl.style.opacity = '1';
-
-                    // Measure new compact height
-                    appreciationCell.style.height = 'auto';
-                    const cellCompactHeight = appreciationCell.offsetHeight;
-
-                    // Reset to expanded and animate
+                    // 1. Capture current cell height (determines row height)
+                    const cellExpandedHeight = appreciationCell.offsetHeight;
                     appreciationCell.style.height = cellExpandedHeight + 'px';
-                    appreciationCell.offsetHeight; // Force reflow
+                    appreciationCell.style.overflow = 'hidden';
+                    appreciationCell.style.boxSizing = 'border-box';
 
-                    // Animate cell height (this controls row height)
-                    appreciationCell.style.transition = 'height 0.8s cubic-bezier(0.32, 0.72, 0, 1)';
-                    appreciationCell.style.height = cellCompactHeight + 'px';
+                    // 2. Fade out content
+                    targetEl.style.opacity = '0.3';
+                    targetEl.style.transition = 'opacity 0.4s ease-out';
 
-                    // Clean up after animation
-                    appreciationCell._collapseCleanupTimer = setTimeout(() => {
-                        appreciationCell._collapseCleanupTimer = null;
-                        appreciationCell.style.height = '';
-                        appreciationCell.style.overflow = '';
-                        appreciationCell.style.boxSizing = '';
-                        appreciationCell.style.transition = '';
-                        targetEl.style.transition = '';
-                    }, 900);
-                }, 400);
-            }, 2000);
+                    // 3. After fade, switch to canonical compact cell and animate cell height
+                    appreciationCell._collapseInnerTimer = setTimeout(() => {
+                        appreciationCell._collapseInnerTimer = null;
+                        if (!targetEl.isConnected || !appreciationCell.isConnected) return;
+
+                        // Restore canonical cell markup (wrapper, quick-copy button, overflow/copied badges)
+                        const latestResult = appState.generatedResults.find(r => r.id === studentId) || result;
+                        TooltipsUI.cleanupTooltipsIn?.(appreciationCell);
+                        appreciationCell.innerHTML = this._getAppreciationCell(latestResult);
+                        TooltipsUI.initTooltips?.(appreciationCell);
+
+                        const newContent = appreciationCell.firstElementChild;
+                        if (newContent) {
+                            newContent.style.opacity = '0.3';
+                        }
+
+                        // Measure new compact height on the real final DOM
+                        appreciationCell.style.height = 'auto';
+                        const cellCompactHeight = appreciationCell.offsetHeight;
+
+                        // Reset to expanded and animate
+                        appreciationCell.style.height = cellExpandedHeight + 'px';
+                        appreciationCell.offsetHeight; // Force reflow
+
+                        // Animate cell height (this controls row height) and fade content back in
+                        appreciationCell.style.transition = 'height 0.8s cubic-bezier(0.32, 0.72, 0, 1)';
+                        appreciationCell.style.height = cellCompactHeight + 'px';
+                        if (newContent) {
+                            newContent.style.transition = 'opacity 0.4s ease-out';
+                            newContent.style.opacity = '1';
+                        }
+
+                        // Clean up after animation
+                        appreciationCell._collapseCleanupTimer = setTimeout(() => {
+                            appreciationCell._collapseCleanupTimer = null;
+                            if (!appreciationCell.isConnected) return;
+                            appreciationCell.style.height = '';
+                            appreciationCell.style.overflow = '';
+                            appreciationCell.style.boxSizing = '';
+                            appreciationCell.style.transition = '';
+                            if (newContent?.isConnected) {
+                                newContent.style.transition = '';
+                                newContent.style.opacity = '';
+                            }
+                        }, 900);
+                    }, 400);
+                }, 2000);
+            }
 
         } else {
             // Standard render
+            TooltipsUI.cleanupTooltipsIn?.(appreciationCell);
             appreciationCell.innerHTML = this._getAppreciationCell(result);
+            TooltipsUI.initTooltips?.(appreciationCell);
         }
 
         const actionBtn = row.querySelector('.btn-action-menu');

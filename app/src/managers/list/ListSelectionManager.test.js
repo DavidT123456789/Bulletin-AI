@@ -172,6 +172,7 @@ describe('ListSelectionManager', () => {
 
         mockCallbacks = {
             updateStudentRow: vi.fn(),
+            updateRow: vi.fn().mockResolvedValue(),
             setRowStatus: vi.fn(),
             renderList: vi.fn(),
             clearSelections: vi.fn()
@@ -394,15 +395,24 @@ describe('ListSelectionManager', () => {
             StudentDataManager.updateResult = vi.fn((orig, next) => Object.assign(orig, next, { copied: false }));
 
             mockCallbacks.updateStudentRow.mockClear();
+            mockCallbacks.updateRow.mockClear();
+            FocusPanelManager.handleExternalGenerationComplete.mockClear();
             await ListSelectionManager.bulkRegenerate(['student-1', 'student-2', 'student-3']);
 
-            // First student succeeded: historyState reset to null
-            expect(appState.generatedResults[0].historyState).toBeNull();
-            // Second student aborted during AI call: historyState and copied preserved
+            // First student succeeded: animated reveal triggered
+            expect(mockCallbacks.updateRow).toHaveBeenCalledTimes(1);
+            expect(mockCallbacks.updateRow).toHaveBeenCalledWith('student-1', expect.objectContaining({ id: 'student-1' }), true);
+            // Second student aborted during AI call: historyState and copied preserved, Focus Panel restored cleanly
             expect(appState.generatedResults[1].historyState).toEqual({ idx: 2 });
             expect(appState.generatedResults[1].copied).toBe(true);
-            // updateStudentRow called once when student-1 succeeded, then only for student-2 and student-3 on abort cleanup
-            expect(mockCallbacks.updateStudentRow.mock.calls.map(c => c[0])).toEqual(['student-1', 'student-2', 'student-3']);
+            expect(FocusPanelManager.handleExternalGenerationComplete).toHaveBeenCalledWith(
+                'student-2',
+                expect.objectContaining({ id: 'student-2' }),
+                false,
+                { cancelled: true }
+            );
+            // updateStudentRow called only for remaining uncompleted rows (student-2 and student-3) on abort cleanup
+            expect(mockCallbacks.updateStudentRow.mock.calls.map(c => c[0])).toEqual(['student-2', 'student-3']);
             expect(UI.showNotification).toHaveBeenCalledWith('Régénération interrompue (1/3 régénérée).', 'warning');
         });
 
@@ -417,6 +427,90 @@ describe('ListSelectionManager', () => {
             expect(AppreciationsManager.generateAppreciation).not.toHaveBeenCalled();
             expect(ListSelectionManager.selectedIds.size).toBe(2);
             vi.restoreAllMocks();
+        });
+
+        it('should seed prior version and record regenerated version in historyPerPeriod via StudentDataManager.updateResult', async () => {
+            const existing = {
+                id: 'student-1',
+                nom: 'DUPONT',
+                prenom: 'Jean',
+                appreciation: 'Ancienne appréciation importée.',
+                generationPeriod: 'T1',
+                wasGenerated: false,
+                appreciationSource: 'imported',
+                studentData: {
+                    currentPeriod: 'T1',
+                    periods: { T1: { grade: 14, appreciation: 'Ancienne appréciation importée.' } }
+                }
+            };
+            const next = {
+                id: 'new-id',
+                nom: 'DUPONT',
+                prenom: 'Jean',
+                appreciation: 'Nouvelle appréciation régénérée par IA.',
+                generationPeriod: 'T1',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                studentData: {
+                    currentPeriod: 'T1',
+                    currentAIModel: 'gemini-2.5-flash',
+                    periods: { T1: { grade: 14, appreciation: 'Nouvelle appréciation régénérée par IA.' } }
+                }
+            };
+
+            const { StudentDataManager: RealStudentDataManager } = await vi.importActual('../StudentDataManager.js');
+            const updated = RealStudentDataManager.updateResult(existing, next);
+            expect(updated.appreciationSource).toBe('ai');
+            const versions = updated.historyPerPeriod?.T1?.versions || [];
+            expect(versions.length).toBe(2);
+            expect(versions[0]).toMatchObject({
+                content: 'Ancienne appréciation importée.',
+                source: 'imported',
+                appreciationSource: 'imported'
+            });
+            expect(versions[1]).toMatchObject({
+                content: 'Nouvelle appréciation régénérée par IA.',
+                source: 'regenerate',
+                appreciationSource: 'ai'
+            });
+        });
+
+        it('should migrate legacy historyState into historyPerPeriod instead of discarding it on regeneration', async () => {
+            const existing = {
+                id: 'student-legacy',
+                nom: 'MARTIN',
+                prenom: 'Claire',
+                appreciation: 'Version actuelle.',
+                generationPeriod: 'T1',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                historyState: {
+                    versions: [
+                        { content: 'Première version.', source: 'original', appreciationSource: 'ai' },
+                        { content: 'Version actuelle.', source: 'regenerate', appreciationSource: 'ai' }
+                    ],
+                    currentIndex: 1
+                },
+                studentData: { currentPeriod: 'T1', periods: { T1: { grade: 12, appreciation: 'Version actuelle.' } } }
+            };
+            const next = {
+                appreciation: 'Troisième version.',
+                generationPeriod: 'T1',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                studentData: { currentPeriod: 'T1', periods: { T1: { grade: 12, appreciation: 'Troisième version.' } } }
+            };
+
+            const { StudentDataManager: RealStudentDataManager } = await vi.importActual('../StudentDataManager.js');
+            const updated = RealStudentDataManager.updateResult(existing, next);
+
+            expect(updated.historyState).toBeNull();
+            expect(updated.historyPerPeriod.T1.versions.map(v => v.content)).toEqual([
+                'Première version.',
+                'Version actuelle.',
+                'Troisième version.'
+            ]);
+            expect(updated.historyPerPeriod.T1.currentIndex).toBe(2);
         });
     });
 

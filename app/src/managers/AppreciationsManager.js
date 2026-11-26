@@ -14,7 +14,6 @@ import { ResultsUIManager } from './ResultsUIManager.js';
 import { MassImportManager } from './MassImportManager.js';
 import { FileImportManager } from './FileImportManager.js';
 import { ListViewManager } from './ListViewManager.js';
-import * as HistoryUtils from '../utils/HistoryUtils.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
 
 let App;
@@ -49,17 +48,6 @@ export const AppreciationsManager = {
 
     createResultObject(...args) {
         return StudentDataManager.createResultObject(...args);
-    },
-
-    /**
-     * Enregistre une version d'appréciation dans l'historique par période (délégué à HistoryUtils SSOT)
-     * @param {Object} result - L'objet résultat
-     * @param {string} [source='edit'] - Source de la modification
-     * @param {string} [period=appState.currentPeriod] - Période cible
-     */
-    pushToHistory(result, source = 'edit', period = appState.currentPeriod) {
-        if (!result || !result.appreciation) return;
-        HistoryUtils.recordStudentVersion(result, period, result.appreciation, source, { autoSeed: false });
     },
 
     analyserEvolution(periodsData) {
@@ -328,21 +316,11 @@ export const AppreciationsManager = {
 
             const newResult = await this.generateAppreciation(updatedStudentData, false, null, null, 'single-student');
 
-            // Préserver l'appréciation précédente dans l'historique AVANT l'écrasement par updateResult
-            const priorState = HistoryUtils.getStudentPeriodState(appState.generatedResults[resultIndex], targetPeriod, {
-                createIfMissing: true,
-                autoSeed: true
-            });
-            const hadPriorVersions = (priorState?.versions?.length || 0) > 0;
-
-            // Use centralized updateResult to preserve user data (photo, journal, history)
+            // Use centralized updateResult to preserve user data (photo, journal, historyPerPeriod)
             const updatedResult = StudentDataManager.updateResult(
                 appState.generatedResults[resultIndex],
                 newResult
             );
-
-            // Enregistrer la nouvelle génération dans l'historique
-            this.pushToHistory(updatedResult, hadPriorVersions ? 'regenerate' : 'original', targetPeriod);
 
             // CORRECTIF: Synchroniser filteredResults avec le nouveau résultat
             const filteredIndex = appState.filteredResults.findIndex(r => r.id === id);
@@ -350,10 +328,12 @@ export const AppreciationsManager = {
                 appState.filteredResults[filteredIndex] = updatedResult;
             }
 
-            // Mettre à jour la ligne avec animation typewriter et le volet s'il est ouvert
+            // Mettre à jour la ligne avec animation typewriter et le volet s'il est ouvert (en parallèle)
             if ((appState.currentClassId ?? null) === (targetClassId ?? null) && appState.currentPeriod === targetPeriod) {
-                await ListViewManager.updateRow(id, updatedResult, true);
-                await FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true);
+                await Promise.all([
+                    ListViewManager.updateRow(id, updatedResult, true),
+                    FocusPanelManager?.handleExternalGenerationComplete?.(id, updatedResult, true)
+                ]);
             }
             try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
 

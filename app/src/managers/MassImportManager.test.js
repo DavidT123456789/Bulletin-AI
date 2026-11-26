@@ -143,11 +143,16 @@ describe('MassImportManager', () => {
             expect(MassImportManager.massImportAbortController).toBeNull();
         });
 
-        it('should call generateAppreciation for each student', async () => {
+        it('should call generateAppreciation for each student and queue all rows with pending-skeleton first', async () => {
             const students = [
                 { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] },
                 { nom: 'DUPONT', prenom: 'Emma', periods: { T1: { grade: 12 } }, statuses: [] }
             ];
+
+            const statusCalls = [];
+            const statusSpy = vi.spyOn(ListViewManager, 'setRowStatus').mockImplementation((id, status) => {
+                statusCalls.push(status);
+            });
 
             mockAm.generateAppreciation.mockResolvedValue({
                 id: 'test-id',
@@ -159,6 +164,8 @@ describe('MassImportManager', () => {
             await MassImportManager.processMassImport(students, 0);
 
             expect(mockAm.generateAppreciation).toHaveBeenCalledTimes(2);
+            expect(statusCalls).toEqual(['pending-skeleton', 'pending-skeleton', 'generating', 'generating']);
+            statusSpy.mockRestore();
         });
 
         it('should handle generation errors gracefully', async () => {
@@ -175,6 +182,47 @@ describe('MassImportManager', () => {
                 expect.any(Object), {}, {},
                 expect.stringContaining('Erreur IA')
             );
+        });
+
+        it('should preserve an existing appreciation on the period when AI generation fails', async () => {
+            appState.currentPeriod = 'T1';
+            appState.generatedResults = [{
+                id: 'existing-1',
+                nom: 'MARTIN',
+                prenom: 'Lucas',
+                classId: appState.currentClassId,
+                appreciation: 'Ancienne appréciation conservée.',
+                generationPeriod: 'T1',
+                studentData: {
+                    currentPeriod: 'T1',
+                    periods: { T1: { grade: 15, appreciation: 'Ancienne appréciation conservée.' } }
+                }
+            }];
+
+            mockAm.generateAppreciation.mockRejectedValue(new Error('Network error'));
+            mockAm.createResultObject.mockImplementation((nom, prenom, app, evo, sd, prompts, usage, err) => ({
+                id: 'err-id',
+                nom,
+                prenom,
+                appreciation: app,
+                evolutions: evo,
+                studentData: {
+                    ...sd,
+                    periods: { T1: { grade: 15, appreciation: app } }
+                },
+                errorMessage: err,
+                errorPeriod: 'T1'
+            }));
+
+            const students = [
+                { existingId: 'existing-1', nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
+            ];
+
+            await MassImportManager.processMassImport(students, 0);
+
+            expect(appState.generatedResults[0].appreciation).toBe('Ancienne appréciation conservée.');
+            expect(appState.generatedResults[0].studentData.periods.T1.appreciation).toBe('Ancienne appréciation conservée.');
+            expect(appState.generatedResults[0].errorMessage).toContain('Erreur IA');
         });
 
         it('should call renderResults after completion', async () => {

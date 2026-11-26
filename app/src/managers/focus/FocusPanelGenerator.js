@@ -413,8 +413,10 @@ export const FocusPanelGenerator = {
      * @param {string} studentId
      * @param {Object} result
      * @param {boolean} [animate=true]
+     * @param {Object} [options={}]
+     * @param {boolean} [options.cancelled=false] - True si la génération externe a été annulée
      */
-    async handleExternalGenerationComplete(panel, studentId, result, animate = true) {
+    async handleExternalGenerationComplete(panel, studentId, result, animate = true, { cancelled = false } = {}) {
         if (panel.currentStudentId !== studentId || !result) return;
         const generateBtn = document.getElementById('focusGenerateBtn');
 
@@ -423,10 +425,12 @@ export const FocusPanelGenerator = {
         const periodApp = result.studentData?.periods?.[period]?.appreciation;
         const effectiveApp = periodApp || ((result.generationPeriod === period) ? result.appreciation : '');
 
-        if (result.errorMessage && result.errorPeriod === period) {
+        if (cancelled || (result.errorMessage && result.errorPeriod === period) || !effectiveApp) {
             if (generateBtn) UI.hideInlineSpinner(generateBtn);
-            panel._renderAppreciationText(result);
+            if (appreciationEl) panel._renderAppreciationText(result);
             FocusPanelStatus.updateAppreciationStatus(result, { animate: false });
+            FocusPanelStatus.updateSourceIndicator(result);
+            FocusPanelStatus.updateHistoryIndicator();
             panel._updateGenerateButton(result);
             return;
         }
@@ -461,9 +465,6 @@ export const FocusPanelGenerator = {
             FocusPanelStatus.updateSourceIndicator(result);
             panel._updateGenerateButton(result);
             try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }
-        } else if (generateBtn) {
-            UI.hideInlineSpinner(generateBtn);
-            panel._updateGenerateButton(result);
         }
     },
 

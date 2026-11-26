@@ -952,6 +952,9 @@ export const ResultsUIManager = {
             let wasAborted = false;
             const recentOpenings = [];
             const total = toRegen.length;
+            const isSameBatchContext = () =>
+                (appState.currentClassId ?? null) === (currentClassId ?? null) &&
+                appState.currentPeriod === currentPeriod;
 
             // Afficher "En file" sur toutes les lignes concernées
             toRegen.forEach(resultToRegen => {
@@ -972,7 +975,10 @@ export const ResultsUIManager = {
                 let isSuccess = false;
 
                 try {
-                    ListViewManager.setRowStatus(resultToRegen.id, 'generating');
+                    if (isSameBatchContext()) {
+                        ListViewManager.setRowStatus(resultToRegen.id, 'generating');
+                        FocusPanelManager?.handleExternalGenerationStart?.(resultToRegen.id);
+                    }
 
                     const updatedStudentData = Utils.deepClone(resultToRegen.studentData);
                     updatedStudentData.id = resultToRegen.id;
@@ -988,6 +994,9 @@ export const ResultsUIManager = {
                 } catch (e) {
                     if (e.name === 'AbortError' || signal.aborted) {
                         wasAborted = true;
+                        if (isSameBatchContext()) {
+                            FocusPanelManager?.handleExternalGenerationComplete?.(resultToRegen.id, resultToRegen, false, { cancelled: true });
+                        }
                         break;
                     }
 
@@ -1022,9 +1031,15 @@ export const ResultsUIManager = {
 
                     if (isSuccess) {
                         successCount++;
-                        await ListViewManager.updateRow(updatedResult.id, updatedResult, true);
-                    } else {
+                        if (isSameBatchContext()) {
+                            await Promise.all([
+                                ListViewManager.updateRow(updatedResult.id, updatedResult, true),
+                                FocusPanelManager?.handleExternalGenerationComplete?.(updatedResult.id, updatedResult, true)
+                            ]);
+                        }
+                    } else if (isSameBatchContext()) {
                         ListViewManager.updateRow(updatedResult.id, updatedResult, false);
+                        await FocusPanelManager?.handleExternalGenerationComplete?.(updatedResult.id, updatedResult, false);
                     }
                 }
             }

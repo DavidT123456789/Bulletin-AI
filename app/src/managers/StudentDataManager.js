@@ -2,6 +2,7 @@ import { appState, userSettings, runtimeState } from '../state/State.js';
 import { Utils } from '../utils/Utils.js';
 import { DBService } from '../services/DBService.js';
 import { PromptService } from '../services/PromptService.js';
+import * as HistoryUtils from '../utils/HistoryUtils.js';
 
 export const StudentDataManager = {
     createResultObject(nom, prenom, appreciation, evolutions, studentData, prompts, tokenUsage, errorMessage = null, modelUsed = null) {
@@ -358,6 +359,19 @@ export const StudentDataManager = {
      * @returns {Object} - Le résultat mis à jour (même référence que existingResult)
      */
     updateResult(existingResult, newResult) {
+        const targetPeriod = newResult.generationPeriod || newResult.studentData?.currentPeriod || appState.currentPeriod;
+        const hasValidNewAppreciation = Boolean(
+            !newResult.errorMessage &&
+            typeof newResult.appreciation === 'string' &&
+            newResult.appreciation.trim()
+        );
+
+        // Préserver l'appréciation précédente dans l'historique par période AVANT tout écrasement
+        const priorState = hasValidNewAppreciation
+            ? HistoryUtils.getStudentPeriodState(existingResult, targetPeriod, { createIfMissing: true, autoSeed: true })
+            : null;
+        const hadPriorVersions = (priorState?.versions?.length || 0) > 0;
+
         // Sauvegarder les données utilisateur qui doivent être préservées
         const preserved = {
             id: existingResult.id,
@@ -384,6 +398,11 @@ export const StudentDataManager = {
         existingResult.timestamp = newResult.timestamp;
         existingResult.tokenUsage = newResult.tokenUsage;
         existingResult.wasGenerated = newResult.wasGenerated;
+        if (newResult.appreciationSource) {
+            existingResult.appreciationSource = newResult.appreciationSource;
+        } else if (newResult.wasGenerated) {
+            existingResult.appreciationSource = 'ai';
+        }
         existingResult.isPending = false;
         existingResult.generationSnapshot = newResult.generationSnapshot;
         existingResult.generationSnapshotJournal = Utils.deepClone(preserved.journal || []);
@@ -408,8 +427,8 @@ export const StudentDataManager = {
             existingResult.studentData.prompts = newResult.studentData.prompts;
             existingResult.studentData.statuses = newResult.studentData.statuses;
         }
-        const targetPeriod = newResult.generationPeriod || newResult.studentData?.currentPeriod || appState.currentPeriod;
-        Utils.setAppreciationCopied(existingResult, targetPeriod, false);
+        const targetPeriodForCopy = newResult.generationPeriod || newResult.studentData?.currentPeriod || appState.currentPeriod;
+        Utils.setAppreciationCopied(existingResult, targetPeriodForCopy, false);
 
         // Restaurer les données utilisateur préservées
         existingResult.id = preserved.id;
@@ -429,6 +448,21 @@ export const StudentDataManager = {
         Utils.syncStudentAnalysisRootCache(existingResult, existingResult.generationPeriod || appState.currentPeriod);
         if (preserved._lastModified) existingResult._lastModified = preserved._lastModified;
         if (preserved._manualEdits) existingResult._manualEdits = preserved._manualEdits;
+
+        if (hasValidNewAppreciation) {
+            HistoryUtils.recordStudentVersion(
+                existingResult,
+                targetPeriod,
+                newResult.appreciation,
+                hadPriorVersions ? 'regenerate' : 'original',
+                {
+                    autoSeed: false,
+                    appreciationSource: existingResult.appreciationSource || 'ai',
+                    aiModel: existingResult.studentData?.currentAIModel ?? null,
+                    tokenUsage: existingResult.tokenUsage
+                }
+            );
+        }
 
         // Auto-compute prompt hash AFTER all data is finalized
         if (!newResult.promptHash && existingResult.studentData) {

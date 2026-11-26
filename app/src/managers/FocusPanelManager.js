@@ -894,7 +894,7 @@ export const FocusPanelManager = {
     _prepareStudentData(studentId, period, result) { return FocusPanelGenerator.prepareStudentData(studentId, period, result); },
     generate() { return FocusPanelGenerator.generate(this); },
     handleExternalGenerationStart(studentId) { return FocusPanelGenerator.handleExternalGenerationStart(this, studentId); },
-    handleExternalGenerationComplete(studentId, result, animate = true) { return FocusPanelGenerator.handleExternalGenerationComplete(this, studentId, result, animate); },
+    handleExternalGenerationComplete(studentId, result, animate = true, options = undefined) { return FocusPanelGenerator.handleExternalGenerationComplete(this, studentId, result, animate, options); },
     _showAppreciationSkeleton() { return FocusPanelGenerator.showAppreciationSkeleton(); },
     _updateGenerateButton(result) { return FocusPanelGenerator.updateGenerateButton(result); },
     copy() { return FocusPanelGenerator.copy(this); },
