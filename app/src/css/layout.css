@@ -929,7 +929,7 @@ button > .icon-spin-wrapper {
 
     .header {
         padding: 0 var(--space-3);
-        gap: 6px;
+        gap: 8px;
         overflow: visible;
         flex-wrap: nowrap;
     }
@@ -942,7 +942,7 @@ button > .icon-spin-wrapper {
     }
 
     .header-left {
-        gap: 6px;
+        gap: 8px;
     }
 
     .header .header-context-chip {
@@ -1004,7 +1004,7 @@ button > .icon-spin-wrapper {
     }
 
     .header-actions {
-        gap: 4px;
+        gap: 6px;
     }
 
     .header-actions-pill {
@@ -1064,13 +1064,13 @@ button > .icon-spin-wrapper {
     }
 
     .header {
-        gap: 3px;
+        --header-mobile-gap: clamp(3px, 6.25vw - 19.5px, 8px);
+        gap: var(--header-mobile-gap);
         padding: 0 10px 0 6px;
     }
 
     .header-left {
-        gap: 3px;
-        flex: 1 1 auto;
+        gap: var(--header-mobile-gap);
     }
 
     .header .header-context-chip {
@@ -1091,7 +1091,7 @@ button > .icon-spin-wrapper {
     }
 
     .header-actions {
-        gap: 3px;
+        gap: clamp(3px, 5vw - 15px, 6px);
     }
 
     .header-center {

@@ -617,10 +617,6 @@
 }
 
 @media (max-width: 600px) {
-    .class-selector-wrapper {
-        gap: 2px;
-    }
-
     .class-dropdown {
         top: calc(100% + 18px);
     }
@@ -636,6 +632,10 @@
 }
 
 @media (max-width: 480px) {
+    .class-selector-wrapper {
+        gap: clamp(2px, 5vw - 16px, 4px);
+    }
+
     .header-class-note-btn {
         width: 32px;
         height: 32px;
