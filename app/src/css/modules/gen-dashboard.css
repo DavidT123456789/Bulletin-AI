@@ -336,7 +336,7 @@
 
 @media (max-width: 768px) {
     .header-gen-dashboard:not(.generating) {
-        width: 36px;
+        width: 38px;
         padding: 0;
         justify-content: center;
     }
@@ -383,11 +383,16 @@
     .header-gen-dashboard {
         height: 36px;
     }
+
+    .header-gen-dashboard:not(.generating) {
+        width: 36px;
+    }
 }
 
 @media (max-width: 480px) {
     .header-gen-dashboard:not(.generating) {
-        width: 30px;
+        width: 32px;
+        height: 32px;
     }
 }
 
