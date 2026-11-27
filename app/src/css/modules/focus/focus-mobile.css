@@ -22,23 +22,6 @@
     .focus-content {
         padding: var(--focus-header-offset) 16px 24px 16px;
     }
-
-    /* Refinement options: scroll horizontally */
-    .focus-refinement-options {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 10px;
-    }
-
-    .focus-refinement-options::-webkit-scrollbar {
-        display: none;
-    }
-
-    .focus-refinement-options .btn {
-        flex: 1 0 auto;
-        height: auto;
-    }
 }
 
 /* Mobile Breakpoint (max-width: 600px) */
@@ -172,8 +155,19 @@
         padding: 2.5px 7px;
     }
 
-    /* Hide navigation arrows on mobile to save space (user can swipe) */
-    .focus-nav-buttons > .focus-nav-btn {
+    /* Keep navigation arrows in unscrolled Focus Header for one-handed tap nav; hide in compact Analysis & scrolled capsule */
+    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons {
+        margin-left: -4px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons > .focus-nav-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 16.5px;
+    }
+
+    .analysis-nav-buttons > .focus-nav-btn,
+    .focus-header.scrolled:not(.editing) .focus-nav-buttons {
         display: none;
     }
 
@@ -259,6 +253,16 @@
     .focus-header.scrolled:not(.editing) .focus-status-dot {
         width: 6.5px;
         height: 6.5px;
+    }
+
+    /* Compact grades inside scrolled capsule: drop period prefixes (3T truncation mutualized in focus-grades.css) */
+    .focus-header.scrolled:not(.editing) .focus-grades-strip {
+        margin-left: auto;
+    }
+
+    .focus-header.scrolled:not(.editing) .previous-grade-chip .period-prefix,
+    .focus-header.scrolled:not(.editing) .context-grade-group label {
+        display: none;
     }
 
     /* ============================================
@@ -352,17 +356,24 @@
         justify-content: flex-start;
     }
 
+    .focus-header:not(.scrolled):not(.editing) .context-grade-group {
+        height: 28px;
+        padding: 0 8px;
+    }
+
     .focus-consigne-row {
-        padding: 9px 10px 9px 14px;
+        padding: 8px 10px 8px 14px;
         gap: 8px;
     }
 
-    .focus-appreciation-body {
-        padding-right: 10px;
+    .focus-consigne-label {
+        font-size: 11.5px;
+        padding-right: 8px;
     }
 
     .focus-appreciation-body .focus-audio-group {
-        padding-top: 9px;
+        padding: 0 10px 4px 14px;
+        gap: 4px;
     }
 
     .focus-context-textarea {
@@ -456,27 +467,32 @@
     }
 
     .focus-appreciation-text {
-        min-height: 48px;
-        padding: 10px 14px;
+        min-height: 44px;
+        padding: 12px 14px 2px 14px;
         font-size: 14.5px;
         line-height: 1.5;
     }
 
-    /* Refinement buttons: 2x2 refined tonal pills on mobile (lighter than 44px primary footer) */
+    .focus-appreciation-body:has(.appreciation-skeleton) .focus-appreciation-text,
+    .focus-appreciation-body:has(.focus-audio-group:not(:has(> button:not([disabled]):not([style*="display: none"])))) .focus-appreciation-text {
+        padding-bottom: 12px;
+    }
+
+    /* Refinement buttons: slim 2x2 refined tonal pills on mobile (lighter than 44px primary footer) */
     .focus-refinement-options {
         flex-wrap: wrap;
         overflow-x: visible;
-        margin: 2px 0 0;
-        padding: 0 14px 12px;
-        gap: 7px;
+        margin: 0;
+        padding: 0 14px 10px;
+        gap: 6px;
     }
 
     .focus-refinement-options .btn {
-        flex: 1 1 calc(50% - 4px);
+        flex: 1 1 calc(50% - 3px);
         min-width: 0;
         font-size: 12px;
-        padding: 6px 10px;
-        min-height: 34px;
+        padding: 5px 10px;
+        min-height: 30px;
         height: auto;
         gap: 6px;
         justify-content: center;
@@ -525,22 +541,25 @@
     /* Header radius overrides removed: They naturally match the container (radius-lg) now. */
 }
 
-/* Narrow Mobile (max-width: 420px) */
-@media (max-width: 420px) {
-
-    .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
+/* Adaptively wrap 3-trimester grades to Row 3 on narrow phones so student names never get crushed */
+@media (max-width: 440px) {
+    .focus-header:not(.scrolled):not(.editing):has(.previous-grade-chip:nth-of-type(2)) .focus-header-identity {
         grid-column: 1 / -1;
     }
 
-    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+    .focus-header:not(.scrolled):not(.editing):has(.previous-grade-chip:nth-of-type(2)) .focus-grades-strip {
         grid-column: 1 / -1;
         grid-row: 3;
         justify-self: start;
         padding-left: 66px;
     }
+}
 
-    /* Preserve generous name space inside the single-row scrolled pill */
-    .focus-header.scrolled:not(.editing) .focus-nav-buttons,
+/* Narrow Mobile (max-width: 420px) */
+@media (max-width: 420px) {
+    /* Preserve generous name space inside the single-row scrolled pill (keep trend arrow + current grade; hide if current grade empty) */
+    .focus-header.scrolled:not(.editing) .previous-grade-chip,
+    .focus-header.scrolled:not(.editing) .focus-grades-strip:has(#focusCurrentGradeInput:placeholder-shown),
     .focus-header.scrolled:not(.editing) .focus-origin-class-badge,
     #focusWordCount .word-count-unit {
         display: none;
@@ -552,6 +571,17 @@
 
     :root {
         --focus-header-offset: 112px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
+        grid-column: 1 / -1;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        justify-self: start;
+        padding-left: 58px;
     }
 
     .focus-header:not(.scrolled):not(.editing) {
@@ -605,10 +635,6 @@
         -ms-overflow-style: none;
     }
 
-    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
-        padding-left: 58px;
-    }
-
     .journal-header,
     .focus-appreciation-header {
         padding: 8px 10px;
@@ -660,6 +686,19 @@
     .btn-action-menu {
         min-width: 44px;
         min-height: 44px;
+    }
+
+    /* Mutualized invisible touch expansion for all 3 mics + speaker (zero layout bloat) */
+    .focus-mic-btn::after,
+    .focus-speaker-btn::after {
+        content: '';
+        position: absolute;
+        inset: -7px -4px;
+        border-radius: 50%;
+    }
+
+    .focus-audio-group {
+        gap: 8px;
     }
 
     /* Invisible touch target expansion to ensure 44px hitbox on touch screens */

@@ -491,6 +491,10 @@ describe('SpeechRecognitionManager', () => {
 
         it('should clear errorMessage and errorPeriod when dictating into appreciation field', () => {
             startDictation('appreciation');
+            const aiIndicator = document.createElement('span');
+            aiIndicator.id = 'focusAiIndicator';
+            aiIndicator.className = 'ai-indicator tooltip';
+            document.body.appendChild(aiIndicator);
             expect(testStudent.errorMessage).toBe('Clé API Mistral manquante. Veuillez la configurer dans les paramètres.');
 
             mockRecognition.onresult(finalResult('très bon travail'));
@@ -499,6 +503,9 @@ describe('SpeechRecognitionManager', () => {
             expect(testStudent.appreciationSource).toBe('manual');
             expect(testStudent.appreciation).toBe('Très bon travail');
             expect(testStudent.studentData.periods.T1.appreciation).toBe('Très bon travail');
+            expect(aiIndicator.classList.contains('ai-indicator')).toBe(true);
+            expect(aiIndicator.classList.contains('source-manual')).toBe(true);
+            expect(aiIndicator.classList.contains('source-indicator')).toBe(false);
         });
 
         it('should NOT push each intermediate phrase to history, but push ONCE when dictation stops', () => {

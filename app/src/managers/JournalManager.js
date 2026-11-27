@@ -262,17 +262,22 @@ export const JournalManager = {
      * @param {string} studentId
      * @param {string|null} period
      * @param {Object} [options={}]
-     * @returns {Array<{icon: string, color: string, count: number, label: string}>}
+     * @param {boolean} [options.excludePrivate=false] - Ignore private entries
+     * @param {boolean} [options.excludeRemarque=false] - Exclude technical fallback tag 'remarque'
+     * @returns {Array<{id: string, icon: string, color: string, ink: string, count: number, label: string, promptLabel: string}>}
      */
     getAggregatedCounts(studentId, period = null, options = {}) {
+        const { excludeRemarque = false } = options;
         const tagCounts = this.countTags(studentId, period, options);
 
         const aggregated = [];
         Object.entries(tagCounts).forEach(([tagId, count]) => {
+            if (excludeRemarque && tagId === 'remarque') return;
             if (count > 0) {
                 const tag = this.getTag(tagId);
                 if (tag) {
                     aggregated.push({
+                        id: tagId,
                         icon: tag.icon,
                         color: tag.color,
                         ink: tag.ink,
@@ -366,11 +371,21 @@ export const JournalManager = {
     },
 
     /**
+     * Check whether a journal entry contains a non-empty written note
+     * @param {Object|null|undefined} entry
+     * @returns {boolean}
+     * @private
+     */
+    _hasWrittenNote(entry) {
+        return typeof entry?.note === 'string' && entry.note.trim().length > 0;
+    },
+
+    /**
      * Build structured AI synthesis summary for UI transparency and prompt injection (SSOT).
      * Excludes private entries and technical fallback tag 'remarque'; includes all written non-private notes up to 12 notes / 1200 chars.
      * @param {string|Object} studentOrId - Student ID or student object
      * @param {string|null} [period=null] - Optional period filter
-     * @returns {{ includedInAI: boolean, threshold: number, tags: Array<{id: string, label: string, count: number}>, notes: Array<{text: string, extraTagLabels: string[]}>, privateCount: number, totalCount: number, displayText: string }}
+     * @returns {{ includedInAI: boolean, threshold: number, tags: Array<{id: string, label: string, count: number}>, notes: Array<{text: string, extraTagLabels: string[]}>, transmittedTagIds: string[], privateCount: number, totalCount: number, displayText: string, compactText: string }}
      */
     getAISummary(studentOrId, period = null) {
         const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
@@ -385,14 +400,32 @@ export const JournalManager = {
                 threshold,
                 tags: [],
                 notes: [],
+                standaloneLabels: [],
+                transmittedTagIds: [],
+                transmittedCount: 0,
                 privateCount,
                 totalCount,
-                displayText: ''
+                displayText: '',
+                compactText: ''
             };
         }
 
         const aiEntries = entries.filter(e => !e.isPrivate);
-        const tagCounts = this.countTags(aiEntries);
+        const tagCounts = {};
+        const tagOnlyCounts = {};
+        const writtenEntries = [];
+
+        for (const entry of aiEntries) {
+            const hasNote = this._hasWrittenNote(entry);
+            if (hasNote) writtenEntries.push(entry);
+            if (Array.isArray(entry.tags)) {
+                for (const tagId of entry.tags) {
+                    tagCounts[tagId] = (tagCounts[tagId] || 0) + 1;
+                    if (!hasNote) tagOnlyCounts[tagId] = (tagOnlyCounts[tagId] || 0) + 1;
+                }
+            }
+        }
+
         const tags = Object.entries(tagCounts)
             .filter(([tagId, count]) => tagId !== 'remarque' && count >= threshold)
             .sort((a, b) => b[1] - a[1])
@@ -404,41 +437,65 @@ export const JournalManager = {
             }));
 
         const significantSet = new Set(tags.map(t => t.id));
-        const rawNotes = aiEntries
-            .filter(e => typeof e.note === 'string' && e.note.trim().length > 0)
-            .slice(-12);
+        // Standalone UI tags: repeated trends (count >= 2) or tags with at least one tag-only occurrence.
+        // Prevents a single written note's tag from shifting between "Tag · « note »" and "Tag : « note »" when threshold = 1.
+        const standaloneTags = tags.filter(t => t.count >= 2 || (tagOnlyCounts[t.id] || 0) > 0);
+        const standaloneTagSet = new Set(standaloneTags.map(t => t.id));
 
+        const rawNotes = writtenEntries.slice(-12);
         const notes = [];
+        const noteDisplayParts = [];
+        const transmittedTagIdSet = new Set(significantSet);
+        const includedNoteEntries = new Set();
         let totalNoteChars = 0;
+
         for (let i = rawNotes.length - 1; i >= 0; i--) {
             const e = rawNotes[i];
             const text = e.note.trim();
             if (notes.length > 0 && totalNoteChars + text.length > 1200) break;
             totalNoteChars += text.length;
-            const extraTagLabels = (Array.isArray(e.tags) ? e.tags : [])
-                .filter(tagId => tagId && tagId !== 'remarque' && !significantSet.has(tagId))
-                .map(tagId => this.getPromptLabel(tagId));
-            notes.unshift({ text, extraTagLabels });
+            includedNoteEntries.add(e);
+
+            const explicitTagIds = (Array.isArray(e.tags) ? e.tags : [])
+                .filter(tagId => tagId && tagId !== 'remarque');
+            const extraTagLabels = [];
+            const uiTagLabels = [];
+
+            for (const tagId of explicitTagIds) {
+                transmittedTagIdSet.add(tagId);
+                const promptLabel = this.getPromptLabel(tagId);
+                if (!significantSet.has(tagId)) extraTagLabels.push(promptLabel);
+                if (!standaloneTagSet.has(tagId)) uiTagLabels.push(promptLabel);
+            }
+
+            notes.unshift({ text, extraTagLabels, uiTagLabels });
+            const short = text.length > 42 ? `${text.slice(0, 42).trimEnd()}…` : text;
+            noteDisplayParts.unshift(
+                uiTagLabels.length > 0 ? `${uiTagLabels.join(', ')} : « ${short} »` : `« ${short} »`
+            );
         }
 
-        const displayParts = [
-            ...tags.map(t => t.label),
-            ...notes.map(n => {
-                const short = n.text.length > 42 ? `${n.text.slice(0, 42).trimEnd()}…` : n.text;
-                return n.extraTagLabels.length > 0
-                    ? `« [${n.extraTagLabels.join(', ')}] ${short} »`
-                    : `« ${short} »`;
-            })
-        ];
+        const standaloneLabels = standaloneTags.map(t => t.label);
+        const transmittedCount = aiEntries.filter(e =>
+            includedNoteEntries.has(e) ||
+            (Array.isArray(e.tags) && e.tags.some(tagId => significantSet.has(tagId)))
+        ).length;
+        const compactText = transmittedCount > 0
+            ? `${transmittedCount} observation${transmittedCount > 1 ? 's' : ''}`
+            : '';
 
         return {
             includedInAI: true,
             threshold,
             tags,
             notes,
+            standaloneLabels,
+            transmittedTagIds: Array.from(transmittedTagIdSet),
+            transmittedCount,
             privateCount,
             totalCount,
-            displayText: displayParts.join(' · ')
+            displayText: [...standaloneLabels, ...noteDisplayParts].join(' · '),
+            compactText
         };
     },
 
@@ -486,7 +543,7 @@ export const JournalManager = {
     isEntryIsolated(entry, tagCounts, threshold = null, classId = null) {
         if (!entry || entry.isPrivate === true || !this.isIncludedInAI(classId)) return false;
         // Written observations are always transmitted to AI -> never isolated
-        if (typeof entry.note === 'string' && entry.note.trim().length > 0) return false;
+        if (this._hasWrittenNote(entry)) return false;
         const limit = threshold ?? this.getThreshold(classId || appState.currentClassId);
         // Tag-only entry is isolated if ALL its tags are below limit
         const tags = Array.isArray(entry.tags) ? entry.tags : [];
@@ -536,21 +593,30 @@ export const JournalManager = {
      * @returns {string} HTML string
      */
     renderEntryCard(entry, tagCounts, threshold, classId = null, extraClass = '') {
-        const tagsHTML = (Array.isArray(entry.tags) ? entry.tags : []).map(tagId => {
+        const isPrivate = entry.isPrivate === true;
+        const includeInAI = this.isIncludedInAI(classId);
+        const hasNote = this._hasWrittenNote(entry);
+        const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
+
+        const visibleTags = (Array.isArray(entry.tags) ? entry.tags : []).filter(tagId => tagId !== 'remarque');
+        const tagsHTML = visibleTags.map(tagId => {
             const tag = this.getTag(tagId);
             if (!tag) return '';
-            return `<span class="journal-tag" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
+            const isTagBelow = !isPrivate && includeInAI && !hasNote && (tagCounts[tagId] || 0) < threshold;
+            const belowClass = isTagBelow ? ' below-threshold' : '';
+            const tagTooltipAttr = isTagBelow && !isIsolated
+                ? ` data-tooltip="${Utils.escapeHtml(tag.label)} : sous le seuil ≥${threshold} (tag seul non retenu)"`
+                : '';
+            return `<span class="journal-tag${belowClass}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}"${tagTooltipAttr}>
                 <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
             </span>`;
         }).join('');
 
-        const isPrivate = entry.isPrivate === true;
         const privateClass = isPrivate ? 'is-private' : '';
         const privateBadge = isPrivate
             ? `<span class="journal-private-badge tooltip" data-tooltip="Note personnelle (non transmise à l'IA)"><iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon> Privé</span>`
             : '';
 
-        const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
         const isolatedClass = isIsolated ? 'isolated' : '';
 
         const infoIcon = isIsolated
@@ -558,17 +624,22 @@ export const JournalManager = {
             : '';
 
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
-
-        return `
-            <div class="journal-entry ${extraClass} ${isolatedClass} ${privateClass}" data-entry-id="${safeEntryId}">
-                <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
-                <div class="journal-entry-content">
+        const hasTagHeader = Boolean(tagsHTML || infoIcon);
+        const noteTextHtml = entry.note ? Utils.escapeHtml(entry.note) : '';
+        const contentBodyHTML = hasTagHeader
+            ? `
                     <div class="journal-entry-tags">
                         ${tagsHTML}
                         ${privateBadge}
                         ${infoIcon}
                     </div>
-                    ${entry.note ? `<div class="journal-entry-note">${Utils.escapeHtml(entry.note)}</div>` : ''}
+                    ${noteTextHtml ? `<div class="journal-entry-note">${noteTextHtml}</div>` : ''}`
+            : `<div class="journal-entry-note journal-entry-note--standalone">${noteTextHtml}${privateBadge ? (noteTextHtml ? ' ' : '') + privateBadge : ''}</div>`;
+
+        return `
+            <div class="journal-entry ${extraClass} ${isolatedClass} ${privateClass}" data-entry-id="${safeEntryId}">
+                <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
+                <div class="journal-entry-content">${contentBodyHTML}
                 </div>
                 <div class="journal-entry-actions">
                     <button type="button" class="journal-entry-action-btn journal-entry-edit tooltip" data-entry-id="${safeEntryId}" aria-label="Modifier l'observation" data-tooltip="Modifier">
@@ -576,6 +647,7 @@ export const JournalManager = {
                     </button>
                     <button type="button" class="journal-entry-action-btn journal-entry-delete tooltip" data-entry-id="${safeEntryId}" aria-label="Supprimer l'observation" data-tooltip="Supprimer">
                         <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                        <span class="journal-delete-confirm-label" aria-hidden="true">Supprimer ?</span>
                     </button>
                 </div>
             </div>
@@ -605,9 +677,11 @@ export const JournalManager = {
      * @param {string} studentId - Student ID
      * @param {string} [period] - Optional period filter
      * @param {string} [highlightEntryId] - Optional entry ID to animate
+     * @param {string|null} [editingEntryId=null] - Entry ID currently edited inline
+     * @param {string} [highlightClass='enter'] - CSS animation class for highlighted entry
      * @returns {string} HTML string
      */
-    renderTimeline(studentId, period = null, highlightEntryId = null, editingEntryId = null) {
+    renderTimeline(studentId, period = null, highlightEntryId = null, editingEntryId = null, highlightClass = 'enter') {
         const targetPeriod = period || appState.currentPeriod;
         const entries = Array.isArray(studentId) ? studentId : (targetPeriod
             ? this.getEntriesForPeriod(studentId, targetPeriod)
@@ -647,7 +721,7 @@ export const JournalManager = {
                 return this.renderDraftPreview(entry);
             }
 
-            const animationClass = entry.id === highlightEntryId ? 'enter' : '';
+            const animationClass = entry.id === highlightEntryId ? highlightClass : '';
             return this.renderEntryCard(entry, tagCounts, threshold, classId, animationClass);
         }).join('');
 
@@ -677,50 +751,54 @@ export const JournalManager = {
 
         return `
             <div class="journal-draft-preview ${isEdit ? 'visible is-editing' : ''}" id="journalDraftPreview">
-                <div class="journal-draft-header">
-                    <div class="journal-draft-title">
-                        <span class="journal-draft-title-text">${labelText}</span>
-                        <span class="journal-draft-date-badge">${formattedDate}</span>
-                        <button type="button" id="journalNoteMicBtn" class="focus-mic-btn tooltip"
-                            data-tooltip="Dictée vocale" aria-label="Dicter la note">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
-                                stroke-linejoin="round" width="15" height="15">
-                                <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
-                                <rect width="6" height="13" x="9" y="2" rx="3"></rect>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                <div class="journal-draft-inner">
+                    <div class="journal-draft-card">
+                        <div class="journal-draft-header">
+                            <div class="journal-draft-title">
+                                <span class="journal-draft-title-text">${labelText}</span>
+                                <span class="journal-draft-date-badge">${formattedDate}</span>
+                            </div>
+                        </div>
 
-                <div class="journal-draft-pills-row">
-                    <div class="journal-draft-pills" id="journalDraftPills" role="group" aria-label="Tags d'observation">
-                        ${pillButtonsHTML}
-                    </div>
-                </div>
+                        <div class="journal-draft-pills-row">
+                            <div class="journal-draft-pills" id="journalDraftPills" role="group" aria-label="Tags d'observation">
+                                ${pillButtonsHTML}
+                            </div>
+                        </div>
 
-                <div class="journal-draft-input-wrap">
-                    <textarea class="journal-note-input" id="journalNoteInput"
-                        placeholder="Précision ou contexte (optionnel)..."
-                        rows="2" maxlength="280">${Utils.escapeHtml(noteValue)}</textarea>
-                    <div class="journal-input-footer">
-                        <span class="journal-char-count${showCharCount ? ' is-visible' : ''}"><span id="journalCharCount">${noteValue.length}</span>/280</span>
-                    </div>
-                </div>
+                        <div class="journal-draft-input-wrap">
+                            <textarea class="journal-note-input" id="journalNoteInput"
+                                placeholder="Précision ou contexte (optionnel)..."
+                                rows="2" maxlength="280">${Utils.escapeHtml(noteValue)}</textarea>
+                            <button type="button" id="journalNoteMicBtn" class="focus-mic-btn tooltip"
+                                data-tooltip="Dictée vocale" aria-label="Dicter la note">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                    stroke-linejoin="round" width="15" height="15">
+                                    <path d="M12 19v3m7-12v2a7 7 0 0 1-14 0v-2"></path>
+                                    <rect width="6" height="13" x="9" y="2" rx="3"></rect>
+                                </svg>
+                            </button>
+                            <div class="journal-input-footer">
+                                <span class="journal-char-count${showCharCount ? ' is-visible' : ''}"><span id="journalCharCount">${noteValue.length}</span>/280</span>
+                            </div>
+                        </div>
 
-                <div class="journal-draft-actions-footer">
-                    <button type="button" class="journal-private-toggle${isPrivate ? ' is-active' : ''} tooltip"
-                        id="journalDraftPrivateBtn" aria-pressed="${isPrivate ? 'true' : 'false'}"
-                        data-tooltip="Note personnelle : exclue de l'IA">
-                        <iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon>
-                        <span>Privé</span>
-                    </button>
-                    <button type="button" class="journal-footer-btn journal-cancel-btn" id="journalDraftCancelFooterBtn">
-                        Annuler
-                    </button>
-                    <button type="button" class="journal-footer-btn journal-save-btn" id="journalDraftSaveBtn" ${canSave ? '' : 'disabled'}>
-                        <span>${isEdit ? 'Mettre à jour' : 'Enregistrer'}</span>
-                    </button>
+                        <div class="journal-draft-actions-footer">
+                            <button type="button" class="journal-private-toggle${isPrivate ? ' is-active' : ''} tooltip"
+                                id="journalDraftPrivateBtn" aria-pressed="${isPrivate ? 'true' : 'false'}"
+                                data-tooltip="Note personnelle : exclue de l'IA">
+                                <iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon>
+                                <span>Privé</span>
+                            </button>
+                            <button type="button" class="journal-footer-btn journal-cancel-btn" id="journalDraftCancelFooterBtn">
+                                Annuler
+                            </button>
+                            <button type="button" class="journal-footer-btn journal-save-btn" id="journalDraftSaveBtn" ${canSave ? '' : 'disabled'}>
+                                <span>${isEdit ? 'Mettre à jour' : 'Enregistrer'}</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;

@@ -1657,13 +1657,11 @@
 }
 
 .student-list-table tbody {
-    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-                filter 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .student-list-table:has(.global-actions-dropdown.open) tbody {
     opacity: 0.48;
-    filter: blur(2px);
     pointer-events: none;
 }
 

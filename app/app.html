@@ -797,14 +797,14 @@
                                     <span id="focusJournalTitle">Journal</span>
                                     <span id="focusJournalEmptyHint" class="journal-empty-inline-hint">Aucune observation</span>
                                 </div>
-                                <!-- Manual note button (Add observation icon) -->
+                            </div>
+                            <div class="journal-header-right">
+                                <span class="journal-count-badge is-hidden" id="focusJournalCount">0</span>
+                                <!-- Manual note button (Add / close observation icon) -->
                                 <button type="button" class="journal-header-btn icon-only tooltip" id="focusJournalNoteBtn"
                                     data-tooltip="Ajouter une observation" aria-label="Ajouter une observation">
                                     <iconify-icon icon="ph:plus" aria-hidden="true"></iconify-icon>
                                 </button>
-                            </div>
-                            <div class="journal-header-right">
-                                <span class="journal-count-badge is-hidden" id="focusJournalCount">0</span>
                             </div>
                         </div>
                         <div class="journal-content" id="focusJournalContent">
@@ -831,10 +831,10 @@
                                         </label>
                                     </div>
                                     <div class="threshold-stepper-block" id="journalThresholdStepperBlock">
-                                        <div class="threshold-popover-header">Seuil des tags rapides</div>
+                                        <div class="threshold-popover-header">Seuil des tags sans note</div>
                                         <div class="ui-segmented-control css-driven journal-threshold-segmented"
                                             id="journalThresholdSegmented" role="radiogroup"
-                                            aria-label="Seuil des tags rapides" data-active-index="1">
+                                            aria-label="Seuil des tags sans note" data-active-index="1">
                                             <div class="ui-glider" aria-hidden="true"></div>
                                             <button type="button" class="ui-segment journal-threshold-option" role="radio"
                                                 aria-checked="false" data-threshold="1">Dès 1</button>
@@ -844,7 +844,7 @@
                                                 aria-checked="false" data-threshold="3">Dès 3</button>
                                         </div>
                                         <div class="threshold-popover-hint">
-                                            <span id="thresholdHintText">Tags répétés (≥2) et notes écrites non privées transmis.</span>
+                                            <span id="thresholdHintText">Un tag sans note est transmis dès 2 occurrences. Les notes écrites (hors Privé) le sont toujours.</span>
                                         </div>
                                     </div>
                                     <div class="threshold-popover-hint threshold-ai-off-hint is-hidden" id="journalAiOffHint">
@@ -897,7 +897,7 @@
                                     Indications
                                 </label>
                                 <textarea id="focusContextInput" class="focus-context-textarea" rows="1"
-                                    placeholder="Ex. : bavarde mais participe, insister sur la méthode…"></textarea>
+                                    placeholder="Points clés pour l'IA…"></textarea>
                                 <button type="button" id="focusMicBtn" class="focus-mic-btn tooltip"
                                     data-tooltip="Dictée vocale" aria-label="Dicter les indications">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"

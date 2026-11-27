@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JournalManager } from './JournalManager.js';
+import { FocusPanelJournal } from './FocusPanelJournal.js';
 import { appState, userSettings } from '../state/State.js';
 
 // Mock dependencies
@@ -224,6 +225,36 @@ describe('JournalManager', () => {
             expect(html).toContain('journal-entry-delete');
             expect(html).toContain('Élève actif');
         });
+
+        it('n\'affiche pas le faux tag technique Remarque sur les notes libres et expose uiTagLabels/standaloneLabels', () => {
+            JournalManager.addEntry('student-1', {
+                tags: [],
+                note: 'Observation libre publique'
+            });
+            JournalManager.addEntry('student-1', {
+                tags: [],
+                note: 'Point parents prévu vendredi.',
+                isPrivate: true
+            });
+            JournalManager.addEntry('student-1', {
+                tags: ['progres'],
+                note: 'Méthode bien appliquée'
+            });
+
+            const html = JournalManager.renderTimeline('student-1', 'T1');
+            expect(html).not.toContain('Remarque');
+            expect(html).toContain('journal-entry-note--standalone');
+            expect(html).toContain('Observation libre publique');
+            expect(html).toContain('Point parents prévu vendredi.');
+            expect(html).toContain('journal-private-badge');
+            expect(html).toContain('Progrès');
+
+            const summary = JournalManager.getAISummary('student-1', 'T1');
+            expect(summary.standaloneLabels).toEqual([]);
+            expect(summary.notes).toHaveLength(2);
+            expect(summary.notes[0].uiTagLabels).toEqual([]);
+            expect(summary.notes[1].uiTagLabels).toEqual(['Progrès']);
+        });
     });
 
     describe('synthesizeForPrompt & isEntryIsolated (notes rédigées vs tags rapides & mode Hors IA)', () => {
@@ -398,10 +429,14 @@ describe('JournalManager', () => {
             expect(JournalManager.getPromptLabel('bavardage')).toBe('Bavardage');
             expect(JournalManager.getPromptLabel('inconnu')).toBe('inconnu');
 
-            // 1. Sous le seuil avec note -> préfixe explicite [Attitude à revoir]
+            // 1. Sous le seuil avec note -> UI lisible sans crochets, prompt avec préfixe [Attitude à revoir]
             JournalManager.addEntry('student-1', { tags: ['attitude-'], note: 'Soupirs répétés en classe' });
             const underSummary = JournalManager.getAISummary('student-1', 'T1');
-            expect(underSummary.displayText).toContain('[Attitude à revoir]');
+            expect(underSummary.displayText).toBe('Attitude à revoir : « Soupirs répétés en classe »');
+            expect(underSummary.displayText).not.toContain('[');
+            expect(underSummary.transmittedCount).toBe(1);
+            expect(underSummary.compactText).toBe('1 observation');
+            expect(underSummary.transmittedTagIds).toEqual(['attitude-']);
             expect(JournalManager.synthesizeForPrompt('student-1', 'T1'))
                 .toBe('Notes: "[Attitude à revoir] Soupirs répétés en classe"');
 
@@ -413,6 +448,8 @@ describe('JournalManager', () => {
             expect(summary.tags.map(t => t.label)).toEqual(['Attitude à revoir', 'Attitude positive']);
             expect(summary.displayText).not.toContain('Attitude -');
             expect(summary.displayText).not.toContain('Attitude +');
+            expect(summary.transmittedCount).toBe(4);
+            expect(summary.compactText).toBe('4 observations');
 
             const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
             expect(synth).toContain('Observations: Attitude à revoir, Attitude positive');
@@ -423,6 +460,48 @@ describe('JournalManager', () => {
             const html = JournalManager.renderTimeline('student-1', 'T1');
             expect(html).toContain('Attitude -');
             expect(html).toContain('Attitude +');
+        });
+
+        it('garantit la cohérence SSOT (transmittedTagIds, compactText invariant selon le seuil, below-threshold par tag)', () => {
+            // Note rédigée unique avec tag "progres" + note privée "remarque"
+            JournalManager.addEntry('student-1', {
+                tags: ['progres'],
+                note: 'Méthode bien appliquée lors de l\'exercice en autonomie.'
+            });
+            JournalManager.addEntry('student-1', {
+                tags: [],
+                note: 'Point parents prévu vendredi.',
+                isPrivate: true
+            });
+
+            // Identique en Dès 1, Dès 2 et Dès 3 : pas de bascule visuelle ni de doublon
+            for (const threshold of [1, 2, 3]) {
+                appState.journalThreshold = threshold;
+                const summary = JournalManager.getAISummary('student-1', 'T1');
+                expect(summary.transmittedTagIds).toEqual(['progres']);
+                expect(summary.transmittedCount).toBe(1);
+                expect(summary.compactText).toBe('1 observation');
+                expect(summary.displayText).toContain('Progrès : « Méthode bien appliquée');
+                expect(summary.displayText).not.toContain('[Progrès]');
+            }
+
+            // excludeRemarque filtre le tag technique tout en préservant l'id sur les vrais tags
+            appState.journalThreshold = 2;
+            JournalManager.addEntry('student-1', { tags: [], note: 'Note libre publique' });
+            const withoutRemarque = JournalManager.getAggregatedCounts('student-1', 'T1', {
+                excludePrivate: true,
+                excludeRemarque: true
+            });
+            expect(withoutRemarque.map(t => t.id)).toEqual(['progres']);
+
+            // Entrée multi-tags sans note : un tag au-dessus du seuil, l'autre en dessous -> grisage par tag
+            appState.generatedResults[0].journal = [];
+            JournalManager.addEntry('student-1', { tags: ['participation+'], note: '' });
+            JournalManager.addEntry('student-1', { tags: ['participation+', 'progres'], note: '' });
+            const timelineHtml = JournalManager.renderTimeline('student-1', 'T1');
+            expect(timelineHtml).not.toContain('journal-entry  isolated');
+            expect(timelineHtml).toContain('class="journal-tag below-threshold"');
+            expect(JournalManager.getAISummary('student-1', 'T1').transmittedTagIds).toEqual(['participation+']);
         });
 
         it('exclut le tag technique remarque des signaux IA même au-dessus du seuil, tout en le conservant dans countTags', () => {
@@ -443,6 +522,173 @@ describe('JournalManager', () => {
             expect(synth).not.toContain('Observations:');
             expect(synth).not.toContain('Remarque');
             expect(synth).toContain('Notes: "Note libre 1" | "Note libre 2"');
+        });
+    });
+
+    describe('FocusPanelJournal.resetEditingState()', () => {
+        it('réinitialise synchroniquement le brouillon, les tags et le bouton +/× sans laisser de reliquat', () => {
+            document.body.innerHTML = `
+                <div class="journal-section editing" id="focusJournalSection">
+                    <button type="button" id="focusJournalNoteBtn" aria-label="Fermer" aria-expanded="true"></button>
+                    <div id="focusJournalContent">
+                        ${JournalManager.renderDraftPreview()}
+                    </div>
+                </div>
+            `;
+            const draft = document.getElementById('journalDraftPreview');
+            draft.classList.add('visible', 'is-editing');
+            const input = document.getElementById('journalNoteInput');
+            input.value = 'Brouillon en cours';
+            const saveBtn = document.getElementById('journalDraftSaveBtn');
+            saveBtn.disabled = false;
+            FocusPanelJournal._editingJournalEntryId = 'j_123';
+            FocusPanelJournal._selectedJournalTags = ['bavardage'];
+            FocusPanelJournal._isDraftPrivate = true;
+
+            FocusPanelJournal.resetEditingState({ silentHistory: true });
+
+            expect(FocusPanelJournal.getEditingEntryId()).toBeNull();
+            expect(FocusPanelJournal._selectedJournalTags).toEqual([]);
+            expect(FocusPanelJournal._isDraftPrivate).toBe(false);
+            expect(document.getElementById('focusJournalSection').classList.contains('editing')).toBe(false);
+            expect(draft.classList.contains('visible')).toBe(false);
+            expect(draft.classList.contains('is-editing')).toBe(false);
+            expect(input.value).toBe('');
+            expect(saveBtn.disabled).toBe(true);
+            const noteBtn = document.getElementById('focusJournalNoteBtn');
+            expect(noteBtn.getAttribute('aria-label')).toBe('Ajouter une observation');
+            expect(noteBtn.getAttribute('aria-expanded')).toBe('false');
+        });
+    });
+
+    describe('FocusPanelJournal animation lifecycle guards', () => {
+        const mountJournalDOM = () => {
+            document.body.innerHTML = `
+                <div class="journal-section" id="focusJournalSection">
+                    <span id="focusJournalTitle"></span>
+                    <span id="focusJournalEmptyHint"></span>
+                    <span id="focusJournalCount"></span>
+                    <button type="button" id="focusJournalNoteBtn" aria-label="Ajouter une observation" aria-expanded="false"></button>
+                    <div class="journal-content" id="focusJournalContent"></div>
+                    <div id="journalThresholdControl">
+                        <button type="button" id="journalThresholdBtn"><span id="journalThresholdValue"></span></button>
+                    </div>
+                </div>
+            `;
+        };
+
+        beforeEach(() => {
+            FocusPanelJournal._lastRenderedContext = null;
+            FocusPanelJournal._clearCloseTimer();
+            FocusPanelJournal.resetEditingState({ silentHistory: true });
+            FocusPanelJournal._callbacks = {
+                getCurrentStudentId: () => 'student-1',
+                onStatusRefresh: vi.fn()
+            };
+        });
+
+        it('n\'applique .fade-in sur la timeline qu\'au changement d\'élève ou de période (zéro clignotement local)', () => {
+            mountJournalDOM();
+            JournalManager.addEntry('student-1', { tags: ['progres'], note: 'Bon début' });
+            const student1 = appState.generatedResults[0];
+
+            // 1er rendu pour student-1:T1 -> fade-in actif
+            FocusPanelJournal.render(student1);
+            expect(document.querySelector('.journal-timeline').classList.contains('fade-in')).toBe(true);
+
+            // Re-rendu pour le même élève/période (ex. changement de seuil) -> pas de fade-in
+            FocusPanelJournal.render(student1);
+            expect(document.querySelector('.journal-timeline').classList.contains('fade-in')).toBe(false);
+
+            // Changement d'élève -> fade-in réactivé
+            appState.generatedResults.push({
+                id: 'student-2',
+                name: 'MARTIN Claire',
+                journal: [{ id: 'j_2', date: '2026-10-01T10:00:00.000Z', tags: ['participation+'], note: '', period: 'T1' }]
+            });
+            FocusPanelJournal.render(appState.generatedResults[1]);
+            expect(document.querySelector('.journal-timeline').classList.contains('fade-in')).toBe(true);
+        });
+
+        it('enregistre synchroniquement dans _saveEntry, resynchronise immédiatement le bouton × -> + et annule le timer si resetEditingState survient', () => {
+            vi.useFakeTimers();
+            try {
+                mountJournalDOM();
+                const student1 = appState.generatedResults[0];
+                FocusPanelJournal.render(student1);
+                FocusPanelJournal.toggleQuickAdd(true, true);
+
+                const section = document.getElementById('focusJournalSection');
+                const noteBtn = document.getElementById('focusJournalNoteBtn');
+                expect(section.classList.contains('editing')).toBe(true);
+                expect(noteBtn.getAttribute('aria-expanded')).toBe('true');
+
+                FocusPanelJournal._selectedJournalTags = ['progres'];
+                document.getElementById('journalNoteInput').value = 'Excellente progression';
+
+                FocusPanelJournal._saveEntry();
+
+                // Donnée persistée synchroniquement (aucune race condition si navigation immédiate)
+                expect(student1.journal).toHaveLength(1);
+                expect(student1.journal[0].note).toBe('Excellente progression');
+
+                // Bouton × -> + synchronisé dès le clic (sans attendre 250ms)
+                expect(section.classList.contains('editing')).toBe(false);
+                expect(noteBtn.getAttribute('aria-expanded')).toBe('false');
+                expect(document.querySelector('.journal-crossfade-wrapper.is-visible')).not.toBeNull();
+
+                // Nettoyage anticipé annule le timer et retire le wrapper crossfade proprement
+                FocusPanelJournal.resetEditingState({ silentHistory: true });
+                expect(FocusPanelJournal._closeTimer).toBeNull();
+                expect(document.querySelector('.journal-crossfade-wrapper')).toBeNull();
+
+                vi.advanceTimersByTime(300);
+                expect(student1.journal).toHaveLength(1);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('exécute la fermeture et la sauvegarde sans délai en mode prefers-reduced-motion: reduce', () => {
+            const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true });
+            try {
+                mountJournalDOM();
+                const student1 = appState.generatedResults[0];
+                FocusPanelJournal.render(student1);
+                FocusPanelJournal.toggleQuickAdd(true, true);
+
+                FocusPanelJournal._selectedJournalTags = ['bavardage'];
+                FocusPanelJournal._saveEntry();
+
+                // Exécution synchrone immédiate sans timer ni crossfade-wrapper résiduel
+                expect(FocusPanelJournal._closeTimer).toBeNull();
+                expect(document.querySelector('.journal-crossfade-wrapper')).toBeNull();
+                expect(document.getElementById('journalDraftPreview').classList.contains('visible')).toBe(false);
+                expect(student1.journal).toHaveLength(1);
+            } finally {
+                matchMediaSpy.mockRestore();
+            }
+        });
+
+        it('ne recrée pas les nœuds DOM de la timeline lors de l\'annulation de Nouvelle observation', () => {
+            const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: true });
+            try {
+                mountJournalDOM();
+                JournalManager.addEntry('student-1', { tags: ['progres'], note: 'Déjà présent' });
+                const student1 = appState.generatedResults[0];
+
+                FocusPanelJournal.render(student1);
+                const existingEntryNode = document.querySelector('.journal-entry');
+                expect(existingEntryNode).not.toBeNull();
+
+                FocusPanelJournal.toggleQuickAdd(true, true);
+                FocusPanelJournal.toggleQuickAdd(false);
+
+                // Exactement le même nœud DOM conservé (zéro innerHTML inutile)
+                expect(document.querySelector('.journal-entry')).toBe(existingEntryNode);
+            } finally {
+                matchMediaSpy.mockRestore();
+            }
         });
     });
 });

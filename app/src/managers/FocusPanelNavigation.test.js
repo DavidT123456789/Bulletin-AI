@@ -34,6 +34,13 @@ vi.mock('./FocusPanelHistory.js', () => ({
     }
 }));
 
+vi.mock('./FocusPanelJournal.js', () => ({
+    FocusPanelJournal: {
+        closeThresholdPopover: vi.fn(),
+        resetEditingState: vi.fn()
+    }
+}));
+
 vi.mock('./FocusPanelAnalysis.js', () => ({
     FocusPanelAnalysis: {
         isVisible: vi.fn(() => false),
@@ -202,8 +209,9 @@ describe('FocusPanelNavigation', () => {
             expect(saveContextSpy).not.toHaveBeenCalled();
         });
 
-        it('aborts active speech recognition when navigating between students', async () => {
+        it('aborts active speech recognition and resets journal editing state when navigating between students', async () => {
             const { SpeechRecognitionManager } = await import('./SpeechRecognitionManager.js');
+            const { FocusPanelJournal } = await import('./FocusPanelJournal.js');
             const student1 = { id: 's1', nom: 'Alice' };
             const student2 = { id: 's2', nom: 'Bob' };
             appState.filteredResults = [student1, student2];
@@ -222,6 +230,8 @@ describe('FocusPanelNavigation', () => {
 
             FocusPanelNavigation.navigateNext();
             expect(SpeechRecognitionManager.abort).toHaveBeenCalled();
+            expect(FocusPanelJournal.closeThresholdPopover).toHaveBeenCalled();
+            expect(FocusPanelJournal.resetEditingState).toHaveBeenCalled();
         });
     });
 

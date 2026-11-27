@@ -146,7 +146,8 @@ export const FocusPanelRefinement = {
                <details class="prompt-raw-details">
                    <summary class="prompt-raw-toggle">
                        <iconify-icon icon="solar:code-square-linear" aria-hidden="true"></iconify-icon>
-                       <span>Voir le prompt complet envoyé au modèle</span>
+                       <span>Voir le prompt complet</span>
+                       <iconify-icon class="prompt-raw-chevron" icon="solar:alt-arrow-down-linear" aria-hidden="true"></iconify-icon>
                    </summary>
                    <div class="prompt-preview-content">${escapedText}</div>
                </details>`

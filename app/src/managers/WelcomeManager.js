@@ -603,28 +603,44 @@ export const WelcomeManager = {
     },
 
     /**
-     * Crée une classe "Exemple" avec 8 élèves pré-remplis (P1)
-     * @param {string} periodSystem - 'trimestres' ou 'semestres'
+     * Crée une classe "Exemple" avec 8 élèves pré-remplis (P1 complète, P2 prête à générer avec journal)
+     * @param {string} [periodSystem] - 'trimestres' ou 'semestres'
+     * @param {Object} [options]
+     * @param {boolean} [options.switchToClass=true] - Basculer sur la classe créée
+     * @param {boolean} [options.setInitialPeriod=true] - Positionner la période active sur P2 (T2/S2)
+     * @param {boolean} [options.awaitPhotos=false] - Attendre le chargement des photos avant de résoudre
+     * @returns {Promise<Object>} La classe exemple créée (ou existante)
      * @private
      */
-    async _injectDemoClass(periodSystem) {
+    async _injectDemoClass(
+        periodSystem,
+        { switchToClass = true, setInitialPeriod = true, awaitPhotos = false } = {}
+    ) {
         // Guard: skip if a demo class already exists
         const existingDemo = ClassManager.getAllClasses().find(c => ClassManager.isDemoClass(c.id));
         if (existingDemo) {
-            await ClassManager.switchClass(existingDemo.id);
-            return;
+            if (switchToClass) {
+                await ClassManager.switchClass(existingDemo.id);
+            }
+            return existingDemo;
         }
 
-        // SampleData imported statically
-        const { className, students } = getDemoClassData(periodSystem);
+        const resolvedSystem = periodSystem || appState.periodSystem || 'trimestres';
+        const { className, students } = getDemoClassData(resolvedSystem);
 
         const newClass = ClassManager.createClass(className);
         newClass.isDemo = true;
-        await ClassManager.switchClass(newClass.id);
+        if (switchToClass) {
+            await ClassManager.switchClass(newClass.id);
+        }
 
-        const currentPeriod = periodSystem === 'semestres' ? 'S1' : 'T1';
-        appState.currentPeriod = currentPeriod;
+        const demoPeriod = resolvedSystem === 'semestres' ? 'S2' : 'T2';
+        if (setInitialPeriod) {
+            appState.currentPeriod = demoPeriod;
+            UI.updatePeriodSystemUI?.();
+        }
 
+        const now = Date.now();
         const results = [];
         for (const studentData of students) {
             const photoFile = studentData.photoFile;
@@ -632,7 +648,14 @@ export const WelcomeManager = {
             delete studentData.photoFile;
             delete studentData.journal;
 
-            const result = StudentDataManager.createPendingResult(studentData);
+            const result = StudentDataManager.createPendingResult(studentData, newClass.id, { enrichProfile: false });
+            result.classId = newClass.id;
+            // P1 dispose déjà d'appréciations : laisser Utils.isPendingForPeriod évaluer chaque période dynamiquement
+            result.isPending = false;
+            if (result.studentData) {
+                result.studentData.currentPeriod = demoPeriod;
+            }
+            result._lastModified = now;
             if (Array.isArray(journal) && journal.length > 0) {
                 result.journal = journal;
             }
@@ -640,11 +663,47 @@ export const WelcomeManager = {
             appState.generatedResults.push(result);
         }
 
-        await ClassManager._filterResultsByClass(newClass.id);
+        if (switchToClass) {
+            await ClassManager._filterResultsByClass(newClass.id);
+        }
         await StorageManager.saveAppState();
 
-        // Fetch demo photos in parallel (non-blocking)
-        this._loadDemoPhotos(results);
+        // Fetch demo photos in parallel (optionally awaited so Cloud Sync has them immediately)
+        const photoPromise = this._loadDemoPhotos(results);
+        if (awaitPhotos) {
+            await photoPromise;
+        }
+
+        return newClass;
+    },
+
+    /**
+     * Réinitialise (ou restaure) la classe exemple avec ses données d'origine (notes, journal, photos)
+     * sans toucher aux autres classes. Enregistre les tombstones des anciennes données démo pour
+     * propager proprement le remplacement sur les autres appareils lors de la synchro Cloud.
+     * @param {string} [periodSystem] - 'trimestres' ou 'semestres' (par défaut `appState.periodSystem`)
+     * @returns {Promise<{ demoClass: Object, hadExistingDemo: boolean, switchedToDemo: boolean }>}
+     */
+    async resetDemoClass(periodSystem = appState.periodSystem || 'trimestres') {
+        const existingDemos = ClassManager.getAllClasses().filter(c => ClassManager.isDemoClass(c.id));
+        const hadExistingDemo = existingDemos.length > 0;
+        const previousClassId = appState.currentClassId;
+        const wasOnDemo = Boolean(previousClassId && ClassManager.isDemoClass(previousClassId));
+
+        for (const demoCls of existingDemos) {
+            await ClassManager.deleteClass(demoCls.id, true);
+        }
+
+        const remainingClasses = ClassManager.getAllClasses();
+        const switchedToDemo = wasOnDemo || remainingClasses.length === 0;
+
+        const demoClass = await this._injectDemoClass(periodSystem, {
+            switchToClass: switchedToDemo,
+            setInitialPeriod: false,
+            awaitPhotos: true
+        });
+
+        return { demoClass, hadExistingDemo, switchedToDemo };
     },
 
     /**

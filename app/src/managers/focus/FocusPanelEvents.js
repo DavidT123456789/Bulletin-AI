@@ -663,6 +663,14 @@ export const FocusPanelEvents = {
                 panel._saveContext();
                 FocusPanelStatus.refreshAppreciationStatus();
             });
+            const gradeGroup = gradeInput.closest('.context-grade-group');
+            if (gradeGroup) {
+                gradeGroup.addEventListener('click', (e) => {
+                    if (e.target !== gradeInput) {
+                        gradeInput.focus();
+                    }
+                });
+            }
         }
 
         const contextInput = document.getElementById('focusContextInput');

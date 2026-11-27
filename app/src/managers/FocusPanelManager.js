@@ -335,9 +335,7 @@ export const FocusPanelManager = {
             SpeechRecognitionManager.abort();
             this._saveContext();
             FocusPanelJournal.closeThresholdPopover?.();
-            if (FocusPanelJournal.isEditing?.()) {
-                FocusPanelJournal.toggleQuickAdd(false);
-            }
+            FocusPanelJournal.resetEditingState?.();
         }
 
         if (!openState) {
@@ -405,9 +403,7 @@ export const FocusPanelManager = {
 
         FocusPanelHeader.settleEditMode();
         FocusPanelJournal.closeThresholdPopover?.();
-        if (FocusPanelJournal.isEditing?.()) {
-            FocusPanelJournal.toggleQuickAdd(false);
-        }
+        FocusPanelJournal.resetEditingState?.();
 
         this.isCreationMode = true;
         this.currentStudentId = null;
@@ -505,9 +501,7 @@ export const FocusPanelManager = {
         UI?.cancelHtmlReveal?.(document.getElementById('focusAppreciationText'));
         FocusPanelHistory.closePopover?.();
         FocusPanelJournal.closeThresholdPopover?.();
-        if (HistoryManager.isOpen('focusJournalQuickAdd')) {
-            HistoryManager.handleManualClose('focusJournalQuickAdd');
-        }
+        FocusPanelJournal.resetEditingState?.({ silentHistory: discardChanges });
         FocusPanelAnalysis.hide({
             causedByHistory: Boolean(options.causedByHistory),
             silentHistory: discardChanges,

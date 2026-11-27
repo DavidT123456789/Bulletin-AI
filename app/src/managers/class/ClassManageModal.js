@@ -15,6 +15,8 @@ import { sortClassesByLevel } from '../../utils/LevelDetector.js';
 import { StatsService } from '../../services/StatsService.js';
 import { FocusPanelManager } from '../FocusPanelManager.js';
 import { StudentDataManager } from '../StudentDataManager.js';
+import { SeatingChartManager } from '../SeatingChartManager.js';
+import { WelcomeManager } from '../WelcomeManager.js';
 import { TooltipsUI } from '../TooltipsManager.js';
 import { Utils } from '../../utils/Utils.js';
 
@@ -611,13 +613,22 @@ export const ClassManageModal = {
                 });
             };
 
+            const bindResetDemoHandler = (btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleResetOrRestoreDemo(btn);
+                });
+            };
+
             const bindRowActionButtons = (row) => {
                 const renameBtn = row.querySelector('.manage-rename-btn');
                 const duplicateBtn = row.querySelector('.manage-duplicate-btn');
+                const resetDemoBtn = row.querySelector('.manage-reset-demo-btn');
                 const deleteBtn = row.querySelector('.manage-delete-btn');
                 const noteMeta = row.querySelector('.class-management-note-meta');
                 if (renameBtn) bindRenameHandler(renameBtn);
                 if (duplicateBtn) bindDuplicateHandler(duplicateBtn);
+                if (resetDemoBtn) bindResetDemoHandler(resetDemoBtn);
                 if (deleteBtn) bindDeleteHandler(deleteBtn);
                 if (noteMeta) {
                     noteMeta.addEventListener('click', async (e) => {
@@ -652,16 +663,67 @@ export const ClassManageModal = {
 
         let draggedItem = null;
 
+        // Réinitialisation / restauration mutualisée de la classe exemple (bouton de ligne + menu ⋯)
+        const handleResetOrRestoreDemo = async (triggerBtn = null) => {
+            const hasExistingDemo = ClassManager.getAllClasses().some(c => ClassManager.isDemoClass(c.id));
+            if (hasExistingDemo) {
+                const isSemestres = appState.periodSystem === 'semestres';
+                const periodSummary = isSemestres
+                    ? 'S1 complet, S2 avec notes, indications et journal pré-rempli prêt à générer'
+                    : 'T1 complet, T2 avec notes, indications et journal pré-rempli prêt à générer';
+                const confirmed = await this._ui?.showCustomConfirm?.(
+                    `Remplace la classe exemple actuelle par les 8 élèves d'origine (${periodSummary}, avec photos). Vos autres classes restent intactes.`,
+                    null,
+                    null,
+                    {
+                        title: 'Réinitialiser la classe exemple ?',
+                        confirmText: 'Réinitialiser',
+                        cancelText: 'Annuler',
+                        isDanger: false
+                    }
+                );
+                if (!confirmed) return;
+            }
+
+            const originalIcon = triggerBtn ? triggerBtn.innerHTML : null;
+            if (triggerBtn) {
+                triggerBtn.innerHTML = '<iconify-icon icon="svg-spinners:ring-resize"></iconify-icon>';
+                triggerBtn.disabled = true;
+            }
+
+            try {
+                const { demoClass, hadExistingDemo, switchedToDemo } = await WelcomeManager.resetDemoClass();
+                this.renderClassList();
+                this.updateHeaderDisplay();
+                this.updateStudentCount();
+                if (switchedToDemo) {
+                    AppreciationsManager.renderResults();
+                    this._ui?.updateStats?.();
+                    SeatingChartManager.onClassChange?.(true);
+                }
+                refreshList(demoClass?.id);
+                this._ui?.showNotification?.(
+                    hadExistingDemo
+                        ? 'Classe exemple réinitialisée avec les données d\'origine.'
+                        : 'Classe exemple restaurée.',
+                    'success'
+                );
+            } catch {
+                this._ui?.showNotification?.('Erreur lors de la réinitialisation de la classe exemple.', 'error');
+                if (triggerBtn && originalIcon !== null) {
+                    triggerBtn.innerHTML = originalIcon;
+                    triggerBtn.disabled = false;
+                }
+            }
+        };
+
         // Options supplémentaires dans le header (menu ⋯)
         const renderMoreMenu = (currentClasses) => {
             if (!moreMenu) return;
 
             const allResults = appState.generatedResults || [];
             const emptyClasses = currentClasses.filter(c => !allResults.some(r => r.classId === c.id));
-
-            if (moreWrapper) {
-                moreWrapper.style.display = currentClasses.length > 0 ? '' : 'none';
-            }
+            const hasDemoClass = currentClasses.some(c => ClassManager.isDemoClass(c.id));
 
             let menuHtml = '';
             let nextSortDirection = 'asc';
@@ -690,6 +752,13 @@ export const ClassManageModal = {
                 `;
             }
 
+            menuHtml += `
+                <button type="button" class="action-dropdown-item" id="resetDemoClassBtn">
+                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                    <span>${hasDemoClass ? 'Réinitialiser la classe exemple' : 'Restaurer la classe exemple'}</span>
+                </button>
+            `;
+
             if (currentClasses.length > 0) {
                 if (menuHtml) {
                     menuHtml += '<div class="dropdown-divider"></div>';
@@ -702,7 +771,17 @@ export const ClassManageModal = {
                 `;
             }
 
+            if (moreWrapper) {
+                moreWrapper.style.display = menuHtml ? '' : 'none';
+            }
+
             moreMenu.innerHTML = menuHtml;
+
+            moreMenu.querySelector('#resetDemoClassBtn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                moreMenu.classList.remove('open');
+                handleResetOrRestoreDemo();
+            });
 
             moreMenu.querySelector('#sortClassesPedagogicalBtn')?.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -928,7 +1007,17 @@ export const ClassManageModal = {
                             `;
 
                         const isNew = highlightClassId && cls.id === highlightClassId;
+                        const isDemo = ClassManager.isDemoClass(cls.id);
                         const safeClassId = this._escapeHtml(String(cls.id ?? ''));
+                        const primaryActionBtnHtml = isDemo
+                            ? `<button type="button" class="manage-reset-demo-btn btn-icon-small tooltip" data-class-id="${safeClassId}"
+                                       data-tooltip="Réinitialiser la classe exemple" aria-label="Réinitialiser la classe exemple">
+                                   <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                               </button>`
+                            : `<button type="button" class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${safeClassId}"
+                                       data-tooltip="Dupliquer la classe" aria-label="Dupliquer la classe">
+                                   <iconify-icon icon="solar:copy-linear"></iconify-icon>
+                               </button>`;
 
                         return `
                             <div class="class-management-item ${isActive ? 'active-switch' : ''} ${isNew ? 'class-item-just-created' : ''}"
@@ -954,10 +1043,7 @@ export const ClassManageModal = {
                                 </div>
 
                                 <div class="class-management-actions">
-                                    <button type="button" class="manage-duplicate-btn btn-icon-small tooltip" data-class-id="${safeClassId}"
-                                            data-tooltip="Dupliquer la classe" aria-label="Dupliquer la classe">
-                                        <iconify-icon icon="solar:copy-linear"></iconify-icon>
-                                    </button>
+                                    ${primaryActionBtnHtml}
                                     <button type="button" class="manage-rename-btn btn-icon-small tooltip" data-class-id="${safeClassId}"
                                             data-tooltip="Renommer" aria-label="Renommer">
                                         <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>

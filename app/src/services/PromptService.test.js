@@ -1316,14 +1316,16 @@ describe('PromptService', () => {
     });
 
     describe('getPromptSummary & isPrivate', () => {
-        it('synthétise fidèlement les données envoyées à l\'IA (anonymisation, statuts RGPD, journal hors privé, consigne)', () => {
+        it('synthétise fidèlement les données envoyées à l\'IA (anonymisation, statuts RGPD, journal hors privé et scrubbé, genre)', () => {
             const prevAnon = appState.anonymizeData;
             const prevClasses = appState.classes;
             const prevClassId = appState.currentClassId;
             const prevInclude = appState.journalIncludeInAI;
+            const prevResults = appState.generatedResults;
 
             try {
                 Utils.getPeriods.mockReturnValue(['T1', 'T2', 'T3']);
+                StatsService.analyserEvolution.mockReturnValue([{ periode: 'T1-T2', valeur: 2.5, type: 'very-positive' }]);
                 appState.anonymizeData = true;
                 appState.classes = [{ id: 'c1', name: '3A', journalIncludeInAI: true }];
                 appState.currentClassId = 'c1';
@@ -1342,33 +1344,49 @@ describe('PromptService', () => {
                     },
                     journal: [
                         { id: 'e1', period: 'T2', tags: ['bavardage'], note: 'Note confidentielle prof', isPrivate: true },
-                        { id: 'e2', period: 'T2', tags: ['participation+'], note: 'Exposé réussi' }
+                        { id: 'e2', period: 'T2', tags: ['participation+'], note: 'Sophie collabore bien avec Lucas et son PAP l\'aide.' }
                     ]
                 };
+                appState.generatedResults = [
+                    student,
+                    { id: 'stu-mate', classId: 'c1', nom: 'Martin', prenom: 'Lucas' }
+                ];
 
                 const summaryAnon = PromptService.getPromptSummary(student);
+                expect(summaryAnon.currentPeriodLabel).toBe('T2');
                 expect(summaryAnon.identity.isAnonymous).toBe(true);
-                expect(summaryAnon.identity.label).toContain('[PRÉNOM]');
+                expect(summaryAnon.identity.label).toBe('Aucun nom ni prénom');
+                expect(summaryAnon.identity.genderIncluded).toBe(true);
                 expect(summaryAnon.grades.items.map(i => i.period)).toEqual(['T1', 'T2']);
+                expect(summaryAnon.grades.evolutions).toEqual([
+                    { periode: 'T1 → T2', deltaLabel: '+2,5 pts', description: 'Progression notable', type: 'very-positive' }
+                ]);
                 expect(summaryAnon.previousAppreciations).toHaveLength(1);
                 expect(summaryAnon.previousAppreciations[0].preview).toContain('[PRÉNOM]');
                 expect(summaryAnon.statuses.find(s => s.raw === 'PAP').isGdprSensitive).toBe(true);
                 expect(summaryAnon.statuses.find(s => s.raw === 'delegue').isGdprSensitive).toBe(false);
                 expect(summaryAnon.journal.notes).toHaveLength(1);
-                expect(summaryAnon.journal.notes[0].text).toBe('Exposé réussi');
+                expect(summaryAnon.journal.notes[0].text).toContain('[PRÉNOM]');
+                expect(summaryAnon.journal.notes[0].text).toContain('[CAMARADE]');
+                expect(summaryAnon.journal.notes[0].text).toContain('[AMÉNAGEMENT]');
+                expect(summaryAnon.journal.notes[0].text).not.toContain('Sophie');
+                expect(summaryAnon.journal.notes[0].text).not.toContain('Lucas');
+                expect(summaryAnon.journal.notes[0].text).not.toContain('PAP');
                 expect(summaryAnon.journal.privateCount).toBe(1);
                 expect(summaryAnon.context).toContain('[PRÉNOM]');
 
-                // Mode non anonymisé (hors style neutre) : prénom affiché
+                // Mode non anonymisé (hors style neutre) : prénom affiché, genre non injecté si prénom non épicène
                 appState.anonymizeData = false;
                 const summaryNamed = PromptService.getPromptSummary(student, { voice: 'je' });
                 expect(summaryNamed.identity.isAnonymous).toBe(false);
-                expect(summaryNamed.identity.label).toContain('Sophie');
+                expect(summaryNamed.identity.label).toBe('Sophie');
+                expect(summaryNamed.identity.genderIncluded).toBe(false);
             } finally {
                 appState.anonymizeData = prevAnon;
                 appState.classes = prevClasses;
                 appState.currentClassId = prevClassId;
                 appState.journalIncludeInAI = prevInclude;
+                appState.generatedResults = prevResults;
             }
         });
 

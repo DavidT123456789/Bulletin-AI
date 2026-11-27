@@ -109,28 +109,37 @@ describe('SampleData', () => {
     });
 
     describe('getDemoClassData()', () => {
-        it('should build trimestres demo class with T1 populated and T2/T3 empty', () => {
+        it('should build trimestres demo class with T1 completed, T2 pending appreciation, and T3 empty', () => {
             const demo = getDemoClassData('trimestres');
             expect(demo.className).toBe('Classe exemple');
             expect(demo.students).toHaveLength(8);
             expect(demo.students[0].nom).toBe('BERNARD');
             expect(demo.students[0].prenom).toBe('Thomas');
+            expect(demo.students[0].currentPeriod).toBe('T2');
             expect(demo.students[0].periods.T1.grade).toBe(15);
-            expect(demo.students[0].periods.T1.appreciation).toBe('');
-            expect(demo.students[0].periods.T2.grade).toBeNull();
+            expect(demo.students[0].periods.T1.appreciation).toBeTruthy();
+            expect(demo.students[0].periods.T1.context).toBeTruthy();
+            expect(demo.students[0].periods.T2.grade).toBe(15.2);
+            expect(demo.students[0].periods.T2.appreciation).toBe('');
+            expect(demo.students[0].periods.T2.context).toBeTruthy();
             expect(demo.students[0].periods.T3.grade).toBeNull();
+            expect(demo.students[0].periods.T3.appreciation).toBe('');
         });
 
-        it('should build semestres demo class with S1 populated and S2 empty', () => {
+        it('should build semestres demo class with S1 completed and S2 pending appreciation', () => {
             const demo = getDemoClassData('semestres');
             expect(demo.students).toHaveLength(8);
             expect(demo.students[1].nom).toBe('DURAND');
             expect(demo.students[1].statuses).toEqual(['PPRE']);
+            expect(demo.students[1].currentPeriod).toBe('S2');
             expect(demo.students[1].periods.S1.grade).toBe(9);
-            expect(demo.students[1].periods.S2.grade).toBeNull();
+            expect(demo.students[1].periods.S1.appreciation).toBeTruthy();
+            expect(demo.students[1].periods.S2.grade).toBe(10.5);
+            expect(demo.students[1].periods.S2.appreciation).toBe('');
+            expect(demo.students[1].periods.S2.context).toBeTruthy();
         });
 
-        it('should populate realistic sample journal entries on a subset of demo students for the active period', () => {
+        it('should populate realistic sample journal entries on a subset of demo students for the active P2 period', () => {
             const demo = getDemoClassData('semestres');
             const withJournal = demo.students.filter(s => s.journal.length > 0);
             const withoutJournal = demo.students.filter(s => s.journal.length === 0);
@@ -140,7 +149,7 @@ describe('SampleData', () => {
 
             for (const student of withJournal) {
                 for (const entry of student.journal) {
-                    expect(entry.period).toBe('S1');
+                    expect(entry.period).toBe('S2');
                     expect(entry.tags.length).toBeGreaterThan(0);
                     expect(Date.parse(entry.date)).not.toBeNaN();
                 }

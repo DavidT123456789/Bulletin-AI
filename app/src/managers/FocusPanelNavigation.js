@@ -9,6 +9,7 @@ import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { FocusPanelHeader } from './FocusPanelHeader.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
+import { FocusPanelJournal } from './FocusPanelJournal.js';
 import { FocusPanelAnalysis } from './FocusPanelAnalysis.js';
 import { SpeechRecognitionManager } from './SpeechRecognitionManager.js';
 import { shouldIgnoreHorizontalSwipeTarget } from '../utils/TouchGestures.js';
@@ -515,6 +516,8 @@ export const FocusPanelNavigation = {
      */
     _switchToStudent(targetResult, targetIndex) {
         SpeechRecognitionManager.abort?.();
+        FocusPanelJournal.closeThresholdPopover?.();
+        FocusPanelJournal.resetEditingState?.();
         this.callbacks?.setCurrentStudentId?.(targetResult?.id);
         this.callbacks?.setCurrentIndex?.(targetIndex);
 

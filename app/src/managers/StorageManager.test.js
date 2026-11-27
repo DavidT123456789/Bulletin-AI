@@ -1224,6 +1224,52 @@ describe('StorageManager', () => {
             expect(userSettings.academic.classes.map(c => c.id)).toEqual(['demo-kept', 'c1', 'c2']);
         });
 
+        it('should replace an older local Classe exemple with a newer reset Classe exemple on merge without duplicates (even with distinct IDs)', async () => {
+            userSettings.academic.classes = [
+                { id: 'c1', name: '3A', createdAt: 1000, updatedAt: 1000 },
+                { id: 'demo-old', name: 'Classe exemple', isDemo: true, createdAt: 1000, updatedAt: 1000 }
+            ];
+            runtimeState.data.generatedResults = [
+                { id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } },
+                { id: 'old-demo-s1', nom: 'Durand', prenom: 'Sophie', classId: 'demo-old', studentData: { periods: {} } }
+            ];
+
+            await StorageManager.mergeRemoteData({
+                classes: [
+                    { id: 'c1', name: '3A', createdAt: 1000, updatedAt: 1000 },
+                    { id: 'demo-new', name: 'Classe exemple', isDemo: true, createdAt: 5000, updatedAt: 5000 }
+                ],
+                generatedResults: [
+                    { id: 's1', nom: 'Dupont', prenom: 'Alice', classId: 'c1', studentData: { periods: {} } },
+                    {
+                        id: 'new-demo-s1',
+                        nom: 'Durand',
+                        prenom: 'Sophie',
+                        classId: 'demo-new',
+                        journal: [{ id: 'demo_j_durand_1', tags: ['progres'], note: 'Test', period: 'T1' }],
+                        studentData: { periods: {} }
+                    }
+                ]
+            });
+
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['c1', 'demo-new']);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['s1', 'new-demo-s1']);
+
+            // Reverse direction: merging an older remote demo must not duplicate or resurrect old demo students
+            await StorageManager.mergeRemoteData({
+                classes: [
+                    { id: 'c1', name: '3A', createdAt: 1000, updatedAt: 1000 },
+                    { id: 'demo-stale', name: 'Classe exemple', isDemo: true, createdAt: 2000, updatedAt: 2000 }
+                ],
+                generatedResults: [
+                    { id: 'stale-demo-s1', nom: 'Durand', prenom: 'Sophie', classId: 'demo-stale', studentData: { periods: {} } }
+                ]
+            });
+
+            expect(userSettings.academic.classes.map(c => c.id)).toEqual(['c1', 'demo-new']);
+            expect(runtimeState.data.generatedResults.map(s => s.id)).toEqual(['s1', 'new-demo-s1']);
+        });
+
         it('should remove demo students when importing classes only (students category unchecked) evicts the virgin Classe exemple', async () => {
             userSettings.academic.classes = [{ id: 'demo-fresh', name: 'Classe exemple', isDemo: true }];
             runtimeState.data.generatedResults = [

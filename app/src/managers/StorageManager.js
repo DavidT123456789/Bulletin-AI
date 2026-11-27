@@ -1642,6 +1642,40 @@ export const StorageManager = {
             });
         }
 
+        // Éviter les doublons de « Classe exemple » lors d'une fusion inter-appareils après réinitialisation :
+        // si la source entrante apporte une classe démo non tombstonée d'un ID différent, conserver uniquement la plus récente.
+        const incomingLiveDemos = safeIncoming.filter(rClass => {
+            if (!rClass?.id || !Utils.isDemoClassObject(rClass)) return false;
+            const tombstone = deletedClassesMap.get(rClass.id);
+            const remoteTime = rClass.updatedAt || rClass.createdAt || 0;
+            return !(tombstone && (tombstone.deletedAt || Infinity) >= remoteTime);
+        });
+        if (incomingLiveDemos.length > 0) {
+            const newestIncomingDemo = incomingLiveDemos.reduce((best, cls) => {
+                const bestTs = best.updatedAt || best.createdAt || 0;
+                const clsTs = cls.updatedAt || cls.createdAt || 0;
+                return clsTs > bestTs ? cls : best;
+            });
+            const newestIncomingTs = newestIncomingDemo.updatedAt || newestIncomingDemo.createdAt || 0;
+            // S'il existe plusieurs classes démo entrantes, écarter les plus anciennes
+            for (const incomingDemo of incomingLiveDemos) {
+                if (incomingDemo.id !== newestIncomingDemo.id) {
+                    evictedDemoClassIds.add(incomingDemo.id);
+                }
+            }
+            const localLiveDemos = currentLocalClasses.filter(c => c?.id && ClassManager.isDemoClass(c.id) && !evictedDemoClassIds.has(c.id));
+
+            for (const localDemo of localLiveDemos) {
+                if (localDemo.id === newestIncomingDemo.id) continue;
+                const localTs = localDemo.updatedAt || localDemo.createdAt || 0;
+                if (newestIncomingTs >= localTs) {
+                    evictedDemoClassIds.add(localDemo.id);
+                } else {
+                    evictedDemoClassIds.add(newestIncomingDemo.id);
+                }
+            }
+        }
+
         const localClasses = currentLocalClasses.filter(lClass => {
             if (!lClass?.id || evictedDemoClassIds.has(lClass.id)) return false;
             const tombstone = deletedClassesMap.get(lClass.id);
@@ -1654,7 +1688,7 @@ export const StorageManager = {
         let addedClasses = 0;
 
         safeIncoming.forEach(rClass => {
-            if (!rClass?.id) return;
+            if (!rClass?.id || evictedDemoClassIds.has(rClass.id)) return;
             const tombstone = deletedClassesMap.get(rClass.id);
             const remoteClassTime = rClass.updatedAt || rClass.createdAt || 0;
             if (tombstone && (tombstone.deletedAt || Infinity) >= remoteClassTime) {
@@ -1794,6 +1828,7 @@ export const StorageManager = {
 
         safeIncoming.forEach(rawRemoteStudent => {
             const remoteStudent = this._ensureStudentId(rawRemoteStudent);
+            if (remoteStudent.classId && evictedDemoClassIds.has(remoteStudent.classId)) return;
             const studentTombstone = deletedStudentsMap.get(remoteStudent.id);
             const classTombstone = remoteStudent.classId ? deletedClassesMap.get(remoteStudent.classId) : null;
             const remoteTime = remoteStudent._lastModified || (remoteStudent.timestamp ? new Date(remoteStudent.timestamp).getTime() : 0) || 0;

@@ -257,15 +257,17 @@ const DEMO_JOURNAL_TEMPLATES = {
 };
 
 /**
- * Builds a complete demo class dataset ready for direct injection during onboarding.
- * Creates student result objects with P1 data filled (grades, statuses, context, sample journal entries),
- * no appreciations (left pending for AI generation).
- * 
+ * Builds a complete demo class dataset ready for direct injection during onboarding or reset.
+ * - P1 (`T1` / `S1`): fully completed (grade, appreciation, context) so evolution & history are visible immediately.
+ * - P2 (`T2` / `S2`): active period with grade, context, and sample journal entries, appreciation left empty for AI generation.
+ * - P3 (`T3` in trimestres): empty.
+ *
  * @param {string} periodSystem - 'trimestres' or 'semestres'
  * @returns {{ className: string, students: Array<Object> }}
  */
 export function getDemoClassData(periodSystem = 'trimestres') {
-    const currentPeriod = periodSystem === 'semestres' ? 'S1' : 'T1';
+    const completedPeriod = periodSystem === 'semestres' ? 'S1' : 'T1';
+    const activePeriod = periodSystem === 'semestres' ? 'S2' : 'T2';
     const allPeriods = periodSystem === 'semestres'
         ? ['S1', 'S2']
         : ['T1', 'T2', 'T3'];
@@ -273,14 +275,27 @@ export function getDemoClassData(periodSystem = 'trimestres') {
     const DAY_MS = 24 * 60 * 60 * 1000;
 
     const students = SAMPLE_STUDENTS.map(s => {
-        const grade = parseFloat(s.periods.P1.moy);
+        const p1Grade = parseFloat(s.periods.P1.moy);
+        const p2Grade = parseFloat(s.periods.P2.moy);
         const statuses = s.statut ? [s.statut] : [];
 
         const periods = {};
         for (const p of allPeriods) {
-            periods[p] = p === currentPeriod
-                ? { grade, appreciation: '', context: s.periods.P1.ctx }
-                : { grade: null, appreciation: '' };
+            if (p === completedPeriod) {
+                periods[p] = {
+                    grade: p1Grade,
+                    appreciation: s.periods.P1.app,
+                    context: s.periods.P1.ctx
+                };
+            } else if (p === activePeriod) {
+                periods[p] = {
+                    grade: p2Grade,
+                    appreciation: '',
+                    context: s.periods.P2.ctx
+                };
+            } else {
+                periods[p] = { grade: null, appreciation: '' };
+            }
         }
 
         const journal = (DEMO_JOURNAL_TEMPLATES[s.id] || []).map((entry, idx) => {
@@ -290,7 +305,7 @@ export function getDemoClassData(periodSystem = 'trimestres') {
                 date: new Date(ts).toISOString(),
                 tags: [...entry.tags],
                 note: entry.note,
-                period: currentPeriod,
+                period: activePeriod,
                 ...(entry.isPrivate ? { isPrivate: true } : {}),
                 _lastModified: ts
             };
@@ -301,7 +316,7 @@ export function getDemoClassData(periodSystem = 'trimestres') {
             prenom: s.prenom,
             statuses,
             periods,
-            currentPeriod,
+            currentPeriod: activePeriod,
             subject: 'Générique',
             photoFile: s.photo,
             journal

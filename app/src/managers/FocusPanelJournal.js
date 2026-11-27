@@ -30,6 +30,32 @@ export const FocusPanelJournal = {
     /** Whether active draft/edit entry is marked as private (excluded from AI) */
     _isDraftPrivate: false,
 
+    /** Last rendered student+period key to restrict timeline fade-in to context switches */
+    _lastRenderedContext: null,
+
+    /** Pending close/crossfade timer handle */
+    _closeTimer: null,
+
+    /**
+     * Check whether the user prefers reduced motion
+     * @returns {boolean}
+     * @private
+     */
+    _prefersReducedMotion() {
+        return Boolean(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    },
+
+    /**
+     * Cancel any pending draft close/crossfade timeout
+     * @private
+     */
+    _clearCloseTimer() {
+        if (this._closeTimer) {
+            clearTimeout(this._closeTimer);
+            this._closeTimer = null;
+        }
+    },
+
     /**
      * Callback functions set by parent manager
      * @private
@@ -207,22 +233,28 @@ export const FocusPanelJournal = {
 
         // Note button in header & empty-header click (Ajouter une observation)
         const openQuickAdd = () => {
-            const draftPreview = document.getElementById('journalDraftPreview');
-            if (draftPreview) {
-                draftPreview.classList.add('visible');
-                const journalContent = document.getElementById('focusJournalContent');
-                if (journalContent) {
-                    requestAnimationFrame(() => {
-                        journalContent.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-                }
-            }
             this.toggleQuickAdd(true, true);
+            const journalContent = document.getElementById('focusJournalContent');
+            if (journalContent) {
+                requestAnimationFrame(() => {
+                    journalContent.scrollTo({
+                        top: 0,
+                        behavior: this._prefersReducedMotion() ? 'auto' : 'smooth'
+                    });
+                });
+            }
         };
 
         const noteBtn = document.getElementById('focusJournalNoteBtn');
         if (noteBtn) {
-            noteBtn.addEventListener('click', openQuickAdd);
+            noteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.isEditing()) {
+                    this.toggleQuickAdd(false);
+                    return;
+                }
+                openQuickAdd();
+            });
         }
 
         const journalHeader = document.getElementById('focusJournalHeader');
@@ -365,10 +397,14 @@ export const FocusPanelJournal = {
     /**
      * Render Journal section for current student
      * @param {Object} result - Student data
-     * @param {string|null} highlightEntryId - Entry ID to highlight after save
+     * @param {string|null} [highlightEntryId=null] - Entry ID to highlight after save
+     * @param {Object} [options={}]
+     * @param {boolean} [options.animateTimeline] - Force timeline fade-in on or off (defaults to true only on student/period switch)
+     * @param {string} [options.highlightClass='enter'] - Animation class for highlighted entry
      */
-    render(result, highlightEntryId = null) {
+    render(result, highlightEntryId = null, options = {}) {
         if (!result?.id) {
+            this._lastRenderedContext = null;
             // Hide journal section in creation mode
             const section = document.getElementById('focusJournalSection');
             if (section) {
@@ -377,6 +413,14 @@ export const FocusPanelJournal = {
             }
             return;
         }
+
+        const contextKey = `${result.id}:${appState.currentPeriod}`;
+        const shouldFadeIn = options.animateTimeline !== undefined
+            ? Boolean(options.animateTimeline)
+            : this._lastRenderedContext !== contextKey;
+        this._lastRenderedContext = contextKey;
+
+        const highlightClass = options.highlightClass || 'enter';
 
         const section = document.getElementById('focusJournalSection');
         if (section) section.style.display = '';
@@ -387,8 +431,9 @@ export const FocusPanelJournal = {
             titleEl.textContent = periodLabel ? `Journal ${periodLabel}` : 'Journal';
         }
 
-        // Update threshold UI (button label + popover value)
-        this._updateThresholdUI(result);
+        // Compute AI summary once per render (SSOT shared between footer and header count badges)
+        const aiSummary = JournalManager.getAISummary(result, appState.currentPeriod);
+        this._updateThresholdUI(result, aiSummary);
 
         const contentEl = document.getElementById('focusJournalContent');
         if (!contentEl) return;
@@ -401,12 +446,13 @@ export const FocusPanelJournal = {
                 result.id,
                 appState.currentPeriod,
                 highlightEntryId,
-                this._editingJournalEntryId
+                this._editingJournalEntryId,
+                highlightClass
             );
             this._setupDraftListeners(contentEl);
             this._setupDeleteHandlers(contentEl, result);
             this._initTooltips(contentEl);
-            this._updateCountBadge(result);
+            this._updateCountBadge(result, aiSummary);
             this._callbacks.bindScrollAffordances?.(contentEl);
             return;
         }
@@ -426,9 +472,9 @@ export const FocusPanelJournal = {
             this._setupDraftListeners(contentEl);
         } else {
             draftPreview.classList.remove('closing');
-            const section = document.getElementById('focusJournalSection');
             if (!section?.classList.contains('editing')) {
                 draftPreview.classList.remove('visible', 'is-editing');
+                this._syncNoteButtonState(false);
             }
         }
 
@@ -453,18 +499,35 @@ export const FocusPanelJournal = {
                 null,
                 null
             );
-            const emptyEl = timelineContainer.querySelector('.journal-empty');
-            emptyEl?.classList.add('fade-in');
+            if (shouldFadeIn) {
+                timelineContainer.querySelector('.journal-empty')?.classList.add('fade-in');
+            }
         } else {
             TooltipsUI.cleanupTooltipsIn(timelineContainer);
             timelineContainer.innerHTML = JournalManager.renderTimeline(
                 result.id,
                 appState.currentPeriod,
                 highlightEntryId,
-                null
+                null,
+                highlightClass
             );
-            const timelineEl = timelineContainer.querySelector('.journal-timeline');
-            timelineEl?.classList.add('fade-in');
+            if (shouldFadeIn) {
+                timelineContainer.querySelector('.journal-timeline')?.classList.add('fade-in');
+            }
+
+            // Calibrate height of sliding-in entry so expansion matches exact rendered height
+            if (highlightEntryId && highlightClass === 'enter' && !this._prefersReducedMotion()) {
+                const entryEl = timelineContainer.querySelector('.journal-entry.enter');
+                if (entryEl) {
+                    entryEl.classList.remove('enter');
+                    const exactHeight = entryEl.offsetHeight;
+                    if (exactHeight > 0) {
+                        entryEl.style.setProperty('--entry-target-height', `${exactHeight}px`);
+                        void entryEl.offsetHeight;
+                    }
+                    entryEl.classList.add('enter');
+                }
+            }
 
             this._setupDeleteHandlers(timelineContainer, result);
             this._initTooltips(timelineContainer);
@@ -474,7 +537,7 @@ export const FocusPanelJournal = {
         this._setupEmptyStateHandler(timelineContainer);
 
         // Update count badge
-        this._updateCountBadge(result);
+        this._updateCountBadge(result, aiSummary);
         this._callbacks.bindScrollAffordances?.(contentEl);
     },
 
@@ -490,13 +553,12 @@ export const FocusPanelJournal = {
         emptyEl._journalBound = true;
 
         emptyEl.addEventListener('click', () => {
-            const draftPreview = document.getElementById('journalDraftPreview');
-            if (draftPreview) {
-                draftPreview.classList.add('visible');
-                const journalContent = document.getElementById('focusJournalContent');
-                journalContent?.scrollTo({ top: 0, behavior: 'smooth' });
-            }
             this.toggleQuickAdd(true, true);
+            const journalContent = document.getElementById('focusJournalContent');
+            journalContent?.scrollTo({
+                top: 0,
+                behavior: this._prefersReducedMotion() ? 'auto' : 'smooth'
+            });
         });
 
         emptyEl.addEventListener('keydown', (e) => {
@@ -576,20 +638,26 @@ export const FocusPanelJournal = {
                 else {
                     resetConfirm();
 
-                    // Animate removal
-                    const entryEl = btn.closest('.journal-entry');
-                    if (entryEl) {
-                        entryEl.classList.add('leave');
+                    const commitDelete = () => {
+                        JournalManager.deleteEntry(result.id, entryId);
+                        this.render(result, null, { animateTimeline: false });
+                    };
 
-                        setTimeout(() => {
-                            // Execute delete
-                            JournalManager.deleteEntry(result.id, entryId);
-                            // Re-render to update timeline and isolated states
-                            this.render(result);
-                            // Refresh badge status
-                            this._refreshStatus();
-                        }, 400); // Wait for animation
+                    const entryEl = btn.closest('.journal-entry');
+                    if (!entryEl || this._prefersReducedMotion()) {
+                        commitDelete();
+                        return;
                     }
+
+                    // Lock exact rendered height so CSS transitions smoothly from real height -> 0
+                    const currentHeight = entryEl.offsetHeight;
+                    if (currentHeight > 0) {
+                        entryEl.style.maxHeight = `${currentHeight}px`;
+                        void entryEl.offsetHeight;
+                    }
+                    entryEl.classList.add('leave');
+
+                    setTimeout(commitDelete, 250);
                 }
             });
         });
@@ -600,14 +668,22 @@ export const FocusPanelJournal = {
      * @param {Object} result - Student result
      * @private
      */
-    _updateCountBadge(result) {
+    _updateCountBadge(result, precomputedSummary = null) {
         const countBadge = document.getElementById('focusJournalCount');
         if (countBadge) {
             const includeInAI = JournalManager.isIncludedInAI(result.classId);
-            const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod, { excludePrivate: includeInAI });
+            const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod, {
+                excludePrivate: includeInAI,
+                excludeRemarque: true
+            });
 
             if (aggregated.length > 0) {
                 const threshold = JournalManager.getThreshold(result.classId);
+                const summary = includeInAI
+                    ? (precomputedSummary || JournalManager.getAISummary(result, appState.currentPeriod))
+                    : null;
+                const transmittedTagIds = new Set(summary?.transmittedTagIds || []);
+
                 // Show up to 4 tags directly; when 5+, show top 3 + "+N" (never a "+1" replacing a single tag)
                 const maxVisible = aggregated.length <= 4 ? 4 : 3;
                 const visibleItems = aggregated.slice(0, maxVisible);
@@ -615,14 +691,21 @@ export const FocusPanelJournal = {
 
                 // Render top 3 tag counts + neutral +N overflow pill to keep header compact
                 let html = visibleItems.map(item => {
-                    const isBelow = includeInAI && item.count < threshold;
-                    const belowClass = isBelow ? 'below-threshold' : '';
+                    const isBelow = includeInAI && !transmittedTagIds.has(item.id);
+                    const belowClass = isBelow ? ' below-threshold' : '';
                     const escapedLabel = Utils.escapeHtml(item.label);
-                    const tooltipText = isBelow
-                        ? `${escapedLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`
-                        : `${escapedLabel} : ${item.count}`;
+                    let tooltipText;
+                    if (isBelow) {
+                        tooltipText = item.count >= threshold
+                            ? `${escapedLabel} : ${item.count} (hors top 5 transmis à l'IA)`
+                            : `${escapedLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`;
+                    } else if (includeInAI && item.count < threshold) {
+                        tooltipText = `${escapedLabel} : ${item.count} (transmis via note écrite)`;
+                    } else {
+                        tooltipText = `${escapedLabel} : ${item.count}`;
+                    }
                     return `
-                    <span class="journal-tag journal-count-tag ${belowClass}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${tooltipText}">
+                    <span class="journal-tag journal-count-tag${belowClass}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${tooltipText}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
@@ -684,7 +767,7 @@ export const FocusPanelJournal = {
      * @param {Object|null} [result=null]
      * @private
      */
-    _updateThresholdUI(result = null) {
+    _updateThresholdUI(result = null, precomputedSummary = null) {
         const targetResult = result || (this._getCurrentStudentId()
             ? appState.generatedResults?.find(r => r.id === this._getCurrentStudentId())
             : null);
@@ -692,28 +775,29 @@ export const FocusPanelJournal = {
         const threshold = JournalManager.getThreshold(targetClassId);
         const includeInAI = JournalManager.isIncludedInAI(targetClassId);
         const currentClass = targetClassId ? ClassManager.getClassById(targetClassId) : null;
-        const summary = targetResult
+        const summary = precomputedSummary || (targetResult
             ? JournalManager.getAISummary(targetResult, appState.currentPeriod)
-            : null;
+            : null);
 
-        const hasAISignal = Boolean(includeInAI && summary?.displayText);
+        const footerSummaryText = summary?.compactText || '';
+        const hasAISignal = Boolean(includeInAI && footerSummaryText);
         let footerText = '';
         if (!includeInAI) {
             footerText = 'Journal personnel · Non transmis à l\'IA';
         } else if (hasAISignal) {
-            footerText = `Transmis à l'IA : ${summary.displayText}`;
+            footerText = `Transmis à l'IA : ${footerSummaryText}`;
         } else if (summary && summary.totalCount > 0 && summary.privateCount === summary.totalCount) {
             const plural = summary.privateCount > 1 ? 's' : '';
-            footerText = `Transmis à l'IA : aucune (${summary.privateCount} note${plural} privée${plural})`;
+            footerText = `Aucune observation transmise · ${summary.privateCount} note${plural} privée${plural}`;
         } else {
-            footerText = `Transmis à l'IA : aucune (tags < ${threshold}×)`;
+            footerText = 'Aucune observation transmise · tags isolés';
         }
 
         // Update footer label & icon
         const btnValue = document.getElementById('journalThresholdValue');
         if (btnValue) {
             if (hasAISignal) {
-                btnValue.innerHTML = `<span class="journal-ai-footer-prefix">Transmis à l'IA :</span> <span class="journal-ai-footer-value">${Utils.escapeHtml(summary.displayText)}</span>`;
+                btnValue.innerHTML = `<span class="journal-ai-footer-prefix">Transmis à l'IA :</span> <span class="journal-ai-footer-value">${Utils.escapeHtml(footerSummaryText)}</span>`;
             } else {
                 btnValue.textContent = footerText;
             }
@@ -770,29 +854,149 @@ export const FocusPanelJournal = {
         const hintEl = document.getElementById('thresholdHintText');
         if (hintEl) {
             if (threshold <= 1) {
-                hintEl.textContent = 'Chaque tag et chaque note écrite non privée sont transmis.';
-            } else if (threshold === 2) {
-                hintEl.textContent = 'Tags répétés (≥2) et notes écrites non privées transmis.';
-            } else if (threshold === 3) {
-                hintEl.textContent = 'Tendances fréquentes (≥3) et notes écrites non privées transmis.';
+                hintEl.textContent = 'Tous les tags et les notes écrites (hors Privé) sont transmis.';
             } else {
-                hintEl.textContent = `Tags répétés (≥${threshold}) et notes écrites non privées transmis.`;
+                hintEl.textContent = `Un tag sans note est transmis dès ${threshold} occurrences. Les notes écrites (hors Privé) le sont toujours.`;
             }
         }
 
-        // Update tooltip on button (only repeat full sentence if truncated in footer bar)
+        // Update tooltip on button (concise 1-line action hint)
         const btn = document.getElementById('journalThresholdBtn');
         if (btn) {
             btn.classList.toggle('is-ai-excluded', !includeInAI);
             btn.classList.toggle('has-ai-signal', hasAISignal);
-            const contextLabel = currentClass ? `(Classe : ${currentClass.name})` : '(Global)';
-            const isTruncated = Boolean(btnValue && btnValue.scrollWidth > btnValue.clientWidth);
-            const linePrefix = isTruncated ? `${Utils.escapeHtml(footerText)}<br>` : '';
-            const tooltip = includeInAI
-                ? `${linePrefix}Seuil tags ≥${threshold} ${Utils.escapeHtml(contextLabel)}<br><span class="kbd-hint">Cliquer pour régler</span>`
-                : `Réglage ${Utils.escapeHtml(contextLabel)}<br><span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
+            let tooltip;
+            if (!includeInAI) {
+                tooltip = 'Réactiver la transmission du journal à l\'IA';
+            } else if (threshold <= 1) {
+                tooltip = 'Régler la transmission à l\'IA';
+            } else {
+                tooltip = `Régler la transmission à l'IA · Tags sans note dès ${threshold}×`;
+            }
             TooltipsUI.updateTooltip(btn, tooltip);
         }
+    },
+
+    /**
+     * Synchronize the header "+" / "×" toggle button label and tooltip with editing state
+     * @param {boolean} isOpen
+     * @private
+     */
+    _syncNoteButtonState(isOpen) {
+        const noteBtn = document.getElementById('focusJournalNoteBtn');
+        if (!noteBtn) return;
+        const label = isOpen ? 'Fermer' : 'Ajouter une observation';
+        noteBtn.setAttribute('aria-label', label);
+        noteBtn.setAttribute('aria-expanded', String(Boolean(isOpen)));
+        TooltipsUI.updateTooltip?.(noteBtn, label);
+    },
+
+    /**
+     * Synchronously reset any active quick-add or inline-edit journal state (no exit animation).
+     * Used on student switches, panel close, and as the shared final cleanup of toggleQuickAdd(false).
+     * @param {Object} [options={}]
+     * @param {boolean} [options.silentHistory=false] - Skip HistoryManager synchronization
+     * @param {boolean} [options.reRender=false] - Re-render the current student's journal after reset
+     * @param {string|null} [options.highlightEntryId=null] - Optional entry ID to settle-highlight
+     * @param {string} [options.highlightClass='just-saved'] - CSS class for highlighted entry
+     */
+    resetEditingState({ silentHistory = false, reRender = false, highlightEntryId = null, highlightClass = 'just-saved' } = {}) {
+        this._clearCloseTimer();
+        if (!silentHistory && HistoryManager.isOpen('focusJournalQuickAdd')) {
+            HistoryManager.handleManualClose('focusJournalQuickAdd');
+        }
+        this._editingJournalEntryId = null;
+        this._selectedJournalTags = [];
+        this._isDraftPrivate = false;
+
+        const section = document.getElementById('focusJournalSection');
+        section?.classList.remove('editing');
+        this._syncNoteButtonState(false);
+
+        const draft = document.getElementById('journalDraftPreview');
+        if (draft) {
+            draft.classList.remove('visible', 'closing', 'is-editing');
+            const noteInput = draft.querySelector('#journalNoteInput');
+            if (noteInput) noteInput.value = '';
+            const charCount = draft.querySelector('#journalCharCount');
+            if (charCount) {
+                charCount.textContent = '0';
+                charCount.closest('.journal-char-count')?.classList.remove('is-visible');
+            }
+            const privateBtn = draft.querySelector('#journalDraftPrivateBtn');
+            if (privateBtn) {
+                privateBtn.classList.remove('is-active');
+                privateBtn.setAttribute('aria-pressed', 'false');
+            }
+            const saveBtn = draft.querySelector('#journalDraftSaveBtn');
+            if (saveBtn) saveBtn.disabled = true;
+        }
+
+        this._updatePillDirectStates();
+        const contentEl = document.getElementById('focusJournalContent');
+        contentEl?.querySelectorAll('.journal-crossfade-wrapper').forEach(w => w.remove());
+
+        if (reRender) {
+            const studentId = this._getCurrentStudentId();
+            const result = studentId ? appState.generatedResults?.find(r => r.id === studentId) : null;
+            if (result) {
+                this.render(result, highlightEntryId, { animateTimeline: false, highlightClass });
+            }
+        }
+    },
+
+    /**
+     * Smoothly collapse the draft/inline-editor while optionally expanding an incoming entry row in lockstep.
+     * Both transitions share the exact same duration & spring easing so total height glides monotonically.
+     * @param {HTMLElement|null} draftPreview
+     * @param {Object|null} entry - Entry to crossfade into (null for plain cancel)
+     * @param {Object|null} result - Student result object
+     * @param {Object} [options={}]
+     * @param {boolean} [options.isIncoming=false] - Apply subtle highlight tint during arrival
+     * @param {Function} options.onComplete - Callback once transition completes
+     * @private
+     */
+    _animateDraftClose(draftPreview, entry, result, { isIncoming = false, onComplete } = {}) {
+        this._clearCloseTimer();
+
+        // Sync header toggle button immediately so × -> + rotates in lockstep with the collapsing editor
+        const section = document.getElementById('focusJournalSection');
+        section?.classList.remove('editing');
+        this._syncNoteButtonState(false);
+
+        if (!draftPreview || this._prefersReducedMotion()) {
+            onComplete?.();
+            return;
+        }
+
+        if (entry && result) {
+            const classId = result.classId || null;
+            const tagCounts = JournalManager.countTags(result.id, appState.currentPeriod, { excludePrivate: true });
+            const threshold = JournalManager.getThreshold(classId);
+            const entryHTML = JournalManager.renderEntryCard(
+                entry,
+                tagCounts,
+                threshold,
+                classId,
+                isIncoming ? 'is-incoming' : ''
+            );
+
+            const entryWrapper = document.createElement('div');
+            entryWrapper.className = 'journal-crossfade-wrapper';
+            entryWrapper.innerHTML = `<div class="journal-crossfade-inner">${entryHTML}</div>`;
+            draftPreview.after(entryWrapper);
+            void entryWrapper.offsetHeight;
+
+            draftPreview.classList.add('closing');
+            entryWrapper.classList.add('is-visible');
+        } else {
+            draftPreview.classList.add('closing');
+        }
+
+        this._closeTimer = setTimeout(() => {
+            this._closeTimer = null;
+            onComplete?.();
+        }, 250);
     },
 
     /**
@@ -812,78 +1016,29 @@ export const FocusPanelJournal = {
             }
             const draftPreview = document.getElementById('journalDraftPreview');
             const isVisible = draftPreview && (draftPreview.classList.contains('visible') || this._editingJournalEntryId);
-            const editingId = this._editingJournalEntryId; // Capture before reset
+            const editingId = this._editingJournalEntryId;
 
-            // Helper to get current student result
-            const getCurrentResult = () => appState.generatedResults.find(r => r.id === studentId);
-
-            // Cleanup helper
             const finishClose = () => {
-                this._editingJournalEntryId = null;
-                this._selectedJournalTags = [];
-                this._isDraftPrivate = false;
-                section?.classList.remove('editing');
-                const draft = document.getElementById('journalDraftPreview');
-                if (draft) {
-                    draft.classList.remove('visible', 'closing', 'is-editing');
-                    const noteInput = draft.querySelector('#journalNoteInput');
-                    if (noteInput) noteInput.value = '';
-                    const charCount = draft.querySelector('#journalCharCount');
-                    if (charCount) {
-                        charCount.textContent = '0';
-                        charCount.closest('.journal-char-count')?.classList.remove('is-visible');
-                    }
-                    const privateBtn = draft.querySelector('#journalDraftPrivateBtn');
-                    if (privateBtn) {
-                        privateBtn.classList.remove('is-active');
-                        privateBtn.setAttribute('aria-pressed', 'false');
-                    }
-                    const saveBtn = draft.querySelector('#journalDraftSaveBtn');
-                    if (saveBtn) saveBtn.disabled = true;
-                }
-                this._updatePillDirectStates();
-                const contentEl = document.getElementById('focusJournalContent');
-                contentEl?.querySelectorAll('.journal-crossfade-wrapper').forEach(w => w.remove());
-                const result = getCurrentResult();
-                if (result) this.render(result);
+                // Standard quick-add leaves the timeline DOM untouched; only inline edit needs a re-render
+                this.resetEditingState({ silentHistory: true, reRender: Boolean(editingId) });
             };
 
             if (isVisible) {
-                // === Special handling for INLINE EDIT close (crossfade) ===
-                if (editingId) {
-                    const entry = JournalManager.getEntry(studentId, editingId);
-                    if (entry) {
-                        // Build the original entry HTML to inject via shared SSOT helper
-                        const currentStudent = getCurrentResult();
-                        const classId = currentStudent?.classId || null;
-                        const tagCounts = JournalManager.countTags(studentId, appState.currentPeriod);
-                        const threshold = JournalManager.getThreshold(classId);
-                        const entryHTML = JournalManager.renderEntryCard(entry, tagCounts, threshold, classId, 'crossfade-in');
-
-                        // Inject the entry card at the same position as the draft
-                        const entryWrapper = document.createElement('div');
-                        entryWrapper.className = 'journal-crossfade-wrapper';
-                        entryWrapper.innerHTML = entryHTML;
-                        draftPreview.after(entryWrapper);
-
-                        // Trigger crossfade animation
-                        draftPreview.classList.add('closing');
-
-                        // Wait for crossfade animation then cleanup
-                        setTimeout(finishClose, 350);
-                        return;
-                    }
-                }
-
-                // === Standard draft close (not inline edit) ===
-                draftPreview.classList.add('closing');
-                setTimeout(finishClose, 300);
+                const currentResult = studentId ? appState.generatedResults?.find(r => r.id === studentId) : null;
+                const restoredEntry = editingId ? JournalManager.getEntry(studentId, editingId) : null;
+                this._animateDraftClose(draftPreview, restoredEntry, currentResult, {
+                    isIncoming: false,
+                    onComplete: finishClose
+                });
             } else {
-                // Instant update if not visible
                 finishClose();
             }
             return;
         }
+
+        this._clearCloseTimer();
+        const contentEl = document.getElementById('focusJournalContent');
+        contentEl?.querySelectorAll('.journal-crossfade-wrapper').forEach(w => w.remove());
 
         const saveBtn = document.getElementById('journalDraftSaveBtn');
         const draftPreview = document.getElementById('journalDraftPreview');
@@ -891,6 +1046,7 @@ export const FocusPanelJournal = {
 
         if (show) {
             section?.classList.add('editing');
+            this._syncNoteButtonState(true);
 
             if (reset) {
                 // Reset state
@@ -925,13 +1081,11 @@ export const FocusPanelJournal = {
                 this._updatePillDirectStates();
             }
 
-            // Show the draft preview when opening
+            // Show the draft preview when opening (clear any mid-close class for smooth reversal)
+            draftPreview?.classList.remove('closing');
             draftPreview?.classList.add('visible');
             HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
         }
-
-        // Remove visual dimming from original entries
-        document.querySelectorAll('.journal-entry.editing-original').forEach(el => el.classList.remove('editing-original'));
     },
 
     /**
@@ -976,6 +1130,7 @@ export const FocusPanelJournal = {
      * @private
      */
     _onEditEntry(entryId) {
+        this._clearCloseTimer();
         const studentId = this._getCurrentStudentId();
         const entry = JournalManager.getEntry(studentId, entryId);
         if (!entry) return;
@@ -988,24 +1143,24 @@ export const FocusPanelJournal = {
         // 2. Re-render journal to show inline editor
         const result = appState.generatedResults.find(r => r.id === studentId);
         if (result) {
-            this.render(result);
+            this.render(result, null, { animateTimeline: false });
 
-            // 3. Scroll to the inline editor
-            setTimeout(() => {
-                const journalContent = document.querySelector('.journal-content');
-                if (journalContent) {
-                    // Scroll the journal-content container to show the draft at top
-                    journalContent.scrollTo({ top: 0, behavior: 'smooth' });
-                    // Focus inputs
-                    const noteInput = document.getElementById('journalNoteInput');
-                    if (noteInput && !entry.note) noteInput.focus();
-                }
-            }, 50);
+            // 3. Gently ensure inline editor is in view without unnecessary scroll jumps
+            requestAnimationFrame(() => {
+                const draftPreview = document.getElementById('journalDraftPreview');
+                draftPreview?.scrollIntoView?.({
+                    behavior: this._prefersReducedMotion() ? 'auto' : 'smooth',
+                    block: 'nearest'
+                });
+                const noteInput = document.getElementById('journalNoteInput');
+                if (noteInput && !entry.note) noteInput.focus();
+            });
         }
 
         // 4. Mark section as editing
         const section = document.getElementById('focusJournalSection');
         section?.classList.add('editing');
+        this._syncNoteButtonState(true);
         HistoryManager.pushState('focusJournalQuickAdd', (opts) => this.toggleQuickAdd(false, true, opts));
     },
 
@@ -1033,79 +1188,50 @@ export const FocusPanelJournal = {
             HistoryManager.handleManualClose('focusJournalQuickAdd');
         }
 
-        // Disable button immediately
         const saveBtn = document.getElementById('journalDraftSaveBtn');
         if (saveBtn) saveBtn.disabled = true;
 
-        // Animate closing
-        const draftPreview = document.getElementById('journalDraftPreview');
-        if (draftPreview) draftPreview.classList.add('closing');
-
         const wasEditingId = this._editingJournalEntryId;
+        const entry = wasEditingId
+            ? JournalManager.updateEntry(studentId, wasEditingId, {
+                tags: [...this._selectedJournalTags],
+                note: note,
+                isPrivate: this._isDraftPrivate
+            })
+            : JournalManager.addEntry(studentId, {
+                tags: [...this._selectedJournalTags],
+                note: note,
+                isPrivate: this._isDraftPrivate
+            });
 
-        // Execute save after animation
-        setTimeout(() => {
-            let entry;
+        if (!entry) {
+            if (saveBtn) saveBtn.disabled = false;
+            return;
+        }
 
-            if (wasEditingId) {
-                // Update existing
-                entry = JournalManager.updateEntry(studentId, wasEditingId, {
-                    tags: [...this._selectedJournalTags],
-                    note: note,
-                    isPrivate: this._isDraftPrivate
-                });
-            } else {
-                // Create new
-                entry = JournalManager.addEntry(studentId, {
-                    tags: [...this._selectedJournalTags],
-                    note: note,
-                    isPrivate: this._isDraftPrivate
+        // Commit badges & AI summary immediately (JournalManager already refreshed appreciation status)
+        const result = appState.generatedResults.find(r => r.id === studentId);
+        const section = document.getElementById('focusJournalSection');
+        section?.classList.remove('is-empty');
+
+        if (result) {
+            const aiSummary = JournalManager.getAISummary(result, appState.currentPeriod);
+            this._updateThresholdUI(result, aiSummary);
+            this._updateCountBadge(result, aiSummary);
+        }
+
+        // Collapse editor straight into the new/updated row in one 240ms continuous gesture
+        const draftPreview = document.getElementById('journalDraftPreview');
+        this._animateDraftClose(draftPreview, entry, result, {
+            isIncoming: true,
+            onComplete: () => {
+                this.resetEditingState({
+                    silentHistory: true,
+                    reRender: true,
+                    highlightEntryId: this._prefersReducedMotion() ? null : entry.id,
+                    highlightClass: 'just-saved'
                 });
             }
-
-            if (entry) {
-                // Refresh badge status (dirty check)
-                this._refreshStatus();
-
-                // Reset editing state
-                this._editingJournalEntryId = null;
-                this._selectedJournalTags = [];
-                this._isDraftPrivate = false;
-                const section = document.getElementById('focusJournalSection');
-                section?.classList.remove('editing');
-
-                const draft = document.getElementById('journalDraftPreview');
-                if (draft) {
-                    draft.classList.remove('visible', 'closing', 'is-editing');
-                    const noteInput = draft.querySelector('#journalNoteInput');
-                    if (noteInput) noteInput.value = '';
-                    const charCount = draft.querySelector('#journalCharCount');
-                    if (charCount) {
-                        charCount.textContent = '0';
-                        charCount.closest('.journal-char-count')?.classList.remove('is-visible');
-                    }
-                    const privateBtn = draft.querySelector('#journalDraftPrivateBtn');
-                    if (privateBtn) {
-                        privateBtn.classList.remove('is-active');
-                        privateBtn.setAttribute('aria-pressed', 'false');
-                    }
-                    const saveBtn = draft.querySelector('#journalDraftSaveBtn');
-                    if (saveBtn) saveBtn.disabled = true;
-                }
-                this._updatePillDirectStates();
-
-                // Re-render journal
-                const result = appState.generatedResults.find(r => r.id === studentId);
-                if (result) {
-                    // If new entry, highlight it
-                    const highlightId = wasEditingId ? null : entry.id;
-                    this.render(result, highlightId);
-                }
-            } else {
-                // If failed, re-enable button and remove closing class
-                if (saveBtn) saveBtn.disabled = false;
-                if (draftPreview) draftPreview.classList.remove('closing');
-            }
-        }, 300);
+        });
     }
 };

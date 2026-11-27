@@ -129,8 +129,19 @@ export const FocusPanelGenerator = {
         if (!summary) return '';
         const esc = (v) => Utils.escapeHtml(String(v ?? ''));
 
-        const identityParts = [esc(summary.identity.label), `genre : ${esc(summary.identity.gender)}`];
-        if (summary.identity.className) identityParts.push(`classe : ${esc(summary.identity.className)}`);
+        const genderLabels = {
+            'féminin': 'Féminin',
+            'masculin': 'Masculin',
+            'non déterminé': 'Genre non déterminé'
+        };
+        const identityBadge = summary.identity.isAnonymous
+            ? '<span class="ai-data-badge is-rgpd">Anonymisé · RGPD</span>'
+            : '<span class="ai-data-badge is-included">Nom masqué</span>';
+        const identityParts = [esc(summary.identity.label)];
+        if (summary.identity.genderIncluded && summary.identity.gender) {
+            identityParts.push(esc(genderLabels[summary.identity.gender] || summary.identity.gender));
+        }
+        if (summary.identity.className) identityParts.push(esc(summary.identity.className));
         if (summary.identity.levelLabel) identityParts.push(esc(summary.identity.levelLabel));
 
         const periodGradeParts = (summary.grades.items || []).map(item => {
@@ -139,12 +150,18 @@ export const FocusPanelGenerator = {
             return `${esc(item.periodLabel)} : <strong>${esc(val)}</strong>${esc(evalSuffix)}`;
         });
         const gradeMetaParts = [];
-        if (summary.grades.evolutionText) {
-            gradeMetaParts.push(esc(summary.grades.evolutionText.replace(/\n/g, ' · ')));
+        const evolutions = summary.grades.evolutions;
+        if (Array.isArray(evolutions) && evolutions.length === 1) {
+            gradeMetaParts.push(esc(`${evolutions[0].description} (${evolutions[0].deltaLabel})`));
+        } else if (Array.isArray(evolutions) && evolutions.length > 1) {
+            gradeMetaParts.push(evolutions.map(ev => esc(`${ev.periode} (${ev.deltaLabel})`)).join(' · '));
+        } else if (summary.grades.evolutionText) {
+            gradeMetaParts.push(esc(summary.grades.evolutionText.replace(/->/g, '→').replace(/\n/g, ' · ')));
         }
         if (summary.grades.classStatsIncluded) {
-            const avgSuffix = summary.grades.classAverageFormatted ? ` (moy. ${esc(summary.grades.classAverageFormatted)})` : '';
-            gradeMetaParts.push(`repères de classe inclus${avgSuffix}`);
+            gradeMetaParts.push(summary.grades.classAverageFormatted
+                ? `Moy. classe ${esc(summary.grades.classAverageFormatted)}`
+                : 'Repères de classe inclus');
         }
         let gradesHtml = '<span class="ai-data-muted">Aucune moyenne renseignée</span>';
         if (periodGradeParts.length > 0 || gradeMetaParts.length > 0) {
@@ -153,76 +170,109 @@ export const FocusPanelGenerator = {
             gradesHtml = `${topLine}${subLine}`;
         }
 
-        const prevAppsHtml = summary.previousAppreciations?.length > 0
-            ? summary.previousAppreciations.map(a => {
-                const raw = a.preview.length > 140 ? `${a.preview.slice(0, 140).trimEnd()}…` : a.preview;
-                return `<div class="ai-data-subitem"><strong>${esc(a.periodLabel)} :</strong> « ${esc(raw)} »</div>`;
-            }).join('')
-            : '<span class="ai-data-muted">Aucune</span>';
+        const rows = [
+            {
+                label: 'Identité',
+                valueHtml: `${identityBadge}<span>${identityParts.join(' · ')}</span>`
+            },
+            {
+                label: 'Moyennes',
+                valueHtml: gradesHtml
+            }
+        ];
 
-        const statusesHtml = summary.statuses?.length > 0
-            ? `<div class="ai-data-status-list">${summary.statuses.map(st => `
-                <div class="ai-data-status-item">
-                    <span class="ai-data-badge ${st.isGdprSensitive ? 'is-rgpd' : 'is-included'}">${esc(st.label)}${st.isGdprSensitive ? ' · neutre RGPD' : ''}</span>
-                    <span class="ai-data-status-desc">${esc(st.instruction)}</span>
-                </div>`).join('')}</div>`
-            : '<span class="ai-data-muted">Aucun</span>';
-
-        let journalHtml = '';
-        const j = summary.journal;
-        if (!j?.includedInAI) {
-            journalHtml = `<span class="ai-data-badge is-excluded">Hors IA</span> <span class="ai-data-muted">Journal personnel non transmis</span>`;
-        } else if (j.displayText) {
-            const privSuffix = j.privateCount > 0 ? ` <span class="ai-data-muted">(${j.privateCount} privée${j.privateCount > 1 ? 's' : ''} exclue${j.privateCount > 1 ? 's' : ''})</span>` : '';
-            journalHtml = `${esc(j.displayText)}${privSuffix}`;
-        } else if (j.totalCount > 0 && j.privateCount === j.totalCount) {
-            journalHtml = `<span class="ai-data-muted">Aucune observation transmise (${j.privateCount} note${j.privateCount > 1 ? 's' : ''} privée${j.privateCount > 1 ? 's' : ''})</span>`;
-        } else {
-            journalHtml = `<span class="ai-data-muted">Aucune observation retenue (tags &lt; ${esc(j.threshold)}×)</span>`;
+        if (summary.previousAppreciations?.length > 0) {
+            const prevAppsHtml = summary.previousAppreciations.map((a) => {
+                const raw = a.preview.length > 180 ? `${a.preview.slice(0, 180).trimEnd()}…` : a.preview;
+                const inner = `<strong>${esc(a.periodLabel)} :</strong> « ${esc(raw)} »`;
+                return summary.previousAppreciations.length === 1
+                    ? `<span>${inner}</span>`
+                    : `<div class="ai-data-line">${inner}</div>`;
+            }).join('');
+            rows.push({ label: 'Précédent', valueHtml: prevAppsHtml });
         }
 
-        const contextHtml = summary.context
-            ? `« ${esc(summary.context)} »`
-            : '<span class="ai-data-muted">Aucune</span>';
+        if (summary.statuses?.length > 0) {
+            const statusesHtml = `<div class="ai-data-status-list">${summary.statuses.map(st => `
+                <div class="ai-data-status-item">
+                    <span class="ai-data-badge ${st.isGdprSensitive ? 'is-rgpd' : 'is-included'}">${esc(st.label)}${st.isGdprSensitive ? ' masqué · RGPD' : ''}</span>
+                    <span class="ai-data-status-desc">« ${esc(st.instruction)} »</span>
+                </div>`).join('')}</div>`;
+            rows.push({ label: 'Statuts', valueHtml: statusesHtml });
+        }
+
+        const j = summary.journal;
+        const hasJournalContent = Boolean(
+            !j?.includedInAI ||
+            j?.totalCount > 0 ||
+            j?.tags?.length > 0 ||
+            j?.notes?.length > 0
+        );
+        if (j && hasJournalContent) {
+            let journalHtml = '';
+            const standaloneLabels = Array.isArray(j.standaloneLabels)
+                ? j.standaloneLabels
+                : (j.tags || []).map(t => t.label);
+            const notes = j.notes || [];
+
+            if (!j.includedInAI) {
+                journalHtml = `<span class="ai-data-badge is-excluded">Hors IA</span> <span class="ai-data-muted">Journal personnel non transmis</span>`;
+            } else if (standaloneLabels.length > 0 || notes.length > 0) {
+                const privSuffix = j.privateCount > 0
+                    ? ` <span class="ai-data-muted">(${j.privateCount} privée${j.privateCount > 1 ? 's' : ''} exclue${j.privateCount > 1 ? 's' : ''})</span>`
+                    : '';
+                const formattedNotes = notes.map(n => {
+                    const tagLabels = n.uiTagLabels?.length ? n.uiTagLabels : (n.extraTagLabels || []);
+                    const tagPrefix = tagLabels.length > 0 ? `${esc(tagLabels.join(', '))} : ` : '';
+                    return `${tagPrefix}« ${esc(n.text)} »`;
+                });
+
+                if (standaloneLabels.length === 0 && formattedNotes.length === 1) {
+                    journalHtml = `<span>${formattedNotes[0]}</span>${privSuffix}`;
+                } else {
+                    const parts = [];
+                    if (standaloneLabels.length > 0) {
+                        const tagsSuffix = formattedNotes.length === 0 ? privSuffix : '';
+                        parts.push(`<div class="ai-data-line">${standaloneLabels.map(esc).join(' · ')}${tagsSuffix}</div>`);
+                    }
+                    formattedNotes.forEach((fn, idx) => {
+                        const noteSuffix = idx === formattedNotes.length - 1 ? privSuffix : '';
+                        parts.push(`<div class="ai-data-line">${fn}${noteSuffix}</div>`);
+                    });
+                    journalHtml = parts.join('');
+                }
+            } else if (j.totalCount > 0 && j.privateCount === j.totalCount) {
+                const plural = j.privateCount > 1 ? 's' : '';
+                journalHtml = `<span class="ai-data-muted">Aucune observation transmise (${j.privateCount} privée${plural} exclue${plural})</span>`;
+            } else {
+                journalHtml = `<span class="ai-data-muted">Aucune observation transmise · tags isolés (seuil ${esc(j.threshold)}×)</span>`;
+            }
+            rows.push({ label: 'Journal', valueHtml: journalHtml });
+        }
+
+        if (summary.context) {
+            rows.push({ label: 'Indications', valueHtml: `« ${esc(summary.context)} »` });
+        }
 
         const styleParts = [esc(summary.style.voiceLabel)];
         if (summary.style.discipline) styleParts.push(esc(summary.style.discipline));
         if (summary.style.maxChars) styleParts.push(`max ${esc(summary.style.maxChars)} car.`);
         else if (summary.style.length) styleParts.push(`~${esc(summary.style.length)} mots`);
-        if (summary.style.hasCustomInstructions) styleParts.push('consigne de style perso');
+        if (summary.style.hasCustomInstructions) styleParts.push('consigne personnalisée');
+
+        const rowsHtml = rows.map(row => `
+                <div class="ai-data-row">
+                    <span class="ai-data-row-label">${esc(row.label)}</span>
+                    <div class="ai-data-row-value">${row.valueHtml}</div>
+                </div>`).join('');
 
         return `
             <div class="ai-data-summary">
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Identité</span>
-                    <div class="ai-data-row-value">
-                        <span class="ai-data-badge ${summary.identity.isAnonymous ? 'is-rgpd' : 'is-included'}">${summary.identity.isAnonymous ? 'Anonymisé' : 'Prénom seul'}</span>
-                        <span>${identityParts.join(' · ')}</span>
-                    </div>
+                <div class="ai-data-card">${rowsHtml}
                 </div>
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Moyennes</span>
-                    <div class="ai-data-row-value">${gradesHtml}</div>
-                </div>
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Appr. passées</span>
-                    <div class="ai-data-row-value">${prevAppsHtml}</div>
-                </div>
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Statuts</span>
-                    <div class="ai-data-row-value">${statusesHtml}</div>
-                </div>
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Journal</span>
-                    <div class="ai-data-row-value">${journalHtml}</div>
-                </div>
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Indications</span>
-                    <div class="ai-data-row-value">${contextHtml}</div>
-                </div>
-                <div class="ai-data-row">
-                    <span class="ai-data-row-label">Style actif</span>
-                    <div class="ai-data-row-value">${styleParts.join(' · ')}</div>
+                <div class="ai-data-style-bar">
+                    <span class="ai-data-style-label">Style :</span>
+                    <span>${styleParts.join(' · ')}</span>
                 </div>
             </div>
         `;
@@ -238,7 +288,11 @@ export const FocusPanelGenerator = {
 
         const summary = PromptService.getPromptSummary?.(ctx.studentData) || null;
         const summaryHtml = summary ? this._buildPromptSummaryHtml(summary) : '';
-        const title = summaryHtml ? 'Données transmises à l\'IA' : 'Prévisualisation du prompt';
+        const title = summaryHtml
+            ? (summary?.currentPeriodLabel
+                ? `Données transmises à l'IA · ${summary.currentPeriodLabel}`
+                : 'Données transmises à l\'IA')
+            : 'Prévisualisation du prompt';
 
         await panel._displayPromptModal(ctx.promptText, title, summaryHtml ? { summaryHtml } : {});
     },

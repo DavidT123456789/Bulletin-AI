@@ -791,14 +791,6 @@ export const SpeechRecognitionManager = {
         result.generationPeriod = appState.currentPeriod;
         result.generationSnapshot = null;
 
-        const aiIndicator = document.getElementById('focusAiIndicator');
-        if (aiIndicator) {
-            aiIndicator.style.display = 'inline-flex';
-            aiIndicator.innerHTML = '<iconify-icon icon="solar:pen-linear"></iconify-icon>';
-            aiIndicator.className = 'source-indicator source-manual';
-            aiIndicator.setAttribute('data-tooltip', 'Rédigé manuellement');
-        }
-
         // NOTE : On ne pousse PAS dans l'historique sur chaque segment intermédiaire.
         // L'historique n'enregistrera qu'une seule entrée consolidée à la clôture de la dictée.
 

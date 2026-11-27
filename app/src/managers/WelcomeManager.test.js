@@ -57,6 +57,7 @@ vi.mock('./AppreciationsManager', () => ({
 vi.mock('./ClassManager', () => ({
     ClassManager: {
         createClass: vi.fn(() => ({ id: 'demo-class-id', name: 'Classe Exemple' })),
+        deleteClass: vi.fn(async () => true),
         getAllClasses: vi.fn(() => []),
         isDemoClass: vi.fn(() => false),
         switchClass: vi.fn(),
@@ -562,6 +563,164 @@ describe('WelcomeManager', () => {
 
             window.matchMedia = originalMatchMedia;
             vi.useRealTimers();
+        });
+    });
+
+    describe('resetDemoClass', () => {
+        it('should delete existing demo class, recreate fresh demo students with journal, and preserve active real class & period', async () => {
+            const { ClassManager } = await import('./ClassManager');
+            const { StudentDataManager } = await import('./StudentDataManager');
+            const { StorageManager } = await import('./StorageManager');
+
+            const realClass = { id: 'real-3a', name: '3ème A', isDemo: false };
+            const oldDemo = { id: 'demo-old', name: 'Classe exemple', isDemo: true };
+            const classesList = [realClass, oldDemo];
+
+            appState.currentClassId = realClass.id;
+            appState.periodSystem = 'trimestres';
+            appState.currentPeriod = 'T2';
+            appState.generatedResults = [
+                { id: 'real-s1', nom: 'DUPONT', prenom: 'Alice', classId: realClass.id }
+            ];
+
+            ClassManager.getAllClasses.mockImplementation(() => classesList);
+            ClassManager.isDemoClass.mockImplementation((id) => {
+                const cls = classesList.find(c => c.id === id);
+                return Boolean(cls?.isDemo);
+            });
+            ClassManager.deleteClass.mockImplementation(async (id) => {
+                const idx = classesList.findIndex(c => c.id === id);
+                if (idx !== -1) classesList.splice(idx, 1);
+                return true;
+            });
+            ClassManager.createClass.mockImplementation((name) => {
+                const created = { id: 'demo-new', name };
+                classesList.push(created);
+                return created;
+            });
+            StudentDataManager.createPendingResult.mockImplementation((s, targetClassId) => ({
+                id: `demo-stu-${s.nom.toLowerCase()}`,
+                nom: s.nom,
+                prenom: s.prenom,
+                classId: targetClassId,
+                studentData: { ...s }
+            }));
+
+            const loadPhotosSpy = vi.spyOn(WelcomeManager, '_loadDemoPhotos').mockResolvedValue();
+
+            const result = await WelcomeManager.resetDemoClass('trimestres');
+
+            expect(ClassManager.deleteClass).toHaveBeenCalledWith('demo-old', true);
+            expect(result.hadExistingDemo).toBe(true);
+            expect(result.switchedToDemo).toBe(false);
+            expect(result.demoClass.id).toBe('demo-new');
+            expect(result.demoClass.isDemo).toBe(true);
+
+            // Real class & active period remain untouched
+            expect(ClassManager.switchClass).not.toHaveBeenCalled();
+            expect(appState.currentClassId).toBe(realClass.id);
+            expect(appState.currentPeriod).toBe('T2');
+
+            // 8 demo students injected with P1 filled, P2 pending + journal, isPending=false for per-period status, enrichProfile disabled
+            const demoStudents = appState.generatedResults.filter(r => r.classId === 'demo-new');
+            expect(demoStudents).toHaveLength(8);
+            expect(demoStudents.every(r => r.isPending === false)).toBe(true);
+            expect(demoStudents.every(r => r.studentData.currentPeriod === 'T2')).toBe(true);
+            expect(demoStudents.every(r => Boolean(r.studentData.periods.T1.appreciation))).toBe(true);
+            expect(demoStudents.every(r => r.studentData.periods.T2.appreciation === '' && typeof r.studentData.periods.T2.grade === 'number')).toBe(true);
+            expect(demoStudents.some(r => Array.isArray(r.journal) && r.journal.every(e => e.period === 'T2'))).toBe(true);
+            expect(StudentDataManager.createPendingResult).toHaveBeenCalledWith(
+                expect.objectContaining({ nom: 'BERNARD' }),
+                'demo-new',
+                { enrichProfile: false }
+            );
+            expect(loadPhotosSpy).toHaveBeenCalledTimes(1);
+            expect(StorageManager.saveAppState).toHaveBeenCalled();
+
+            loadPhotosSpy.mockRestore();
+        });
+
+        it('should switch back to the recreated demo class when the user was currently viewing the demo class', async () => {
+            const { ClassManager } = await import('./ClassManager');
+            const { StudentDataManager } = await import('./StudentDataManager');
+
+            const realClass = { id: 'real-3a', name: '3ème A', isDemo: false };
+            const oldDemo = { id: 'demo-old', name: 'Classe exemple', isDemo: true };
+            const classesList = [realClass, oldDemo];
+
+            appState.currentClassId = oldDemo.id;
+            appState.periodSystem = 'semestres';
+            appState.currentPeriod = 'S1';
+
+            ClassManager.getAllClasses.mockImplementation(() => classesList);
+            ClassManager.isDemoClass.mockImplementation((id) => Boolean(classesList.find(c => c.id === id)?.isDemo));
+            ClassManager.deleteClass.mockImplementation(async (id) => {
+                const idx = classesList.findIndex(c => c.id === id);
+                if (idx !== -1) classesList.splice(idx, 1);
+                return true;
+            });
+            ClassManager.createClass.mockImplementation((name) => {
+                const created = { id: 'demo-fresh', name };
+                classesList.push(created);
+                return created;
+            });
+            StudentDataManager.createPendingResult.mockImplementation((s, targetClassId) => ({
+                id: `demo-stu-${s.nom.toLowerCase()}`,
+                nom: s.nom,
+                prenom: s.prenom,
+                classId: targetClassId,
+                studentData: { ...s }
+            }));
+
+            const loadPhotosSpy = vi.spyOn(WelcomeManager, '_loadDemoPhotos').mockResolvedValue();
+
+            const result = await WelcomeManager.resetDemoClass();
+
+            expect(result.hadExistingDemo).toBe(true);
+            expect(result.switchedToDemo).toBe(true);
+            expect(ClassManager.switchClass).toHaveBeenCalledWith('demo-fresh');
+            expect(ClassManager._filterResultsByClass).toHaveBeenCalledWith('demo-fresh');
+
+            loadPhotosSpy.mockRestore();
+        });
+
+        it('should restore the demo class when none currently exists without disturbing existing real classes', async () => {
+            const { ClassManager } = await import('./ClassManager');
+            const { StudentDataManager } = await import('./StudentDataManager');
+
+            const realClass = { id: 'real-4b', name: '4ème B', isDemo: false };
+            const classesList = [realClass];
+
+            appState.currentClassId = realClass.id;
+            appState.periodSystem = 'trimestres';
+            appState.currentPeriod = 'T3';
+
+            ClassManager.getAllClasses.mockImplementation(() => classesList);
+            ClassManager.isDemoClass.mockImplementation((id) => Boolean(classesList.find(c => c.id === id)?.isDemo));
+            ClassManager.createClass.mockImplementation((name) => {
+                const created = { id: 'demo-restored', name };
+                classesList.push(created);
+                return created;
+            });
+            StudentDataManager.createPendingResult.mockImplementation((s, targetClassId) => ({
+                id: `demo-stu-${s.nom.toLowerCase()}`,
+                nom: s.nom,
+                prenom: s.prenom,
+                classId: targetClassId,
+                studentData: { ...s }
+            }));
+
+            const loadPhotosSpy = vi.spyOn(WelcomeManager, '_loadDemoPhotos').mockResolvedValue();
+
+            const result = await WelcomeManager.resetDemoClass();
+
+            expect(ClassManager.deleteClass).not.toHaveBeenCalled();
+            expect(result.hadExistingDemo).toBe(false);
+            expect(result.switchedToDemo).toBe(false);
+            expect(result.demoClass.id).toBe('demo-restored');
+            expect(appState.currentPeriod).toBe('T3');
+
+            loadPhotosSpy.mockRestore();
         });
     });
 });

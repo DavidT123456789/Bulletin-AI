@@ -204,8 +204,13 @@
     gap: 9px;
 }
 
-.focus-header.scrolled:not(.editing) .focus-header-toolbar {
+.focus-header.scrolled:not(.editing) .focus-grades-strip {
     order: 2;
+    flex-shrink: 0;
+}
+
+.focus-header.scrolled:not(.editing) .focus-header-toolbar {
+    order: 3;
     width: auto;
 }
 
@@ -291,7 +296,7 @@
 
 .focus-header.scrolled:not(.editing) .focus-name-edit-icon,
 .focus-header.scrolled:not(.editing) .focus-status-badges,
-.focus-header.scrolled:not(.editing) .focus-grades-strip {
+.focus-header.scrolled:not(.editing) .focus-print-btn {
     display: none !important;
 }
 

@@ -1267,6 +1267,24 @@ RÈGLES STRICTES DE FIABILITÉ :
             return targetIndex >= 0 && targetIndex <= currentPeriodIndex;
         });
         const evolutionText = this._formatEvolutions(filteredEvolutions);
+        const evolutionDescriptions = {
+            'very-positive': 'Progression notable',
+            'positive': 'Progression',
+            'stable': 'Stable',
+            'negative': 'Baisse',
+            'very-negative': 'Baisse prononcée'
+        };
+        const evolutionItems = filteredEvolutions.map(e => {
+            const sign = e.valeur > 0 ? '+' : '';
+            const formattedVal = String(e.valeur).replace('.', ',');
+            const unit = Math.abs(e.valeur) < 2 ? 'pt' : 'pts';
+            return {
+                periode: e.periode.replace('-', ' → '),
+                deltaLabel: `${sign}${formattedVal} ${unit}`,
+                description: evolutionDescriptions[e.type] || 'Stable',
+                type: e.type
+            };
+        });
 
         const activeStatuses = Utils.getActiveStatuses(Array.isArray(statuses) ? statuses : [], currentPeriod);
         const statusItems = activeStatuses.map(raw => {
@@ -1290,10 +1308,23 @@ RÈGLES STRICTES DE FIABILITÉ :
         const resolvedJournalClassId = studentData.classId
             || (studentData.id ? appState.generatedResults?.find(s => s.id === studentData.id)?.classId : null)
             || classId;
-        const journalSummary = JournalManager.getAISummary(
+        const rawJournalSummary = JournalManager.getAISummary(
             { ...studentData, classId: resolvedJournalClassId },
             currentPeriod
         );
+        const journalSummary = {
+            ...rawJournalSummary,
+            notes: (rawJournalSummary.notes || []).map(n => ({
+                ...n,
+                text: this.scrubStudentIdentity(n.text, studentIdentity, scrubOptions)
+            })),
+            displayText: rawJournalSummary.displayText
+                ? this.scrubStudentIdentity(rawJournalSummary.displayText, studentIdentity, scrubOptions)
+                : ''
+        };
+
+        const isEpicene = typeof Utils.isEpiceneFirstName === 'function' && Utils.isEpiceneFirstName(prenom);
+        const genderIncluded = isAnonymous || isNeutralVoice || isEpicene;
 
         const voiceLabels = {
             je: '1re personne (je)',
@@ -1303,20 +1334,22 @@ RÈGLES STRICTES DE FIABILITÉ :
         };
 
         return {
+            currentPeriodLabel: Utils.getPeriodLabel(currentPeriod, false) || currentPeriod || '',
             identity: {
                 label: isNeutralVoice
-                    ? 'Anonyme (style neutre)'
-                    : (isAnonymous
-                        ? `${this.PRENOM_PLACEHOLDER} (nom masqué)`
-                        : `${prenom || 'Élève'} (nom masqué)`),
+                    ? 'Aucun nom ni prénom (style neutre)'
+                    : (isAnonymous ? 'Aucun nom ni prénom' : (prenom || 'Élève')),
                 isAnonymous: isAnonymous || isNeutralVoice,
+                isNeutralVoice,
                 gender: gender === 'féminin' || gender === 'masculin' ? gender : 'non déterminé',
+                genderIncluded,
                 className,
                 levelLabel
             },
             grades: {
                 items: gradeItems,
                 evolutionText,
+                evolutions: evolutionItems,
                 classStatsIncluded,
                 classAverageFormatted
             },
