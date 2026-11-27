@@ -372,7 +372,7 @@
     }
 
     .focus-appreciation-body .focus-audio-group {
-        padding: 0 10px 4px 14px;
+        padding: 2px 10px 6px 14px;
         gap: 4px;
     }
 
@@ -474,20 +474,23 @@
     }
 
     .focus-appreciation-body:has(.appreciation-skeleton) .focus-appreciation-text,
-    .focus-appreciation-body:has(.focus-audio-group:not(:has(> button:not([disabled]):not([style*="display: none"])))) .focus-appreciation-text {
+    .focus-appreciation-body:not(:has(.focus-audio-group > button:not([disabled]):not([style*="display: none"]))) .focus-appreciation-text {
         padding-bottom: 12px;
     }
 
     /* Refinement buttons: slim 2x2 refined tonal pills on mobile (lighter than 44px primary footer) */
     .focus-refinement-options {
-        flex-wrap: wrap;
-        overflow-x: visible;
         margin: 0;
         padding: 0 14px 10px;
+    }
+
+    .focus-refinement-chips {
+        flex-wrap: wrap;
+        overflow-x: visible;
         gap: 6px;
     }
 
-    .focus-refinement-options .btn {
+    .focus-refinement-chips .btn {
         flex: 1 1 calc(50% - 3px);
         min-width: 0;
         font-size: 12px;
@@ -496,6 +499,21 @@
         height: auto;
         gap: 6px;
         justify-content: center;
+    }
+
+    .focus-custom-refine-bar {
+        min-height: 36px;
+        padding: 3px 3px 3px 12px;
+    }
+
+    .focus-custom-refine-input {
+        font-size: 14px;
+    }
+
+    .focus-custom-refine-submit,
+    .focus-custom-refine-close {
+        width: 28px;
+        height: 28px;
     }
 
     /* Inline appreciation actions — mobile */
@@ -672,6 +690,7 @@
 
         .focus-context-textarea,
         .focus-appreciation-text,
+        .focus-custom-refine-input,
         .focus-header.editing .focus-input-header,
         .context-grade-input,
         .journal-note-input {
@@ -688,13 +707,20 @@
         min-height: 44px;
     }
 
-    /* Mutualized invisible touch expansion for all 3 mics + speaker (zero layout bloat) */
+    /* Mutualized invisible touch expansion for all 3 mics + speaker + inline custom/polish actions (zero layout bloat) */
     .focus-mic-btn::after,
-    .focus-speaker-btn::after {
+    .focus-speaker-btn::after,
+    .focus-custom-refine-submit::after,
+    .focus-custom-refine-close::after {
         content: '';
         position: absolute;
         inset: -7px -4px;
         border-radius: 50%;
+    }
+
+    .focus-polish-btn {
+        min-height: 30px;
+        padding: 0 10px;
     }
 
     .focus-audio-group {
@@ -729,5 +755,13 @@
     .focus-header.editing .focus-close-btn::after {
         left: 0;
         transform: translateY(-50%);
+    }
+
+    /* Invisible 44px touch target expansion for inline grades */
+    .context-grade-group::after,
+    .previous-grade-chip.has-appreciation::after {
+        content: '';
+        position: absolute;
+        inset: -8px -4px;
     }
 }

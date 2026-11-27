@@ -13,6 +13,7 @@ import { ListViewManager } from '../ListViewManager.js';
 import { FocusPanelHistory } from '../FocusPanelHistory.js';
 import { FocusPanelHeader } from '../FocusPanelHeader.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
+import { FocusPanelRefinement } from '../FocusPanelRefinement.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
 
 const COPY_FEEDBACK_MS = 1500;
@@ -69,7 +70,7 @@ export const FocusPanelGenerator = {
                         FocusPanelStatus.updateHistoryIndicator();
                     }
 
-                    document.querySelectorAll('#focusRefinementOptions .is-generating').forEach(b => {
+                    document.querySelectorAll('#focusRefinementOptions .is-generating, #focusPolishBtn.is-generating, #focusCustomRefineSubmitBtn.is-generating').forEach(b => {
                         b.classList.remove('is-generating');
                         if (b.dataset.baseTooltip !== undefined) {
                             const baseTooltip = b.dataset.baseTooltip;
@@ -81,6 +82,18 @@ export const FocusPanelGenerator = {
                             }
                         }
                     });
+                    const customInput = document.getElementById('focusCustomRefineInput');
+                    if (customInput) customInput.disabled = false;
+                    const customCloseBtn = document.getElementById('focusCustomRefineCloseBtn');
+                    if (customCloseBtn) {
+                        customCloseBtn.disabled = false;
+                        customCloseBtn.classList.remove('disabled');
+                    }
+                    FocusPanelRefinement._syncCustomSubmitState?.();
+                    if (FocusPanelRefinement.isCustomInputOpen?.() && customInput && !window.matchMedia?.('(pointer: coarse)')?.matches) {
+                        customInput.focus();
+                    }
+                    FocusPanelStatus.syncRefinementStates?.(result);
                 }
 
                 if (result) {
@@ -660,10 +673,14 @@ export const FocusPanelGenerator = {
 
         const refinementOptions = document.getElementById('focusRefinementOptions');
         if (refinementOptions) {
-            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
+            FocusPanelRefinement.closeCustomInput?.();
+            refinementOptions.querySelectorAll('[data-refine-type], #focusCustomRefineTrigger').forEach(btn => {
                 btn.classList.add('disabled');
             });
         }
+
+        const polishBtn = document.getElementById('focusPolishBtn');
+        if (polishBtn) polishBtn.classList.add('disabled');
 
         const copyBtn = document.getElementById('focusCopyBtn');
         if (copyBtn) {
@@ -708,6 +725,11 @@ export const FocusPanelGenerator = {
             const state = !hasAppreciation ? 'idle' : (isDirty ? 'dirty' : 'done');
             UI?.setGenerateButtonState?.(generateBtn, state, { suffixHtml: shortcutKbd });
             tooltipText = GENERATE_TOOLTIPS[state] || GENERATE_TOOLTIPS.idle;
+
+            const copyBtn = document.getElementById('focusCopyBtn');
+            if (copyBtn) {
+                copyBtn.classList.toggle('is-primary-action', state === 'done' && !copyBtn.classList.contains('disabled'));
+            }
         }
 
         generateBtn.setAttribute('data-tooltip', tooltipText);

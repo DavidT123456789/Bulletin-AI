@@ -341,12 +341,6 @@
     z-index: 25;
 }
 
-/* Softly dim Bulletin card underneath when threshold popover opens over it */
-.journal-section:has(.journal-threshold-control.open) ~ .focus-appreciation {
-    opacity: 0.48;
-    pointer-events: none;
-}
-
 /* Threshold Popover */
 .journal-threshold-popover {
     position: absolute;

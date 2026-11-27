@@ -813,7 +813,26 @@ button.synthesis-intro-copy-btn.copied iconify-icon {
     gap: var(--space-2);
     position: relative;
     overflow: hidden;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Atténuation sélective en arrière-plan lorsque le popover d'historique des versions est ouvert */
+#classDashboardModal :is(.modal-header, .dashboard-panel.panel-right, .panel-left > .panel-header, #aiSynthesisContent > :not(.ai-synthesis-text), .synthesis-intro-card > :not(.synthesis-intro-header)) {
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body:has(#synthesisHistoryPopover) #classDashboardModal .modal-content {
+    cursor: default;
+}
+
+body:has(#synthesisHistoryPopover) #classDashboardModal :is(.modal-header, .dashboard-panel.panel-right, .panel-left > .panel-header, #aiSynthesisContent > :not(.ai-synthesis-text), .ai-synthesis-text > :not(.synthesis-intro-card)),
+body:has(#synthesisHistoryPopover:not(.place-above)) #classDashboardModal .synthesis-intro-card > :not(.synthesis-intro-header) {
+    opacity: 0.48;
+    pointer-events: none;
+}
+
+body:has(#synthesisHistoryPopover) #classDashboardModal :is(.synthesis-intro-card > :not(.synthesis-intro-header), .synthesis-intro-header :is(.history-nav-btn, .synthesis-intro-copy-btn)) {
+    pointer-events: none;
 }
 
 /* 0. SYNTHESIS INTRO (Narrative — Top Full-Width Card, AI Slate Mineral Surface) */

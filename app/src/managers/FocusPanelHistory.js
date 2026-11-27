@@ -227,13 +227,71 @@ export const FocusPanelHistory = {
         const appreciationSource = result?.appreciationSource ?? null;
         const aiModel = result?.studentData?.currentAIModel ?? null;
         const tokenUsage = result?.tokenUsage ? Utils.deepClone(result.tokenUsage) : null;
+        const extraMeta = typeof options === 'object' && options
+            ? {
+                customInstruction: options.customInstruction || null,
+                toneBaseContent: options.toneBaseContent || null
+            }
+            : null;
 
-        if (HistoryUtils.pushToState(state, cleanContent, source, appreciationSource, aiModel, tokenUsage)) {
+        if (HistoryUtils.pushToState(state, cleanContent, source, appreciationSource, aiModel, tokenUsage, extraMeta)) {
             this._save();
             if (isCurrentStudent && isCurrentPeriod) {
                 this._notifyHistoryChange();
             }
         }
+    },
+
+    /**
+     * Retourne l'entrée normalisée de la version active dans l'historique (ou null).
+     * @param {string|null} [targetPeriod=null]
+     * @param {string|null} [targetStudentId=null]
+     * @returns {Object|null}
+     */
+    getCurrentVersion(targetPeriod = null, targetStudentId = null) {
+        const state = this._getState(false, targetPeriod, targetStudentId, false);
+        if (!state || !Array.isArray(state.versions) || state.currentIndex < 0 || state.currentIndex >= state.versions.length) {
+            return null;
+        }
+        return HistoryUtils.normalizeVersion(state.versions[state.currentIndex]);
+    },
+
+    /**
+     * Cherche dans l'historique une variante de ton déjà calculée pour un texte de base donné.
+     * @param {'encouraging'|'demanding'} toneType
+     * @param {string} baseContent
+     * @param {string|null} [targetPeriod=null]
+     * @param {string|null} [targetStudentId=null]
+     * @returns {number} Index de la variante trouvée, ou -1
+     */
+    findToneVariantIndex(toneType, baseContent, targetPeriod = null, targetStudentId = null) {
+        const cleanBase = typeof baseContent === 'string' ? baseContent.trim() : '';
+        if (!toneType || !cleanBase) return -1;
+        const state = this._getState(false, targetPeriod, targetStudentId, false);
+        if (!state || !Array.isArray(state.versions)) return -1;
+
+        for (let i = state.versions.length - 1; i >= 0; i--) {
+            const v = state.versions[i];
+            if (v && typeof v === 'object' && v.source === toneType && v.toneBaseContent?.trim() === cleanBase) {
+                return i;
+            }
+        }
+        return -1;
+    },
+
+    /**
+     * Cherche dans l'historique l'index d'un contenu exact (utilisé pour restaurer la base d'une bascule de ton).
+     * @param {string} content
+     * @param {string|null} [targetPeriod=null]
+     * @param {string|null} [targetStudentId=null]
+     * @returns {number} Index trouvé ou -1
+     */
+    findContentIndex(content, targetPeriod = null, targetStudentId = null) {
+        const clean = typeof content === 'string' ? content.trim() : '';
+        if (!clean) return -1;
+        const state = this._getState(false, targetPeriod, targetStudentId, false);
+        if (!state || !Array.isArray(state.versions)) return -1;
+        return state.versions.findIndex(v => HistoryUtils.getVersionContent(v).trim() === clean);
     },
 
     canUndo() {

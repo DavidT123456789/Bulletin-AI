@@ -400,6 +400,39 @@ describe('PromptService', () => {
             expect(p).toContain('fluidifie la syntaxe');
         });
 
+        it('should generate custom refinement prompt with GDPR-scrubbed instruction and student dossier reference', () => {
+            const { userPrompt, systemPrompt } = PromptService.getRefinementPrompts(
+                'custom',
+                'Sophie Dupont progresse bien en classe.',
+                {
+                    id: 'stu-1',
+                    prenom: 'Sophie',
+                    nom: 'Dupont',
+                    currentPeriod: 'S2',
+                    customInstruction: 'Mentionne les progrès de Sophie Dupont en TP et son PAP',
+                    studentData: {
+                        id: 'stu-1',
+                        prenom: 'Sophie',
+                        nom: 'Dupont',
+                        statuses: [],
+                        periods: {
+                            S1: { grade: 11.0 },
+                            S2: { grade: 14.5, context: 'Plus régulière à l\'oral avec Sophie Dupont' }
+                        }
+                    }
+                }
+            );
+
+            expect(userPrompt).toContain('REPÈRES FACTUELS DU DOSSIER');
+            expect(userPrompt).toContain('S2 14,5/20');
+            expect(userPrompt).toContain('Plus régulière à l\'oral');
+            expect(userPrompt).toContain('[PRÉNOM]');
+            expect(userPrompt).toContain('[AMÉNAGEMENT]');
+            expect(userPrompt).not.toContain('Dupont');
+            expect(userPrompt).not.toContain('PAP');
+            expect(systemPrompt).toContain('ne cite jamais de moyenne chiffrée');
+        });
+
         it('should inject student gender when prenom is provided and strip surname locally without leaking [NOM]', () => {
             Utils.detectGender.mockReturnValueOnce('féminin');
             const pFemale = PromptService.getRefinementPrompt(

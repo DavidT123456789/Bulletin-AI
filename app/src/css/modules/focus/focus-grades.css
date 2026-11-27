@@ -54,6 +54,28 @@
     border-bottom-right-radius: var(--radius-md);
 }
 
+/* Atténuation sélective en arrière-plan lors de l'ouverture d'un popover dans le panneau Focus
+   (préserve la carte d'ancrage nette et neutralise les survols/clics parasites) */
+#focusPanel :is(.focus-header, .focus-appreciation-body, .focus-refinement-options, .focus-appreciation-actions) {
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#focusPanel:has(.journal-threshold-control.open),
+body:has(#historyPopover) #focusPanel {
+    cursor: default;
+}
+
+#focusPanel:has(.journal-threshold-control.open) :is(.focus-header, .focus-appreciation),
+body:has(#historyPopover) #focusPanel :is(.focus-header, .journal-section),
+body:has(#historyPopover:not(.place-above)) #focusPanel .focus-appreciation > :not(.focus-appreciation-header) {
+    opacity: 0.48;
+    pointer-events: none;
+}
+
+body:has(#historyPopover) #focusPanel :is(.focus-appreciation > :not(.focus-appreciation-header), .focus-appreciation-header :is(.history-nav-btn, #focusAppreciationBadge, #focusAiIndicator)) {
+    pointer-events: none;
+}
+
 /* ============================
    3. GRADES STRIP - Integrated in Student Profile Header
    ============================ */
@@ -174,11 +196,6 @@
     border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
-.focus-speaker-btn.disabled,
-.focus-speaker-btn[disabled] {
-    display: none !important;
-}
-
 .focus-speaker-btn.playing {
     background: var(--primary-color) !important;
     color: var(--text-on-primary) !important;
@@ -259,13 +276,13 @@
 .grades-wrapper {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 6px;
 }
 
 .previous-grades-inline {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 6px;
     cursor: default;
     user-select: none;
 }
@@ -277,14 +294,14 @@
 /* Inline Grade Items: Past Grade (read-only) & Current Grade (editable on hover/focus) */
 .previous-grade-chip,
 .context-grade-group {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    height: 24px;
+    height: 26px;
     background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    padding: 0 6px;
+    padding: 0;
     box-sizing: border-box;
     white-space: nowrap;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
@@ -296,9 +313,8 @@
 }
 
 .context-grade-group {
-    position: relative;
-    height: 26px;
     padding: 0 7px;
+    border-radius: var(--radius-sm);
     background: var(--tonal-bg);
     cursor: text;
 }
@@ -311,9 +327,14 @@
     gap: 4px;
 }
 
+.focus-header.scrolled:not(.editing) .grades-wrapper,
+.focus-header.scrolled:not(.editing) .previous-grades-inline {
+    gap: 4px;
+}
+
 .focus-header.scrolled:not(.editing) .previous-grade-chip {
     height: 24px;
-    padding: 0 3px;
+    padding: 0;
     gap: 3px;
 }
 
@@ -365,6 +386,7 @@
     margin: 0;
     padding: 0;
     cursor: default;
+    transform: translateY(0.5px);
     transition: color var(--transition-fast);
 }
 
@@ -391,7 +413,7 @@
     font-variant-numeric: tabular-nums;
     line-height: 1;
     box-shadow: none !important;
-    cursor: default;
+    cursor: inherit;
     user-select: none;
     opacity: 0.85;
 }
@@ -402,12 +424,47 @@
 }
 
 .previous-grade-chip.has-appreciation {
-    cursor: help;
+    cursor: pointer;
+    outline: none;
+    box-shadow: inset 0 -1.5px 0 var(--border-color-strong);
+    transition: box-shadow var(--transition-fast);
 }
 
-.previous-grade-chip.has-appreciation .prev-grade-value {
-    text-decoration: underline dotted var(--border-color-strong);
-    text-underline-offset: 3px;
+.previous-grade-chip.has-appreciation::before {
+    content: '';
+    position: absolute;
+    inset: 0 -5px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+    pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .previous-grade-chip.has-appreciation:hover {
+        box-shadow: none;
+    }
+
+    .previous-grade-chip.has-appreciation:hover::before {
+        background: var(--item-hover-bg);
+    }
+
+    .previous-grade-chip.has-appreciation:hover .period-prefix {
+        color: var(--text-secondary);
+    }
+
+    .previous-grade-chip.has-appreciation:hover .prev-grade-value {
+        opacity: 1;
+    }
+}
+
+.previous-grade-chip.has-appreciation:focus-visible {
+    box-shadow: none;
+}
+
+.previous-grade-chip.has-appreciation:focus-visible::before {
+    background: var(--item-hover-bg);
+    box-shadow: 0 0 0 1.5px var(--border-color-hover);
 }
 
 .grade-tooltip-appreciation {
@@ -421,6 +478,13 @@
     white-space: normal;
 }
 
+.grade-tooltip-hint {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    opacity: 0.72;
+}
+
 .context-grade-input {
     border: none !important;
     outline: none !important;
@@ -429,9 +493,9 @@
     font-weight: 700;
     font-size: 13px !important;
     font-variant-numeric: tabular-nums;
-    width: 3.4ch !important;
+    width: 3.8ch !important;
     min-width: 1.8ch !important;
-    max-width: 4.2ch !important;
+    max-width: 4.6ch !important;
     height: auto !important;
     text-align: left;
     padding: 0 !important;

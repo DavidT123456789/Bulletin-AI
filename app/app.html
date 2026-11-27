@@ -779,7 +779,8 @@
                     <div class="context-grade-group">
                         <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">S1</label>
                         <input type="text" id="focusCurrentGradeInput" class="context-grade-input custom-input grade-value"
-                            placeholder="--" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                            inputmode="decimal" aria-label="Moyenne de la période actuelle"
+                            placeholder="--" maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                     </div>
                 </div>
             </div>
@@ -913,10 +914,18 @@
                             <div id="focusAppreciationText" class="focus-appreciation-text empty" contenteditable="true"
                                 role="textbox" aria-multiline="true" aria-label="Appréciation de l'élève"
                                 data-placeholder="Saisissez, collez ou générez une appréciation."></div>
-                            <!-- Voice Dictation & Audio Synthesis Group (aligned with Consigne mic) -->
+                            <!-- Inline text tools: Polish + Audio/Dictation on bottom-right -->
                             <div class="focus-audio-group">
+                                <button type="button" id="focusPolishBtn" class="focus-polish-btn tooltip"
+                                    data-refine-type="polish"
+                                    data-tooltip="Corriger les maladresses et fluidifier la syntaxe"
+                                    aria-label="Peaufiner l'appréciation" style="display: none;">
+                                    <iconify-icon icon="solar:stars-line-linear" aria-hidden="true"></iconify-icon>
+                                    <span>Peaufiner</span>
+                                </button>
+                                <span class="focus-audio-divider" aria-hidden="true"></span>
                                 <button type="button" id="focusAppreciationSpeakBtn" class="focus-speaker-btn tooltip"
-                                    data-tooltip="Écouter l'appréciation" aria-label="Écouter l'appréciation" disabled>
+                                    data-tooltip="Écouter l'appréciation" aria-label="Écouter l'appréciation" disabled style="display: none;">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                         stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
                                         stroke-linejoin="round" width="15" height="15">
@@ -936,24 +945,46 @@
                             </div>
                         </div>
 
-                        <!-- Refinement style buttons -->
+                        <!-- Refinement options (1-click adjustments + inline freeform instruction) -->
                         <div class="focus-refinement-options" id="focusRefinementOptions">
-                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
-                                data-tooltip="Raccourcir et aller à l'essentiel">
-                                <iconify-icon icon="solar:minimize-square-linear"></iconify-icon> Concise
-                            </button>
-                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
-                                data-tooltip="Ton plus bienveillant et valorisant">
-                                <iconify-icon icon="solar:heart-linear"></iconify-icon> Encourageante
-                            </button>
-                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="demanding"
-                                data-tooltip="Ton plus ferme et exigeant">
-                                <iconify-icon icon="solar:target-linear"></iconify-icon> Exigeante
-                            </button>
-                            <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="polish"
-                                data-tooltip="Corriger et fluidifier la rédaction">
-                                <iconify-icon icon="solar:stars-line-linear"></iconify-icon> Peaufiner
-                            </button>
+                            <div class="focus-refinement-chips">
+                                <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="concise"
+                                    data-tooltip="Raccourcir et aller à l'essentiel">
+                                    <iconify-icon icon="solar:minimize-square-linear" aria-hidden="true"></iconify-icon> Raccourcir
+                                </button>
+                                <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="encouraging"
+                                    aria-pressed="false" data-tooltip="Ton plus bienveillant et valorisant">
+                                    <iconify-icon icon="solar:heart-linear" aria-hidden="true"></iconify-icon> Encourageante
+                                </button>
+                                <button type="button" class="btn btn-ai-outline btn-tiny tooltip" data-refine-type="demanding"
+                                    aria-pressed="false" data-tooltip="Ton plus ferme et exigeant">
+                                    <iconify-icon icon="solar:target-linear" aria-hidden="true"></iconify-icon> Exigeante
+                                </button>
+                                <button type="button" id="focusCustomRefineTrigger"
+                                    class="btn btn-ai-outline btn-tiny focus-custom-refine-trigger tooltip"
+                                    data-tooltip="Demander une retouche précise sur ce texte">
+                                    <iconify-icon icon="solar:pen-2-linear" aria-hidden="true"></iconify-icon> Préciser…
+                                </button>
+                            </div>
+                            <div class="focus-custom-refine-bar" id="focusCustomRefineBar">
+                                <iconify-icon class="focus-custom-refine-lead-icon" icon="solar:pen-2-linear" aria-hidden="true"></iconify-icon>
+                                <input type="text" id="focusCustomRefineInput" class="focus-custom-refine-input custom-input"
+                                    placeholder="Ajuster ce texte (ex. retirer la fin, parler des TP)…"
+                                    aria-label="Consigne de retouche sur l'appréciation"
+                                    maxlength="240" autocomplete="off" enterkeyhint="send">
+                                <button type="button" id="focusCustomRefineCloseBtn"
+                                    class="focus-custom-refine-close tooltip"
+                                    data-tooltip="Fermer (Échap)"
+                                    aria-label="Fermer la saisie de retouche">
+                                    <iconify-icon icon="ph:x" aria-hidden="true"></iconify-icon>
+                                </button>
+                                <button type="button" id="focusCustomRefineSubmitBtn"
+                                    class="focus-custom-refine-submit disabled tooltip"
+                                    data-tooltip="Appliquer la retouche<br><span class='kbd-hint'>Clic droit : voir le prompt</span>"
+                                    aria-label="Appliquer la retouche" aria-disabled="true">
+                                    <iconify-icon icon="solar:arrow-up-linear" aria-hidden="true"></iconify-icon>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Inline actions: AI Data Inspector + Adaptive Copy/Prompt + Generate -->

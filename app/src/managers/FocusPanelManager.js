@@ -258,6 +258,7 @@ export const FocusPanelManager = {
         if (!result) return;
 
         SpeechSynthesisManager.cancel();
+        FocusPanelRefinement.closeCustomInput?.({ clear: true });
         FocusPanelHeader.renderStatusBadges(result.studentData?.statuses || []);
         this._renderGradesAndContext(result, currentPeriod);
 
@@ -499,6 +500,7 @@ export const FocusPanelManager = {
 
         SpeechSynthesisManager.cancel();
         UI?.cancelHtmlReveal?.(document.getElementById('focusAppreciationText'));
+        FocusPanelRefinement.closeCustomInput?.({ clear: true });
         FocusPanelHistory.closePopover?.();
         FocusPanelJournal.closeThresholdPopover?.();
         FocusPanelJournal.resetEditingState?.({ silentHistory: discardChanges });
@@ -607,13 +609,11 @@ export const FocusPanelManager = {
     _renderContent(result) {
         SpeechSynthesisManager.cancel();
         this._resetCopyFeedback();
+        FocusPanelRefinement.closeCustomInput?.({ clear: true });
 
-        const refinementOptions = document.getElementById('focusRefinementOptions');
-        if (refinementOptions) {
-            refinementOptions.querySelectorAll('[data-refine-type]').forEach(btn => {
-                btn.classList.remove('is-generating');
-            });
-        }
+        document.querySelectorAll('#focusRefinementOptions [data-refine-type], #focusPolishBtn, #focusCustomRefineSubmitBtn').forEach(btn => {
+            btn.classList.remove('is-generating');
+        });
 
         const currentPeriod = appState.currentPeriod;
         this._isAppreciationEdited = false;
@@ -766,13 +766,15 @@ export const FocusPanelManager = {
         if (this._isGradeEdited) {
             const gradeInput = document.getElementById('focusCurrentGradeInput');
             if (gradeInput) {
-                const parsedGrade = parseFloat(gradeInput.value.trim().replace(',', '.'));
-                const newGrade = isNaN(parsedGrade) ? null : parsedGrade;
-                if ((result.studentData.periods?.[currentPeriod]?.grade ?? null) !== newGrade) {
-                    Utils.markStudentModified(result, currentPeriod);
-                    result.studentData.periods[currentPeriod].grade = newGrade;
+                const parsed = FocusPanelGrades.parseGradeInput(gradeInput.value);
+                if (parsed.valid) {
+                    const newGrade = parsed.value;
+                    if ((result.studentData.periods?.[currentPeriod]?.grade ?? null) !== newGrade) {
+                        Utils.markStudentModified(result, currentPeriod);
+                        result.studentData.periods[currentPeriod].grade = newGrade;
+                    }
+                    hasChanged = true;
                 }
-                hasChanged = true;
             }
             this._isGradeEdited = false;
         }

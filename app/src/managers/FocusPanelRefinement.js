@@ -20,6 +20,8 @@ let panel = null;
 /** @type {import('./UIManager.js').UI|null} */
 let UI = null;
 
+const TONE_TYPES = new Set(['encouraging', 'demanding']);
+
 export const FocusPanelRefinement = {
 
     /**
@@ -31,6 +33,160 @@ export const FocusPanelRefinement = {
     init(focusPanelManager, uiManager, maybeUiManager = null) {
         panel = focusPanelManager;
         UI = maybeUiManager || uiManager;
+    },
+
+    /**
+     * Retourne tous les boutons de retouche IA de la carte Bulletin (puces + Peaufiner).
+     * @returns {HTMLElement[]}
+     * @private
+     */
+    _getRefineButtons() {
+        return Array.from(
+            document.querySelectorAll('#focusRefinementOptions [data-refine-type], #focusPolishBtn[data-refine-type]')
+        );
+    },
+
+    /**
+     * Retourne le bouton correspondant à un type de retouche donné.
+     * @param {string} refineType
+     * @returns {HTMLElement|null}
+     * @private
+     */
+    _getRefineButton(refineType) {
+        if (refineType === 'custom') {
+            return document.getElementById('focusCustomRefineSubmitBtn');
+        }
+        return document.querySelector(
+            `#focusRefinementOptions [data-refine-type="${refineType}"], #focusPolishBtn[data-refine-type="${refineType}"]`
+        );
+    },
+
+    /**
+     * Indique si la barre de consigne libre est actuellement ouverte.
+     * @returns {boolean}
+     */
+    isCustomInputOpen() {
+        return Boolean(document.getElementById('focusRefinementOptions')?.classList.contains('is-custom-mode'));
+    },
+
+    /**
+     * Synchronise l'état actif/désactivé du bouton d'envoi de la consigne libre.
+     */
+    _syncCustomSubmitState() {
+        const input = document.getElementById('focusCustomRefineInput');
+        const submitBtn = document.getElementById('focusCustomRefineSubmitBtn');
+        if (!submitBtn) return;
+
+        if (submitBtn.classList.contains('is-generating')) {
+            submitBtn.classList.remove('disabled');
+            submitBtn.setAttribute('aria-disabled', 'false');
+            return;
+        }
+        const hasText = Boolean(input?.value?.trim());
+        submitBtn.classList.toggle('disabled', !hasText);
+        submitBtn.setAttribute('aria-disabled', String(!hasText));
+        const tooltipText = hasText
+            ? "Appliquer la retouche<br><span class='kbd-hint'>Clic droit : voir le prompt</span>"
+            : 'Saisissez une consigne de retouche';
+        if (typeof UI?.updateTooltip === 'function') {
+            UI.updateTooltip(submitBtn, tooltipText);
+        } else {
+            submitBtn.setAttribute('data-tooltip', tooltipText);
+        }
+    },
+
+    /**
+     * Ouvre la barre de consigne libre sur place (en remplaçant temporairement les puces).
+     */
+    openCustomInput() {
+        const ctx = this._resolveRefinementContext();
+        if (!ctx) return;
+
+        const container = document.getElementById('focusRefinementOptions');
+        const input = document.getElementById('focusCustomRefineInput');
+        if (!container || !input) return;
+
+        container.classList.add('is-custom-mode');
+        input.disabled = false;
+        this._syncCustomSubmitState();
+        input.focus();
+        if (input.value) {
+            input.select();
+        }
+    },
+
+    /**
+     * Referme la barre de consigne libre et restaure les puces.
+     * @param {Object} [options={}]
+     * @param {boolean} [options.clear=false]
+     * @param {boolean} [options.restoreFocus=false]
+     */
+    closeCustomInput({ clear = false, restoreFocus = false } = {}) {
+        const container = document.getElementById('focusRefinementOptions');
+        const input = document.getElementById('focusCustomRefineInput');
+        const submitBtn = document.getElementById('focusCustomRefineSubmitBtn');
+        const closeBtn = document.getElementById('focusCustomRefineCloseBtn');
+
+        container?.classList.remove('is-custom-mode');
+        if (input) {
+            if (clear) input.value = '';
+            input.disabled = false;
+        }
+        if (closeBtn) {
+            closeBtn.disabled = false;
+            closeBtn.classList.remove('disabled');
+        }
+        if (submitBtn) {
+            submitBtn.classList.remove('is-generating');
+            if (submitBtn.dataset.baseTooltip !== undefined) {
+                const baseTooltip = submitBtn.dataset.baseTooltip;
+                delete submitBtn.dataset.baseTooltip;
+                if (typeof UI?.updateTooltip === 'function') {
+                    UI.updateTooltip(submitBtn, baseTooltip);
+                } else {
+                    submitBtn.setAttribute('data-tooltip', baseTooltip);
+                }
+            }
+        }
+        this._syncCustomSubmitState();
+
+        if (restoreFocus) {
+            document.getElementById('focusCustomRefineTrigger')?.focus?.();
+        }
+    },
+
+    /**
+     * Lance (ou annule si en cours) la retouche libre saisie dans #focusCustomRefineInput.
+     */
+    async applyCustom() {
+        const submitBtn = document.getElementById('focusCustomRefineSubmitBtn');
+        const studentId = panel?.currentStudentId;
+        if (submitBtn?.classList.contains('is-generating') && studentId && panel?._activeGenerations?.has(studentId)) {
+            const elapsed = Date.now() - (panel._activeGenerationStartTime || 0);
+            if (elapsed >= 350) {
+                panel._cancelGenerationForStudent(studentId);
+            }
+            return;
+        }
+
+        const input = document.getElementById('focusCustomRefineInput');
+        const instruction = input?.value?.trim() || '';
+        if (!instruction) {
+            input?.focus?.();
+            return;
+        }
+
+        await this.apply('custom', { customInstruction: instruction });
+    },
+
+    /**
+     * Prévisualise le prompt de retouche libre (clic droit sur le bouton d'envoi).
+     */
+    async showCustomPreview() {
+        const input = document.getElementById('focusCustomRefineInput');
+        const instruction = input?.value?.trim() || '';
+        if (!instruction) return;
+        await this.showPreview('custom', { customInstruction: instruction });
     },
 
     /**
@@ -70,11 +226,11 @@ export const FocusPanelRefinement = {
      * @private
      */
     _setSecondaryControlsDisabled(disabled) {
-        for (const id of ['focusCopyBtn', 'focusAppreciationSpeakBtn', 'focusAppreciationMicBtn']) {
+        for (const id of ['focusCopyBtn', 'focusAppreciationSpeakBtn', 'focusAppreciationMicBtn', 'focusCustomRefineTrigger']) {
             const el = document.getElementById(id);
             if (!el) continue;
             el.classList.toggle('disabled', disabled);
-            if (id === 'focusCopyBtn') {
+            if (id === 'focusCopyBtn' || id === 'focusCustomRefineTrigger') {
                 el.disabled = false;
                 el.setAttribute('aria-disabled', String(disabled));
             } else if (!disabled) {
@@ -84,33 +240,105 @@ export const FocusPanelRefinement = {
     },
 
     /**
-     * Construit le descripteur d'identité et de classe utilisé par PromptService pour le scrubbing RGPD.
-     * @param {{ refineStudentId: string, refineClassId: string, result: Object }} ctx
-     * @returns {{ id: string|null, classId: string|null, prenom: string, nom: string }}
+     * Construit le descripteur d'identité, classe et dossier élève utilisé par PromptService.
+     * @param {{ refineStudentId: string, refinePeriod: string, refineClassId: string, result: Object }} ctx
+     * @param {Object} [extra={}]
+     * @returns {Object}
      * @private
      */
-    _buildRefinementIdentity(ctx) {
+    _buildRefinementOptions(ctx, extra = {}) {
         const result = ctx?.result;
+        const classId = result?.classId || result?.studentData?.classId || ctx?.refineClassId || null;
+        const studentData = typeof panel?._prepareStudentData === 'function'
+            ? panel._prepareStudentData(ctx.refineStudentId, ctx.refinePeriod, result)
+            : (result?.studentData
+                ? {
+                    ...result.studentData,
+                    id: ctx?.refineStudentId ?? result?.id ?? null,
+                    classId,
+                    nom: result?.nom || result?.studentData?.nom || '',
+                    prenom: result?.prenom || result?.studentData?.prenom || '',
+                    currentPeriod: ctx?.refinePeriod || appState.currentPeriod
+                }
+                : null);
+
         return {
             id: ctx?.refineStudentId ?? result?.id ?? null,
-            classId: result?.classId || result?.studentData?.classId || ctx?.refineClassId || null,
+            classId,
             prenom: result?.studentData?.prenom || result?.prenom || '',
-            nom: result?.studentData?.nom || result?.nom || ''
+            nom: result?.studentData?.nom || result?.nom || '',
+            currentPeriod: ctx?.refinePeriod || appState.currentPeriod,
+            studentData,
+            ...extra
+        };
+    },
+
+    /**
+     * Résout le texte source effectif (pour éviter l'effet « téléphone arabe » entre Encourageante et Exigeante).
+     * @param {string} refineType
+     * @param {{ refineStudentId: string, refinePeriod: string, currentText: string }} ctx
+     * @returns {{ sourceText: string, toneBaseContent: string|null, currentVersion: Object|null, currentVersionMatches: boolean }}
+     * @private
+     */
+    _resolveSourceForRefinement(refineType, ctx) {
+        const currentVersion = FocusPanelHistory.getCurrentVersion?.(ctx.refinePeriod, ctx.refineStudentId) ?? null;
+        const currentVersionMatches = Boolean(
+            currentVersion && currentVersion.content?.trim() === ctx.currentText.trim()
+        );
+
+        if (!TONE_TYPES.has(refineType)) {
+            return {
+                sourceText: ctx.currentText,
+                toneBaseContent: null,
+                currentVersion,
+                currentVersionMatches
+            };
+        }
+
+        if (
+            currentVersionMatches &&
+            TONE_TYPES.has(currentVersion.source) &&
+            currentVersion.source !== refineType &&
+            currentVersion.toneBaseContent
+        ) {
+            const baseText = currentVersion.toneBaseContent.trim();
+            return {
+                sourceText: baseText,
+                toneBaseContent: baseText,
+                currentVersion,
+                currentVersionMatches
+            };
+        }
+
+        return {
+            sourceText: ctx.currentText,
+            toneBaseContent: ctx.currentText.trim(),
+            currentVersion,
+            currentVersionMatches
         };
     },
 
     /**
      * Affiche une prévisualisation du prompt de raffinement
      * @param {string} refineType - Type de raffinement
+     * @param {Object} [options={}]
      */
-    async showPreview(refineType) {
+    async showPreview(refineType, options = {}) {
         const ctx = this._resolveRefinementContext();
         if (!ctx) return;
 
+        const { sourceText, currentVersion, currentVersionMatches } = this._resolveSourceForRefinement(refineType, ctx);
+        const previousCustomInstruction = refineType === 'custom' && currentVersionMatches && currentVersion?.source === 'custom'
+            ? (currentVersion.customInstruction || '')
+            : '';
+
         const promptText = PromptService.getRefinementPrompt(
             refineType,
-            ctx.currentText,
-            this._buildRefinementIdentity(ctx)
+            sourceText,
+            this._buildRefinementOptions(ctx, {
+                ...options,
+                ...(previousCustomInstruction ? { previousCustomInstruction } : {})
+            })
         );
         await this.displayPromptModal(promptText, 'Prévisualisation du prompt (raffinement)');
     },
@@ -238,15 +466,16 @@ export const FocusPanelRefinement = {
     },
 
     /**
-     * Apply a refinement style to the appreciation
-     * @param {string} refineType - Type of refinement (concise, encouraging, polish)
+     * Apply a refinement style or freeform instruction to the appreciation
+     * @param {string} refineType - Type of refinement (concise, encouraging, demanding, polish, custom)
+     * @param {Object} [options={}] - Optional refinement parameters ({ customInstruction })
      */
-    async apply(refineType) {
+    async apply(refineType, options = {}) {
         const ctx = this._resolveRefinementContext();
         if (!ctx) return;
         const { refineStudentId, refinePeriod, refineClassId, result, appreciationText, currentText } = ctx;
 
-        const btn = document.querySelector(`#focusRefinementOptions [data-refine-type="${refineType}"]`);
+        const btn = this._getRefineButton(refineType);
         if (btn?.classList.contains('is-generating') && panel?._activeGenerations?.has(refineStudentId)) {
             const elapsed = Date.now() - (panel._activeGenerationStartTime || 0);
             if (elapsed >= 350) {
@@ -255,17 +484,71 @@ export const FocusPanelRefinement = {
             return;
         }
 
+        const customInstruction = refineType === 'custom'
+            ? String(options?.customInstruction || '').trim()
+            : '';
+        if (refineType === 'custom' && !customInstruction) {
+            return;
+        }
+
+        const { sourceText, toneBaseContent, currentVersion, currentVersionMatches } = this._resolveSourceForRefinement(refineType, ctx);
+
+        // Bascule réversible sur les variantes de ton (Encourageante ↔ Exigeante) :
+        // 1) Re-clic sur le ton actif -> retour instantané à la base (0 ms, 0 appel API)
+        if (TONE_TYPES.has(refineType) && currentVersionMatches && currentVersion?.source === refineType && currentVersion?.toneBaseContent) {
+            const baseIdx = FocusPanelHistory.findContentIndex?.(currentVersion.toneBaseContent, refinePeriod, refineStudentId) ?? -1;
+            if (baseIdx !== -1) {
+                FocusPanelHistory.restoreVersion(baseIdx);
+                return;
+            }
+            // Fallback si la version de base a été évincée par MAX_VERSIONS
+            FocusPanelHistory.push(currentVersion.toneBaseContent, 'edit', {
+                studentId: refineStudentId,
+                period: refinePeriod,
+                autoSeed: false
+            });
+            const pushedIdx = FocusPanelHistory.findContentIndex?.(currentVersion.toneBaseContent, refinePeriod, refineStudentId) ?? -1;
+            if (pushedIdx !== -1) {
+                FocusPanelHistory.restoreVersion(pushedIdx);
+            }
+            return;
+        }
+
+        // 2) Variante déjà calculée pour cette même base -> bascule instantanée (0 ms, 0 appel API)
+        if (TONE_TYPES.has(refineType) && toneBaseContent) {
+            const cachedIdx = FocusPanelHistory.findToneVariantIndex?.(refineType, toneBaseContent, refinePeriod, refineStudentId) ?? -1;
+            if (cachedIdx !== -1) {
+                FocusPanelHistory.restoreVersion(cachedIdx);
+                return;
+            }
+        }
+
         if (typeof UI?.checkAPIKeyPresence === 'function' && !UI.checkAPIKeyPresence()) {
             return;
         }
 
         FocusPanelHistory.push(currentText, 'edit', { studentId: refineStudentId, period: refinePeriod });
 
-        document.querySelectorAll('#focusRefinementOptions [data-refine-type]').forEach(b => {
+        const allRefineBtns = this._getRefineButtons();
+        allRefineBtns.forEach(b => {
             b.classList.remove('is-generating');
             b.classList.toggle('disabled', b !== btn);
         });
+
+        const customInput = document.getElementById('focusCustomRefineInput');
+        const customCloseBtn = document.getElementById('focusCustomRefineCloseBtn');
+        if (refineType === 'custom') {
+            if (customInput) customInput.disabled = true;
+            if (customCloseBtn) {
+                customCloseBtn.disabled = true;
+                customCloseBtn.classList.add('disabled');
+            }
+        } else if (this.isCustomInputOpen()) {
+            this.closeCustomInput();
+        }
+
         if (btn) {
+            btn.classList.remove('disabled');
             btn.classList.add('is-generating');
             btn.dataset.baseTooltip ??= btn.dataset.tooltip || '';
             if (typeof UI?.updateTooltip === 'function') {
@@ -306,10 +589,16 @@ export const FocusPanelRefinement = {
         }
 
         try {
-            const identity = this._buildRefinementIdentity(ctx);
-            const studentPrenom = identity.prenom;
+            const previousCustomInstruction = refineType === 'custom' && currentVersionMatches && currentVersion?.source === 'custom'
+                ? (currentVersion.customInstruction || '')
+                : '';
+            const promptOptions = this._buildRefinementOptions(ctx, {
+                ...(customInstruction ? { customInstruction } : {}),
+                ...(previousCustomInstruction ? { previousCustomInstruction } : {})
+            });
+            const studentPrenom = promptOptions.prenom;
 
-            const { systemPrompt, userPrompt } = PromptService.getRefinementPrompts(refineType, currentText, identity);
+            const { systemPrompt, userPrompt } = PromptService.getRefinementPrompts(refineType, sourceText, promptOptions);
             const response = await AIService.callAIWithFallback(userPrompt, { context: 'refinement', systemPrompt, signal });
 
             if (signal.aborted) return;
@@ -369,7 +658,9 @@ export const FocusPanelRefinement = {
                 FocusPanelHistory.push(refined, refineType, {
                     studentId: refineStudentId,
                     period: refinePeriod,
-                    autoSeed: false
+                    autoSeed: false,
+                    ...(toneBaseContent ? { toneBaseContent } : {}),
+                    ...(customInstruction ? { customInstruction } : {})
                 });
 
                 // Delete the active generation ONLY after animation finishes,
@@ -383,6 +674,10 @@ export const FocusPanelRefinement = {
                     if (panel) {
                         panel._initialAppreciationHtml = finalHtml;
                         panel._isAppreciationEdited = false;
+                    }
+
+                    if (refineType === 'custom') {
+                        this.closeCustomInput({ clear: true });
                     }
 
                     FocusPanelStatus.updateWordCount();
@@ -430,13 +725,23 @@ export const FocusPanelRefinement = {
                         btn.setAttribute('data-tooltip', baseTooltip);
                     }
                 }
-                document.querySelectorAll('#focusRefinementOptions [data-refine-type]').forEach(b => {
+                this._getRefineButtons().forEach(b => {
                     b.classList.remove('disabled');
                 });
+                if (customInput) customInput.disabled = false;
+                if (customCloseBtn) {
+                    customCloseBtn.disabled = false;
+                    customCloseBtn.classList.remove('disabled');
+                }
+                this._syncCustomSubmitState();
+                if (refineType === 'custom' && this.isCustomInputOpen() && customInput && !window.matchMedia?.('(pointer: coarse)')?.matches) {
+                    customInput.focus();
+                }
                 this._setSecondaryControlsDisabled(false);
                 if (generateBtn) UI?.hideInlineSpinner?.(generateBtn);
                 panel?._updateGenerateButton?.(result);
                 FocusPanelStatus.updateHistoryIndicator();
+                FocusPanelStatus.syncRefinementStates?.(result);
             }
         }
     }

@@ -94,13 +94,17 @@ function cloneValue(value) {
  * @param {string|null} [appreciationSource=null] - Appreciation source ('ai'|'manual'|'imported'|'dictation')
  * @param {string|null} [aiModel=null] - AI Model used
  * @param {Object|null} [tokenUsage=null] - Token usage data
+ * @param {Object|null} [extraMeta=null] - Optional refinement metadata ({ customInstruction?, toneBaseContent? })
  * @returns {boolean} True if state changed (version added or pointer moved)
  */
-export function pushToState(state, content, source = 'edit', appreciationSource = null, aiModel = null, tokenUsage = null) {
+export function pushToState(state, content, source = 'edit', appreciationSource = null, aiModel = null, tokenUsage = null, extraMeta = null) {
     if (!state || typeof content !== 'string') return false;
     const cleanContent = content.trim();
     if (!cleanContent) return false;
     if (!Array.isArray(state.versions)) state.versions = [];
+
+    const customInstruction = typeof extraMeta?.customInstruction === 'string' ? extraMeta.customInstruction.trim() : '';
+    const toneBaseContent = typeof extraMeta?.toneBaseContent === 'string' ? extraMeta.toneBaseContent.trim() : '';
 
     const currentContent = getVersionContent(state.versions[state.currentIndex]).trim();
     if (currentContent === cleanContent) return false;
@@ -108,19 +112,31 @@ export function pushToState(state, content, source = 'edit', appreciationSource 
     // Deduplicate: if this exact text already exists in history, jump to it without duplicating
     const existingIdx = state.versions.findIndex(v => getVersionContent(v).trim() === cleanContent);
     if (existingIdx !== -1) {
+        const existingEntry = normalizeVersion(state.versions[existingIdx]);
+        if (customInstruction && !existingEntry.customInstruction) {
+            existingEntry.customInstruction = customInstruction;
+        }
+        if (toneBaseContent && !existingEntry.toneBaseContent) {
+            existingEntry.toneBaseContent = toneBaseContent;
+        }
+        state.versions[existingIdx] = existingEntry;
         state.currentIndex = existingIdx;
         return true;
     }
 
     // Non-destructive append (preserves previously tried AI variants when branching from an older version)
-    state.versions.push({
+    const entry = {
         content: cleanContent,
         timestamp: Date.now(),
         source,
         appreciationSource,
         aiModel,
         tokenUsage: tokenUsage ? cloneValue(tokenUsage) : null
-    });
+    };
+    if (customInstruction) entry.customInstruction = customInstruction;
+    if (toneBaseContent) entry.toneBaseContent = toneBaseContent;
+
+    state.versions.push(entry);
 
     if (state.versions.length > MAX_VERSIONS) {
         state.versions.shift();

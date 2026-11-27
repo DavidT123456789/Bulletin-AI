@@ -16,6 +16,8 @@ import { FocusPanelAnalysis } from '../FocusPanelAnalysis.js';
 import { FocusPanelHeader } from '../FocusPanelHeader.js';
 import { FocusPanelNavigation } from '../FocusPanelNavigation.js';
 import { FocusPanelStatus } from '../FocusPanelStatus.js';
+import { FocusPanelRefinement } from '../FocusPanelRefinement.js';
+import { FocusPanelGrades } from './FocusPanelGrades.js';
 import { SettingsModalListeners } from '../listeners/SettingsModalListeners.js';
 import { ExportManager } from '../ExportManager.js';
 import { SpeechRecognitionManager } from '../SpeechRecognitionManager.js';
@@ -340,16 +342,7 @@ export const FocusPanelEvents = {
             const target = e.target;
             let changed = false;
 
-            if (target.id === 'focusCurrentGradeInput' || target.id === 'focusEditGradeInput') {
-                const val = target.value.replace(',', '.');
-                let numVal = val === '' ? null : parseFloat(val);
-                if (isNaN(numVal)) numVal = null;
-
-                Utils.markStudentModified(result, currentPeriod);
-                result.studentData.periods[currentPeriod].grade = numVal;
-                changed = true;
-                panel._isGradeEdited = true;
-            } else if (target.id === 'focusContextInput') {
+            if (target.id === 'focusContextInput') {
                 Utils.markStudentModified(result, currentPeriod);
                 result.studentData.periods[currentPeriod].context = target.value;
                 changed = true;
@@ -382,6 +375,10 @@ export const FocusPanelEvents = {
 
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
+                if (activeEl?.id === 'focusCustomRefineInput') {
+                    FocusPanelRefinement.applyCustom();
+                    return;
+                }
                 if (FocusPanelAnalysis.isVisible?.()) {
                     FocusPanelAnalysis.generate();
                     return;
@@ -418,6 +415,10 @@ export const FocusPanelEvents = {
                     setTimeout(() => { panel._isCancellingGeneration = false; }, 300);
                     return;
                 }
+                if (FocusPanelRefinement.isCustomInputOpen?.()) {
+                    FocusPanelRefinement.closeCustomInput({ restoreFocus: true });
+                    return;
+                }
                 const header = document.querySelector('.focus-header');
                 if (header?.classList.contains('editing')) {
                     FocusPanelHeader.toggleEditMode(false, true);
@@ -439,6 +440,36 @@ export const FocusPanelEvents = {
         const refinementOptions = document.getElementById('focusRefinementOptions');
         if (refinementOptions) {
             refinementOptions.addEventListener('click', (e) => {
+                const customTrigger = e.target.closest('#focusCustomRefineTrigger');
+                if (customTrigger) {
+                    if (!customTrigger.classList.contains('disabled')) {
+                        FocusPanelRefinement.openCustomInput();
+                    }
+                    return;
+                }
+                const submitBtn = e.target.closest('#focusCustomRefineSubmitBtn');
+                if (submitBtn) {
+                    if (!submitBtn.classList.contains('disabled') || submitBtn.classList.contains('is-generating')) {
+                        FocusPanelRefinement.applyCustom();
+                        blurOnPointerClick(submitBtn, e);
+                    }
+                    return;
+                }
+                const closeBtn = e.target.closest('#focusCustomRefineCloseBtn');
+                if (closeBtn) {
+                    if (!closeBtn.classList.contains('disabled')) {
+                        FocusPanelRefinement.closeCustomInput({ restoreFocus: true });
+                    }
+                    return;
+                }
+                const customBar = e.target.closest('#focusCustomRefineBar');
+                if (customBar && !e.target.closest('button')) {
+                    const input = document.getElementById('focusCustomRefineInput');
+                    if (input && !input.disabled && document.activeElement !== input) {
+                        input.focus();
+                    }
+                    return;
+                }
                 const btn = e.target.closest('[data-refine-type]');
                 if (btn && !btn.classList.contains('disabled')) {
                     panel._refineAppreciation(btn.dataset.refineType);
@@ -447,11 +478,53 @@ export const FocusPanelEvents = {
             });
 
             refinementOptions.addEventListener('contextmenu', (e) => {
+                const submitBtn = e.target.closest('#focusCustomRefineSubmitBtn');
+                if (submitBtn && !submitBtn.classList.contains('disabled') && !submitBtn.classList.contains('is-generating')) {
+                    e.preventDefault();
+                    FocusPanelRefinement.showCustomPreview();
+                    submitBtn.blur();
+                    return;
+                }
                 const btn = e.target.closest('[data-refine-type]');
                 if (btn && !btn.classList.contains('disabled')) {
                     e.preventDefault();
                     panel._showRefinementPreview(btn.dataset.refineType);
                     btn.blur();
+                }
+            });
+        }
+
+        const customRefineInput = document.getElementById('focusCustomRefineInput');
+        if (customRefineInput) {
+            customRefineInput.addEventListener('input', () => {
+                FocusPanelRefinement._syncCustomSubmitState();
+            });
+            customRefineInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    FocusPanelRefinement.applyCustom();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    FocusPanelRefinement.closeCustomInput({ restoreFocus: true });
+                }
+            });
+        }
+
+        const polishBtn = document.getElementById('focusPolishBtn');
+        if (polishBtn) {
+            polishBtn.addEventListener('click', (e) => {
+                if (!polishBtn.classList.contains('disabled') || polishBtn.classList.contains('is-generating')) {
+                    panel._refineAppreciation('polish');
+                    blurOnPointerClick(polishBtn, e);
+                }
+            });
+            polishBtn.addEventListener('contextmenu', (e) => {
+                if (!polishBtn.classList.contains('disabled')) {
+                    e.preventDefault();
+                    panel._showRefinementPreview('polish');
+                    polishBtn.blur();
                 }
             });
         }
@@ -659,11 +732,48 @@ export const FocusPanelEvents = {
 
         const gradeInput = document.getElementById('focusCurrentGradeInput');
         if (gradeInput) {
+            const gradeGroup = gradeInput.closest('.context-grade-group');
+            gradeInput.addEventListener('input', () => {
+                const updatedResult = FocusPanelGrades.handleGradeInput(panel, gradeInput);
+                if (updatedResult) {
+                    clearTimeout(panel._uiUpdateTimeout);
+                    panel._uiUpdateTimeout = setTimeout(() => {
+                        FocusPanelStatus.refreshAppreciationStatus();
+                        panel._updateListRow(updatedResult);
+                    }, 300);
+                }
+            });
+            gradeInput.addEventListener('focus', () => {
+                gradeInput.dataset.prevValue = gradeInput.value;
+                const currentResult = panel.currentStudentId
+                    ? appState.generatedResults.find(r => r.id === panel.currentStudentId)
+                    : null;
+                const periodData = currentResult?.studentData?.periods?.[appState.currentPeriod];
+                panel._gradeBeforeFocus = periodData?.grade ?? null;
+                panel._gradeFocusMeta = {
+                    studentLastModified: currentResult?._lastModified,
+                    periodLastModified: periodData?._lastModified
+                };
+                panel._hasGradeBeforeFocus = true;
+                gradeGroup?._tippy?.hide?.();
+            });
+            gradeInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    gradeInput.blur();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    FocusPanelGrades.revertGradeInput(panel, gradeInput);
+                    gradeInput.blur();
+                }
+            });
             gradeInput.addEventListener('blur', () => {
+                FocusPanelGrades.commitGradeInput(panel, gradeInput);
                 panel._saveContext();
                 FocusPanelStatus.refreshAppreciationStatus();
             });
-            const gradeGroup = gradeInput.closest('.context-grade-group');
             if (gradeGroup) {
                 gradeGroup.addEventListener('click', (e) => {
                     if (e.target !== gradeInput) {

@@ -12,6 +12,7 @@ import { ClassUIManager } from './ClassUIManager.js';
 import { StorageManager } from './StorageManager.js';
 import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelManager } from './FocusPanelManager.js';
+import { FocusPanelGrades } from './focus/FocusPanelGrades.js';
 import { StudentDataManager } from './StudentDataManager.js';
 import { HistoryManager } from './HistoryManager.js';
 import { TooltipsUI } from './TooltipsManager.js';
@@ -571,9 +572,9 @@ export const FocusPanelHeader = {
             // Capture any grade, context, or appreciation typed before validating header in creation mode
             const gradeInput = document.getElementById('focusCurrentGradeInput');
             if (gradeInput && gradeInput.value.trim() !== '') {
-                const parsedGrade = parseFloat(gradeInput.value.trim().replace(',', '.'));
-                if (!isNaN(parsedGrade)) {
-                    result.studentData.periods[currentPeriod].grade = parsedGrade;
+                const parsed = FocusPanelGrades.parseGradeInput(gradeInput.value);
+                if (parsed.valid && parsed.value !== null) {
+                    result.studentData.periods[currentPeriod].grade = parsed.value;
                 }
             }
 

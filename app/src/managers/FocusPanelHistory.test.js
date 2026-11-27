@@ -159,6 +159,14 @@ describe('FocusPanelHistory', () => {
         expect(demanding.typeClass).toBe('source-demanding');
         expect(polish.icon).toContain('solar:stars-line-linear');
         expect(polish.typeClass).toBe('source-polish');
+
+        const custom = FocusPanelHistory._getVersionPresentation(
+            { source: 'custom', customInstruction: 'Insister sur l\'écrit' },
+            1
+        );
+        expect(custom.title).toBe('« Insister sur l\'écrit »');
+        expect(custom.icon).toContain('solar:pen-2-linear');
+        expect(custom.typeClass).toBe('source-custom');
     });
 
     it('ne devrait pas déclencher de restauration ni de sauvegarde si l\'utilisateur clique sur la version déjà actuelle', () => {

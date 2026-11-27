@@ -1368,11 +1368,82 @@ RÈGLES STRICTES DE FIABILITÉ :
     },
 
     /**
+     * Construit un bloc compact et anonymisé des repères factuels de l'élève
+     * pour ancrer les retouches IA sur le dossier réel sans jamais inventer de faits.
+     * @param {Object|null} studentData
+     * @param {string|null} currentPeriod
+     * @param {Object} identity
+     * @param {Object} scrubOptions
+     * @returns {string}
+     * @private
+     */
+    _buildRefinementDossier(studentData, currentPeriod, identity, scrubOptions) {
+        if (!studentData || typeof studentData !== 'object') return '';
+
+        const resolvedPeriod = currentPeriod || studentData.currentPeriod || appState.currentPeriod;
+        const periods = studentData.periods || {};
+        const allPeriods = Utils.getPeriods();
+        const currentPeriodIndex = allPeriods.indexOf(resolvedPeriod);
+        const relevantPeriods = currentPeriodIndex >= 0
+            ? allPeriods.slice(0, currentPeriodIndex + 1)
+            : [resolvedPeriod].filter(Boolean);
+
+        const lines = [];
+
+        const gradeParts = [];
+        for (const p of relevantPeriods) {
+            const gradeVal = this._parseGrade(periods?.[p]?.grade);
+            if (!isNaN(gradeVal)) {
+                gradeParts.push(`${p} ${gradeVal.toFixed(1).replace('.', ',')}/20`);
+            }
+        }
+        if (gradeParts.length > 0) {
+            const allEvolutions = StatsService.analyserEvolution(periods) || [];
+            const filteredEvolutions = allEvolutions.filter(e => {
+                const targetPeriod = e.periode.split('-')[1];
+                const targetIndex = allPeriods.indexOf(targetPeriod);
+                return targetIndex >= 0 && targetIndex <= currentPeriodIndex;
+            });
+            const evoSuffix = filteredEvolutions.length > 0
+                ? ` (${filteredEvolutions.map(e => `${e.periode}: ${e.valeur > 0 ? '+' : ''}${String(e.valeur).replace('.', ',')}`).join(', ')})`
+                : '';
+            lines.push(`Moyennes : ${gradeParts.join(' · ')}${evoSuffix}`);
+        }
+
+        const statusInstructions = this.getStatusInstructions(studentData.statuses, resolvedPeriod);
+        if (statusInstructions) {
+            lines.push(`Accompagnement : ${statusInstructions}`);
+        }
+
+        const rawContext = periods?.[resolvedPeriod]?.context;
+        if (typeof rawContext === 'string' && rawContext.trim()) {
+            const scrubbedContext = this.scrubStudentIdentity(rawContext.trim(), identity, scrubOptions);
+            if (scrubbedContext) {
+                lines.push(`Indications de l'enseignant : « ${scrubbedContext} »`);
+            }
+        }
+
+        const rawJournal = this._extractJournalSynthesis(studentData, resolvedPeriod);
+        if (rawJournal) {
+            const scrubbedJournal = this.scrubStudentIdentity(
+                rawJournal.replace(/^Observations\s*:\s*/i, '').trim(),
+                identity,
+                scrubOptions
+            );
+            if (scrubbedJournal) {
+                lines.push(`Observations du journal : ${scrubbedJournal}`);
+            }
+        }
+
+        return lines.join('\n');
+    },
+
+    /**
      * Génère les prompts structurés (`systemPrompt`, `userPrompt` et concaténation `prompt`)
      * pour le raffinement d'une appréciation existante.
-     * @param {string} type - Type de raffinement (`concise`, `encouraging`, `demanding`, `polish`, `default`)
+     * @param {string} type - Type de raffinement (`concise`, `encouraging`, `demanding`, `polish`, `custom`, `default`)
      * @param {string} original - Texte d'origine à retravailler
-     * @param {Object} [options={}] - Identité locale pour le scrubbing RGPD et l'accord de genre
+     * @param {Object} [options={}] - Identité locale, dossier élève optionnel et consigne libre (`customInstruction`, `previousCustomInstruction`)
      * @returns {{ systemPrompt: string, userPrompt: string, prompt: string }}
      */
     getRefinementPrompts(type, original, options = {}) {
@@ -1387,13 +1458,24 @@ RÈGLES STRICTES DE FIABILITÉ :
         const explicitClassmates = isOptionsObject ? options.classmates : undefined;
 
         const identity = { id: explicitId, prenom: explicitPrenom, nom: explicitNom, classId: explicitClassId };
-        const sanitizedOriginal = this.scrubStudentIdentity(original || '', identity, {
+        const scrubOptions = {
             anonymizePrenom: isAnonymous,
             studentId: explicitId,
             classId: explicitClassId,
             ...(explicitClassmates !== undefined ? { classmates: explicitClassmates } : {}),
             scrubSensitive: true
-        }).replace(/\s*\[nom\]/gi, '');
+        };
+        const sanitizedOriginal = this.scrubStudentIdentity(original || '', identity, scrubOptions)
+            .replace(/\s*\[nom\]/gi, '');
+
+        const dossierBlock = isOptionsObject && options.studentData
+            ? this._buildRefinementDossier(
+                options.studentData,
+                options.currentPeriod || options.studentData.currentPeriod || null,
+                identity,
+                scrubOptions
+            )
+            : '';
 
         const gender = explicitPrenom ? Utils.detectGender(explicitPrenom) : null;
         const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
@@ -1407,7 +1489,9 @@ RÈGLES STRICTES DE FIABILITÉ :
                 ? [`Genre de l'élève : ${gender} (pour les accords grammaticaux).`]
                 : []),
             `Conserve la personne grammaticale du texte d'origine (je, nous, troisième personne ou tournure impersonnelle).`,
-            `N'invente aucun fait, résultat ou compétence absents du texte.`,
+            dossierBlock
+                ? `N'invente aucun fait, résultat ou compétence absents du texte ou des repères factuels du dossier, et ne cite jamais de moyenne chiffrée.`
+                : `N'invente aucun fait, résultat ou compétence absents du texte.`,
             `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »), sauf si le texte d'origine ou la consigne de l'enseignant l'emploie déjà.`,
             `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
             ...(charBudget
@@ -1447,12 +1531,35 @@ RÈGLES STRICTES DE FIABILITÉ :
             case 'polish':
                 taskInstruction = `Peaufine cette appréciation scolaire : corrige les éventuelles fautes, maladresses ou répétitions et fluidifie la syntaxe dans un style de bulletin naturel et professionnel, en restant fidèle au sens et à la longueur du texte d'origine (si le texte est sous forme de notes brèves, rédige-le en phrases complètes).`;
                 break;
+            case 'custom': {
+                const rawInstruction = isOptionsObject && typeof options.customInstruction === 'string'
+                    ? options.customInstruction.trim()
+                    : '';
+                const sanitizedInstruction = rawInstruction
+                    ? this.scrubStudentIdentity(rawInstruction, identity, scrubOptions).replace(/\s*\[nom\]/gi, '')
+                    : '';
+                const rawPrevInstruction = isOptionsObject && typeof options.previousCustomInstruction === 'string'
+                    ? options.previousCustomInstruction.trim()
+                    : '';
+                const sanitizedPrev = rawPrevInstruction
+                    ? this.scrubStudentIdentity(rawPrevInstruction, identity, scrubOptions).replace(/\s*\[nom\]/gi, '')
+                    : '';
+                const prevClause = sanitizedPrev
+                    ? ` (Retouche précédente déjà appliquée sur ce texte : « ${sanitizedPrev} ».)`
+                    : '';
+                taskInstruction = sanitizedInstruction
+                    ? `Modifie cette appréciation scolaire selon la consigne précise de l'enseignant : « ${sanitizedInstruction} ». Conserve ce qui n'est pas concerné par la demande et reste cohérent avec les repères factuels du dossier.${prevClause}`
+                    : `Reformule cette appréciation scolaire de manière fluide et naturelle.`;
+                break;
+            }
             case 'default':
             default:
                 taskInstruction = `Reformule cette appréciation scolaire de manière fluide et naturelle.`;
         }
 
-        const userPrompt = `${taskInstruction}\n\n---\n${sanitizedOriginal}\n---`;
+        const userPrompt = dossierBlock
+            ? `${taskInstruction}\n\n--- REPÈRES FACTUELS DU DOSSIER (référence uniquement) ---\n${dossierBlock}\n\n--- TEXTE ACTUEL ---\n${sanitizedOriginal}\n---`
+            : `${taskInstruction}\n\n---\n${sanitizedOriginal}\n---`;
         return {
             systemPrompt,
             userPrompt,

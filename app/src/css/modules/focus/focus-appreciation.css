@@ -43,7 +43,7 @@
 .focus-consigne-band {
     background: transparent;
     border-bottom: 1px solid var(--border-color);
-    transition: background-color var(--transition-fast);
+    transition: background-color var(--transition-fast), opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .focus-consigne-band:focus-within {
@@ -92,7 +92,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: 4px;
-    padding: 0 12px 6px 16px;
+    padding: 2px 12px 8px 16px;
     flex-shrink: 0;
 }
 
@@ -102,26 +102,134 @@
 }
 
 .focus-appreciation-body:has(.appreciation-skeleton) .focus-appreciation-text,
-.focus-appreciation-body:has(.focus-audio-group:not(:has(> button:not([disabled]):not([style*="display: none"])))) .focus-appreciation-text {
+.focus-appreciation-body:not(:has(.focus-audio-group > button:not([disabled]):not([style*="display: none"]))) .focus-appreciation-text {
     padding-bottom: 14px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .focus-consigne-row #focusMicBtn,
-    .focus-appreciation-body :is(#focusAppreciationSpeakBtn, #focusAppreciationMicBtn),
-    .journal-draft-input-wrap #journalNoteMicBtn {
+    :where(
+        .focus-consigne-row #focusMicBtn,
+        .focus-appreciation-body :is(#focusAppreciationSpeakBtn, #focusAppreciationMicBtn, #focusPolishBtn),
+        .journal-draft-input-wrap #journalNoteMicBtn
+    ) {
         opacity: 0.45;
     }
 
     .focus-consigne-band:is(:hover, :focus-within) #focusMicBtn,
-    .focus-appreciation-body:is(:hover, :focus-within) :is(#focusAppreciationSpeakBtn, #focusAppreciationMicBtn),
+    .focus-appreciation-body:is(:hover, :focus-within) :is(#focusAppreciationSpeakBtn, #focusAppreciationMicBtn, #focusPolishBtn),
     .journal-draft-input-wrap:is(:hover, :focus-within) #journalNoteMicBtn,
     #focusMicBtn.recording,
     #focusAppreciationMicBtn.recording,
     #journalNoteMicBtn.recording,
-    #focusAppreciationSpeakBtn.playing {
+    #focusAppreciationSpeakBtn.playing,
+    #focusPolishBtn:is(.is-polish-recommended, .is-generating) {
         opacity: 1;
     }
+}
+
+/* Inline Polish button — neutral ghost action next to audio tools, softly elevated after manual edit / dictation */
+.focus-polish-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.16s var(--ease-spring);
+}
+
+.focus-audio-divider {
+    display: none;
+    width: 1px;
+    height: 14px;
+    background: var(--border-color);
+    flex-shrink: 0;
+    margin: 0 2px;
+}
+
+.focus-audio-group:has(> #focusPolishBtn:not([style*="display: none"])):has(> :is(#focusAppreciationSpeakBtn, #focusAppreciationMicBtn):not([style*="display: none"])) .focus-audio-divider {
+    display: block;
+}
+
+.focus-polish-btn iconify-icon {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    opacity: 0.9;
+    transition: color var(--transition-fast), opacity var(--transition-fast), transform 0.2s ease;
+}
+
+.focus-polish-btn.is-polish-recommended:not(.disabled):not(.is-generating) {
+    background: var(--tonal-bg);
+    color: var(--text-primary);
+}
+
+.focus-polish-btn.is-polish-recommended:not(.disabled):not(.is-generating) iconify-icon {
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+.focus-polish-btn.is-generating {
+    pointer-events: auto;
+    cursor: pointer;
+    background: var(--tonal-bg);
+    color: var(--text-primary);
+}
+
+.focus-polish-btn.is-generating iconify-icon {
+    color: var(--text-primary);
+    opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-polish-btn:not(.disabled):not(.is-generating):hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
+
+    .focus-polish-btn.is-polish-recommended:not(.disabled):not(.is-generating):hover {
+        background: var(--tonal-hover-bg);
+    }
+
+    .focus-polish-btn:not(.disabled):not(.is-generating):hover iconify-icon {
+        color: var(--text-primary);
+        opacity: 1;
+    }
+}
+
+.focus-polish-btn:not(.disabled):active {
+    transform: scale(0.96);
+}
+
+.focus-polish-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--highlight-standard-border);
+}
+
+.focus-polish-btn.disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    background: transparent !important;
+    color: var(--text-tertiary) !important;
+}
+
+.focus-polish-btn.disabled iconify-icon {
+    color: var(--text-tertiary) !important;
+    animation: none !important;
 }
 
 /* Main Appreciation Text Area - ContentEditable */
@@ -131,7 +239,7 @@
     min-height: 48px;
     max-height: 500px;
     height: auto;
-    padding: 14px 16px 4px 16px;
+    padding: 14px 16px 6px 16px;
     /* Harmonized with context-textarea */
     font-size: 14px;
     line-height: 1.55;
@@ -613,6 +721,11 @@
     background: rgba(var(--chip-rgb), 0.14);
 }
 
+.history-source-icon.source-custom {
+    color: var(--text-primary);
+    background: var(--item-active-bg);
+}
+
 /* Word count & relative timestamp */
 .history-time {
     font-size: 11px;
@@ -879,33 +992,285 @@
 }
 
 
-/* Refinement Options */
+/* Refinement Options (1-click chips + in-place custom instruction bar) */
 .focus-refinement-options {
     display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
     align-items: center;
     margin-top: 0;
     padding: 0 16px 12px 16px;
     animation: word-fade-in 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.focus-refinement-options .btn-ai-outline {
+.focus-refinement-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+    width: 100%;
+    transform-origin: left center;
+    animation: history-enter-from-left 0.22s var(--ease-spring);
+}
+
+.focus-refinement-options.is-custom-mode .focus-refinement-chips {
+    display: none;
+}
+
+.focus-refinement-chips .btn-ai-outline {
     flex: 1 1 0;
     min-width: max-content;
     justify-content: center;
 }
 
-.focus-refinement-options .btn-ai-outline:not(.disabled):nth-child(2) {
+.focus-refinement-chips .btn-ai-outline:not(.disabled):nth-child(2) {
     transition-delay: 0s, 0s, 0s, 0s, 30ms, 0s;
 }
 
-.focus-refinement-options .btn-ai-outline:not(.disabled):nth-child(3) {
+.focus-refinement-chips .btn-ai-outline:not(.disabled):nth-child(3) {
     transition-delay: 0s, 0s, 0s, 0s, 60ms, 0s;
 }
 
-.focus-refinement-options .btn-ai-outline:not(.disabled):nth-child(4) {
+.focus-refinement-chips .btn-ai-outline:not(.disabled):nth-child(4) {
     transition-delay: 0s, 0s, 0s, 0s, 90ms, 0s;
+}
+
+.focus-custom-refine-trigger iconify-icon {
+    color: var(--text-tertiary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-custom-refine-trigger:not(.disabled):hover iconify-icon {
+        color: var(--text-primary);
+    }
+}
+
+/* Inline custom refinement bar (reuses Bulletin card's history-enter-from-right spring motion) */
+.focus-custom-refine-bar {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-height: 30px;
+    padding: 2px 2px 2px 11px;
+    border-radius: var(--radius-pill);
+    background: var(--tonal-bg);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+    position: relative;
+    cursor: text;
+    transform-origin: right center;
+    transition:
+        border-color var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.focus-refinement-options.is-custom-mode .focus-custom-refine-bar {
+    display: flex;
+    animation: history-enter-from-right 0.24s var(--ease-spring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .focus-refinement-chips,
+    .focus-refinement-options.is-custom-mode .focus-custom-refine-bar {
+        animation: none;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-custom-refine-bar:not(:focus-within):not(:has(.focus-custom-refine-submit.is-generating)):hover {
+        border-color: var(--border-color-strong);
+    }
+}
+
+.focus-custom-refine-bar:focus-within {
+    border-color: var(--border-color-strong);
+    background: var(--input-focus-bg, var(--surface-color));
+    box-shadow: none;
+}
+
+.focus-custom-refine-lead-icon {
+    font-size: 13.5px;
+    color: var(--text-tertiary);
+    margin-right: 4px;
+    flex-shrink: 0;
+    transition: color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.focus-custom-refine-bar:focus-within .focus-custom-refine-lead-icon {
+    color: var(--text-secondary);
+}
+
+.focus-custom-refine-input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    height: 24px;
+    padding: 0 2px 0 0;
+    margin: 0;
+    border-radius: 0;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 12.5px;
+    line-height: 1.35;
+}
+
+.focus-custom-refine-input::placeholder {
+    color: var(--text-tertiary);
+    opacity: 0.85;
+}
+
+.focus-custom-refine-input:disabled {
+    color: var(--text-secondary);
+    opacity: 0.85;
+    cursor: default;
+}
+
+.focus-custom-refine-submit,
+.focus-custom-refine-close {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    box-sizing: border-box;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        opacity var(--transition-fast),
+        transform 0.16s var(--ease-spring);
+}
+
+.focus-custom-refine-submit:focus-visible,
+.focus-custom-refine-close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--highlight-standard-border);
+}
+
+.focus-custom-refine-submit {
+    background: var(--text-primary);
+    color: var(--surface-color);
+    font-size: 13.5px;
+}
+
+.focus-custom-refine-submit.disabled:not(.is-generating) {
+    background: var(--item-hover-bg);
+    color: var(--text-tertiary);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.focus-custom-refine-submit:not(.disabled):active,
+.focus-custom-refine-close:not(.disabled):active {
+    transform: scale(0.92);
+}
+
+/* Calm matte loading state on custom refine bar (monochrome satin sweep, single footer Stop) */
+.focus-custom-refine-bar:has(.focus-custom-refine-submit.is-generating) {
+    overflow: hidden;
+    isolation: isolate;
+    cursor: default;
+    border-color: var(--border-color);
+    background: var(--tonal-bg);
+    box-shadow: none;
+}
+
+.focus-custom-refine-bar:has(.focus-custom-refine-submit.is-generating)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.65) 50%,
+            transparent 100%);
+    animation: shine-sweep 2.2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+[data-theme="dark"] .focus-custom-refine-bar:has(.focus-custom-refine-submit.is-generating)::before {
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.075) 50%,
+            transparent 100%);
+}
+
+.focus-custom-refine-bar:has(.focus-custom-refine-submit.is-generating) > * {
+    position: relative;
+    z-index: 1;
+}
+
+.focus-custom-refine-bar:has(.focus-custom-refine-submit.is-generating) .focus-custom-refine-close {
+    display: none;
+}
+
+.focus-custom-refine-submit.is-generating {
+    background: transparent;
+    color: var(--text-secondary);
+    opacity: 1;
+    cursor: pointer;
+}
+
+.focus-custom-refine-submit.is-generating iconify-icon {
+    opacity: 0;
+    transform: scale(0.5);
+    animation: none;
+}
+
+.focus-custom-refine-submit.is-generating::before {
+    content: '';
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-color-strong);
+    border-top-color: var(--text-secondary);
+    animation: rotate-soft 0.75s linear infinite;
+}
+
+.focus-custom-refine-close {
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 13px;
+}
+
+.focus-custom-refine-close.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .focus-custom-refine-submit:not(.disabled):not(.is-generating):hover {
+        opacity: 0.88;
+    }
+
+    .focus-custom-refine-submit.is-generating:hover {
+        background: rgba(var(--error-rgb), 0.14);
+        color: var(--error-text);
+    }
+
+    .focus-custom-refine-submit.is-generating:hover::before {
+        width: 6.5px;
+        height: 6.5px;
+        border: none;
+        border-radius: 1.5px;
+        background: currentColor;
+        animation: none;
+    }
+
+    .focus-custom-refine-close:not(.disabled):hover {
+        background: var(--item-hover-bg);
+        color: var(--text-primary);
+    }
 }
 
 /* ============================
@@ -1035,10 +1400,19 @@
     gap: 7px;
 }
 
-/* Generate / Regenerate = primary action of the footer: emphasized by weight/ink, not by heavy fill */
-.focus-appreciation-actions #focusGenerateBtn:is(.btn-ai, .btn-neutral):not(.is-loading) {
+/* Generate (idle) = primary action of the footer; when ready (done), Copy becomes primary and Regenerate steps down */
+.focus-appreciation-actions #focusGenerateBtn.btn-ai:not(.is-loading) {
     color: var(--text-primary);
     font-weight: 600;
+}
+
+.focus-appreciation-actions #focusCopyBtn.is-primary-action:not(.disabled):not(.copied):not(.copied-prompt) {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.focus-appreciation-actions #focusCopyBtn.is-primary-action:not(.disabled):not(.copied):not(.copied-prompt) iconify-icon {
+    color: var(--text-secondary);
 }
 
 .focus-appreciation-actions #focusGenerateBtn.btn-ai::after {
@@ -1046,7 +1420,7 @@
 }
 
 .focus-appreciation-actions #focusGenerateBtn.btn-neutral:not(.is-loading) iconify-icon {
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
 }
 
 .focus-appreciation-actions #focusGenerateBtn .kbd-hint {
@@ -1193,7 +1567,7 @@
 }
 
 /* Chip icons: semantic tint at rest on neutral surface (harmonized with .journal-pill-btn), full tint on hover / active */
-[data-refine-type] iconify-icon {
+.btn[data-refine-type] iconify-icon {
     color: var(--chip-color, currentColor);
     opacity: 0.85;
     transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
@@ -1341,7 +1715,7 @@
 }
 
 /* Shine sweep - synced with header progress (2s) */
-.btn-ai-outline.is-generating::before {
+:is(.btn-ai-outline, .focus-polish-btn).is-generating::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1353,9 +1727,10 @@
             rgba(255, 255, 255, 0.6) 50%,
             transparent 100%);
     animation: shine-sweep 2s ease-in-out infinite;
+    pointer-events: none;
 }
 
-/* Animated gradient border ring */
+/* Animated gradient border ring (semantic chips only; .focus-polish-btn stays monochrome matte) */
 .btn-ai-outline.is-generating::after {
     content: '';
     position: absolute;
@@ -1391,6 +1766,13 @@
     background: linear-gradient(90deg,
             transparent 0%,
             rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%);
+}
+
+[data-theme="dark"] .focus-polish-btn.is-generating::before {
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.12) 50%,
             transparent 100%);
 }
 

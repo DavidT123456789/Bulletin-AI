@@ -8,6 +8,7 @@ import { appState } from '../state/State.js';
 import { UI } from './UIManager.js';
 import { PromptService } from '../services/PromptService.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
+import { FocusPanelHistory } from './FocusPanelHistory.js';
 
 // Mock dependencies
 vi.mock('../state/State.js', () => ({
@@ -30,7 +31,9 @@ vi.mock('./StatsUIManager.js', () => ({
 }));
 
 vi.mock('./FocusPanelHistory.js', () => ({
-    FocusPanelHistory: {}
+    FocusPanelHistory: {
+        getCurrentVersion: vi.fn(() => null)
+    }
 }));
 
 vi.mock('./JournalManager.js', () => ({
@@ -450,6 +453,52 @@ describe('FocusPanelStatus', () => {
 
             expect(UI.updateTooltip).toHaveBeenCalledWith(copyBtn, "Copier l'appréciation (déjà copiée)<br><span class=\"kbd-hint\">Clic droit : copier le prompt</span>");
             expect(copyBtn.getAttribute('aria-label')).toBe('Copier à nouveau (déjà copiée)');
+            expect(copyBtn.classList.contains('is-primary-action')).toBe(true);
+        });
+
+        it('met en avant Peaufiner après saisie manuelle/dictée et réinitialise cet état après peaufinage IA', () => {
+            document.body.innerHTML = `
+                <div id="focusAppreciationText" contenteditable="true">Texte rédigé.</div>
+                <span id="focusWordCount"></span>
+                <button id="focusPolishBtn" data-refine-type="polish" style="display: none;"></button>
+            `;
+            const appreciationEl = document.getElementById('focusAppreciationText');
+            const polishBtn = document.getElementById('focusPolishBtn');
+
+            const aiStudent = {
+                id: 'stu-ai',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                appreciation: 'Texte rédigé.',
+                studentData: { periods: { T1: { appreciation: 'Texte rédigé.' } } }
+            };
+            appState.generatedResults = [aiStudent];
+            FocusPanelStatus.init({ getCurrentStudentId: () => 'stu-ai', getActiveGenerations: () => new Set() });
+
+            FocusPanelStatus.syncRefinementStates(aiStudent);
+            expect(polishBtn.style.display).toBe('inline-flex');
+            expect(polishBtn.classList.contains('is-polish-recommended')).toBe(false);
+
+            const manualStudent = { ...aiStudent, wasGenerated: false, appreciationSource: 'manual' };
+            FocusPanelStatus.syncRefinementStates(manualStudent);
+            expect(polishBtn.classList.contains('is-polish-recommended')).toBe(true);
+
+            // Une fois Peaufiner appliqué, appreciationSource reste 'manual' (protection contre l'actualisation de masse),
+            // mais la version courante est 'polish' : la mise en avant doit s'éteindre.
+            const getVersionSpy = vi.spyOn(FocusPanelHistory, 'getCurrentVersion').mockReturnValue({
+                content: 'Texte peaufiné.',
+                source: 'polish'
+            });
+            appreciationEl.textContent = 'Texte peaufiné.';
+            FocusPanelStatus.syncRefinementStates({ ...manualStudent, appreciation: 'Texte peaufiné.' });
+            expect(polishBtn.classList.contains('is-polish-recommended')).toBe(false);
+
+            // Nouvelle retouche clavier en direct (avant le debounce d'historique) : se rallume immédiatement
+            appreciationEl.textContent = 'Texte peaufiné. Ajout manuel.';
+            FocusPanelStatus.syncRefinementStates({ ...manualStudent, appreciation: 'Texte peaufiné. Ajout manuel.' });
+            expect(polishBtn.classList.contains('is-polish-recommended')).toBe(true);
+
+            getVersionSpy.mockRestore();
         });
 
         it('affiche le compteur caractères/limite avec alertes near/over et met en avant Concise en cas de dépassement', () => {

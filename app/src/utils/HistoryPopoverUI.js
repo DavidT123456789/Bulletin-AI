@@ -98,6 +98,20 @@ export function getVersionPresentation(versionData, index, options = {}) {
         };
     }
 
+    if (source === 'custom') {
+        const rawInstruction = typeof versionData?.customInstruction === 'string'
+            ? versionData.customInstruction.trim()
+            : '';
+        const clipped = rawInstruction.length > 44
+            ? `${rawInstruction.slice(0, 44).trimEnd()}…`
+            : rawInstruction;
+        return {
+            title: clipped ? `« ${clipped} »` : 'Retouche personnalisée',
+            icon: '<iconify-icon icon="solar:pen-2-linear"></iconify-icon>',
+            typeClass: 'source-custom'
+        };
+    }
+
     if (source === 'regenerate') {
         return {
             title: 'Régénération IA',
@@ -388,6 +402,7 @@ export function togglePopover({
             ? `<span class="history-time">${metaParts.join(' · ')}</span>`
             : '';
         const currentBadgeHtml = isCurrent ? '<span class="history-badge-current">Actuelle</span>' : '';
+        const escapedTitle = Utils.escapeHtml(presentation.title);
         const escapedContent = Utils.escapeHtml(content);
 
         html += `
@@ -397,7 +412,7 @@ export function togglePopover({
                         <span class="history-source-icon ${presentation.typeClass}" aria-hidden="true">
                             ${presentation.icon}
                         </span>
-                        <span class="history-version-label">${presentation.title}</span>
+                        <span class="history-version-label">${escapedTitle}</span>
                         ${currentBadgeHtml}
                     </div>
                     ${timeHtml}

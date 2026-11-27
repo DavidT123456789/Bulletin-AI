@@ -557,7 +557,10 @@ export const FocusPanelStatus = {
             const refinementOptions = document.getElementById('focusRefinementOptions');
             if (refinementOptions) {
                 refinementOptions.style.display = isEmpty ? 'none' : 'flex';
-                const refineButtons = refinementOptions.querySelectorAll('[data-refine-type]');
+                if (isEmpty) {
+                    refinementOptions.classList.remove('is-custom-mode');
+                }
+                const refineButtons = refinementOptions.querySelectorAll('[data-refine-type], #focusCustomRefineTrigger');
                 refineButtons.forEach(btn => {
                     btn.disabled = false; // Always ensure native disabled is removed to allow hover and tooltips
                     btn.classList.toggle('disabled', shouldDisable && !btn.classList.contains('is-generating'));
@@ -579,6 +582,8 @@ export const FocusPanelStatus = {
                 micBtn.disabled = isGenerating;
                 micBtn.classList.toggle('disabled', isGenerating);
             }
+
+            this.syncRefinementStates();
         }
 
         const activeMaxChars = PromptService.getActiveMaxChars?.() ?? null;
@@ -646,7 +651,90 @@ export const FocusPanelStatus = {
     },
 
     /**
-     * Met discrètement en avant le bouton « Concise » lorsque la limite de caractères est dépassée.
+     * Synchronise les états visuels des contrôles de retouche :
+     * - Bascule active (`.active` + `aria-pressed`) sur Encourageante / Exigeante
+     * - Visibilité et mise en avant contextuelle de Peaufiner (après saisie manuelle ou dictée)
+     * @param {Object|null} [explicitResult=null]
+     */
+    syncRefinementStates(explicitResult = null) {
+        const currentId = this._getCurrentStudentId();
+        const result = explicitResult || (currentId
+            ? appState.generatedResults?.find(r => r.id === currentId)
+            : null);
+        const textEl = document.getElementById('focusAppreciationText');
+        const hasSkeleton = Boolean(textEl?.querySelector('.appreciation-skeleton'));
+        const currentText = hasSkeleton ? '' : (textEl?.textContent || '').trim();
+        const isEmpty = !hasSkeleton && !currentText;
+        const isGenerating = this._isGenerating(currentId);
+        const currentVersion = FocusPanelHistory.getCurrentVersion?.() ?? null;
+
+        const TONE_TOOLTIPS = {
+            encouraging: 'Ton plus bienveillant et valorisant',
+            demanding: 'Ton plus ferme et exigeant'
+        };
+        const activeTone = (
+            !isEmpty &&
+            currentVersion &&
+            (currentVersion.source === 'encouraging' || currentVersion.source === 'demanding') &&
+            Boolean(currentVersion.toneBaseContent) &&
+            currentVersion.content?.trim() === currentText
+        ) ? currentVersion.source : null;
+
+        for (const toneType of ['encouraging', 'demanding']) {
+            const btn = document.querySelector(`#focusRefinementOptions [data-refine-type="${toneType}"]`);
+            if (!btn) continue;
+            const isActive = activeTone === toneType;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', String(isActive));
+
+            const tooltipText = isActive
+                ? 'Cliquer pour revenir à la version précédente'
+                : TONE_TOOLTIPS[toneType];
+            if (btn.classList.contains('is-generating')) {
+                btn.dataset.baseTooltip = tooltipText;
+            } else if (typeof UI?.updateTooltip === 'function') {
+                UI.updateTooltip(btn, tooltipText);
+            } else {
+                btn.setAttribute('data-tooltip', tooltipText);
+            }
+        }
+
+        const polishBtn = document.getElementById('focusPolishBtn');
+        if (polishBtn) {
+            polishBtn.style.display = isEmpty ? 'none' : 'inline-flex';
+            polishBtn.disabled = false;
+            polishBtn.classList.toggle('disabled', (isEmpty || isGenerating) && !polishBtn.classList.contains('is-generating'));
+            polishBtn.setAttribute('aria-disabled', String((isEmpty || isGenerating) && !polishBtn.classList.contains('is-generating')));
+
+            const source = result ? this._resolveSource(result) : 'none';
+            const currentVersionMatches = Boolean(
+                currentVersion && currentVersion.content?.trim() === currentText
+            );
+            const isRecommended = !isEmpty && !isGenerating && (
+                currentVersion
+                    ? (!currentVersionMatches
+                        || currentVersion.source === 'edit'
+                        || currentVersion.source === 'dictation'
+                        || (!currentVersion.source && source === 'manual'))
+                    : source === 'manual'
+            );
+            polishBtn.classList.toggle('is-polish-recommended', isRecommended);
+
+            const polishTooltip = isRecommended
+                ? 'Corriger et fluidifier votre rédaction'
+                : 'Corriger les maladresses et fluidifier la syntaxe';
+            if (polishBtn.classList.contains('is-generating')) {
+                polishBtn.dataset.baseTooltip = polishTooltip;
+            } else if (typeof UI?.updateTooltip === 'function') {
+                UI.updateTooltip(polishBtn, polishTooltip);
+            } else {
+                polishBtn.setAttribute('data-tooltip', polishTooltip);
+            }
+        }
+    },
+
+    /**
+     * Met discrètement en avant le bouton « Raccourcir » lorsque la limite de caractères est dépassée.
      * @param {'none'|'ok'|'near'|'over'} limitState
      * @param {number|null} maxChars
      * @private
@@ -699,6 +787,8 @@ export const FocusPanelStatus = {
             : null;
         const isAlreadyCopied = mode === 'appreciation'
             && Boolean(currentResult && Utils.isAppreciationCopied?.(currentResult, appState.currentPeriod));
+        const isDirty = mode === 'appreciation'
+            && Boolean(currentResult && this.isBulkRefreshable(currentResult, appState.currentPeriod));
         const tooltip = isAlreadyCopied
             ? config.copiedTooltip
             : config.tooltip;
@@ -709,6 +799,7 @@ export const FocusPanelStatus = {
         copyBtn.dataset.copyMode = mode;
         copyBtn.disabled = false;
         copyBtn.classList.toggle('disabled', isGenerating);
+        copyBtn.classList.toggle('is-primary-action', mode === 'appreciation' && !isGenerating && !isDirty);
         copyBtn.setAttribute('aria-disabled', String(isGenerating));
         copyBtn.setAttribute('aria-label', ariaLabel);
 
@@ -798,6 +889,7 @@ export const FocusPanelStatus = {
         }
 
         UI.initTooltips();
+        this.syncRefinementStates(result);
     },
 
 
@@ -844,6 +936,7 @@ export const FocusPanelStatus = {
             isBusy,
             onHide: () => FocusPanelHistory.closePopover?.()
         });
+        this.syncRefinementStates();
     },
 
     /**
