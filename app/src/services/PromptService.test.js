@@ -1089,8 +1089,32 @@ describe('PromptService', () => {
             const contextIdx = customPrompts.appreciationUser.indexOf("Indications de l'enseignant :");
             expect(periodIdx).toBeGreaterThan(-1);
             expect(contextIdx).toBeGreaterThan(periodIdx);
-            expect(customPrompts.appreciationSystem).toContain("respectant les indications de l'enseignant");
+            expect(customPrompts.appreciationSystem).toContain("respectant les indications et les observations fournies");
             expect(customPrompts.analysisUser).toContain("Indications de l'enseignant :");
+
+            // Les badges ambigus Attitude - / Attitude + sont transmis avec leurs libellés explicites dans les prompts
+            const prevThreshold = appState.journalThreshold;
+            appState.journalThreshold = 1;
+            try {
+                const attitudePrompts = PromptService.getAllPrompts({
+                    nom: 'MARTIN',
+                    prenom: 'Sophie',
+                    statuses: [],
+                    currentPeriod: 'S2',
+                    periods: {
+                        S1: { grade: 9.0 },
+                        S2: { grade: 10.5, context: 'Les efforts portent leurs fruits.' }
+                    },
+                    journal: [
+                        { id: 'j-att', period: 'S2', tags: ['attitude-'], note: '' }
+                    ]
+                });
+                expect(attitudePrompts.appreciationUser).toContain('Observations du professeur : Attitude à revoir');
+                expect(attitudePrompts.appreciationUser).not.toContain('Attitude -');
+                expect(attitudePrompts.analysisUser).toContain('Observations : Attitude à revoir');
+            } finally {
+                appState.journalThreshold = prevThreshold;
+            }
         });
 
         it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {

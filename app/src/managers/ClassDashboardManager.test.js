@@ -656,6 +656,23 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(userPrompt).not.toMatch(/\bAlice\b/i);
         expect(userPrompt).not.toMatch(/\bBob\b/i);
 
+        // Les tendances Attitude - utilisent le libellé court en UI et le promptLabel explicite dans le prompt IA (et excluent remarque)
+        appState.generatedResults[0].journal.push(
+            { id: 'j6', period: 'T2', tags: ['attitude-'], note: '' },
+            { id: 'j7', period: 'T2', tags: ['attitude-'], note: '' },
+            { id: 'j8', period: 'T2', tags: ['remarque'], note: 'Note libre 1' },
+            { id: 'j9', period: 'T2', tags: ['remarque'], note: 'Note libre 2' }
+        );
+        const updatedStats = ClassDashboardManager.calculateStatistics(ClassDashboardManager.getStudentsData());
+        expect(updatedStats.journalTrends).toContainEqual(
+            expect.objectContaining({ id: 'attitude-', label: 'Attitude -', promptLabel: 'Attitude à revoir', count: 1 })
+        );
+        expect(updatedStats.journalTrends.some(t => t.id === 'remarque')).toBe(false);
+        const { userPrompt: updatedPrompt } = ClassDashboardManager.buildAIPrompt(updatedStats);
+        expect(updatedPrompt).toContain('Attitude à revoir (1 élève)');
+        expect(updatedPrompt).not.toContain('Attitude - (');
+        expect(updatedPrompt).not.toContain('Remarque (');
+
         // Le dataHash change même si l'appréciation garde la même longueur ou si seul le contexte change
         const hashBefore = stats.dataHash;
         appState.generatedResults[0].studentData.periods.T2.context = 'Autre observation de même taille';

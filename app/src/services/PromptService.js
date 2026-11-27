@@ -939,7 +939,7 @@ export const PromptService = {
                     ? ''
                     : " Si la période courante n'a pas de moyenne, le signaler factuellement sans inventer de résultats.";
                 coherenceNotes.push(
-                    `L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne${evolutionClause}, tout en respectant les indications de l'enseignant.${missingCurrentGradeNote}`
+                    `L'appréciation doit être cohérente avec le niveau de réussite suggéré par la moyenne${evolutionClause}, tout en respectant les indications et les observations fournies.${missingCurrentGradeNote}`
                 );
                 if (hasCurrentGrade) {
                     if (currentEvalCount === 1) {

@@ -12,19 +12,19 @@ import { bus, EVENTS } from '../core/EventBus.js';
 
 /**
  * Predefined tags for quick observation categorization
- * @constant {Array<{id: string, label: string, icon: string, color: string, ink: string, category: string}>}
+ * @constant {Array<{id: string, label: string, promptLabel?: string, icon: string, color: string, ink: string, category: string}>}
  */
 const PREDEFINED_TAGS = [
     // POSITIF (vert) - 4 items
     { id: 'participation+', label: 'Participe', icon: 'solar:hand-shake-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
     { id: 'travail+', label: 'Travail sérieux', icon: 'solar:book-2-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
     { id: 'progres', label: 'Progrès', icon: 'solar:graph-up-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
-    { id: 'attitude+', label: 'Attitude +', icon: 'solar:smile-circle-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
+    { id: 'attitude+', label: 'Attitude +', promptLabel: 'Attitude positive', icon: 'solar:smile-circle-linear', color: 'var(--success-color)', ink: 'var(--success-text)', category: 'positive' },
     // NÉGATIF (rouge) - 4 items
     { id: 'bavardage', label: 'Bavardage', icon: 'solar:chat-round-dots-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
     { id: 'travail-', label: 'Travail insuffisant', icon: 'solar:notebook-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
     { id: 'oubli', label: 'Oubli d\'affaires', icon: 'solar:bag-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
-    { id: 'attitude-', label: 'Attitude -', icon: 'solar:sad-circle-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
+    { id: 'attitude-', label: 'Attitude -', promptLabel: 'Attitude à revoir', icon: 'solar:sad-circle-linear', color: 'var(--error-color)', ink: 'var(--error-text)', category: 'negative' },
     // NEUTRE (orange/gris) - 2 direct buttons
     { id: 'difficulte', label: 'Difficulté', icon: 'solar:danger-triangle-linear', color: 'var(--warning-color)', ink: 'var(--warning-text)', category: 'neutral' },
     { id: 'remarque', label: 'Remarque', icon: 'solar:chat-square-linear', color: 'var(--text-secondary)', ink: 'var(--text-secondary)', category: 'neutral' }
@@ -277,7 +277,8 @@ export const JournalManager = {
                         color: tag.color,
                         ink: tag.ink,
                         count: count,
-                        label: tag.label
+                        label: tag.label,
+                        promptLabel: tag.promptLabel || tag.label
                     });
                 }
             }
@@ -359,14 +360,14 @@ export const JournalManager = {
         const threshold = this.getThreshold(classId);
         const tagCounts = this.countTags(aiEntries);
         return Object.entries(tagCounts)
-            .filter(([, count]) => count >= threshold)
+            .filter(([tagId, count]) => tagId !== 'remarque' && count >= threshold)
             .sort((a, b) => b[1] - a[1])
             .map(([tagId]) => tagId);
     },
 
     /**
      * Build structured AI synthesis summary for UI transparency and prompt injection (SSOT).
-     * Excludes private entries; includes all written non-private notes up to 12 notes / 1200 chars.
+     * Excludes private entries and technical fallback tag 'remarque'; includes all written non-private notes up to 12 notes / 1200 chars.
      * @param {string|Object} studentOrId - Student ID or student object
      * @param {string|null} [period=null] - Optional period filter
      * @returns {{ includedInAI: boolean, threshold: number, tags: Array<{id: string, label: string, count: number}>, notes: Array<{text: string, extraTagLabels: string[]}>, privateCount: number, totalCount: number, displayText: string }}
@@ -393,13 +394,14 @@ export const JournalManager = {
         const aiEntries = entries.filter(e => !e.isPrivate);
         const tagCounts = this.countTags(aiEntries);
         const tags = Object.entries(tagCounts)
-            .filter(([, count]) => count >= threshold)
+            .filter(([tagId, count]) => tagId !== 'remarque' && count >= threshold)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
-            .map(([tagId, count]) => {
-                const tag = this.getTag(tagId);
-                return { id: tagId, label: tag ? tag.label : tagId, count };
-            });
+            .map(([tagId, count]) => ({
+                id: tagId,
+                label: this.getPromptLabel(tagId),
+                count
+            }));
 
         const significantSet = new Set(tags.map(t => t.id));
         const rawNotes = aiEntries
@@ -415,7 +417,7 @@ export const JournalManager = {
             totalNoteChars += text.length;
             const extraTagLabels = (Array.isArray(e.tags) ? e.tags : [])
                 .filter(tagId => tagId && tagId !== 'remarque' && !significantSet.has(tagId))
-                .map(tagId => this.getTag(tagId)?.label || tagId);
+                .map(tagId => this.getPromptLabel(tagId));
             notes.unshift({ text, extraTagLabels });
         }
 
@@ -502,6 +504,17 @@ export const JournalManager = {
     },
 
     /**
+     * Get explicit AI-safe label for a tag ID (falls back to UI label or raw ID).
+     * Keeps UI pills compact while preventing ambiguous shorthand (e.g. "Attitude -") in LLM prompts.
+     * @param {string} tagId - Tag ID
+     * @returns {string}
+     */
+    getPromptLabel(tagId) {
+        const tag = this.getTag(tagId);
+        return tag ? (tag.promptLabel || tag.label) : tagId;
+    },
+
+    /**
      * Format entry date for display
      * @param {string} isoDate - ISO date string
      * @returns {string} Formatted date (e.g., "15 jan")
@@ -541,7 +554,7 @@ export const JournalManager = {
         const isolatedClass = isIsolated ? 'isolated' : '';
 
         const infoIcon = isIsolated
-            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (&lt; ${threshold}×) — non transmise à l'IA (ajoutez une note ou répétez)"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
+            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (&lt; ${threshold}×) — non transmise à l'IA<br>Ajoutez une note ou répétez l'observation"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
             : '';
 
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));

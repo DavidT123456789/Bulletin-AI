@@ -789,8 +789,8 @@ export const FocusPanelJournal = {
             const isTruncated = Boolean(btnValue && btnValue.scrollWidth > btnValue.clientWidth);
             const linePrefix = isTruncated ? `${Utils.escapeHtml(footerText)}<br>` : '';
             const tooltip = includeInAI
-                ? `${linePrefix}Seuil tags ≥${threshold} ${Utils.escapeHtml(contextLabel)} · <span class="kbd-hint">Cliquer pour régler</span>`
-                : `Réglage ${Utils.escapeHtml(contextLabel)} · <span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
+                ? `${linePrefix}Seuil tags ≥${threshold} ${Utils.escapeHtml(contextLabel)}<br><span class="kbd-hint">Cliquer pour régler</span>`
+                : `Réglage ${Utils.escapeHtml(contextLabel)}<br><span class="kbd-hint">Cliquer pour réactiver la transmission IA</span>`;
             TooltipsUI.updateTooltip(btn, tooltip);
         }
     },

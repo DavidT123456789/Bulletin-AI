@@ -5114,10 +5114,10 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 label: 'Nouveau'
             });
 
-            // Le tooltip contient toujours l'intégralité des statuts actifs
-            expect(SeatingChartManager._getStudentTooltipText(ulisStudent)).toBe('Léo BERNARD • ULIS • PAP');
-            expect(SeatingChartManager._getStudentTooltipText(delegateStudent)).toBe('Emma MOREAU • Délégué');
-            expect(SeatingChartManager._getStudentTooltipText(multiStudent)).toBe('Hugo PETIT • Nouveau • PPRE • Délégué');
+            // Le tooltip contient toujours l'intégralité des statuts actifs (empilé verticalement sous le nom)
+            expect(SeatingChartManager._getStudentTooltipText(ulisStudent)).toBe('Léo BERNARD<br>ULIS · PAP');
+            expect(SeatingChartManager._getStudentTooltipText(delegateStudent)).toBe('Emma MOREAU<br>Délégué');
+            expect(SeatingChartManager._getStudentTooltipText(multiStudent)).toBe('Hugo PETIT<br>Nouveau · PPRE · Délégué');
 
             // 2. Activation de Dispositifs et Délégués
             appState.seatingStatusDots = { movements: true, devices: true, delegates: true };
@@ -5247,7 +5247,19 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
                 expect(renderSpy).not.toHaveBeenCalled();
                 const journalBadge = cell?.querySelector('.sc-cell-journal-badge');
                 expect(journalBadge?.textContent).toBe('2');
-                expect(cell?.getAttribute('data-tooltip')).toContain('Journal : Participe (×2)');
+                expect(cell?.getAttribute('data-tooltip')).toContain('<br>Journal : Participe (×2)');
+
+                // Vérifie l'expansion promptLabel (Attitude à revoir), les notes seules sans double-comptage et le débordement (+N)
+                firstStudent.journal = [
+                    { id: 'j-1', period: appState.currentPeriod, tags: ['participation+'], note: 'Bon oral' },
+                    { id: 'j-2', period: appState.currentPeriod, tags: ['attitude-'], note: '' },
+                    { id: 'j-3', period: appState.currentPeriod, tags: ['bavardage'], note: '' },
+                    { id: 'j-4', period: appState.currentPeriod, tags: ['progres'], note: '' },
+                    { id: 'j-5', period: appState.currentPeriod, tags: [], note: 'Note libre sans tag' }
+                ];
+                SeatingChartManager._refreshStatusDotsInPlace();
+                expect(cell?.querySelector('.sc-cell-journal-badge')?.textContent).toBe('5');
+                expect(cell?.getAttribute('data-tooltip')).toContain('<br>Journal : Participe, Attitude à revoir, Bavardage… (+1), 1 note');
 
                 SeatingChartManager._setStatusDot('journal', false);
                 expect(cell?.querySelector('.sc-cell-journal-badge')).toBeNull();
@@ -5820,7 +5832,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const singleCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
             expect(singleCell.querySelector('.sc-cell-group-badge')).toBeNull();
             expect(singleCell.querySelector('.sc-cell-name .sc-stacked-group-tag')?.textContent).toBe('G1');
-            expect(singleCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Groupe 3ᵉG1');
+            expect(singleCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI<br>Groupe 3ᵉG1');
 
             const stackedCell = document.querySelector('#scGridContainer .sc-cell.sc-cell-stacked[data-row="0"][data-col="1"]');
             expect(stackedCell).not.toBeNull();
@@ -5828,8 +5840,8 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             expect(groupTags).toEqual(['G2', 'G1']);
             const memberPills = Array.from(stackedCell.querySelectorAll('.sc-stacked-member'));
             expect(memberPills.map(el => el.getAttribute('data-tooltip'))).toEqual([
-                'Noah DUPONT • Groupe 3ᵉG2',
-                'Charly MARTIN • Groupe 3ᵉG1'
+                'Noah DUPONT<br>Groupe 3ᵉG2',
+                'Charly MARTIN<br>Groupe 3ᵉG1'
             ]);
 
             // 5. En vue Groupe (3ᵉG1), aucun badge permanent sur la carte du plan (pureté visuelle), mais classe d'origine dans le tooltip au survol
@@ -5839,7 +5851,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
             const g1Cell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
             expect(g1Cell.querySelector('.sc-stacked-group-tag')).toBeNull();
             expect(g1Cell.querySelector('.sc-cell-group-badge')).toBeNull();
-            expect(g1Cell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Classe 3ᵉ1');
+            expect(g1Cell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI<br>Classe 3ᵉ1');
 
             // 6. Dans un groupe personnalisé (PAPD) intégrant Sami depuis 3ᵉG1 : carte sobre, tooltip classe + groupe, sidebar avec pastille 3ᵉ1 · G1
             const papd = ClassManager.createClass('PAPD');
@@ -5871,7 +5883,7 @@ describe('SeatingChartManager - Classes reconstituées et empilement des élève
 
             const papdCell = document.querySelector('#scGridContainer .sc-cell[data-row="0"][data-col="0"]');
             expect(papdCell.querySelector('.sc-stacked-group-tag')).toBeNull();
-            expect(papdCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI • Classe 3ᵉ1 • Groupe 3ᵉG1');
+            expect(papdCell.getAttribute('data-tooltip')).toBe('Sami BOUKHARI<br>Classe 3ᵉ1 · Groupe 3ᵉG1');
 
             const unplacedTag = document.querySelector('#scStudentList .sc-student-chip[data-result-id="s-charly-papd"] .student-origin-class-tag');
             expect(unplacedTag?.textContent).toBe('3ᵉ1 · G1');

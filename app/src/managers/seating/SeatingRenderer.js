@@ -602,7 +602,7 @@ export const SeatingRenderer = {
                 shortLabel: displayLabel,
                 isGroup: false,
                 isVirtual,
-                tooltipLabel: `Classe ${displayLabel} • Groupe ${displayGroup}`
+                tooltipLabel: `Classe ${displayLabel} · Groupe ${displayGroup}`
             };
         }
 
@@ -633,10 +633,24 @@ export const SeatingRenderer = {
         if (periodEntries.length === 0) return null;
 
         const aggregated = JournalManager.getAggregatedCounts(periodEntries, null, { excludePrivate: false });
-        const topTags = aggregated.slice(0, 3).map(t => t.count > 1 ? `${t.label} (×${t.count})` : t.label);
-        const summaryText = topTags.length > 0
-            ? topTags.join(', ')
-            : `${periodEntries.length} note${periodEntries.length > 1 ? 's' : ''}`;
+        const topTags = aggregated.slice(0, 3).map(t => {
+            const displayLabel = t.promptLabel || t.label;
+            return t.count > 1 ? `${displayLabel} (×${t.count})` : displayLabel;
+        });
+        const overflowCount = Math.max(0, aggregated.length - 3);
+        const noteOnlyCount = periodEntries.filter(e => (!Array.isArray(e?.tags) || e.tags.length === 0) && Boolean(e?.note?.trim())).length;
+
+        let summaryText;
+        if (topTags.length > 0) {
+            const tagsPart = overflowCount > 0
+                ? `${topTags.join(', ')}… (+${overflowCount})`
+                : topTags.join(', ');
+            summaryText = noteOnlyCount > 0
+                ? `${tagsPart}, ${noteOnlyCount} note${noteOnlyCount > 1 ? 's' : ''}`
+                : tagsPart;
+        } else {
+            summaryText = `${periodEntries.length} note${periodEntries.length > 1 ? 's' : ''}`;
+        }
 
         return {
             count: periodEntries.length,
@@ -649,16 +663,23 @@ export const SeatingRenderer = {
         if (!studentResult) return '';
         const baseName = Utils.formatStudentFirstLastName(studentResult.nom, studentResult.prenom);
         const resolvedClassInfo = classInfo !== undefined ? classInfo : this._getStudentContextualClassInfo(studentResult);
-        const labels = [];
+        const lines = [Utils.escapeHtml(baseName)];
+
+        const metaParts = [];
         if (resolvedClassInfo?.tooltipLabel) {
-            labels.push(resolvedClassInfo.tooltipLabel);
+            metaParts.push(resolvedClassInfo.tooltipLabel);
         }
-        labels.push(...this._getStudentStatusLabels(studentResult, activePeriod));
+        metaParts.push(...this._getStudentStatusLabels(studentResult, activePeriod));
+        if (metaParts.length > 0) {
+            lines.push(metaParts.map(part => Utils.escapeHtml(part)).join(' · '));
+        }
+
         const journalInfo = this._getStudentJournalBadgeInfo(studentResult, activePeriod);
         if (journalInfo) {
-            labels.push(`Journal : ${journalInfo.summaryText}`);
+            lines.push(`Journal : ${Utils.escapeHtml(journalInfo.summaryText)}`);
         }
-        return labels.length > 0 ? `${baseName} • ${labels.join(' • ')}` : baseName;
+
+        return lines.join('<br>');
     },
 
     _getStudentStatusBadgeInfo(studentResult, activePeriod = appState.currentPeriod || 'T1') {

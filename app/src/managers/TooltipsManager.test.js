@@ -445,4 +445,59 @@ describe('TooltipsManager', () => {
             expect(setContentSpy).toHaveBeenCalledWith('Alerte ');
         });
     });
+
+    describe('open popover suppression', () => {
+        it('should block trigger/background tooltips when a journal or seating popover is open, while allowing tooltips inside it', () => {
+            let capturedOptions;
+            window.tippy = vi.fn((selector, options) => {
+                capturedOptions = options;
+                return [];
+            });
+
+            TooltipsUI.initTooltips();
+
+            // 1. Journal threshold popover open: trigger button outside #journalThresholdPopover must be blocked
+            const wrapper = document.createElement('div');
+            wrapper.id = 'journalThresholdControl';
+            wrapper.className = 'open';
+            const triggerBtn = document.createElement('button');
+            triggerBtn.id = 'journalThresholdBtn';
+            const popover = document.createElement('div');
+            popover.id = 'journalThresholdPopover';
+            wrapper.append(triggerBtn, popover);
+            document.body.appendChild(wrapper);
+
+            expect(capturedOptions.onShow({ state: { isFocused: false }, reference: triggerBtn })).toBe(false);
+
+            wrapper.classList.remove('open');
+            expect(capturedOptions.onShow({ state: { isFocused: false }, reference: triggerBtn })).toBe(true);
+            wrapper.remove();
+
+            // 2. Seating config popover open: inner preset tooltip allowed, outside button blocked
+            const scPopover = document.createElement('div');
+            scPopover.id = 'scConfigPopover';
+            scPopover.className = 'open';
+            const innerPreset = document.createElement('button');
+            scPopover.appendChild(innerPreset);
+            const outsideBtn = document.createElement('button');
+            document.body.append(scPopover, outsideBtn);
+
+            expect(capturedOptions.onShow({ state: { isFocused: false }, reference: outsideBtn })).toBe(false);
+            expect(capturedOptions.onShow({ state: { isFocused: false }, reference: innerPreset })).toBe(true);
+
+            scPopover.remove();
+            outsideBtn.remove();
+
+            // 3. Version history popover (present in DOM only while open)
+            const historyPopover = document.createElement('div');
+            historyPopover.className = 'history-popover';
+            const outsideUndo = document.createElement('button');
+            document.body.append(historyPopover, outsideUndo);
+
+            expect(capturedOptions.onShow({ state: { isFocused: false }, reference: outsideUndo })).toBe(false);
+            historyPopover.remove();
+            expect(capturedOptions.onShow({ state: { isFocused: false }, reference: outsideUndo })).toBe(true);
+            outsideUndo.remove();
+        });
+    });
 });

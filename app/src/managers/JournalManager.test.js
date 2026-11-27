@@ -391,5 +391,58 @@ describe('JournalManager', () => {
             expect(combined.displayText).not.toContain('(×2)');
             expect(combined.displayText).toContain('Aide ses camarades');
         });
+
+        it('traduit Attitude + / Attitude - en libellés IA explicites tout en gardant les badges UI courts', () => {
+            expect(JournalManager.getPromptLabel('attitude+')).toBe('Attitude positive');
+            expect(JournalManager.getPromptLabel('attitude-')).toBe('Attitude à revoir');
+            expect(JournalManager.getPromptLabel('bavardage')).toBe('Bavardage');
+            expect(JournalManager.getPromptLabel('inconnu')).toBe('inconnu');
+
+            // 1. Sous le seuil avec note -> préfixe explicite [Attitude à revoir]
+            JournalManager.addEntry('student-1', { tags: ['attitude-'], note: 'Soupirs répétés en classe' });
+            const underSummary = JournalManager.getAISummary('student-1', 'T1');
+            expect(underSummary.displayText).toContain('[Attitude à revoir]');
+            expect(JournalManager.synthesizeForPrompt('student-1', 'T1'))
+                .toBe('Notes: "[Attitude à revoir] Soupirs répétés en classe"');
+
+            // 2. Au-dessus du seuil -> Observations utilise le promptLabel, timeline conserve "Attitude -"
+            JournalManager.addEntry('student-1', { tags: ['attitude-'], note: '' });
+            JournalManager.addEntry('student-1', { tags: ['attitude+'], note: '' });
+            JournalManager.addEntry('student-1', { tags: ['attitude+'], note: '' });
+            const summary = JournalManager.getAISummary('student-1', 'T1');
+            expect(summary.tags.map(t => t.label)).toEqual(['Attitude à revoir', 'Attitude positive']);
+            expect(summary.displayText).not.toContain('Attitude -');
+            expect(summary.displayText).not.toContain('Attitude +');
+
+            const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
+            expect(synth).toContain('Observations: Attitude à revoir, Attitude positive');
+            expect(synth).not.toContain('Attitude -');
+            expect(synth).not.toContain('Attitude +');
+
+            // Les badges UI conservent les libellés compacts
+            const html = JournalManager.renderTimeline('student-1', 'T1');
+            expect(html).toContain('Attitude -');
+            expect(html).toContain('Attitude +');
+        });
+
+        it('exclut le tag technique remarque des signaux IA même au-dessus du seuil, tout en le conservant dans countTags', () => {
+            JournalManager.addEntry('student-1', { tags: [], note: 'Note libre 1' });
+            JournalManager.addEntry('student-1', { tags: [], note: 'Note libre 2' });
+
+            // Compteur UI conservé
+            expect(JournalManager.countTags('student-1', 'T1')).toEqual({ remarque: 2 });
+            expect(JournalManager.getAggregatedCounts('student-1', 'T1')).toHaveLength(1);
+
+            // Exclu des signaux transmis à l'IA et des tendances
+            expect(JournalManager.getSignificantTagIds('student-1', 'T1')).toEqual([]);
+            const summary = JournalManager.getAISummary('student-1', 'T1');
+            expect(summary.tags).toEqual([]);
+            expect(summary.displayText).not.toContain('Remarque');
+
+            const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
+            expect(synth).not.toContain('Observations:');
+            expect(synth).not.toContain('Remarque');
+            expect(synth).toContain('Notes: "Note libre 1" | "Note libre 2"');
+        });
     });
 });

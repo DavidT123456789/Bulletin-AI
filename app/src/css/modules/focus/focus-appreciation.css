@@ -95,10 +95,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .focus-consigne-row #focusMicBtn {
-        opacity: 0;
-    }
-
+    .focus-consigne-row #focusMicBtn,
     .focus-appreciation-body #focusAppreciationMicBtn {
         opacity: 0.4;
     }
@@ -878,7 +875,8 @@
 }
 
 .focus-refinement-options .btn-ai-outline {
-    flex: 1 0 auto;
+    flex: 1 1 0;
+    min-width: max-content;
     justify-content: center;
 }
 
@@ -1015,6 +1013,16 @@
     gap: 7px;
 }
 
+/* Regenerate = primary action of the footer: emphasized by weight/ink, not by brand color */
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral:not(.is-loading) {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.focus-appreciation-actions #focusGenerateBtn.btn-neutral:not(.is-loading) iconify-icon {
+    color: var(--text-secondary);
+}
+
 .focus-appreciation-actions #focusGenerateBtn .kbd-hint {
     background: var(--tonal-bg);
     border: 1px solid var(--border-color);
@@ -1149,9 +1157,9 @@
     --chip-bg-opacity: 0.15;
 }
 
-/* Semantic accent colors for chip icons */
+/* Chip icons: neutral at rest, semantic accent on hover / active state */
 [data-refine-type] iconify-icon {
-    color: var(--chip-color);
+    color: var(--text-tertiary);
     transition: color 0.2s ease, transform 0.2s ease;
 }
 
@@ -1217,7 +1225,8 @@
 }
 
 .btn-ai-outline.active i,
-.btn-ai-outline.active iconify-icon {
+.btn-ai-outline.active iconify-icon,
+.btn[data-refine-type="concise"].is-limit-recommended:not(:disabled):not(.disabled):not(.is-generating) iconify-icon {
     color: var(--chip-color, var(--primary-color));
 }
 

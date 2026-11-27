@@ -360,7 +360,7 @@ async function populateAboutBuildDate() {
             const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
             if (checkUpdatesBtn && currentHash) {
                 const versionPrefix = currentVersion ? `v${currentVersion} · ` : '';
-                checkUpdatesBtn.title = `Bulletin AI ${versionPrefix}Build ${currentHash}`.trim();
+                UI.updateTooltip(checkUpdatesBtn, `Bulletin AI ${versionPrefix}Build ${currentHash}`.trim());
             }
         }
     } catch (e) {

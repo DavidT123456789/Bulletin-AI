@@ -568,6 +568,9 @@ export const ClassDashboardManager = {
                 return {
                     id: tagId,
                     label: tagMeta ? tagMeta.label : tagId,
+                    promptLabel: JournalManager.getPromptLabel
+                        ? JournalManager.getPromptLabel(tagId)
+                        : (tagMeta?.promptLabel || tagMeta?.label || tagId),
                     category: tagMeta ? tagMeta.category : 'neutral',
                     count: studentCount
                 };
@@ -2858,7 +2861,7 @@ Ne rajoute aucune introduction, aucun commentaire, ni de balises de code Markdow
 
         if (Array.isArray(stats.journalTrends) && stats.journalTrends.length > 0) {
             const trendsStr = stats.journalTrends
-                .map(t => `${t.label} (${t.count} élève${t.count > 1 ? 's' : ''})`)
+                .map(t => `${t.promptLabel || t.label} (${t.count} élève${t.count > 1 ? 's' : ''})`)
                 .join(', ');
             userPrompt += `\n• Tendances du journal de suivi : ${trendsStr}`;
         }

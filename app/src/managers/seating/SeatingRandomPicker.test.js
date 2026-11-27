@@ -442,11 +442,12 @@ describe('SeatingRandomPicker — Tirage au sort sur le plan', () => {
         expect(iconEl.getAttribute('icon')).toBe('solar:dice-linear');
         expect(randomBtn.classList.contains('round-complete')).toBe(false);
 
-        // 2/2 révélé -> bascule sur ↻ + tooltip Tour complet
+        // 2/2 révélé -> bascule sur ↻ + tooltip Tour complet (HTML kbd-hint) et aria-label texte brut
         vi.runAllTimers();
         expect(iconEl.getAttribute('icon')).toBe('solar:restart-linear');
         expect(randomBtn.classList.contains('round-complete')).toBe(true);
-        expect(randomBtn.getAttribute('data-tooltip')).toBe('Tour complet · Nouveau tour (Espace)');
+        expect(randomBtn.getAttribute('data-tooltip')).toBe('Tour complet<br>Nouveau tour <kbd class="kbd-hint">Espace</kbd>');
+        expect(randomBtn.getAttribute('aria-label')).toBe('Tour complet — Nouveau tour (Espace)');
 
         // Recul dans l'historique (1/2) -> la pioche reste vide, icône ↻ conservée
         SeatingChartManager._stepRandomHistory(-1);

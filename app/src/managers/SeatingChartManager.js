@@ -129,7 +129,7 @@ export const SeatingChartManager = {
         searchEl.className = 'sc-floating-search header-search';
         searchEl.id = 'scFloatingSearch';
         searchEl.innerHTML = `
-            <button type="button" class="pill-segment sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
+            <button type="button" class="pill-segment sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher <kbd class='kbd-hint'>/</kbd>">
                 <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
             </button>
             <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
@@ -222,10 +222,10 @@ export const SeatingChartManager = {
                                         ${this._getPlacementPopoverHTML()}
                                     </div>
                                 </div>
-                                <button type="button" class="sc-action-btn sc-undo-btn disabled" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler" aria-disabled="true">
+                                <button type="button" class="sc-action-btn sc-undo-btn disabled" id="scUndoBtn" aria-label="Annuler" data-tooltip="Annuler <kbd class='kbd-hint'>Ctrl+Z</kbd>" aria-disabled="true">
                                     <iconify-icon icon="solar:undo-left-round-linear"></iconify-icon>
                                 </button>
-                                <button type="button" class="sc-action-btn sc-redo-btn disabled" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir" aria-disabled="true">
+                                <button type="button" class="sc-action-btn sc-redo-btn disabled" id="scRedoBtn" aria-label="Rétablir" data-tooltip="Rétablir <kbd class='kbd-hint'>Ctrl+Y</kbd>" aria-disabled="true">
                                     <iconify-icon icon="solar:undo-right-round-linear"></iconify-icon>
                                 </button>
                                 <div class="sc-config-wrapper">
@@ -382,13 +382,13 @@ export const SeatingChartManager = {
                 <div class="sc-status-dots-popover" id="scStatusDotsPopover" role="dialog" aria-label="Calques d'affichage" aria-hidden="true">
                     <div class="sc-config-section-title">Calques d'affichage</div>
                     <div class="seating-dots-selector" id="seatingStatusDotsSelector" role="group" aria-label="Calques sur le plan">
-                        <label class="seating-dot-option" data-tooltip="Nouveau (bleu) • Départ (ambre)">
+                        <label class="seating-dot-option" data-tooltip="Nouveau (bleu) · Départ (ambre)">
                             <input type="checkbox" data-dot-category="movements" checked>
                             <span class="seating-dot-preview seating-dot-preview--movements" aria-hidden="true"></span>
                             <span class="seating-dot-label">Parcours <small>Nouveau, Départ</small></span>
                             <iconify-icon icon="ph:check-bold" class="seating-dot-check" aria-hidden="true"></iconify-icon>
                         </label>
-                        <label class="seating-dot-option" data-tooltip="ULIS, AESH (violet) • PAP, PPRE, PAI (rose)">
+                        <label class="seating-dot-option" data-tooltip="ULIS, AESH (violet)<br>PAP, PPRE, PAI (rose)">
                             <input type="checkbox" data-dot-category="devices">
                             <span class="seating-dot-preview seating-dot-preview--devices" aria-hidden="true"></span>
                             <span class="seating-dot-label">Accompagnement <small>ULIS, PAP, PPRE</small></span>

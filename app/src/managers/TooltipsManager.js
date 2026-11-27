@@ -101,9 +101,9 @@ const getCommonTippyConfig = () => {
         onShow(instance) {
             // Use centralized flag from ModalUI for tooltip suppression
             if (ModalUI._isIgnoringTooltips) return false;
-            // Ne jamais afficher de tooltip en arrière-plan (ou sur le bouton déclencheur) lorsqu'un menu déroulant est ouvert
+            // Ne jamais afficher de tooltip en arrière-plan (ou sur le bouton déclencheur) lorsqu'un menu/popover est ouvert
             const openMenu = document.querySelector(
-                '#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open #headerModelDropdown, .global-actions-dropdown-menu.open, .action-dropdown-menu.open'
+                '#headerMenuDropdown.open, #classDropdown.visible, #classNotePopover.visible, #headerGenWrapper.open #headerModelDropdown, #journalThresholdControl.open #journalThresholdPopover, #scPlacementPopover.open, #scConfigPopover.open, #scStatusDotsPopover.open, #scRandomHistoryPopover.open, .history-popover, .global-actions-dropdown-menu.open, .action-dropdown-menu.open'
             );
             if (openMenu && !(instance.reference instanceof Node && openMenu.contains(instance.reference))) {
                 return false;

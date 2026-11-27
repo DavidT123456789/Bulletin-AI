@@ -207,7 +207,7 @@
                 <div class="header-actions">
                     <!-- Unified Global Search (List & Plan) -->
                     <div class="sc-floating-search header-search" id="scFloatingSearch">
-                        <button type="button" class="pill-segment sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher (/)">
+                        <button type="button" class="pill-segment sc-search-toggle-btn tooltip" id="scFloatingSearchBtn" aria-label="Rechercher un élève (/)" data-tooltip="Rechercher <kbd class='kbd-hint'>/</kbd>">
                             <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
                         </button>
                         <div class="sc-floating-search-input-box" id="scFloatingSearchBox">
@@ -261,15 +261,15 @@
                                     <div class="ui-segmented-control css-driven" id="themeSegmentedControl"
                                         data-active="light">
                                         <button type="button" class="ui-segment" data-value="light" aria-label="Mode clair"
-                                            title="Mode clair">
+                                            data-tooltip="Mode clair">
                                             <iconify-icon icon="solar:sun-linear"></iconify-icon>
                                         </button>
                                         <button type="button" class="ui-segment" data-value="system" aria-label="Mode système"
-                                            title="Mode système">
+                                            data-tooltip="Mode système">
                                             <iconify-icon icon="solar:monitor-linear"></iconify-icon>
                                         </button>
                                         <button type="button" class="ui-segment" data-value="dark" aria-label="Mode sombre"
-                                            title="Mode sombre">
+                                            data-tooltip="Mode sombre">
                                             <iconify-icon icon="solar:moon-linear"></iconify-icon>
                                         </button>
                                         <div class="ui-glider"></div>
@@ -1421,7 +1421,7 @@
 
             <div class="import-hub-choices">
                 <!-- Mass Import Card -->
-                <button type="button" class="import-hub-card" data-action="mass" data-tooltip="Importez moyennes et appréciations (Pronote, ENT)" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+                <button type="button" class="import-hub-card" data-action="mass" data-tooltip="Importer moyennes et appréciations (Pronote, ENT)" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                     </div>
@@ -1430,7 +1430,7 @@
                 </button>
 
                 <!-- Trombinoscope Import Card -->
-                <button type="button" class="import-hub-card" data-action="photos" data-tooltip="Importez liste d'élèves et photos automatiquement" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+                <button type="button" class="import-hub-card" data-action="photos" data-tooltip="Importer liste d'élèves et photos automatiquement" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:camera-linear"></iconify-icon>
                     </div>
@@ -1439,7 +1439,7 @@
                 </button>
 
                 <!-- Individual Student Card -->
-                <button type="button" class="import-hub-card" data-action="individual" data-tooltip="Ajoutez un élève, son profil et ses moyennes" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+                <button type="button" class="import-hub-card" data-action="individual" data-tooltip="Ajouter un élève, son profil et ses moyennes" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:user-plus-linear"></iconify-icon>
                     </div>
@@ -1448,7 +1448,7 @@
                 </button>
 
                 <!-- Existing Classes Picker Card -->
-                <button type="button" class="import-hub-card" data-action="existing" data-tooltip="Reprenez des élèves avec leurs photos et statuts" data-tippy-placement="bottom" data-tippy-delay="[250, 0]" style="display: none;">
+                <button type="button" class="import-hub-card" data-action="existing" data-tooltip="Reprendre des élèves avec leurs photos et statuts" data-tippy-placement="bottom" data-tippy-delay="[250, 0]" style="display: none;">
                     <div class="import-hub-icon">
                         <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                     </div>
@@ -1909,7 +1909,7 @@
                                 <iconify-icon class="iconify-inline" icon="solar:cup-hot-linear"></iconify-icon>
                                 Soutenir le projet
                             </a>
-                            <button type="button" class="ui-tabs-action-btn" id="checkUpdatesBtn" title="Vérifier les mises à jour (Build 4558af8)">
+                            <button type="button" class="ui-tabs-action-btn" id="checkUpdatesBtn" data-tooltip="Vérifier les mises à jour (Build 4558af8)">
                                 <span class="ui-tabs-action-btn-main">
                                     <iconify-icon class="iconify-inline" icon="solar:restart-linear"></iconify-icon>
                                     <span>Mises à jour</span>
@@ -2382,35 +2382,35 @@
                                             <div class="settings-row-control">
                                                 <div class="accent-color-selector" id="accentColorSelector" role="radiogroup" aria-label="Couleur d'accentuation">
                                                     <button type="button" role="radio" aria-checked="true" class="accent-color-swatch active" data-color="anthracite"
-                                                        title="Anthracite (Par défaut)" aria-label="Anthracite">
+                                                        data-tooltip="Anthracite (Par défaut)" aria-label="Anthracite">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="blue"
-                                                        style="--swatch-color: #3b82f6;" title="Bleu" aria-label="Bleu">
+                                                        style="--swatch-color: #3b82f6;" data-tooltip="Bleu" aria-label="Bleu">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="purple"
-                                                        style="--swatch-color: #8b5cf6;" title="Violet" aria-label="Violet">
+                                                        style="--swatch-color: #8b5cf6;" data-tooltip="Violet" aria-label="Violet">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="pink"
-                                                        style="--swatch-color: #ec4899;" title="Rose" aria-label="Rose">
+                                                        style="--swatch-color: #ec4899;" data-tooltip="Rose" aria-label="Rose">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="teal"
-                                                        style="--swatch-color: #06b6d4;" title="Océan" aria-label="Océan">
+                                                        style="--swatch-color: #06b6d4;" data-tooltip="Océan" aria-label="Océan">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="green"
-                                                        style="--swatch-color: #10b981;" title="Émeraude" aria-label="Émeraude">
+                                                        style="--swatch-color: #10b981;" data-tooltip="Émeraude" aria-label="Émeraude">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch" data-color="orange"
-                                                        style="--swatch-color: #f97316;" title="Ambre" aria-label="Ambre">
+                                                        style="--swatch-color: #f97316;" data-tooltip="Ambre" aria-label="Ambre">
                                                         <iconify-icon icon="ph:check-bold"></iconify-icon>
                                                     </button>
                                                     <button type="button" role="radio" aria-checked="false" class="accent-color-swatch custom-picker" id="customAccentBtn" data-color="custom"
-                                                        style="--swatch-color: #3b82f6;" title="Couleur personnalisée (Pipette & Curseurs)" aria-label="Couleur personnalisée">
+                                                        style="--swatch-color: #3b82f6;" data-tooltip="Couleur personnalisée (Pipette &amp; Curseurs)" aria-label="Couleur personnalisée">
                                                         <iconify-icon icon="ph:eyedropper-bold" class="accent-swatch-picker-icon"></iconify-icon>
                                                         <iconify-icon icon="ph:check-bold" class="accent-swatch-check"></iconify-icon>
                                                         <input type="color" id="customColorPicker" style="position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; bottom: 0; right: 0;" value="#3b82f6">
@@ -2541,7 +2541,7 @@
                                         <div class="settings-row-info">
                                             <label for="settingsPrivacyAnonymizeToggle" class="settings-row-title">
                                                 Pseudonymiser les prénoms
-                                                <span class="privacy-reassurance-badge" title="Protection active par défaut conformément aux recommandations RGPD">
+                                                <span class="privacy-reassurance-badge" data-tooltip="Protection active par défaut conformément aux recommandations RGPD">
                                                     <iconify-icon icon="solar:shield-check-bold"></iconify-icon> Recommandé RGPD
                                                 </span>
                                             </label>
@@ -2596,7 +2596,7 @@
                                                 <iconify-icon icon="logos:google-drive"></iconify-icon>
                                                 Connecter
                                             </button>
-                                            <button type="button" class="btn btn-secondary btn-small data-btn-disconnect" id="disconnectGoogleBtn" style="display: none;" title="Déconnecter le compte">
+                                            <button type="button" class="btn btn-secondary btn-small data-btn-disconnect" id="disconnectGoogleBtn" style="display: none;">
                                                 <iconify-icon icon="solar:logout-2-linear" aria-hidden="true"></iconify-icon>
                                                 <span>Déconnecter</span>
                                             </button>
@@ -3971,7 +3971,7 @@
 
         <!-- Hub d'import intégré directement -->
         <div class="empty-state-hub">
-            <button type="button" class="empty-state-hub-card" data-action="mass" data-tooltip="Importez moyennes et appréciations (Pronote, ENT)" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+            <button type="button" class="empty-state-hub-card" data-action="mass" data-tooltip="Importer moyennes et appréciations (Pronote, ENT)" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:document-text-linear"></iconify-icon>
                 </div>
@@ -3980,7 +3980,7 @@
                     <p>PDF, CSV, copier-coller</p>
                 </div>
             </button>
-            <button type="button" class="empty-state-hub-card" data-action="photos" data-tooltip="Importez liste d'élèves et photos automatiquement" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+            <button type="button" class="empty-state-hub-card" data-action="photos" data-tooltip="Importer liste d'élèves et photos automatiquement" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:camera-linear"></iconify-icon>
                 </div>
@@ -3989,7 +3989,7 @@
                     <p>PDF Pronote ou image</p>
                 </div>
             </button>
-            <button type="button" class="empty-state-hub-card" data-action="individual" data-tooltip="Ajoutez un élève, son profil et ses moyennes" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
+            <button type="button" class="empty-state-hub-card" data-action="individual" data-tooltip="Ajouter un élève, son profil et ses moyennes" data-tippy-placement="bottom" data-tippy-delay="[250, 0]">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:user-plus-linear"></iconify-icon>
                 </div>
@@ -3998,7 +3998,7 @@
                     <p>Saisie manuelle</p>
                 </div>
             </button>
-            <button type="button" class="empty-state-hub-card" data-action="existing" data-tooltip="Reprenez des élèves avec leurs photos et statuts" data-tippy-placement="bottom" data-tippy-delay="[250, 0]" style="display: none;">
+            <button type="button" class="empty-state-hub-card" data-action="existing" data-tooltip="Reprendre des élèves avec leurs photos et statuts" data-tippy-placement="bottom" data-tippy-delay="[250, 0]" style="display: none;">
                 <div class="empty-state-hub-icon">
                     <iconify-icon icon="solar:users-group-rounded-linear"></iconify-icon>
                 </div>
@@ -4224,10 +4224,10 @@
                 <button type="button" id="pwaInstallBtn" class="btn-install">
                     <iconify-icon class="iconify-inline" icon="solar:download-bold"></iconify-icon> Installer
                 </button>
-                <button type="button" id="pwaLaterBtn" class="btn-dismiss" aria-label="Plus tard" title="Plus tard">
+                <button type="button" id="pwaLaterBtn" class="btn-dismiss" aria-label="Plus tard" data-tooltip="Plus tard">
                     <iconify-icon class="iconify-inline" icon="solar:clock-circle-bold"></iconify-icon>
                 </button>
-                <button type="button" id="pwaDismissBtn" class="btn-dismiss" aria-label="Ne plus afficher" title="Ne plus afficher">
+                <button type="button" id="pwaDismissBtn" class="btn-dismiss" aria-label="Ne plus afficher" data-tooltip="Ne plus afficher">
                     <iconify-icon class="iconify-inline" icon="ph:x"></iconify-icon>
                 </button>
             </div>

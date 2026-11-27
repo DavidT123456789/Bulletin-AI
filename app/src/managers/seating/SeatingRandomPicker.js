@@ -10,10 +10,19 @@ import { TooltipsUI } from '../TooltipsManager.js';
 import { UI } from '../UIManager.js';
 import { Utils } from '../../utils/Utils.js';
 
-const REST_TOOLTIP = 'Tirer un élève au sort';
-const ACTIVE_TOOLTIP = 'Tirer un autre élève (Espace)';
-const ROUND_COMPLETE_TOOLTIP = 'Tour complet · Nouveau tour (Espace)';
-const HISTORY_TOOLTIP = 'Élèves tirés (← / →)';
+const REST_TOOLTIP = {
+    tooltip: 'Tirer un élève au sort',
+    ariaLabel: 'Tirer un élève au sort'
+};
+const ACTIVE_TOOLTIP = {
+    tooltip: 'Tirer un autre élève <kbd class="kbd-hint">Espace</kbd>',
+    ariaLabel: 'Tirer un autre élève (Espace)'
+};
+const ROUND_COMPLETE_TOOLTIP = {
+    tooltip: 'Tour complet<br>Nouveau tour <kbd class="kbd-hint">Espace</kbd>',
+    ariaLabel: 'Tour complet — Nouveau tour (Espace)'
+};
+const HISTORY_TOOLTIP = 'Élèves tirés <kbd class="kbd-hint">← / →</kbd>';
 const DICE_ICON = 'solar:dice-linear';
 const RESTART_ICON = 'solar:restart-linear';
 const HOP_DELAYS_MANY = [65, 65, 70, 75, 85, 95, 110, 125, 145, 170, 200, 240, 290, 355, 420];
@@ -290,13 +299,15 @@ export const SeatingRandomPicker = {
     /**
      * Synchronise l'icône, l'infobulle et l'étiquette ARIA du bouton dé / nouveau tour.
      * @param {HTMLElement|null} randomBtn
-     * @param {string} tooltip
+     * @param {string|{ tooltip: string, ariaLabel: string }} tooltipConfig
      * @param {boolean} [isRoundComplete=false]
      */
-    _setRandomBtnState(randomBtn, tooltip, isRoundComplete = false) {
+    _setRandomBtnState(randomBtn, tooltipConfig, isRoundComplete = false) {
         if (!randomBtn) return;
+        const tooltip = typeof tooltipConfig === 'string' ? tooltipConfig : tooltipConfig.tooltip;
+        const ariaLabel = typeof tooltipConfig === 'string' ? tooltipConfig : tooltipConfig.ariaLabel;
         randomBtn.classList.toggle('round-complete', Boolean(isRoundComplete));
-        randomBtn.setAttribute('aria-label', tooltip);
+        randomBtn.setAttribute('aria-label', ariaLabel);
         randomBtn.setAttribute('data-tooltip', tooltip);
         TooltipsUI?.updateTooltip?.(randomBtn, tooltip);
         const iconEl = randomBtn.querySelector('iconify-icon');
