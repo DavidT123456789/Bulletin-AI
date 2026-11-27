@@ -261,7 +261,7 @@
     transition: filter var(--transition-fast), color var(--transition-fast);
 }
 
-/* Reflet spéculaire au survol (petites pilules vs grand bouton Focus) */
+/* Reflet spéculaire au survol (petites pilules .btn-ai hors footer flush) */
 .btn-ai::after,
 .btn-smart-action-inline.mode-generate::after {
     content: '';
@@ -274,12 +274,6 @@
     transform: skewX(-20deg) translateX(-180%);
     pointer-events: none;
     z-index: 2;
-}
-
-#focusGenerateBtn.btn-ai::after {
-    width: 32%;
-    background: var(--ai-satin-shine-wide);
-    transform: skewX(-20deg) translateX(-140%);
 }
 
 :is(.btn-ai, .btn-smart-action-inline.mode-generate):is(:disabled, .disabled, .loading, .is-loading, :has(.loading-spinner-svg))::after {
@@ -300,10 +294,6 @@
 
     :is(.btn-ai:not(#focusGenerateBtn):hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg)), .btn-smart-action-inline.mode-generate:hover:not(:disabled):not(.loading))::after {
         animation: ai-shine-small 1.35s ease-in-out infinite;
-    }
-
-    #focusGenerateBtn.btn-ai:hover:not(:disabled):not(.disabled):not(.loading):not(.is-loading):not(:has(.loading-spinner-svg))::after {
-        animation: ai-shine-wide 2.3s ease-in-out infinite;
     }
 }
 
@@ -345,7 +335,7 @@
     }
 }
 
-/* Animations de reflet spéculaire au survol des boutons Générer (.btn-ai) */
+/* Animation de reflet spéculaire au survol des boutons Générer (.btn-ai) */
 @keyframes ai-shine-small {
     0% {
         transform: skewX(-20deg) translateX(-160%);
@@ -354,17 +344,6 @@
     55%,
     100% {
         transform: skewX(-20deg) translateX(220%);
-    }
-}
-
-@keyframes ai-shine-wide {
-    0% {
-        transform: skewX(-20deg) translateX(-140%);
-    }
-
-    65%,
-    100% {
-        transform: skewX(-20deg) translateX(360%);
     }
 }
 

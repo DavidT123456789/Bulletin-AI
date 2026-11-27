@@ -61,7 +61,7 @@
 /* Soft-disabled preserves pointer-events so Tippy tooltips remain hoverable */
 .history-nav-btn.disabled,
 .history-nav-btn:disabled {
-    opacity: 0.24;
+    opacity: 0.3;
     cursor: default;
 }
 

@@ -213,21 +213,26 @@
     min-height: 22px;
     max-height: 140px;
     height: auto;
-    padding: 1px 0;
+    padding: 1.5px 0;
     margin: 0;
     background: transparent;
     border: none;
     outline: none;
     border-radius: 0;
-    font-size: 13.5px;
+    font-size: 13px;
     line-height: 1.45;
-    color: var(--text-primary);
+    color: var(--text-primary-soft);
     caret-color: var(--primary-color);
     resize: none;
     overflow-y: hidden;
     font-family: inherit;
     box-sizing: border-box;
     display: block;
+    transition: color var(--transition-fast);
+}
+
+.focus-context-textarea:focus {
+    color: var(--text-primary);
 }
 
 .focus-context-textarea::placeholder {

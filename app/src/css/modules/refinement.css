@@ -99,7 +99,7 @@ button[data-refine-type="concise"].is-generating iconify-icon {
     }
 }
 
-button[data-refine-type="demanding"]:hover iconify-icon,
+button[data-refine-type="demanding"]:not(.disabled):hover iconify-icon,
 button[data-refine-type="demanding"].is-generating iconify-icon {
     animation: target-focus 1.25s ease-in-out infinite;
     display: inline-flex;
@@ -158,7 +158,7 @@ button[data-refine-type="demanding"].is-generating iconify-icon {
     }
 }
 
-button[data-refine-type="polish"]:hover iconify-icon,
+button[data-refine-type="polish"]:not(.disabled):hover iconify-icon,
 button[data-refine-type="polish"].is-generating iconify-icon {
     animation: magic-polish 1.2s ease-in-out infinite;
     display: inline-flex;
