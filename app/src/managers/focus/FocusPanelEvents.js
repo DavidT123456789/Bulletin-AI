@@ -46,14 +46,13 @@ export const FocusPanelEvents = {
         const copyBtn = document.getElementById('focusCopyBtn');
         const aiDataBtn = document.getElementById('focusAiDataBtn');
 
-        // Progressive scroll-driven Dynamic Island morphing (desktop) + hysteresis capsule (mobile 2-tier)
+        // Unified hysteresis Dynamic Island capsule on scroll (desktop & mobile)
         const focusContent = panelEl?.querySelector('.focus-main-page .focus-content');
         const focusHeader = panelEl?.querySelector('.focus-header');
         if (focusContent && focusHeader) {
             let scrollRafId = null;
-            const SCROLL_RANGE = 40;
-            const SCROLL_ENTER_MOBILE = 14;
-            const SCROLL_EXIT_MOBILE = 4;
+            const SCROLL_ENTER = 16;
+            const SCROLL_EXIT = 4;
 
             const updateHeaderScrollState = () => {
                 scrollRafId = null;
@@ -63,24 +62,12 @@ export const FocusPanelEvents = {
                     FocusPanelHeader.resetScrollState();
                 } else {
                     const scrollTop = Math.max(0, focusContent.scrollTop);
-                    if (window.innerWidth <= 600) {
-                        focusHeader.style.removeProperty('--scroll-p');
-                        const isScrolled = focusHeader.classList.contains('scrolled');
-                        if (!isScrolled && scrollTop >= SCROLL_ENTER_MOBILE) {
-                            focusHeader.classList.add('scrolled');
-                        } else if (isScrolled && scrollTop <= SCROLL_EXIT_MOBILE) {
-                            focusHeader.classList.remove('scrolled');
-                            FocusPanelHeader.syncHeaderOffset();
-                        }
-                    } else {
-                        const progress = Math.min(1, scrollTop / SCROLL_RANGE);
-                        const wasScrolled = focusHeader.classList.contains('scrolled');
-                        const nowScrolled = progress > 0.01;
-                        focusHeader.style.setProperty('--scroll-p', progress.toFixed(3));
-                        focusHeader.classList.toggle('scrolled', nowScrolled);
-                        if (wasScrolled && !nowScrolled) {
-                            FocusPanelHeader.syncHeaderOffset();
-                        }
+                    const isScrolled = focusHeader.classList.contains('scrolled');
+                    if (!isScrolled && scrollTop >= SCROLL_ENTER) {
+                        focusHeader.classList.add('scrolled');
+                    } else if (isScrolled && scrollTop <= SCROLL_EXIT) {
+                        focusHeader.classList.remove('scrolled');
+                        FocusPanelHeader.syncHeaderOffset();
                     }
                 }
 

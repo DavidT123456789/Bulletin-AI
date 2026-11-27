@@ -713,7 +713,7 @@
                 </div>
             </div>
 
-            <!-- IDENTITY HERO: Full-width Avatar + Name/Badges (read) or Inputs (edit) -->
+            <!-- IDENTITY HERO: Avatar + Name/Badges (left column) -->
             <div class="focus-header-identity">
                 <div class="focus-header-left">
                     <div id="focusAvatarContainer" class="focus-panel-avatar-container">
@@ -769,28 +769,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- MOYENNES: Bottom-right of header on desktop (under toolbar); clean sub-row on mobile/edit -->
+            <div class="focus-grades-strip" id="focusGradesStrip" aria-label="Moyennes">
+                <div class="grades-wrapper">
+                    <div id="focusPreviousGrades" class="previous-grades-inline">
+                        <!-- Populated by JS: T1: 12, T2: 14 -->
+                    </div>
+                    <div class="context-grade-group">
+                        <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">S1</label>
+                        <input type="text" id="focusCurrentGradeInput" class="context-grade-input custom-input grade-value"
+                            placeholder="--" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="focus-pages-container" id="focusPagesContainer">
             <!-- PAGE 1: Main Content (édition) -->
             <div class="focus-page focus-main-page" id="focusMainPage">
                 <div class="focus-content">
-                    <!-- 1. MOYENNES (bande dédiée) -->
-                    <div class="focus-grades-strip" id="focusGradesStrip">
-                        <span class="focus-grades-strip-label">Moyennes</span>
-                        <div class="grades-wrapper">
-                            <div id="focusPreviousGrades" class="previous-grades-inline">
-                                <!-- Populated by JS: T1: 12, T2: 14 -->
-                            </div>
-                            <div class="context-grade-group">
-                                <label for="focusCurrentGradeInput" id="focusCurrentGradeLabel">S1</label>
-                                <input type="text" id="focusCurrentGradeInput" class="context-grade-input custom-input grade-value"
-                                    placeholder="--" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. JOURNAL DE BORD - Observation notes -->
+                    <!-- 1. JOURNAL DE BORD - Observation notes -->
                     <div class="journal-section" id="focusJournalSection">
                         <div class="journal-header" id="focusJournalHeader">
                             <div class="journal-header-left">

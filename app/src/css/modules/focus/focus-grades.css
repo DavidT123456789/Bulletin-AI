@@ -5,11 +5,10 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: var(--focus-header-offset) 16px 28px 16px;
+    padding: var(--focus-header-offset) 16px 24px 16px;
     display: flex;
     flex-direction: column;
-    /* Espacement intermédiaire */
-    gap: 16px;
+    gap: 12px;
     position: relative;
 }
 
@@ -54,28 +53,19 @@
 }
 
 /* ============================
-   3. GRADES STRIP - Boxless Metadata Row
+   3. GRADES STRIP - Integrated in Student Profile Header
    ============================ */
 .focus-grades-strip {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 6px 12px;
-    padding: 2px 4px;
-    margin: -4px 0;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
     background: transparent;
     border: none;
     box-shadow: none;
     flex-shrink: 0;
-}
-
-.focus-grades-strip-label {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: -0.005em;
-    color: var(--text-tertiary);
-    user-select: none;
 }
 
 /* === Voice Dictation (Mic) & Audio Synthesis (Speaker) - iOS 2026 Style === */

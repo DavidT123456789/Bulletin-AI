@@ -10,7 +10,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
+    padding: 9px 16px;
     background: var(--item-idle-bg);
     border-bottom: 1px solid var(--border-color);
 }
@@ -39,22 +39,22 @@
     gap: 12px;
 }
 
-/* Integrated Teacher Indications Band (Indications) inside Bulletin card */
+/* Integrated Teacher Indications Band (Consigne IA) inside Bulletin card */
 .focus-consigne-band {
-    background: color-mix(in srgb, var(--item-idle-bg) 55%, transparent);
+    background: color-mix(in srgb, var(--item-idle-bg) 45%, transparent);
     border-bottom: 1px solid var(--border-color);
     transition: background-color var(--transition-fast);
 }
 
 .focus-consigne-band:focus-within {
-    background: color-mix(in srgb, var(--item-idle-bg) 85%, transparent);
+    background: color-mix(in srgb, var(--item-idle-bg) 80%, transparent);
 }
 
 .focus-consigne-row {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 9px 12px 9px 16px;
+    padding: 8px 12px 8px 16px;
 }
 
 .focus-consigne-label {
@@ -95,9 +95,12 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .focus-consigne-row #focusMicBtn,
+    .focus-consigne-row #focusMicBtn {
+        opacity: 0;
+    }
+
     .focus-appreciation-body #focusAppreciationMicBtn {
-        opacity: 0.45;
+        opacity: 0.4;
     }
 
     .focus-consigne-band:is(:hover, :focus-within) #focusMicBtn,
@@ -115,10 +118,10 @@
     min-height: 52px;
     max-height: 500px;
     height: auto;
-    padding: 14px 0 14px 16px;
+    padding: 12px 0 12px 16px;
     /* Harmonized with context-textarea */
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--text-primary);
     caret-color: var(--primary-color);
     outline: none;

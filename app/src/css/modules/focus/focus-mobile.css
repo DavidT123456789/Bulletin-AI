@@ -68,18 +68,23 @@
         height: calc(100% - 56px);
     }
 
-    /* Header: Two-tier hero at rest on mobile (full width for student name on narrow screens) */
+    /* Header: Two-tier hero at rest on mobile (Toolbar row 1; Identity + Grades row 2) */
     .focus-header:not(.scrolled):not(.editing) {
-        flex-direction: column;
-        align-items: stretch;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
         padding: 2px 0;
         margin: 6px 12px 0 12px;
-        gap: 4px;
+        column-gap: 10px;
+        row-gap: 4px;
     }
 
     .focus-header:not(.scrolled):not(.editing) .focus-header-toolbar {
-        order: 1;
+        grid-column: 1 / -1;
+        grid-row: 1;
         width: 100%;
+        margin-right: 0;
+        justify-self: stretch;
         display: flex;
         align-items: center;
         gap: 6px;
@@ -88,6 +93,7 @@
     .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons {
         order: 1;
         margin-right: auto;
+        margin-left: 0;
     }
 
     .focus-header:not(.scrolled):not(.editing) .focus-header-tools {
@@ -103,28 +109,35 @@
     }
 
     .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
-        order: 2;
-        flex: none;
-        width: 100%;
+        grid-column: 1;
+        grid-row: 2;
         gap: 12px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: end;
+        align-self: center;
+        padding-bottom: 0;
     }
 
     .focus-header:not(.editing) .focus-header-left,
     .focus-header:not(.editing) .focus-panel-avatar-container {
-        width: 56px !important;
-        height: 56px !important;
-        min-width: 56px;
-        min-height: 56px;
+        width: 54px !important;
+        height: 54px !important;
+        min-width: 54px;
+        min-height: 54px;
     }
 
     .focus-header:not(.editing) .focus-panel-avatar-container .student-avatar {
-        width: 56px !important;
-        height: 56px !important;
-        font-size: 22px !important;
+        width: 54px !important;
+        height: 54px !important;
+        font-size: 21px !important;
     }
 
     .focus-header-read {
-        gap: 5px;
+        gap: 4px;
     }
 
     .focus-header:not(.editing) .focus-name-details {
@@ -207,26 +220,13 @@
        MOBILE SCROLLED STATE — Compact Dynamic Island Capsule
        ======================================================= */
     .focus-header.scrolled:not(.editing) {
-        --p: 1;
-        flex-direction: row;
-        align-items: center;
         padding: 4px 6px 4px 4px;
         margin: 8px 12px 0 12px;
         gap: 6px;
-        border-radius: var(--radius-pill);
-        animation: focusHeaderCapsuleIn 0.24s cubic-bezier(0.32, 0.72, 0, 1);
     }
 
     .focus-header.scrolled:not(.editing) .focus-header-identity {
-        order: 1;
-        flex: 1 1 0;
-        width: auto;
         gap: 8px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-header-toolbar {
-        order: 2;
-        width: auto;
     }
 
     .focus-header.scrolled:not(.editing) .focus-header-left,
@@ -241,8 +241,6 @@
         width: 36px !important;
         height: 36px !important;
         font-size: 14.5px !important;
-        border: none !important;
-        box-shadow: none;
     }
 
     .focus-header.scrolled:not(.editing) .focus-name-nom {
@@ -267,31 +265,10 @@
        MOBILE EDIT MODE - Optimized vertical layout
        ============================================ */
     .focus-header.editing {
-        flex-direction: row;
-        flex-wrap: wrap;
         align-items: center;
         margin: 8px 12px 4px 12px;
         padding: 12px;
         gap: 10px;
-    }
-
-    .focus-header.editing .focus-header-identity {
-        display: contents;
-    }
-
-    .focus-header.editing .focus-header-left,
-    .focus-header.editing .focus-panel-avatar-container {
-        order: 1;
-        width: 52px;
-        height: 52px;
-        min-width: 52px;
-        min-height: 52px;
-    }
-
-    .focus-header.editing .focus-panel-avatar-container .student-avatar {
-        width: 52px !important;
-        height: 52px !important;
-        font-size: 20px !important;
     }
 
     .focus-header.editing .focus-header-toolbar {
@@ -365,22 +342,14 @@
     }
 
     /* Card titles: balanced mobile hierarchy */
-    .focus-grades-strip-label,
     .journal-header-left,
     .focus-appreciation-label {
         font-size: 14px;
     }
 
-    /* Dedicated grades strip (boxless) */
-    .focus-grades-strip {
-        padding: 2px 2px;
-        margin: -2px 0;
-        gap: 6px 10px;
-    }
-
     .grades-wrapper {
         width: auto;
-        justify-content: flex-end;
+        justify-content: flex-start;
     }
 
     .focus-consigne-row {
@@ -556,8 +525,19 @@
     /* Header radius overrides removed: They naturally match the container (radius-lg) now. */
 }
 
-/* Narrow Mobile Scrolled Capsule (max-width: 420px) */
+/* Narrow Mobile (max-width: 420px) */
 @media (max-width: 420px) {
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
+        grid-column: 1 / -1;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        justify-self: start;
+        padding-left: 66px;
+    }
 
     /* Preserve generous name space inside the single-row scrolled pill */
     .focus-header.scrolled:not(.editing) .focus-nav-buttons,
@@ -625,13 +605,13 @@
         -ms-overflow-style: none;
     }
 
-    .focus-grades-strip {
-        padding: 2px;
+    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+        padding-left: 58px;
     }
 
     .journal-header,
     .focus-appreciation-header {
-        padding: 6px 10px;
+        padding: 8px 10px;
         gap: 6px;
     }
 
@@ -659,7 +639,6 @@
 /* iOS Safari anti-zoom safeguard without inflating Android/other mobile typography */
 @supports (-webkit-touch-callout: none) {
     @media (max-width: 600px) {
-        .focus-grades-strip-label,
         .journal-header-left,
         .focus-appreciation-label {
             font-size: 14.5px;

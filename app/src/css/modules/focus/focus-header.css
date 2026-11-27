@@ -1,6 +1,6 @@
 /* §0 TOKENS — Default header offset fallback (synced dynamically by FocusPanelHeader.syncHeaderOffset) */
 :root {
-    --focus-header-offset: 108px;
+    --focus-header-offset: 98px;
 }
 
 .focus-panel {
@@ -73,14 +73,16 @@
 }
 
 /* ============================
-   1. HEADER — Compact Single-Row on Desktop, Dynamic Island Capsule on Scroll
+   1. HEADER — Two-Column Balanced Profile Header (Identity left | Toolbar top-right + Grades bottom-right)
    ============================ */
 .focus-header {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     align-items: center;
-    gap: 10px;
-    padding: 7px 0;
+    column-gap: 12px;
+    row-gap: 6px;
+    padding: 4px 0;
     margin: 8px 16px 0 16px;
     background: transparent;
     border-radius: var(--radius-lg);
@@ -102,78 +104,85 @@
     border-color: transparent;
 }
 
-/* --- RIGHT TOOLBAR: Analyze, Print, Nav Stepper, Divider, Save/Close --- */
+/* --- TOP-RIGHT TOOLBAR: Analyze, Print, Nav Stepper, Divider, Save/Close --- */
 .focus-header-toolbar {
-    order: 2;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
+}
+
+.focus-header:not(.scrolled):not(.editing) .focus-header-toolbar {
+    margin-right: -4px;
 }
 
 .focus-header-tools,
 .focus-header-close-group {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     flex-shrink: 0;
 }
 
 .focus-header-divider {
     width: 1px;
-    height: 16px;
+    height: 15px;
     background: var(--border-color-strong);
     flex-shrink: 0;
     margin: 0 3px;
 }
 
-/* --- LEFT IDENTITY: Avatar + Name & Movement Badges --- */
+/* --- LEFT COLUMN: Avatar + Stacked Name & Status Badges --- */
 .focus-header-identity {
-    order: 1;
-    flex: 1 1 0;
+    grid-column: 1;
+    grid-row: 1 / span 2;
     display: flex;
     align-items: center;
     gap: 14px;
     min-width: 0;
 }
 
+/* --- BOTTOM-RIGHT: Typographic Grades Strip (directly under toolbar) --- */
+.focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    align-self: end;
+    padding-bottom: 1px;
+}
+
 /* ====================================================================
-   Progressive Dynamic Island Capsule (Desktop — scroll-linked via --scroll-p)
-   Smoothly interpolates from seamless header (0) to floating glass pill (1)
+   Dynamic Island Capsule (Desktop & Mobile — Scrolled State)
+   Collapses header into a sleek single-row floating glass pill
    ==================================================================== */
-.focus-header:not(.editing) {
-    --p: var(--scroll-p, 0);
-    border-radius: calc(var(--radius-lg) + (100px - var(--radius-lg)) * var(--p));
-    padding: calc(7px - 4px * var(--p)) calc(6px * var(--p)) calc(7px - 4px * var(--p)) calc(3px * var(--p));
-    margin: calc(8px - 2px * var(--p)) 16px 0 16px;
-    gap: calc(10px - 2px * var(--p));
-    background: rgba(255, 255, 255, calc(0.85 * var(--p)));
-    backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
-    -webkit-backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
-    border: 1px solid rgba(0, 0, 0, calc(0.08 * var(--p)));
+.focus-header.scrolled:not(.editing) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px 4px 4px;
+    margin: 6px 16px 0 16px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow:
-        0 calc(8px * var(--p)) calc(28px * var(--p)) -4px rgba(0, 0, 0, calc(0.12 * var(--p))),
-        0 calc(2px * var(--p)) calc(6px * var(--p)) -2px rgba(0, 0, 0, calc(0.04 * var(--p)));
+        0 8px 28px -4px rgba(0, 0, 0, 0.12),
+        0 2px 6px -2px rgba(0, 0, 0, 0.04);
+    animation: focusHeaderCapsuleIn 0.24s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-[data-theme="dark"] .focus-header:not(.editing) {
-    background: rgba(var(--surface-color-rgb), calc(0.82 * var(--p)));
-    backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
-    -webkit-backdrop-filter: blur(calc(24px * var(--p))) saturate(calc(100% + 80% * var(--p)));
-    border: 1px solid rgba(255, 255, 255, calc(0.1 * var(--p)));
+[data-theme="dark"] .focus-header.scrolled:not(.editing) {
+    background: rgba(var(--surface-color-rgb), 0.84);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow:
-        0 calc(12px * var(--p)) calc(32px * var(--p)) -4px rgba(0, 0, 0, calc(0.45 * var(--p))),
-        0 calc(4px * var(--p)) calc(12px * var(--p)) -2px rgba(0, 0, 0, calc(0.25 * var(--p)));
-}
-
-/* At rest (unscrolled), the header is 100% transparent and seamless with the panel */
-.focus-header:not(.scrolled):not(.editing),
-[data-theme="dark"] .focus-header:not(.scrolled):not(.editing) {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-color: transparent;
-    box-shadow: none;
+        0 12px 32px -4px rgba(0, 0, 0, 0.45),
+        0 4px 12px -2px rgba(0, 0, 0, 0.25);
 }
 
 @keyframes focusHeaderCapsuleIn {
@@ -188,59 +197,48 @@
     }
 }
 
-.focus-header:not(.editing) .focus-header-identity {
-    gap: calc(14px - 4px * var(--p));
+.focus-header.scrolled:not(.editing) .focus-header-identity {
+    order: 1;
+    flex: 1 1 0;
+    width: auto;
+    gap: 9px;
 }
 
-/* Concentric avatar with progressive scroll-linked scale */
-.focus-header:not(.editing) .focus-header-left,
-.focus-header:not(.editing) .focus-panel-avatar-container {
-    width: calc(76px - 34px * var(--p)) !important;
-    height: calc(76px - 34px * var(--p)) !important;
-    min-width: calc(76px - 34px * var(--p));
-    min-height: calc(76px - 34px * var(--p));
+.focus-header.scrolled:not(.editing) .focus-header-toolbar {
+    order: 2;
+    width: auto;
 }
 
-.focus-header:not(.editing) .focus-panel-avatar-container .student-avatar {
-    width: calc(76px - 34px * var(--p)) !important;
-    height: calc(76px - 34px * var(--p)) !important;
-    font-size: calc(31px - 14px * var(--p)) !important;
-    border: max(0px, calc(1.5px - 10px * var(--p))) solid var(--surface-color) !important;
-    box-shadow: 0 max(0px, calc(2px - 12px * var(--p))) max(0px, calc(8px - 48px * var(--p))) 0 rgba(0, 0, 0, 0.08);
+.focus-header.scrolled:not(.editing) .focus-header-tools {
+    order: 1;
 }
 
-/* Disable box-dimension spring lag during scroll-linked interpolation while preserving hover zoom */
+.focus-header.scrolled:not(.editing) .focus-nav-buttons {
+    order: 2;
+}
+
+.focus-header.scrolled:not(.editing) .focus-header-divider {
+    order: 3;
+}
+
+.focus-header.scrolled:not(.editing) .focus-header-close-group {
+    order: 4;
+}
+
 .focus-header.scrolled:not(.editing) .focus-header-left,
 .focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
-    transition: none !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px;
+    min-height: 38px;
 }
 
 .focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
-    transition:
-        transform 0.25s var(--ease-bounce),
-        box-shadow 0.25s ease !important;
-}
-
-.focus-header:not(.editing) .focus-name-details {
-    gap: calc(5px - 3.5px * var(--p));
-    min-width: 0;
-    justify-content: center;
-}
-
-.focus-header:not(.editing) .focus-name-nom {
-    font-size: calc(23px - 7.5px * var(--p));
-    line-height: 1.15;
-}
-
-.focus-header:not(.editing) .focus-name-prenom {
-    font-size: calc(18px - 5px * var(--p));
-    line-height: 1.15;
-    gap: calc(8px - 2px * var(--p));
-}
-
-.focus-header:not(.editing) .focus-origin-class-badge {
-    padding: calc(2px - 0.5px * var(--p)) calc(7px - 2px * var(--p));
-    font-size: calc(11px - 1.5px * var(--p));
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 15px !important;
+    border: none !important;
+    box-shadow: none;
 }
 
 .focus-header.scrolled:not(.editing) .focus-student-name {
@@ -248,6 +246,9 @@
 }
 
 .focus-header.scrolled:not(.editing) .focus-name-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5px;
     max-width: 100%;
     overflow: hidden;
 }
@@ -259,6 +260,8 @@
 
 .focus-header.scrolled:not(.editing) .focus-name-nom {
     display: block;
+    font-size: 14.5px;
+    line-height: 1.15;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -267,6 +270,9 @@
 .focus-header.scrolled:not(.editing) .focus-name-prenom {
     display: inline-flex;
     flex-wrap: nowrap;
+    font-size: 12.5px;
+    line-height: 1.15;
+    gap: 6px;
     max-width: 100%;
     overflow: hidden;
 }
@@ -278,8 +284,14 @@
     min-width: 0;
 }
 
+.focus-header.scrolled:not(.editing) .focus-origin-class-badge {
+    padding: 1.5px 5px;
+    font-size: 9.5px;
+}
+
 .focus-header.scrolled:not(.editing) .focus-name-edit-icon,
-.focus-header.scrolled:not(.editing) .focus-status-badges {
+.focus-header.scrolled:not(.editing) .focus-status-badges,
+.focus-header.scrolled:not(.editing) .focus-grades-strip {
     display: none !important;
 }
 
@@ -358,12 +370,14 @@
     max-height: 0 !important;
 }
 
-/* --- EDIT MODE: In-flow card layout (prevents any overlap with content below) --- */
+/* --- EDIT MODE: In-flow card layout (prevents any overlap with content below; keeps grade editable) --- */
 .focus-header.editing {
+    display: flex;
     position: relative;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: 10px;
+    gap: 10px 12px;
     padding: 14px;
     margin: 8px 16px 4px 16px;
     background: var(--surface-color);
@@ -405,19 +419,42 @@
 }
 
 .focus-header.editing .focus-header-identity {
+    display: contents;
+}
+
+.focus-header.editing .focus-header-left {
     order: 1;
-    flex: 1;
-    width: auto;
+}
+
+.focus-header.editing .focus-header-content {
+    order: 2;
+    flex: 1 1 0;
     min-width: 0;
-    align-items: flex-start;
-    gap: 12px;
 }
 
 .focus-header.editing .focus-header-toolbar {
-    order: 2;
+    order: 3;
     width: auto;
     min-height: 0;
+    margin-left: auto;
     flex-shrink: 0;
+}
+
+.focus-header.editing .focus-grades-strip {
+    order: 4;
+    flex: 1 0 100%;
+    justify-content: space-between;
+    padding-top: 10px;
+    margin-top: 2px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.focus-header.editing .focus-grades-strip::before {
+    content: 'Moyennes';
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
 }
 
 .focus-header.editing .focus-header-close-group {
@@ -436,14 +473,14 @@
     animation: focusHeaderControlSpringIn 0.28s var(--ease-spring);
 }
 
-/* --- LEFT ZONE: Avatar --- */
+/* --- LEFT ZONE: Avatar (64px balanced hero) --- */
 .focus-header-left,
 .focus-header .focus-panel-avatar-container {
     position: relative;
-    width: 76px;
-    height: 76px;
-    min-width: 76px;
-    min-height: 76px;
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    min-height: 64px;
     transition:
         width 0.26s cubic-bezier(0.32, 0.72, 0, 1),
         height 0.26s cubic-bezier(0.32, 0.72, 0, 1),
@@ -464,9 +501,9 @@
 }
 
 .focus-header .focus-panel-avatar-container .student-avatar {
-    width: 76px !important;
-    height: 76px !important;
-    font-size: 31px !important;
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 26px !important;
     border: 1.5px solid var(--surface-color) !important;
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
     margin: 0 !important;
@@ -480,7 +517,7 @@
 
 @media (hover: hover) and (pointer: fine) {
     .focus-header .focus-panel-avatar-container:hover .student-avatar {
-        transform: scale(1.08);
+        transform: scale(1.06);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
     }
 
@@ -495,16 +532,16 @@
 
 .focus-header.editing .focus-header-left,
 .focus-header.editing .focus-panel-avatar-container {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    min-height: 60px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
 }
 
 .focus-header.editing .focus-panel-avatar-container .student-avatar {
-    width: 60px !important;
-    height: 60px !important;
-    font-size: 24px !important;
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 21px !important;
 }
 
 .focus-header.editing + .focus-pages-container .focus-main-page .focus-content {
@@ -564,7 +601,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 5px;
+    gap: 3px;
     min-width: 0;
     max-width: 100%;
 }
@@ -578,9 +615,9 @@
 }
 
 .focus-name-nom {
-    font-size: 23px;
+    font-size: 21px;
     font-weight: 600;
-    line-height: 1.1;
+    line-height: 1.12;
     letter-spacing: -0.025em;
     color: var(--text-primary);
     word-break: normal;
@@ -594,7 +631,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    font-size: 18px;
+    font-size: 16.5px;
     font-weight: 400;
     line-height: 1.2;
     color: var(--text-secondary);
@@ -629,9 +666,9 @@
 
 .focus-name-edit-icon {
     position: absolute;
-    left: calc(100% + 8px);
+    left: calc(100% + 7px);
     top: 50%;
-    font-size: 15px;
+    font-size: 14px;
     opacity: 0;
     color: var(--text-tertiary);
     transform: translateY(-50%) translateX(-4px);
@@ -677,14 +714,14 @@
 .focus-nav-buttons {
     display: inline-flex;
     align-items: center;
-    height: 36px;
+    height: 34px;
     flex-shrink: 0;
 }
 
 .focus-nav-buttons > .focus-nav-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
+    width: 30px;
+    height: 30px;
+    font-size: 17.5px;
 }
 
 /* Keep trailing divider before Close in Analysis Page header */
@@ -758,8 +795,9 @@
 .focus-print-btn,
 .focus-save-btn,
 .focus-close-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
 }
 
 /* --- SAVE & CANCEL (Edit Mode — Unified Tonal Pill [ ✓ | × ] aligned to inputs) --- */

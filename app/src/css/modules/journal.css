@@ -10,7 +10,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 16px;
+    padding: 9px 14px 9px 16px;
     background: var(--item-idle-bg);
     border-bottom: 1px solid var(--border-color);
     /* FIXED: Static card header */
@@ -130,19 +130,6 @@
     align-items: center;
 }
 
-.journal-count-badge:not(.is-hidden) + .journal-threshold-control {
-    margin-left: 2px;
-}
-
-.journal-count-badge:not(.is-hidden) + .journal-threshold-control::before {
-    content: '';
-    width: 1px;
-    height: 14px;
-    background: var(--border-color-strong);
-    margin-right: 10px;
-    flex-shrink: 0;
-}
-
 /* === Header Buttons (Shared Style) === */
 .journal-header-btn {
     display: inline-flex;
@@ -247,9 +234,9 @@
     justify-content: flex-start;
     gap: 8px;
     width: 100%;
-    min-height: 34px;
+    min-height: 31px;
     height: auto;
-    padding: 7px 14px 7px 16px;
+    padding: 5px 14px 5px 16px;
     border: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     background: transparent;
@@ -817,9 +804,9 @@
 
 /* === Journal Content === */
 .journal-content {
-    padding: 8px 8px;
+    padding: 6px 8px;
     margin-right: 2px;
-    max-height: 184px;
+    max-height: 108px;
     overflow-y: auto;
     transition:
         max-height 0.35s var(--ease-spring),
@@ -1025,10 +1012,10 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 7px 8px;
-    margin-bottom: 4px;
-    background: var(--item-idle-bg);
-    border-radius: var(--radius-control);
+    padding: 4.5px 8px;
+    margin-bottom: 1px;
+    background: transparent;
+    border-radius: var(--radius-sm);
     position: relative;
     transition: background-color var(--transition-fast), transform 0.2s ease;
 }
@@ -1298,9 +1285,9 @@
     to {
         opacity: 1;
         max-height: 200px;
-        padding-top: 7px;
-        padding-bottom: 7px;
-        margin-bottom: 4px;
+        padding-top: 4.5px;
+        padding-bottom: 4.5px;
+        margin-bottom: 1px;
         transform: translateY(0) scale(1);
     }
 }

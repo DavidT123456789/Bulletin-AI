@@ -739,14 +739,13 @@ export const FocusPanelHeader = {
     },
 
     /**
-     * Réinitialise l'état de scroll de l'entête (--scroll-p et classe .scrolled).
+     * Réinitialise l'état de scroll de l'entête (classe .scrolled).
      * @param {Object} [options={}]
      * @param {boolean} [options.syncOffset=false] - Resynchronise --focus-header-offset après réinitialisation
      */
     resetScrollState({ syncOffset = false } = {}) {
         const header = document.querySelector('.focus-header');
         if (!header) return;
-        header.style.removeProperty('--scroll-p');
         header.classList.remove('scrolled');
         if (syncOffset) {
             this.syncHeaderOffset();

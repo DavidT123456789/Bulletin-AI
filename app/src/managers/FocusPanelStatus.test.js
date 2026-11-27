@@ -498,4 +498,56 @@ describe('FocusPanelStatus', () => {
             PromptService.getActiveMaxChars.mockReturnValue(null);
         });
     });
+
+    describe('updateAppreciationStatus', () => {
+        beforeEach(() => {
+            document.body.innerHTML = `<span id="focusAppreciationBadge" class="appreciation-status-badge tooltip"></span>`;
+        });
+
+        it('masque la pastille dirty quand la source est IA (déjà portée par le bouton Actualiser)', () => {
+            const aiDirtyStudent = {
+                id: 'student-1',
+                promptHash: 'hash_initial',
+                generationPeriod: 'T1',
+                appreciation: 'Appréciation générée par IA.',
+                wasGenerated: true,
+                appreciationSource: 'ai',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: { T1: { appreciation: 'Appréciation générée par IA.' } }
+                }
+            };
+
+            FocusPanelStatus.updateAppreciationStatus(aiDirtyStudent);
+
+            const badge = document.getElementById('focusAppreciationBadge');
+            expect(badge.classList.contains('visible')).toBe(false);
+            expect(badge.classList.contains('modified')).toBe(false);
+            expect(badge.getAttribute('data-tooltip')).toBeNull();
+        });
+
+        it('affiche la pastille modified avec tooltip pour les sources manuelles ou importées', () => {
+            for (const source of ['manual', 'imported']) {
+                const student = {
+                    id: 'student-1',
+                    promptHash: 'hash_initial',
+                    generationPeriod: 'T1',
+                    appreciation: 'Appréciation enseignant.',
+                    wasGenerated: false,
+                    appreciationSource: source,
+                    studentData: {
+                        context: 'MODIFIED',
+                        periods: { T1: { appreciation: 'Appréciation enseignant.' } }
+                    }
+                };
+
+                FocusPanelStatus.updateAppreciationStatus(student);
+
+                const badge = document.getElementById('focusAppreciationBadge');
+                expect(badge.classList.contains('visible')).toBe(true);
+                expect(badge.classList.contains('modified')).toBe(true);
+                expect(badge.getAttribute('data-tooltip')).toContain('Cliquer pour marquer comme vérifiée');
+            }
+        });
+    });
 });

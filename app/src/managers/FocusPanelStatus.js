@@ -421,6 +421,11 @@ export const FocusPanelStatus = {
                 badge.innerHTML = '';
                 break;
             case 'dirty':
+                if (result && this._resolveSource(result) === 'ai') {
+                    badge.classList.remove('visible');
+                    tooltip = '';
+                    break;
+                }
                 badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon>';
                 badge.classList.add('visible', 'modified', 'icon-only');
                 break;
