@@ -315,16 +315,14 @@
     color: var(--text-primary);
 }
 
-/* Anchor popover above footer so it never clips near bottom of Focus Panel */
+/* Anchor popover below footer so it opens over Bulletin space and never collides with Focus Header */
 .journal-ai-footer .journal-threshold-popover {
-    top: auto;
-    bottom: calc(100% + 8px);
     right: 12px;
-    transform: translateY(8px);
 }
 
-.journal-ai-footer .journal-threshold-control.open .journal-threshold-popover {
-    transform: translateY(0);
+.journal-section:has(.journal-threshold-control.open) {
+    position: relative;
+    z-index: 25;
 }
 
 /* Threshold Popover */
