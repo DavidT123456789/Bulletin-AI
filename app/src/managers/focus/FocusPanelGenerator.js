@@ -206,11 +206,20 @@ export const FocusPanelGenerator = {
         }
 
         if (summary.statuses?.length > 0) {
-            const statusesHtml = `<div class="ai-data-status-list">${summary.statuses.map(st => `
+            const statusesHtml = `<div class="ai-data-status-list">${summary.statuses.map(st => {
+                if (st.isExcludedFromAI || (st.isGdprSensitive && !st.instruction)) {
+                    return `
                 <div class="ai-data-status-item">
-                    <span class="ai-data-badge ${st.isGdprSensitive ? 'is-rgpd' : 'is-included'}">${esc(st.label)}${st.isGdprSensitive ? ' masqué · RGPD' : ''}</span>
+                    <span class="ai-data-badge is-rgpd">${esc(st.label)} · Hors IA</span>
+                    <span class="ai-data-muted">Non transmis à l'IA (repère local · RGPD)</span>
+                </div>`;
+                }
+                return `
+                <div class="ai-data-status-item">
+                    <span class="ai-data-badge ${st.isGdprSensitive ? 'is-rgpd' : 'is-included'}">${esc(st.label)}${st.isGdprSensitive ? ' filtré · RGPD' : ''}</span>
                     <span class="ai-data-status-desc">« ${esc(st.instruction)} »</span>
-                </div>`).join('')}</div>`;
+                </div>`;
+            }).join('')}</div>`;
             rows.push({ label: 'Statuts', valueHtml: statusesHtml });
         }
 
@@ -527,7 +536,7 @@ export const FocusPanelGenerator = {
 
                     if (generateBtn) UI?.hideInlineSpinner?.(generateBtn);
                     FocusPanelStatus.updateWordCount();
-                    FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
+                    FocusPanelStatus.updateAppreciationStatus(result);
                     FocusPanelStatus.updateSourceIndicator(result);
                     panel._updateGenerateButton(result);
                 } else {
@@ -658,7 +667,7 @@ export const FocusPanelGenerator = {
             });
 
             FocusPanelStatus.updateWordCount();
-            FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
+            FocusPanelStatus.updateAppreciationStatus(result);
             FocusPanelStatus.updateSourceIndicator(result);
             panel._updateGenerateButton(result);
             try { navigator?.vibrate?.([15, 50, 20]); } catch (_) { }

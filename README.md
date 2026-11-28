@@ -19,7 +19,7 @@ Bulletin AI est une application web qui utilise l'Intelligence Artificielle pour
 ## ✨ Fonctionnalités
 
 - 🤖 **Génération IA multi-moteurs** — Compatible **Albert API** (IA souveraine Gouv.fr / DINUM via ProConnect), Google Gemini, Groq Cloud, Mistral AI, OpenAI, Claude, OpenRouter et **Ollama** (100 % hors-ligne)
-- 🛡️ **Pseudonymisation RGPD à la volée** — Masquage par défaut des prénoms (`[PRÉNOM]`), exclusion systématique des noms de famille et des photos, et traduction locale des statuts médico-scolaires (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`) en consignes pédagogiques neutres
+- 🛡️ **Pseudonymisation RGPD à la volée** — Masquage par défaut des prénoms (`[PRÉNOM]`), exclusion systématique des noms de famille, des photos et des badges d'accompagnement (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`) avant tout appel IA
 - 📊 **Import en masse** — Copier-coller depuis Pronote/Excel ou import de fichiers PDF/CSV
 - 🎨 **Personnalisation par matière** — Ton, longueur, voix, vocabulaire spécifique
 - 🗺️ **Plan de classe & Trombinoscope** — Disposition interactive (cours & îlots d'activité), découpe locale de trombinoscope PDF Pronote, export PDF
@@ -118,7 +118,7 @@ npm run test:coverage
 ## 🔒 Confidentialité, RGPD & Indépendance
 
 - ✅ **Zéro base de données serveur** : Toutes les classes, notes et photos restent dans le navigateur de l'enseignant (`IndexedDB` / `LocalStorage`).
-- ✅ **Pseudonymisation avant envoi IA** : Les noms de famille et photos ne sont jamais transmis ; les prénoms sont remplacés par `[PRÉNOM]` par défaut et réinjectés localement au retour ; les acronymes relevant de l'Art. 9 du RGPD (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`, `Geva-Sco`) sont convertis localement en consignes pédagogiques neutres.
+- ✅ **Pseudonymisation avant envoi IA** : Les noms de famille, photos et badges d'accompagnement relevant de l'Art. 9 du RGPD (`PAI`, `PAP`, `ULIS`, `PPRE`, `AESH`, `Geva-Sco`) ne sont jamais transmis à l'IA (repères locaux uniquement) ; les prénoms sont remplacés par `[PRÉNOM]` par défaut et réinjectés localement au retour.
 - ✅ **Clés API personnelles (BYOK)** : Vos clés (notamment ProConnect / Albert API) ne sont jamais partagées ni mutualisées.
 - ✅ **Outil gratuit & indépendant** : Application développée bénévolement, sans compte, sans pistage ni publicité. Les dons libres sur [Ko-fi](https://ko-fi.com/profassistant) soutiennent exclusivement le développement de l'interface et son hébergement.
 

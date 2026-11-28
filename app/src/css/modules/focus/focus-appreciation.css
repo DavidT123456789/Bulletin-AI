@@ -308,39 +308,14 @@
     pointer-events: auto;
 }
 
-.appreciation-status-badge.pending {
-    display: none !important;
-}
-
-.appreciation-status-badge.done {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-text);
-}
-
 .appreciation-status-badge.error {
     background: rgba(var(--error-rgb), 0.12);
     color: var(--error-text);
 }
 
-/* Empty state - "En attente" - icon only, no background (harmonized with source-manual) */
-.appreciation-status-badge.empty {
-    background: transparent;
-    color: var(--text-secondary);
-    width: auto;
-    height: auto;
-    border-radius: 0;
-    padding: 4px;
-}
-
 .appreciation-status-badge.modified {
     background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);
-    width: auto;
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast, 0.15s ease), transform var(--transition-fast, 0.15s ease);
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
@@ -355,80 +330,11 @@
     transform: scale(0.95);
 }
 
-.appreciation-status-badge.saved {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-text);
-    width: auto;
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    animation: saved-fade-in 0.3s ease, saved-fade-out 0.4s ease 1.6s forwards;
+.appreciation-status-badge.modified:focus-visible {
+    outline: 2px solid var(--warning-text);
+    outline-offset: 2px;
 }
 
-.appreciation-status-badge.valid {
-    background: var(--item-active-bg);
-    color: var(--text-secondary);
-    width: auto;
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@keyframes saved-fade-in {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes saved-fade-out {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-    }
-}
-
-@keyframes pending-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.6;
-        transform: scale(0.95);
-    }
-}
-
-/* Generated state - AI appreciation created successfully */
-.appreciation-status-badge.generated {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-text);
-    width: auto;
-    border-radius: var(--radius-pill);
-    padding: 4px 10px;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* Collapse animation - text fades out, badge shrinks to icon */
 .appreciation-status-badge.icon-only {
     width: 26px;
     height: 26px;
@@ -442,10 +348,6 @@
         height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         padding 0.4s cubic-bezier(0.32, 0.72, 0, 1),
         border-radius 0.3s ease;
-}
-
-.appreciation-status-badge.icon-only .badge-text {
-    display: none;
 }
 
 @keyframes badge-pop-in {
@@ -464,25 +366,7 @@
     }
 }
 
-/* === Morph from Check to Warning === */
-@keyframes morph-to-warning {
-    0% {
-        background: rgba(var(--success-rgb), 0.15);
-        color: var(--success-text);
-    }
-
-    100% {
-        background: rgba(var(--warning-rgb), 0.13);
-        color: var(--warning-text);
-    }
-}
-
-.appreciation-status-badge.morphing-to-warning {
-    animation: morph-to-warning 0.4s ease forwards;
-}
-
-/* State classes for SpeechRecognitionManager */
-.appreciation-status-badge.is-saved,
+/* State class for SpeechRecognitionManager */
 .appreciation-status-badge.is-dictating {
     width: auto;
     border-radius: var(--radius-pill);
@@ -490,15 +374,6 @@
     gap: 6px;
     font-size: 12px;
     font-weight: 600;
-}
-
-.appreciation-status-badge.is-saved {
-    background: rgba(var(--success-rgb), 0.15);
-    color: var(--success-text);
-    animation: saved-fade-in 0.3s ease;
-}
-
-.appreciation-status-badge.is-dictating {
     background: var(--tonal-active-bg);
     color: var(--text-primary);
 }

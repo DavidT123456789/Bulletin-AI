@@ -687,11 +687,11 @@ export const SpeechRecognitionManager = {
                         autoSeed: false
                     });
                 }
-                this._setAppreciationBadge('saved');
+                this._setAppreciationBadge();
             } else {
                 const badge = document.getElementById('focusAppreciationBadge');
-                if (badge && (badge.classList.contains('is-dictating') || badge.classList.contains('dictating'))) {
-                    this._setAppreciationBadge('none');
+                if (badge?.classList.contains('is-dictating')) {
+                    this._setAppreciationBadge();
                 }
             }
         }
@@ -748,13 +748,13 @@ export const SpeechRecognitionManager = {
 
     /**
      * Met à jour le badge de statut de l'appréciation
-     * @param {'dictating'|'saved'|'none'} state
+     * @param {'dictating'} [state] - État forcé, ou omis pour restaurer l'état réel
      * @private
      */
     _setAppreciationBadge(state) {
         const studentId = this._studentId ?? FocusPanelManager.currentStudentId;
         const result = studentId ? appState.generatedResults?.find(r => r.id === studentId) : null;
-        FocusPanelStatus.updateAppreciationStatus(result, { state: state });
+        FocusPanelStatus.updateAppreciationStatus(result, state ? { state } : {});
     },
 
     /**
@@ -794,6 +794,5 @@ export const SpeechRecognitionManager = {
         FocusPanelManager._saveContext();
         FocusPanelManager._updateListRow?.(result);
         FocusPanelStatus.updateSourceIndicator?.(result);
-        FocusPanelStatus.updateAppreciationStatus(result, { state: 'saved' });
     }
 };

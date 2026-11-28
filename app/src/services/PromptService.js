@@ -2,10 +2,9 @@ import { appState } from '../state/State.js';
 import { DEFAULT_IA_CONFIG, DEFAULT_PROMPT_TEMPLATES } from '../config/Config.js';
 import {
     resolveStudentStatus,
-    resolveSensitiveStatusEntries,
+    filterAiEligibleStatuses,
     GDPR_SENSITIVE_TERMS_SOURCE,
-    GDPR_SENSITIVE_STATUS_PATTERN,
-    DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION
+    GDPR_SENSITIVE_STATUS_PATTERN
 } from '../config/academicConstants.js';
 import { Utils } from '../utils/Utils.js';
 import { StatsService } from './StatsService.js';
@@ -41,7 +40,7 @@ export const PromptService = {
      * Placeholder utilisé pour neutraliser une mention médico-scolaire (Art. 9 RGPD) dans les textes libres
      * @constant {string}
      */
-    SENSITIVE_PLACEHOLDER: '[AMÉNAGEMENT]',
+    SENSITIVE_PLACEHOLDER: '[MASQUÉ]',
 
     /**
      * Particules courtes exclues du découpage individuel des noms composés (ex: "DE LA ROCHE")
@@ -259,7 +258,7 @@ export const PromptService = {
 
     /**
      * Supprime ou pseudonymise toute occurrence du prénom/nom/initiales de l'élève cible,
-     * des camarades de classe ([CAMARADE]) et des mentions médico-scolaires Art. 9 ([AMÉNAGEMENT]).
+     * des camarades de classe ([CAMARADE]) et des mentions médico-scolaires Art. 9 ([MASQUÉ]).
      * Le nom de famille est systématiquement masqué ; le prénom cible est masqué lorsque l'anonymisation est active.
      * @param {string} text - Texte libre (appréciation passée, observation, note du journal, contexte, synthèse)
      * @param {Object} [identity] - Identité de l'élève cible ({ id, prenom, nom, classId })
@@ -487,25 +486,36 @@ export const PromptService = {
             }
             result = result.replace(/\[pr[eéèêëėẻẽ]nom\]/gi, cleanPrenom);
         }
+        const preserveInitialCase = (source, target) => (
+            source && source[0] === source[0].toUpperCase() && source[0] !== source[0].toLowerCase()
+                ? target[0].toUpperCase() + target.slice(1)
+                : target
+        );
         result = result
             .replace(/\s*\[nom\]/gi, '')
             .replace(/(?<![\p{L}\p{N}_])(des|les|ses|ces|certains|certaines|quelques)\s+\[camarade\]/giu, '$1 camarades')
             .replace(/(?<![\p{L}\p{N}_])(un|une|le|la|son|sa|ce|cet|cette)\s+\[camarade\]/giu, '$1 camarade')
             .replace(/\[camarade\]/gi, 'un camarade')
-            .replace(/(?<![\p{L}\p{N}_])(des|les|ses|ces)\s+\[am[eéèê]nagement\]/giu, '$1 aménagements')
-            .replace(/(?<![\p{L}\p{N}_])(un|cet|son|ce)\s+\[am[eéèê]nagement\]/giu, '$1 accompagnement')
-            .replace(/(?<![\p{L}\p{N}_])(l|d)(['’])\s*\[am[eéèê]nagement\]/giu, '$1$2accompagnement')
-            .replace(/\[am[eéèê]nagement\]/gi, 'un accompagnement adapté');
+            .replace(/(?<![\p{L}\p{N}_])(à)\s+l['’]\s*\[masqu[eé]\]/giu, (_, prep) => preserveInitialCase(prep, 'au suivi'))
+            .replace(/(?<![\p{L}\p{N}_])(de)\s+l['’]\s*\[masqu[eé]\]/giu, (_, prep) => preserveInitialCase(prep, 'du suivi'))
+            .replace(/(?<![\p{L}\p{N}_])(à)\s+\[masqu[eé]\]/giu, (_, prep) => preserveInitialCase(prep, 'au suivi'))
+            .replace(/(?<![\p{L}\p{N}_])(de)\s+\[masqu[eé]\]/giu, (_, prep) => preserveInitialCase(prep, 'de ce suivi'))
+            .replace(/(?<![\p{L}\p{N}_])(des|les|ses|ces)\s+\[masqu[eé]\]/giu, '$1 méthodes')
+            .replace(/(?<![\p{L}\p{N}_])(cet)\s+\[masqu[eé]\]/giu, (_, det) => preserveInitialCase(det, 'ce suivi'))
+            .replace(/(?<![\p{L}\p{N}_])(un|son|ce)\s+\[masqu[eé]\]/giu, '$1 suivi')
+            .replace(/(?<![\p{L}\p{N}_])(l)['’]\s*\[masqu[eé]\]/giu, (_, art) => preserveInitialCase(art, 'le suivi'))
+            .replace(/(?<![\p{L}\p{N}_])(d)['’]\s*\[masqu[eé]\]/giu, (_, prep) => preserveInitialCase(prep, "d'un suivi"))
+            .replace(/\[masqu[eé]\]/gi, 'un suivi régulier');
         return result;
     },
 
     /**
-     * Traduit localement les statuts élèves (notamment les statuts médico-scolaires relevant
-     * de l'Art. 9 RGPD : PAP, PPRE, ULIS, PAI, Geva-Sco, AESH) en consignes pédagogiques
-     * bienveillantes et neutres, sans jamais transmettre l'acronyme médical brut aux API externes.
+     * Traduit localement les statuts élèves éligibles (parcours, rôle, statut pédagogique non sensible)
+     * en consignes factuelles pour le prompt. Les dispositifs d'accompagnement et données sensibles
+     * relevant de l'Art. 9 RGPD (PAP, PPRE, ULIS, PAI, Geva-Sco, AESH…) sont strictement exclus (hors IA).
      * @param {string[]} statuses - Liste des statuts de l'élève
      * @param {string} [currentPeriod] - Période évaluée
-     * @returns {string} Consignes pédagogiques neutralisées
+     * @returns {string} Consignes factuelles pour les statuts non sensibles uniquement
      */
     getStatusInstructions(statuses, currentPeriod = appState.currentPeriod) {
         if (!Array.isArray(statuses) || statuses.length === 0) return '';
@@ -526,34 +536,18 @@ export const PromptService = {
             }
         };
 
-        const addSensitiveInstructionsFor = (rawStatus) => {
-            const sensitiveEntries = resolveSensitiveStatusEntries(rawStatus);
-            if (sensitiveEntries.length > 0) {
-                for (const entry of sensitiveEntries) {
-                    addInstruction(entry.promptInstruction);
-                }
-            } else {
-                addInstruction(DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION);
-            }
-        };
-
         for (const rawStatus of activeStatuses) {
             const trimmed = String(rawStatus || '').trim();
             if (!trimmed) continue;
 
             const statusMeta = resolveStudentStatus(trimmed);
             if (statusMeta) {
+                if (statusMeta.isGdprSensitive) continue;
                 const instruction = typeof statusMeta.formatPromptInstruction === 'function'
                     ? statusMeta.formatPromptInstruction(trimmed)
                     : statusMeta.promptInstruction;
                 addInstruction(instruction);
-
-                if (!statusMeta.isGdprSensitive && GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
-                    addSensitiveInstructionsFor(trimmed);
-                }
-            } else if (GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
-                addSensitiveInstructionsFor(trimmed);
-            } else {
+            } else if (!GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
                 addInstruction(`Contexte pédagogique : ${trimmed}.`);
             }
         }
@@ -880,6 +874,7 @@ export const PromptService = {
                 forGeneration: `${prefixForGeneration}${p === currentPeriod ? '[à générer]' : storedAppText}`,
                 forAnalysis: `${prefixForAnalysis}${storedAppText}`,
                 hasClassStats: Boolean(classStatsStr),
+                isCurrent: p === currentPeriod,
                 scrubbedApp
             };
         });
@@ -1004,6 +999,18 @@ export const PromptService = {
                 styleParts.push(`Traduis le niveau de réussite en termes qualitatifs, sans citer de moyenne chiffrée.`);
             }
         }
+        const hasMaskedMarkersForGeneration = /\[(?:MASQU[EÉ]|CAMARADE)\]/i.test(
+            `${periodRows.filter(r => !r.isCurrent).map(r => r.scrubbedApp).join('\n')}\n${periodContext}\n${journalSynthesis}`
+        );
+        const hasMaskedMarkersForAnalysis = hasMaskedMarkersForGeneration || /\[(?:MASQU[EÉ]|CAMARADE)\]/i.test(
+            periodRows.filter(r => r.isCurrent).map(r => r.scrubbedApp).join('\n')
+        );
+        if (hasMaskedMarkersForGeneration) {
+            styleParts.push(
+                `Si une donnée contient un marqueur entre crochets (${this.SENSITIVE_PLACEHOLDER} ou ${this.CLASSMATE_PLACEHOLDER}), n'y fais pas allusion et ne conserve jamais de crochets dans ta réponse.`
+            );
+        }
+
         styleParts.push(`Rédige en français courant sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`);
         styleParts.push(`Réponds uniquement avec le texte de l'appréciation en un seul paragraphe, sans titre, préambule, liste à puces ni guillemets.`);
 
@@ -1051,9 +1058,9 @@ export const PromptService = {
             ? periodRows[periodRows.length - 1].scrubbedApp
             : (rawCurrentApp ? this.scrubStudentIdentity(rawCurrentApp, studentIdentity, scrubOptions) : '');
 
-        // Neutralisation RGPD Art. 9 : on traduit localement les statuts en consignes pédagogiques neutres
+        // Filtrage RGPD Art. 9 : les statuts d'accompagnement sont strictement exclus (hors IA)
         const statusInstructions = this.getStatusInstructions(statuses, currentPeriod);
-        const statusLine = statusInstructions ? `\nConsignes d'accompagnement : ${statusInstructions}` : '';
+        const statusLine = statusInstructions ? `\nStatut particulier : ${statusInstructions}` : '';
 
         const specificInfoLine = periodContext ? `\nIndications de l'enseignant : "${periodContext}"` : '';
 
@@ -1115,7 +1122,7 @@ export const PromptService = {
         analysisHeaderParts.push(studentLine);
         analysisHeaderParts.push(`Période analysée : ${periodDisplay}`);
         if (statusInstructions) {
-            analysisHeaderParts.push(`Consignes d'accompagnement : ${statusInstructions}`);
+            analysisHeaderParts.push(`Statut particulier : ${statusInstructions}`);
         }
         if (periodContext) {
             analysisHeaderParts.push(`Indications de l'enseignant : "${periodContext}"`);
@@ -1137,6 +1144,9 @@ ${periodsInfoForAnalysis || 'Aucune donnée chiffrée disponible.'}${evolutionTe
 
 Appréciation de référence : "${currentPeriodAppreciation || 'N/A'}"${sparseDossierHint}`;
 
+        const analysisMaskedRule = hasMaskedMarkersForAnalysis
+            ? `\n6. Confidentialité : si une donnée contient un marqueur entre crochets (${this.SENSITIVE_PLACEHOLDER} ou ${this.CLASSMATE_PLACEHOLDER}), n'y fais pas allusion et ne conserve jamais de crochets dans ta réponse.`
+            : '';
         const analysisSystemTarget = isNeutralVoice ? "d'un élève" : `de l'élève ${studentIdentifier}`;
         const analysisSystem = `Tu es un enseignant${disciplineContext} réalisant le bilan analytique individuel ${analysisSystemTarget} pour le ${periodDisplay}, en vue d'un échange avec l'élève, ses parents et le professeur principal.
 
@@ -1152,7 +1162,7 @@ RÈGLES STRICTES DE FIABILITÉ :
 2. Cohérence arithmétique : respecte strictement le signe de « Écart élève/classe » (positif = au-dessus, négatif = en dessous) et le sens des évolutions.
 3. Cardinalité adaptative (0 à 3 items maximum par liste) : aucun remplissage générique si le dossier est succinct. S'il n'y a aucune fragilité objective, renvoie "vigilances": [].
 4. Lien causal et valeur ajoutée : chaque item de "nextSteps" doit proposer un levier concret et réaliste (méthode de travail, entraînement ciblé ou défi d'approfondissement si "vigilances" est vide), sans jamais paraphraser un point fort ou un point de vigilance par une formule vague (« Maintenir les efforts », « Continuer ainsi »). Si le dossier est trop succinct, laisse "nextSteps": [].
-5. Formulation : phrases courtes et claires (~15 mots max par puce) en français courant à la 3e personne (sans « tu », « vous », sans citer de note brute ni de sigle « T1 », « T2 », « T3 », « S1 », « S2 »). Conserve tel quel tout éventuel marqueur anonyme (${this.PRENOM_PLACEHOLDER}).`;
+5. Formulation : phrases courtes et claires (~15 mots max par puce) en français courant à la 3e personne (sans « tu », « vous », sans citer de note brute ni de sigle « T1 », « T2 », « T3 », « S1 », « S2 »). Conserve tel quel tout éventuel marqueur anonyme (${this.PRENOM_PLACEHOLDER}).${analysisMaskedRule}`;
 
         const analysisPrompt = `${analysisSystem}\n\n${analysisUser}`;
 
@@ -1296,6 +1306,7 @@ RÈGLES STRICTES DE FIABILITÉ :
                 raw: trimmed,
                 label: meta?.label || trimmed,
                 isGdprSensitive,
+                isExcludedFromAI: !instruction,
                 instruction
             };
         }).filter(item => item.raw);
@@ -1412,7 +1423,7 @@ RÈGLES STRICTES DE FIABILITÉ :
 
         const statusInstructions = this.getStatusInstructions(studentData.statuses, resolvedPeriod);
         if (statusInstructions) {
-            lines.push(`Accompagnement : ${statusInstructions}`);
+            lines.push(`Statut particulier : ${statusInstructions}`);
         }
 
         const rawContext = periods?.[resolvedPeriod]?.context;
@@ -1484,28 +1495,6 @@ RÈGLES STRICTES DE FIABILITÉ :
             ? this._computeEffectiveCharBudget(maxChars, { prenom: explicitPrenom, isAnonymous })
             : null;
 
-        const rules = [
-            ...(gender === 'féminin' || gender === 'masculin'
-                ? [`Genre de l'élève : ${gender} (pour les accords grammaticaux).`]
-                : []),
-            `Conserve la personne grammaticale du texte d'origine (je, nous, troisième personne ou tournure impersonnelle).`,
-            dossierBlock
-                ? `N'invente aucun fait, résultat ou compétence absents du texte ou des repères factuels du dossier, et ne cite jamais de moyenne chiffrée.`
-                : `N'invente aucun fait, résultat ou compétence absents du texte.`,
-            `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »), sauf si le texte d'origine ou la consigne de l'enseignant l'emploie déjà.`,
-            `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
-            ...(charBudget
-                ? [`Respecte impérativement un plafond maximal de ${charBudget} caractères (espaces compris).`]
-                : []),
-            ...(effectiveStyle.styleInstructions
-                ? [`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`]
-                : []),
-            `Réponds uniquement avec le texte brut révisé, sans titre, préambule, commentaire, formatage ni guillemets.`
-        ];
-
-        const disciplineContext = effectiveStyle.discipline ? ` en ${effectiveStyle.discipline}` : '';
-        const systemPrompt = `Tu es un enseignant${disciplineContext} qui retravaille une appréciation de bulletin scolaire français.\n\n--- RÈGLES ---\n${rules.map(r => `- ${r}`).join('\n')}`;
-
         let taskInstruction = '';
         switch (type) {
             case 'concise': {
@@ -1556,6 +1545,32 @@ RÈGLES STRICTES DE FIABILITÉ :
             default:
                 taskInstruction = `Reformule cette appréciation scolaire de manière fluide et naturelle.`;
         }
+
+        const hasMaskedMarkers = /\[(?:MASQU[EÉ]|CAMARADE)\]/i.test(`${sanitizedOriginal}\n${dossierBlock}\n${taskInstruction}`);
+        const rules = [
+            ...(gender === 'féminin' || gender === 'masculin'
+                ? [`Genre de l'élève : ${gender} (pour les accords grammaticaux).`]
+                : []),
+            `Conserve la personne grammaticale du texte d'origine (je, nous, troisième personne ou tournure impersonnelle).`,
+            dossierBlock
+                ? `N'invente aucun fait, résultat ou compétence absents du texte ou des repères factuels du dossier, et ne cite jamais de moyenne chiffrée.`
+                : `N'invente aucun fait, résultat ou compétence absents du texte.`,
+            `Ne t'adresse pas directement à l'élève (ni « tu » ni « vous »), sauf si le texte d'origine ou la consigne de l'enseignant l'emploie déjà.`,
+            ...(hasMaskedMarkers
+                ? [`Si le texte ou le dossier contient un marqueur entre crochets (${this.SENSITIVE_PLACEHOLDER} ou ${this.CLASSMATE_PLACEHOLDER}), n'y fais pas allusion et ne conserve jamais de crochets dans ta réponse.`]
+                : []),
+            `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
+            ...(charBudget
+                ? [`Respecte impérativement un plafond maximal de ${charBudget} caractères (espaces compris).`]
+                : []),
+            ...(effectiveStyle.styleInstructions
+                ? [`Consigne de l'enseignant (prioritaire) : ${effectiveStyle.styleInstructions}`]
+                : []),
+            `Réponds uniquement avec le texte brut révisé, sans titre, préambule, commentaire, formatage ni guillemets.`
+        ];
+
+        const disciplineContext = effectiveStyle.discipline ? ` en ${effectiveStyle.discipline}` : '';
+        const systemPrompt = `Tu es un enseignant${disciplineContext} qui retravaille une appréciation de bulletin scolaire français.\n\n--- RÈGLES ---\n${rules.map(r => `- ${r}`).join('\n')}`;
 
         const userPrompt = dossierBlock
             ? `${taskInstruction}\n\n--- REPÈRES FACTUELS DU DOSSIER (référence uniquement) ---\n${dossierBlock}\n\n--- TEXTE ACTUEL ---\n${sanitizedOriginal}\n---`
@@ -1627,7 +1642,7 @@ RÈGLES STRICTES DE FIABILITÉ :
                 return null;
         }
 
-        const hasAnonymizationMarkers = /\[(?:ÉLÈVE|AMÉNAGEMENT|CAMARADE)\]/i.test(sanitizedOriginal);
+        const hasAnonymizationMarkers = /\[(?:ÉLÈVE|MASQU[EÉ]|CAMARADE)\]/i.test(sanitizedOriginal);
         const effectiveStyle = this._getEffectiveStyle(this._resolveIaConfig());
         const discipline = effectiveStyle.discipline || (appState.currentSubject !== 'Générique' && appState.currentSubject !== 'MonStyle' ? appState.currentSubject : null);
         const rolePrefix = discipline
@@ -1638,7 +1653,7 @@ RÈGLES STRICTES DE FIABILITÉ :
             `N'invente aucun fait, résultat ou comportement absents du texte d'origine.`,
             `Ne cite aucun prénom d'élève.`,
             ...(hasAnonymizationMarkers
-                ? [`Si le texte contient un marqueur entre crochets ([ÉLÈVE], [AMÉNAGEMENT]), reformule de manière collective et impersonnelle sans jamais conserver de crochets dans ta réponse.`]
+                ? [`Si le texte contient un marqueur entre crochets ([ÉLÈVE], ${this.SENSITIVE_PLACEHOLDER}), reformule de manière collective et impersonnelle sans jamais conserver de crochets dans ta réponse.`]
                 : []),
             `Rédige en français courant, en un seul paragraphe, sans écriture inclusive (ni point médian) et sans sigles de période (« T1 », « T2 », « T3 », « S1 », « S2 »).`,
             ...(effectiveStyle.styleInstructions
@@ -1786,7 +1801,7 @@ RÈGLES STRICTES DE FIABILITÉ :
                     const text = p === currentPeriod ? d.context : d.appreciation;
                     return [this._parseGrade(d.grade), d.evaluationCount ?? null, (text || '').trim()];
                 }),
-                statuses: Utils.getActiveStatuses(Array.isArray(statuses) ? statuses : [], currentPeriod).sort(),
+                statuses: filterAiEligibleStatuses(Utils.getActiveStatuses(Array.isArray(statuses) ? statuses : [], currentPeriod)).sort(),
                 journal: this._extractJournalSynthesis(studentData, currentPeriod)
             });
 

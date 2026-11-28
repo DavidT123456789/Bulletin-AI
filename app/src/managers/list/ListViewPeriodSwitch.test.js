@@ -429,4 +429,61 @@ describe('ListView - Appreciation Toggle & Period Switch Transitions', () => {
 
         fullUpdateSpy.mockRestore();
     });
+
+    it('should handle dirtyOnly updates surgically: no-op when unchanged, toggle indicator in place when changed, and preserve row icons', () => {
+        const student = {
+            id: 's-dirty-only',
+            nom: 'BERNARD',
+            prenom: 'Thomas',
+            appreciation: 'Très bon trimestre.',
+            generationPeriod: 'S1',
+            promptHash: null,
+            studentData: {
+                prenom: 'Thomas',
+                periods: {
+                    S1: { grade: 15.0, appreciation: 'Très bon trimestre.' },
+                    S2: { grade: 16.5, appreciation: 'Très bon semestre.' }
+                }
+            }
+        };
+
+        appState.currentPeriod = 'S2';
+        student.generationPeriod = 'S2';
+        student.appreciation = 'Très bon semestre.';
+        appState.generatedResults = [student];
+
+        ListViewRenderer.renderFresh(container, [student], ['S1', 'S2'], 1);
+        const row = container.querySelector('.student-row[data-student-id="s-dirty-only"]');
+        const evoIconBefore = row.querySelector('.evolution-cell iconify-icon');
+        const copyIconBefore = row.querySelector('.btn-row-quick-copy iconify-icon');
+        expect(evoIconBefore).not.toBeNull();
+        expect(copyIconBefore).not.toBeNull();
+
+        const fullUpdateSpy = vi.spyOn(ListViewRenderer, 'updateRowContent');
+        const dirtyOnlySpy = vi.spyOn(ListViewRenderer, 'updateDirtyIndicatorOnly');
+
+        // 1. Unchanged dirty state (false -> false): strict no-op, zero DOM mutation
+        ListViewRenderer.updateStudentRow('s-dirty-only', { dirtyOnly: true, skipGenerateButtonUpdate: true });
+        expect(fullUpdateSpy).not.toHaveBeenCalled();
+        expect(dirtyOnlySpy).not.toHaveBeenCalled();
+        expect(row.querySelector('.evolution-cell iconify-icon')).toBe(evoIconBefore);
+        expect(row.querySelector('.btn-row-quick-copy iconify-icon')).toBe(copyIconBefore);
+
+        // 2. Dirty state flips (false -> true): updates indicator only, row & icons preserved
+        student.promptHash = 'v3:stale_hash';
+        ListViewRenderer.updateStudentRow('s-dirty-only', { dirtyOnly: true, skipGenerateButtonUpdate: true });
+        expect(fullUpdateSpy).not.toHaveBeenCalled();
+        expect(dirtyOnlySpy).toHaveBeenCalledTimes(1);
+        expect(row.querySelector('.dirty-indicator')).not.toBeNull();
+        expect(row.querySelector('.evolution-cell iconify-icon')).toBe(evoIconBefore);
+        expect(row.querySelector('.btn-row-quick-copy iconify-icon')).toBe(copyIconBefore);
+
+        // 3. Repeated call while already dirty (true -> true): strict no-op (no fallback to updateRowContent!)
+        ListViewRenderer.updateStudentRow('s-dirty-only', { dirtyOnly: true, skipGenerateButtonUpdate: true });
+        expect(fullUpdateSpy).not.toHaveBeenCalled();
+        expect(dirtyOnlySpy).toHaveBeenCalledTimes(1);
+
+        fullUpdateSpy.mockRestore();
+        dirtyOnlySpy.mockRestore();
+    });
 });

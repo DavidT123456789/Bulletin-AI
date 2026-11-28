@@ -595,8 +595,57 @@ describe('FocusPanelStatus', () => {
                 const badge = document.getElementById('focusAppreciationBadge');
                 expect(badge.classList.contains('visible')).toBe(true);
                 expect(badge.classList.contains('modified')).toBe(true);
+                expect(badge.getAttribute('role')).toBe('button');
+                expect(badge.getAttribute('tabindex')).toBe('0');
                 expect(badge.getAttribute('data-tooltip')).toContain('Cliquer pour marquer comme vérifiée');
+
+                FocusPanelStatus.updateAppreciationStatus(student, { state: 'uptodate' });
+                expect(badge.classList.contains('visible')).toBe(false);
+                expect(badge.hasAttribute('role')).toBe(false);
+                expect(badge.hasAttribute('tabindex')).toBe(false);
             }
+        });
+
+        it('préserve le nœud <iconify-icon> existant quand l\'état du badge ou de la source ne change pas', () => {
+            document.body.innerHTML = `
+                <span id="focusAppreciationBadge" class="appreciation-status-badge tooltip"></span>
+                <span id="focusAiIndicator" class="ai-indicator tooltip" style="display: none;"></span>
+            `;
+
+            const manualDirtyStudent = {
+                id: 'student-1',
+                promptHash: 'hash_initial',
+                generationPeriod: 'T1',
+                appreciation: 'Appréciation enseignant.',
+                wasGenerated: false,
+                appreciationSource: 'manual',
+                studentData: {
+                    context: 'MODIFIED',
+                    periods: { T1: { appreciation: 'Appréciation enseignant.' } }
+                }
+            };
+
+            FocusPanelStatus.updateAppreciationStatus(manualDirtyStudent);
+            FocusPanelStatus.updateSourceIndicator(manualDirtyStudent);
+
+            const badgeIconBefore = document.querySelector('#focusAppreciationBadge iconify-icon');
+            const sourceIconBefore = document.querySelector('#focusAiIndicator iconify-icon');
+            expect(badgeIconBefore).not.toBeNull();
+            expect(sourceIconBefore).not.toBeNull();
+
+            // Appels répétés avec le même état : aucune reconstruction DOM des icônes
+            FocusPanelStatus.updateAppreciationStatus(manualDirtyStudent);
+            FocusPanelStatus.updateSourceIndicator(manualDirtyStudent);
+
+            expect(document.querySelector('#focusAppreciationBadge iconify-icon')).toBe(badgeIconBefore);
+            expect(document.querySelector('#focusAiIndicator iconify-icon')).toBe(sourceIconBefore);
+
+            // Ré-affichage garanti après masquage temporaire (ex: showAppreciationSkeleton pendant régénération)
+            const sourceIndicator = document.getElementById('focusAiIndicator');
+            sourceIndicator.style.display = 'none';
+            FocusPanelStatus.updateSourceIndicator(manualDirtyStudent);
+            expect(sourceIndicator.style.display).toBe('inline-flex');
+            expect(document.querySelector('#focusAiIndicator iconify-icon')).toBe(sourceIconBefore);
         });
     });
 });

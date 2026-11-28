@@ -13,6 +13,7 @@ import { FocusPanelHistory } from './FocusPanelHistory.js';
 import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { StorageManager } from './StorageManager.js';
 import { ListViewManager } from './ListViewManager.js';
+import { HistoryManager } from './HistoryManager.js';
 
 /** @type {import('./FocusPanelManager.js').FocusPanelManager|null} */
 let panel = null;
@@ -21,6 +22,7 @@ let panel = null;
 let UI = null;
 
 const TONE_TYPES = new Set(['encouraging', 'demanding']);
+const CUSTOM_REFINE_HISTORY_ID = 'focusCustomRefine';
 
 export const FocusPanelRefinement = {
 
@@ -109,6 +111,7 @@ export const FocusPanelRefinement = {
         container.classList.add('is-custom-mode');
         input.disabled = false;
         this._syncCustomSubmitState();
+        HistoryManager.pushState(CUSTOM_REFINE_HISTORY_ID, (opts) => this._handleCustomHistoryBack(opts));
         input.focus();
         if (input.value) {
             input.select();
@@ -116,12 +119,34 @@ export const FocusPanelRefinement = {
     },
 
     /**
+     * Gère l'appui sur la touche Retour (popstate) lorsque la barre de consigne libre est ouverte.
+     * Si une retouche libre est en cours, annule d'abord la génération (comme Échap) et maintient
+     * la barre ouverte pour permettre de corriger la consigne.
+     * @param {Object} [options={}]
+     * @private
+     */
+    _handleCustomHistoryBack(options = {}) {
+        const submitBtn = document.getElementById('focusCustomRefineSubmitBtn');
+        const studentId = panel?.currentStudentId;
+        if (submitBtn?.classList.contains('is-generating') && studentId && panel?._activeGenerations?.has(studentId)) {
+            panel._cancelGenerationForStudent(studentId);
+            if (this.isCustomInputOpen()) {
+                HistoryManager.pushState(CUSTOM_REFINE_HISTORY_ID, (opts) => this._handleCustomHistoryBack(opts));
+            }
+            return;
+        }
+        this.closeCustomInput({ causedByHistory: Boolean(options?.causedByHistory) });
+    },
+
+    /**
      * Referme la barre de consigne libre et restaure les puces.
      * @param {Object} [options={}]
      * @param {boolean} [options.clear=false]
      * @param {boolean} [options.restoreFocus=false]
+     * @param {boolean} [options.causedByHistory=false]
+     * @param {boolean} [options.silentHistory=false]
      */
-    closeCustomInput({ clear = false, restoreFocus = false } = {}) {
+    closeCustomInput({ clear = false, restoreFocus = false, causedByHistory = false, silentHistory = false } = {}) {
         const container = document.getElementById('focusRefinementOptions');
         const input = document.getElementById('focusCustomRefineInput');
         const submitBtn = document.getElementById('focusCustomRefineSubmitBtn');
@@ -131,6 +156,9 @@ export const FocusPanelRefinement = {
         if (input) {
             if (clear) input.value = '';
             input.disabled = false;
+            if (!restoreFocus && document.activeElement === input) {
+                input.blur();
+            }
         }
         if (closeBtn) {
             closeBtn.disabled = false;
@@ -149,6 +177,10 @@ export const FocusPanelRefinement = {
             }
         }
         this._syncCustomSubmitState();
+
+        if (!causedByHistory && !silentHistory && HistoryManager.isOpen(CUSTOM_REFINE_HISTORY_ID)) {
+            HistoryManager.handleManualClose(CUSTOM_REFINE_HISTORY_ID);
+        }
 
         if (restoreFocus) {
             document.getElementById('focusCustomRefineTrigger')?.focus?.();
@@ -680,7 +712,7 @@ export const FocusPanelRefinement = {
                     }
 
                     FocusPanelStatus.updateWordCount();
-                    FocusPanelStatus.updateAppreciationStatus(result, { state: 'generated' });
+                    FocusPanelStatus.updateAppreciationStatus(result);
                     FocusPanelStatus.updateSourceIndicator(result);
                 }
 

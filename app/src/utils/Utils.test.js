@@ -1099,7 +1099,7 @@ describe('Utils', () => {
     });
 
     describe('buildStudentAnalysisSnapshot', () => {
-        it('cloisonne le compteur du journal et les statuts datés sur la période ciblée', () => {
+        it('cloisonne le compteur du journal et les statuts datés sur la période ciblée (en excluant les statuts sensibles RGPD)', () => {
             const student = {
                 journal: [
                     { id: 'j1', period: 'T1', note: 'Participation T1' },
@@ -1107,7 +1107,7 @@ describe('Utils', () => {
                     { id: 'j3', note: 'Note sans période' }
                 ],
                 studentData: {
-                    statuses: ['DYS', 'Nouveau T2', 'Départ T3'],
+                    statuses: ['DYS', 'PAP', 'Délégué', 'Nouveau T2', 'Départ T3'],
                     periods: {
                         T1: { grade: 13.5, appreciation: 'Bon T1', context: 'Sérieux' },
                         T2: { grade: 14.0, appreciation: 'Bon T2', context: '' }
@@ -1118,11 +1118,11 @@ describe('Utils', () => {
             const snapT1 = Utils.buildStudentAnalysisSnapshot(student, 'T1');
             expect(snapT1.period).toBe('T1');
             expect(snapT1.journalCount).toBe(2);
-            expect(snapT1.statuses).toEqual(['DYS']);
+            expect(snapT1.statuses).toEqual(['Délégué']);
 
             const snapT2 = Utils.buildStudentAnalysisSnapshot(student, 'T2');
             expect(snapT2.journalCount).toBe(2);
-            expect(snapT2.statuses).toEqual(['DYS', 'Nouveau T2']);
+            expect(snapT2.statuses).toEqual(['Délégué', 'Nouveau T2']);
         });
 
         it('getStudentAnalysisForPeriod résout la période ciblée, isole les périodes et gère le repli legacy sans fuite', () => {

@@ -142,7 +142,7 @@ export const JournalManager = {
         StorageManager.saveAppState();
 
         // Trigger status refresh to detect dirty state
-        FocusPanelStatus.refreshAppreciationStatus();
+        FocusPanelStatus.refreshAppreciationStatus({ dirtyOnly: true });
         bus.emit(EVENTS.JOURNAL_UPDATED, { studentId });
 
         return entry;
@@ -168,7 +168,7 @@ export const JournalManager = {
         StorageManager.saveAppState();
 
         // Trigger status refresh to detect dirty state
-        FocusPanelStatus.refreshAppreciationStatus();
+        FocusPanelStatus.refreshAppreciationStatus({ dirtyOnly: true });
         bus.emit(EVENTS.JOURNAL_UPDATED, { studentId });
 
         return true;
@@ -225,7 +225,7 @@ export const JournalManager = {
         StorageManager.saveAppState();
 
         // Trigger status refresh to detect dirty state
-        FocusPanelStatus.refreshAppreciationStatus();
+        FocusPanelStatus.refreshAppreciationStatus({ dirtyOnly: true });
         bus.emit(EVENTS.JOURNAL_UPDATED, { studentId });
 
         return entry;
@@ -584,6 +584,60 @@ export const JournalManager = {
     },
 
     /**
+     * Build tooltip text for a single tag below the AI threshold (SSOT)
+     * @param {string} tagLabel
+     * @param {number} threshold
+     * @returns {string}
+     */
+    getTagBelowThresholdTooltip(tagLabel, threshold) {
+        return `${tagLabel} : sous le seuil ≥${threshold} (tag seul non retenu)`;
+    },
+
+    /**
+     * Build tooltip HTML for an isolated journal entry below threshold (SSOT)
+     * @param {number} threshold
+     * @returns {string}
+     */
+    getIsolatedEntryTooltip(threshold) {
+        return `Observation isolée (&lt; ${threshold}×) — non transmise à l'IA<br>Ajoutez une précision ou répétez l'observation`;
+    },
+
+    /**
+     * Compute AI visual state for a single journal entry and its visible tags (SSOT shared by
+     * initial HTML rendering and surgical in-place threshold/Hors-IA updates).
+     * @param {Object} entry - Journal entry
+     * @param {Object} tagCounts - Pre-computed non-private tag counts { tagId: count }
+     * @param {number} threshold - Active threshold
+     * @param {string|null} [classId=null] - Student class ID
+     * @returns {{ isPrivate: boolean, isIsolated: boolean, isolatedTooltip: string, tagStates: Array<{ tagId: string, tag: Object, isBelow: boolean, tooltip: string }> }}
+     */
+    getEntryVisualState(entry, tagCounts, threshold, classId = null) {
+        const isPrivate = entry?.isPrivate === true;
+        const includeInAI = this.isIncludedInAI(classId);
+        const hasNote = this._hasWrittenNote(entry);
+        const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
+        const visibleTagIds = (Array.isArray(entry?.tags) ? entry.tags : []).filter(tagId => tagId !== 'remarque');
+
+        const tagStates = [];
+        for (const tagId of visibleTagIds) {
+            const tag = this.getTag(tagId);
+            if (!tag) continue;
+            const isBelow = !isPrivate && includeInAI && !hasNote && (tagCounts[tagId] || 0) < threshold;
+            const tooltip = isBelow && !isIsolated
+                ? this.getTagBelowThresholdTooltip(tag.label, threshold)
+                : '';
+            tagStates.push({ tagId, tag, isBelow, tooltip });
+        }
+
+        return {
+            isPrivate,
+            isIsolated,
+            isolatedTooltip: isIsolated ? this.getIsolatedEntryTooltip(threshold) : '',
+            tagStates
+        };
+    },
+
+    /**
      * Render a single journal entry card HTML (shared by renderTimeline & inline edit crossfade)
      * @param {Object} entry - Journal entry
      * @param {Object} tagCounts - Pre-computed tag counts
@@ -593,21 +647,17 @@ export const JournalManager = {
      * @returns {string} HTML string
      */
     renderEntryCard(entry, tagCounts, threshold, classId = null, extraClass = '') {
-        const isPrivate = entry.isPrivate === true;
-        const includeInAI = this.isIncludedInAI(classId);
-        const hasNote = this._hasWrittenNote(entry);
-        const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
+        const { isPrivate, isIsolated, isolatedTooltip, tagStates } = this.getEntryVisualState(
+            entry,
+            tagCounts,
+            threshold,
+            classId
+        );
 
-        const visibleTags = (Array.isArray(entry.tags) ? entry.tags : []).filter(tagId => tagId !== 'remarque');
-        const tagsHTML = visibleTags.map(tagId => {
-            const tag = this.getTag(tagId);
-            if (!tag) return '';
-            const isTagBelow = !isPrivate && includeInAI && !hasNote && (tagCounts[tagId] || 0) < threshold;
-            const belowClass = isTagBelow ? ' below-threshold' : '';
-            const tagTooltipAttr = isTagBelow && !isIsolated
-                ? ` data-tooltip="${Utils.escapeHtml(tag.label)} : sous le seuil ≥${threshold} (tag seul non retenu)"`
-                : '';
-            return `<span class="journal-tag${belowClass}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}"${tagTooltipAttr}>
+        const tagsHTML = tagStates.map(({ tagId, tag, isBelow, tooltip }) => {
+            const belowClass = isBelow ? ' below-threshold' : '';
+            const tagTooltipAttr = tooltip ? ` data-tooltip="${Utils.escapeHtml(tooltip)}"` : '';
+            return `<span class="journal-tag${belowClass}" data-tag-id="${Utils.escapeHtml(String(tagId))}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}"${tagTooltipAttr}>
                 <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
             </span>`;
         }).join('');
@@ -620,7 +670,7 @@ export const JournalManager = {
         const isolatedClass = isIsolated ? 'isolated' : '';
 
         const infoIcon = isIsolated
-            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (&lt; ${threshold}×) — non transmise à l'IA<br>Ajoutez une précision ou répétez l'observation"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
+            ? `<span class="journal-entry-info tooltip" data-tooltip="${isolatedTooltip}"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
             : '';
 
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));

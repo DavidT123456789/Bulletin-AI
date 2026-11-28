@@ -975,6 +975,8 @@ describe('UIManager', () => {
             btn.className = 'btn btn-small btn-ai-outline';
 
             UI.setGenerateButtonState(btn, 'idle');
+            const iconNode = btn.querySelector('iconify-icon');
+            expect(iconNode).not.toBeNull();
             expect(btn.classList.contains('btn-ai')).toBe(true);
             expect(btn.classList.contains('btn-ai-outline')).toBe(false);
             expect(btn.disabled).toBe(false);
@@ -982,6 +984,7 @@ describe('UIManager', () => {
             expect(btn.textContent.trim()).toBe('Générer');
 
             UI.setGenerateButtonState(btn, 'done');
+            expect(btn.querySelector('iconify-icon')).toBe(iconNode);
             expect(btn.classList.contains('btn-neutral')).toBe(true);
             expect(btn.classList.contains('btn-ai')).toBe(false);
             expect(btn.innerHTML).toContain('solar:refresh-bold');
@@ -992,6 +995,10 @@ describe('UIManager', () => {
             expect(btn.classList.contains('btn-neutral')).toBe(false);
             expect(btn.innerHTML).toContain('Actualiser');
             expect(btn.innerHTML).toContain('<kbd class="kbd-hint">Ctrl ↵</kbd>');
+
+            const iconWithSuffix = btn.querySelector('iconify-icon');
+            UI.setGenerateButtonState(btn, 'done', { suffixHtml: '<kbd class="kbd-hint">Ctrl ↵</kbd>' });
+            expect(btn.querySelector('iconify-icon')).toBe(iconWithSuffix);
 
             UI.setGenerateButtonState(btn, 'loading');
             expect(btn.classList.contains('btn-neutral')).toBe(true);

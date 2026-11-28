@@ -273,7 +273,7 @@
         inset: -11px;
     }
 
-    .focus-appreciation-header .appreciation-status-badge:is(.saved, .is-saved, .is-dictating) {
+    .focus-appreciation-header .appreciation-status-badge.is-dictating {
         padding: 0 8px;
         gap: 4px;
     }

@@ -915,7 +915,7 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(userPrompt).not.toMatch(/\b(Lucas|Martin|Chloé|Bernard|Théo|PAP)\b/i);
         expect(userPrompt).not.toMatch(/dyslexi/i);
         expect(userPrompt).toContain('[CAMARADE]');
-        expect(userPrompt).toContain('[AMÉNAGEMENT]');
+        expect(userPrompt).toContain('[MASQUÉ]');
         expect(userPrompt).toContain('Un petit effort');
 
         // 2. handleClassAnalysisActions : synthèse éditée par l'enseignant nettoyée avant envoi IA
@@ -963,7 +963,7 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         expect(sentPrompt).not.toMatch(/\b(Lucas|Martin|Chloé|ULIS)\b/i);
         expect(sentPrompt).not.toMatch(/dyslexi/i);
         expect(sentPrompt).toContain('[ÉLÈVE]');
-        expect(sentPrompt).toContain('[AMÉNAGEMENT]');
+        expect(sentPrompt).toContain('[MASQUÉ]');
         expect(sentPrompt).toContain('un petit relâchement');
     });
 

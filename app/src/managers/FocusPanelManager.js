@@ -111,7 +111,7 @@ export const FocusPanelManager = {
 
         FocusPanelJournal.init({
             getCurrentStudentId: () => this.currentStudentId,
-            onStatusRefresh: () => FocusPanelStatus.refreshAppreciationStatus(),
+            onStatusRefresh: (options) => FocusPanelStatus.refreshAppreciationStatus(options),
             bindScrollAffordances: (el) => this.bindScrollAffordances(el)
         });
 
@@ -148,7 +148,7 @@ export const FocusPanelManager = {
             getCurrentStudentId: () => this.currentStudentId,
             getActiveGenerations: () => this._activeGenerations,
             onUpdateGenerateButton: (result) => this._updateGenerateButton(result),
-            onUpdateListRow: (result) => this._updateListRow(result)
+            onUpdateListRow: (result, options) => this._updateListRow(result, options)
         });
 
         FocusPanelNavigation.init({
@@ -333,6 +333,7 @@ export const FocusPanelManager = {
         this.isCreationMode = false;
 
         if (this.currentStudentId && this.currentStudentId !== studentId) {
+            FocusPanelNavigation.cancelActiveTransition?.();
             SpeechRecognitionManager.abort();
             this._saveContext();
             FocusPanelJournal.closeThresholdPopover?.();
@@ -500,7 +501,7 @@ export const FocusPanelManager = {
 
         SpeechSynthesisManager.cancel();
         UI?.cancelHtmlReveal?.(document.getElementById('focusAppreciationText'));
-        FocusPanelRefinement.closeCustomInput?.({ clear: true });
+        FocusPanelRefinement.closeCustomInput?.({ clear: true, silentHistory: discardChanges });
         FocusPanelHistory.closePopover?.();
         FocusPanelJournal.closeThresholdPopover?.();
         FocusPanelJournal.resetEditingState?.({ silentHistory: discardChanges });
@@ -831,9 +832,10 @@ export const FocusPanelManager = {
     /**
      * Met à jour une ligne dans la vue liste
      * @param {Object} result - Données de l'élève
+     * @param {Object} [options] - Options chirurgicales transmises à ListViewManager.updateStudentRow
      * @private
      */
-    async _updateListRow(result) {
+    async _updateListRow(result, options) {
         if (!result) return;
 
         const filteredIndex = appState.filteredResults?.findIndex(r => r.id === result.id);
@@ -860,7 +862,9 @@ export const FocusPanelManager = {
             }
 
             if (manager && manager.updateStudentRow) {
-                const updated = manager.updateStudentRow(result.id);
+                const updated = options
+                    ? manager.updateStudentRow(result.id, options)
+                    : manager.updateStudentRow(result.id);
                 if (!updated && AppreciationsManager) {
                     AppreciationsManager.renderResults(result.id, 'new');
                 }

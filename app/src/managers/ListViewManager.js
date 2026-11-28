@@ -296,7 +296,9 @@ export const ListViewManager = {
         // Determine status for this result
         // Update status cell
         if (statusCell) {
+            TooltipsUI.cleanupTooltipsIn?.(statusCell);
             statusCell.innerHTML = this._getStudentStatusCellContent(result);
+            TooltipsUI.initTooltips?.(statusCell);
         }
 
         // 1. Extract plain text only when typewriter animation is requested

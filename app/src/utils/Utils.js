@@ -4,7 +4,7 @@ import { MODEL_SHORT_NAMES } from '../config/models.js';
 import { MAX_CHARS_CONFIG } from '../config/defaults.js';
 import { DOMHelper } from './DOMHelper.js';
 import { mergeHistoryPerPeriod } from './HistoryUtils.js';
-import { resolveStudentStatus, getPeriodsForSystem, getGradeCssClass } from '../config/academicConstants.js';
+import { resolveStudentStatus, filterAiEligibleStatuses, getPeriodsForSystem, getGradeCssClass } from '../config/academicConstants.js';
 import {
     EPICENE_FIRST_NAMES,
     FEMININ_FIRST_NAMES,
@@ -1729,7 +1729,7 @@ export const Utils = {
         const targetPeriod = period || appState.currentPeriod || result?.studentData?.currentPeriod;
         const studentData = result?.studentData || {};
         const periodData = studentData.periods?.[targetPeriod] || {};
-        const activeStatuses = this.getActiveStatuses(studentData.statuses || [], targetPeriod);
+        const activeStatuses = filterAiEligibleStatuses(this.getActiveStatuses(studentData.statuses || [], targetPeriod));
         const periodJournalCount = Array.isArray(result?.journal)
             ? result.journal.filter(e => e && (!e.period || e.period === targetPeriod)).length
             : 0;

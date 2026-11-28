@@ -759,7 +759,32 @@ export const UI = {
         } else {
             btn.classList?.remove('disabled');
         }
-        const nextHtml = `<iconify-icon class="iconify-inline${spinClass}" icon="${config.icon}"></iconify-icon> <span>${label}</span>${suffixHtml}`;
+        const iconClassName = `iconify-inline${spinClass}`;
+        const existingIcon = btn.querySelector?.(':scope > iconify-icon.iconify-inline');
+        const existingLabel = btn.querySelector?.(':scope > span');
+        const hasStopSquare = Boolean(btn.querySelector?.('.stop-square-svg'));
+        const expectedChildCount = options.suffixHtml ? 3 : 2;
+
+        if (
+            existingIcon &&
+            existingLabel &&
+            !hasStopSquare &&
+            btn.children?.length === expectedChildCount &&
+            (!options.suffixHtml || btn.lastElementChild?.outerHTML === options.suffixHtml)
+        ) {
+            if (existingIcon.className !== iconClassName) {
+                existingIcon.className = iconClassName;
+            }
+            if (existingIcon.getAttribute('icon') !== config.icon) {
+                existingIcon.setAttribute('icon', config.icon);
+            }
+            if (existingLabel.textContent !== label) {
+                existingLabel.textContent = label;
+            }
+            return label;
+        }
+
+        const nextHtml = `<iconify-icon class="${iconClassName}" icon="${config.icon}"></iconify-icon> <span>${label}</span>${suffixHtml}`;
         if (btn.innerHTML !== nextHtml) {
             btn.innerHTML = nextHtml;
         }
@@ -1023,33 +1048,33 @@ export const UI = {
         const isKeyConfigured = hasValidApiKey(providerId, { state: appState });
         const iconEl = DOM.dashModelLabel?.querySelector('.dash-model-icon') || DOM.dashModelLabel?.querySelector('iconify-icon:not(.dash-model-chevron)');
 
+        const nextIcon = !isKeyConfigured ? 'solar:key-linear' : (providerConfig?.icon || null);
+        const nextProviderClass = isKeyConfigured ? (providerConfig?.class || null) : null;
+
         if (iconEl) {
             Array.from(iconEl.classList)
-                .filter(c => c.startsWith('provider-'))
+                .filter(c => c.startsWith('provider-') && c !== nextProviderClass)
                 .forEach(c => iconEl.classList.remove(c));
+            if (nextProviderClass && !iconEl.classList.contains(nextProviderClass)) {
+                iconEl.classList.add(nextProviderClass);
+            }
+            if (nextIcon && iconEl.getAttribute('icon') !== nextIcon) {
+                iconEl.setAttribute('icon', nextIcon);
+            }
         }
 
         let tooltip = '';
         if (!isKeyConfigured) {
-            if (DOM.dashModelName) {
+            if (DOM.dashModelName && DOM.dashModelName.textContent !== "Configurer l'IA") {
                 DOM.dashModelName.textContent = "Configurer l'IA";
-            }
-            if (iconEl) {
-                iconEl.setAttribute('icon', 'solar:key-linear');
             }
             tooltip = 'Aucune clé active<br>Albert (Gouv.fr) ou Gemini — gratuits';
         } else {
             const modelName = MODEL_SHORT_NAMES?.[appState.currentAIModel] || appState.currentAIModel || 'IA';
             const shortModelName = providerId === 'albert' ? 'Albert' : modelName.split(' ')[0];
 
-            if (DOM.dashModelName) {
+            if (DOM.dashModelName && DOM.dashModelName.textContent !== shortModelName) {
                 DOM.dashModelName.textContent = shortModelName;
-            }
-            if (iconEl && providerConfig) {
-                iconEl.setAttribute('icon', providerConfig.icon);
-                if (providerConfig.class) {
-                    iconEl.classList.add(providerConfig.class);
-                }
             }
             tooltip = modelName;
         }
@@ -1352,6 +1377,14 @@ export const UI = {
     updateTooltip(element, content) {
         // Delegate to the specialized manager to avoid duplicates
         TooltipsUI.updateTooltip(element, content);
+    },
+
+    /**
+     * Nettoie les tooltips Tippy attachés à un élément ou un conteneur
+     * @param {HTMLElement} container - L'élément ou le conteneur cible
+     */
+    cleanupTooltipsIn(container) {
+        TooltipsUI.cleanupTooltipsIn(container);
     },
 
     /**

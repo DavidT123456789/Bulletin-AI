@@ -402,7 +402,7 @@ export const ListViewEvents = {
                     ListViewRenderer.updateStudentRow(studentId);
                     if (FocusPanelManager.currentStudentId === studentId) {
                         FocusPanelStatus.updateSourceIndicator(result);
-                        FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                        FocusPanelStatus.updateAppreciationStatus(result);
                     }
                 }
                 return;

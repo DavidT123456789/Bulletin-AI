@@ -61,10 +61,9 @@ export const GlobalListeners = {
             if (!studentId) return;
 
             try {
-
-                // Update the specific row dirty indicator
+                // Update the specific row dirty indicator surgically (no full row/icon rebuild)
                 if (ListViewManager?.updateStudentRow) {
-                    ListViewManager.updateStudentRow(studentId);
+                    ListViewManager.updateStudentRow(studentId, { dirtyOnly: true, skipGenerateButtonUpdate: true });
                 }
 
                 // CRITICAL: Also update the "Actualiser" button badge count
@@ -87,16 +86,16 @@ export const GlobalListeners = {
                 try {
                     if (!ListViewManager?.updateStudentRow) return;
 
-                    // Update rows with appreciations that have a hash (scoped to affected class when specified)
+                    // Update dirty indicator in place for affected rows (no full row rebuilds, single button refresh)
                     const results = appState.generatedResults || [];
                     for (const result of results) {
                         if (targetClassId && result.classId && result.classId !== targetClassId) continue;
                         if (result.promptHash || result.generationSnapshot) {
-                            ListViewManager.updateStudentRow(result.id);
+                            ListViewManager.updateStudentRow(result.id, { dirtyOnly: true, skipGenerateButtonUpdate: true });
                         }
                     }
 
-                    // Update the "Actualiser" button to reflect new dirty counts
+                    // Update the "Actualiser" button once to reflect new dirty counts
                     if (ResultsUIManager?.updateGenerateButtonState) {
                         ResultsUIManager.updateGenerateButtonState();
                     }

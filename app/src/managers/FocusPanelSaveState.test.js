@@ -667,7 +667,7 @@ describe('FocusPanelManager and Save State integrity', () => {
             expect(generateBtn.classList.contains('is-loading')).toBe(false);
         });
 
-        it('keeps Annuler active and secondary buttons disabled during progressive reveal, then unlocks all together with the generated badge', async () => {
+        it('keeps Annuler active and secondary buttons disabled during progressive reveal, then unlocks all together with the status badge hidden', async () => {
             vi.useFakeTimers();
             try {
                 const mockAm = {
@@ -705,13 +705,13 @@ describe('FocusPanelManager and Save State integrity', () => {
                 await vi.advanceTimersByTimeAsync(500);
                 await genPromise;
 
-                // Right after reveal completes: everything unlocks together and generated badge is preserved
+                // Right after reveal completes: everything unlocks together and status badge stays hidden
                 expect(generateBtn.classList.contains('is-loading')).toBe(false);
                 expect(generateBtn.textContent).toContain('Régénérer');
                 expect(copyBtn.classList.contains('disabled')).toBe(false);
                 expect(conciseBtn.classList.contains('disabled')).toBe(false);
-                expect(badge.classList.contains('generated')).toBe(true);
-                expect(badge.classList.contains('visible')).toBe(true);
+                expect(badge.classList.contains('generated')).toBe(false);
+                expect(badge.classList.contains('visible')).toBe(false);
             } finally {
                 vi.useRealTimers();
             }

@@ -314,7 +314,7 @@ describe('FocusPanel — Concurrence IA lors d\'un changement de période ou d\'
         expect(sentPrompt).not.toMatch(/\b(Arthur|Dupont|Chloé|Bernard|PAP)\b/i);
         expect(sentPrompt).not.toMatch(/dyslexi/i);
         expect(sentPrompt).toContain('[CAMARADE]');
-        expect(sentPrompt).toContain('[AMÉNAGEMENT]');
+        expect(sentPrompt).toContain('[MASQUÉ]');
         expect(sentPrompt).toContain('un petit effort');
         expect(sentOptions.context).toBe('refinement');
         expect(sentOptions.systemPrompt).toContain('sans sigles de période');

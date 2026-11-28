@@ -238,7 +238,9 @@ export const ListViewRenderer = {
         // Update status cell
         const statusCell = row.querySelector('.status-cell');
         if (statusCell) {
+            TooltipsUI.cleanupTooltipsIn?.(statusCell);
             statusCell.innerHTML = this.getStudentStatusCellContent(result);
+            TooltipsUI.initTooltips?.(statusCell);
         }
         const isSelected = ListSelectionManager.selectedIds.has(result.id);
         row.classList.toggle('student-row-departed', Utils.isStudentDeparted(result, appState.currentPeriod));
@@ -251,10 +253,12 @@ export const ListViewRenderer = {
             const searchQuery = appState.searchQuery || '';
             const currentClassName = Utils.getCurrentClassName();
             const originInfo = Utils.getStudentOriginInfo(result, currentClassName);
+            TooltipsUI.cleanupTooltipsIn?.(identityWrapper);
             identityWrapper.innerHTML = `
                 ${avatarHTML}
                 <span class="student-nom-prenom">${Utils.formatStudentName(result.nom, result.prenom, true, searchQuery, originInfo)}</span>
             `;
+            TooltipsUI.initTooltips?.(identityWrapper);
         }
 
         // Update Grades (replace all cells between status and appreciation)
@@ -272,11 +276,17 @@ export const ListViewRenderer = {
             while (next && next !== appreciationCell) {
                 const toRemove = next;
                 next = next.nextElementSibling;
+                TooltipsUI.cleanupTooltipsIn?.(toRemove);
                 toRemove.remove();
             }
 
-            // Insert new cells after status cell
+            // Insert new cells after status cell and initialize their tooltips in place
             statusCell.insertAdjacentHTML('afterend', newGradeCellsHtml);
+            let inserted = statusCell.nextElementSibling;
+            while (inserted && inserted !== appreciationCell) {
+                TooltipsUI.initTooltips?.(inserted);
+                inserted = inserted.nextElementSibling;
+            }
         }
 
         // Re-enable action button if it was disabled during generation and refresh delete label
@@ -322,39 +332,52 @@ export const ListViewRenderer = {
             if (hasSkeleton) {
                 this.updateRowContent(row, result);
             } else {
-                // Optimization: Only skip full update when toggling a simple dirty indicator
-                // while appreciation content, overflow badge and copied state are unchanged.
                 const existingIndicator = appreciationCell?.querySelector('.dirty-indicator:not(.dirty-indicator-leave)');
                 const status = FocusPanelStatus.getAppreciationStatus(result, appState.currentPeriod);
                 const shouldBeOnlyDirty = status.isDirty && !status.hasError;
-
                 const isErrorIndicator = existingIndicator?.classList.contains('error-indicator');
-                const hasOverflowBadge = Boolean(appreciationCell?.querySelector('.char-limit-overflow-badge'));
-                const previewEl = appreciationCell?.querySelector('.appreciation-preview');
-                const expectedPreviewHtml = status.hasContent
-                    ? Utils.cleanMarkdown(status.appreciation).replace(/&#0?39;/g, "'").replace(/&quot;/g, '"')
-                    : null;
-                const isPreviewUnchanged = Boolean(previewEl) && previewEl.innerHTML === expectedPreviewHtml;
-                const isCopiedUnchanged = Boolean(appreciationCell?.querySelector('.copied-indicator'))
-                    === (Utils.isAppreciationCopied?.(result, appState.currentPeriod) ?? false);
+                const canPatchDirtyCell = Boolean(appreciationCell && !status.hasError && !isErrorIndicator);
 
-                if (
-                    appreciationCell
-                    && !status.hasError
-                    && !isErrorIndicator
-                    && !hasOverflowBadge
-                    && isPreviewUnchanged
-                    && isCopiedUnchanged
-                    && Boolean(existingIndicator) !== shouldBeOnlyDirty
-                ) {
-                    this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
+                if (options?.dirtyOnly && canPatchDirtyCell) {
+                    // Surgical path for dirty-only refreshes (e.g. journal threshold, Indications):
+                    // no-op when unchanged, toggle indicator in place when changed, never rebuilds row icons.
+                    if (status.hasContent) {
+                        if (Boolean(existingIndicator) !== shouldBeOnlyDirty) {
+                            this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
+                        } else if (shouldBeOnlyDirty && existingIndicator && existingIndicator.getAttribute('data-tooltip') !== status.tooltip) {
+                            TooltipsUI.updateTooltip?.(existingIndicator, status.tooltip);
+                        }
+                    }
                 } else {
-                    this.updateRowContent(row, result);
+                    // Optimization: Skip full update when toggling a simple dirty indicator
+                    // while appreciation content, overflow badge and copied state are unchanged.
+                    const hasOverflowBadge = Boolean(appreciationCell?.querySelector('.char-limit-overflow-badge'));
+                    const previewEl = appreciationCell?.querySelector('.appreciation-preview');
+                    const expectedPreviewHtml = status.hasContent
+                        ? Utils.cleanMarkdown(status.appreciation).replace(/&#0?39;/g, "'").replace(/&quot;/g, '"')
+                        : null;
+                    const isPreviewUnchanged = Boolean(previewEl) && previewEl.innerHTML === expectedPreviewHtml;
+                    const isCopiedUnchanged = Boolean(appreciationCell?.querySelector('.copied-indicator'))
+                        === (Utils.isAppreciationCopied?.(result, appState.currentPeriod) ?? false);
+
+                    if (
+                        canPatchDirtyCell
+                        && !hasOverflowBadge
+                        && isPreviewUnchanged
+                        && isCopiedUnchanged
+                        && Boolean(existingIndicator) !== shouldBeOnlyDirty
+                    ) {
+                        this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
+                    } else {
+                        this.updateRowContent(row, result);
+                    }
                 }
             }
 
             // Also update the global generate button state as dirty counts may have changed
-            ResultsUIManager.updateGenerateButtonState();
+            if (!options?.skipGenerateButtonUpdate) {
+                ResultsUIManager.updateGenerateButtonState();
+            }
             return true;
         }
         return false;
@@ -385,12 +408,15 @@ export const ListViewRenderer = {
                 cell.insertBefore(indicator, cell.firstChild); // Fallback
             }
 
+            TooltipsUI.updateTooltip?.(indicator, tooltip);
+
             // Trigger animation
             requestAnimationFrame(() => {
                 indicator.classList.remove('dirty-indicator-enter');
             });
         } else if (!shouldBeDirty && existingIndicator) {
             // REMOVE dirty indicator with fade-out animation
+            TooltipsUI.cleanupTooltipsIn?.(existingIndicator);
             existingIndicator.classList.add('dirty-indicator-leave');
 
             // Remove after animation

@@ -427,10 +427,11 @@ describe('PromptService', () => {
             expect(userPrompt).toContain('S2 14,5/20');
             expect(userPrompt).toContain('Plus régulière à l\'oral');
             expect(userPrompt).toContain('[PRÉNOM]');
-            expect(userPrompt).toContain('[AMÉNAGEMENT]');
+            expect(userPrompt).toContain('[MASQUÉ]');
             expect(userPrompt).not.toContain('Dupont');
             expect(userPrompt).not.toContain('PAP');
             expect(systemPrompt).toContain('ne cite jamais de moyenne chiffrée');
+            expect(systemPrompt).toContain('ne conserve jamais de crochets');
         });
 
         it('should inject student gender when prenom is provided and strip surname locally without leaking [NOM]', () => {
@@ -509,7 +510,7 @@ describe('PromptService', () => {
             expect(res.systemPrompt).toContain('sans jamais conserver de crochets');
             expect(res.userPrompt).not.toMatch(/\b(Lucas|Martin|PAP)\b/i);
             expect(res.userPrompt).toContain('[ÉLÈVE]');
-            expect(res.userPrompt).toContain('[AMÉNAGEMENT]');
+            expect(res.userPrompt).toContain('[MASQUÉ]');
 
             const cleanRes = PromptService.getClassSynthesisRefinementPrompts('polish', mediumIntro);
             expect(cleanRes.systemPrompt).not.toContain('sans jamais conserver de crochets');
@@ -552,13 +553,18 @@ describe('PromptService', () => {
                 { periods: { ...base.periods, T2: { grade: 13, evaluationCount: 4 } } },
                 { periods: { ...base.periods, T2: { grade: 13, context: 'Très bonne participation' } } },
                 { periods: { ...base.periods, T1: { grade: 12, appreciation: 'Trimestre fragile' } } },
-                { statuses: ['PPRE'] },
+                { statuses: ['Délégué'] },
                 { journal: [{ note: 'Excellent exposé', period: 'T2' }] },
                 { prenom: 'Jon' }
             ];
             variants.forEach(variant => {
                 expect(PromptService.getPromptHash({ ...base, ...variant })).not.toBe(baseHash);
             });
+
+            // Les badges d'accompagnement RGPD sont hors IA et ne doivent pas invalider l'empreinte
+            for (const sensitiveStatuses of [['PPRE'], ['PAP'], ['PAI'], ['AESH'], ['ULIS'], ['PAP', 'ULIS']]) {
+                expect(PromptService.getPromptHash({ ...base, statuses: sensitiveStatuses })).toBe(baseHash);
+            }
         });
 
         it('should treat equivalent grade formats as identical', () => {
@@ -702,10 +708,11 @@ describe('PromptService', () => {
             expect(userPrompt).not.toMatch(/\bLucas\b/i);
             expect(userPrompt).not.toMatch(/\bMartin\b/i);
 
-            // 5. Statuts médico-scolaires Art. 9 RGPD (PAP, PPRE, ULIS, PAI, Geva-Sco) traduits en consignes neutres sans acronyme brut
-            const statusInstructions = PromptService.getStatusInstructions(['PAP', 'PPRE', 'ULIS', 'PAI', 'Geva-Sco'], 'T2');
-            expect(statusInstructions).toBeTruthy();
-            expect(statusInstructions).not.toMatch(/\b(PAP|PPRE|ULIS|PAI|Geva-Sco|GevaSco)\b/i);
+            // 5. Statuts médico-scolaires Art. 9 RGPD (PAP, PPRE, ULIS, PAI, AESH, Geva-Sco) strictement exclus (hors IA)
+            const statusInstructions = PromptService.getStatusInstructions(['PAP', 'PPRE', 'ULIS', 'PAI', 'AESH', 'Geva-Sco'], 'T2');
+            expect(statusInstructions).toBe('');
+            expect(prompts.appreciationUser).not.toContain('Statut particulier');
+            expect(prompts.analysisUser).not.toContain('Statut particulier');
             expect(PromptService.deanonymizeText('[Prénom] [NOM] progresse.', 'Lucas')).toBe('Lucas progresse.');
         });
 
@@ -876,20 +883,21 @@ describe('PromptService', () => {
             expect(verbPreserved).toBe('[PRÉNOM] a fourni un travail sérieux. [PRÉNOM] progresse.');
         });
 
-        it('neutralise les statuts composites (Nouveau ULIS, Départ PAI, Délégué dyslexique) et les mentions Art. 9 en texte libre', () => {
+        it('exclut les dispositifs Art. 9 des statuts (simples, libres et composites) et neutralise les mentions Art. 9 en texte libre', () => {
+            expect(PromptService.getStatusInstructions(['PAP', 'PPRE', 'PAI', 'AESH', 'ULIS', 'TDAH', 'Suivi PAP'], 'T2')).toBe('');
+
             const compositeUlis = PromptService.getStatusInstructions(['Nouveau ULIS'], 'T2');
-            expect(compositeUlis).toContain('arrivée récente');
-            expect(compositeUlis).toContain('objectifs personnalisés');
-            expect(compositeUlis).not.toMatch(/ULIS/i);
+            expect(compositeUlis).toBe("Tenir compte de l'arrivée récente de l'élève en cours d'année.");
+            expect(compositeUlis).not.toMatch(/ULIS|objectifs personnalisés|handicap|inclusion/i);
 
             const compositeDys = PromptService.getStatusInstructions(['Délégué dyslexique', 'Départ PAI'], 'T2');
             expect(compositeDys).toContain('engagement citoyen');
             expect(compositeDys).toContain('départ de l\'élève');
-            expect(compositeDys).not.toMatch(/dyslexi|PAI/i);
+            expect(compositeDys).not.toMatch(/dyslexi|PAI|santé|protocole médical/i);
 
-            // Statut mouvement sain traduit sans sigle de période brut
+            // Statut mouvement sain traduit factuellement sans sigle de période brut ni présupposé d'adaptation
             const nouveauT2 = PromptService.getStatusInstructions(['Nouveau T2'], 'T2');
-            expect(nouveauT2).toContain('au 2e trimestre');
+            expect(nouveauT2).toBe("Tenir compte de l'arrivée récente de l'élève au 2e trimestre.");
             expect(nouveauT2).not.toMatch(/\bT2\b/);
 
             // Art. 9 en texte libre (contexte, journal, raffinement)
@@ -922,8 +930,24 @@ describe('PromptService', () => {
                 expect(text).not.toMatch(/\b(ULIS|PAP|PAI|AESH|TDAH|Chloé|Bernard|Dupont|Arthur)\b/i);
                 expect(text).not.toMatch(/dyslexi|orthophon|asthm|tiers-temps/i);
                 expect(text).toContain('[CAMARADE]');
-                expect(text).toContain('[AMÉNAGEMENT]');
+                expect(text).toContain('[MASQUÉ]');
+                expect(text).toContain('ne conserve jamais de crochets');
             }
+
+            // Sans marqueur [MASQUÉ] ni [CAMARADE] dans les données envoyées en génération, la garde anti-crochets n'est pas injectée
+            const cleanPrompts = PromptService.getAllPrompts({
+                id: 's1',
+                classId: 'c-rgpd',
+                prenom: 'Arthur',
+                nom: 'Dupont',
+                statuses: ['PAP'],
+                currentPeriod: 'T1',
+                periods: { T1: { grade: 13, appreciation: 'Ancienne appréciation avec PAP.', context: 'Travail sérieux et régulier.' } }
+            });
+            expect(cleanPrompts.appreciationSystem).not.toContain('ne conserve jamais de crochets');
+            expect(cleanPrompts.analysisSystem).toContain('ne conserve jamais de crochets');
+            expect(cleanPrompts.appreciationUser).not.toContain('Statut particulier');
+            expect(cleanPrompts.appreciationUser).not.toContain("Consignes d'accompagnement");
 
             // Raffinement sans identité explicite : neutralise quand même Art. 9 et camarades de la classe active
             const refinedPrompt = PromptService.getRefinementPrompt(
@@ -932,8 +956,12 @@ describe('PromptService', () => {
             );
             expect(refinedPrompt).not.toMatch(/\b(PAP|Chloé|Bernard)\b/i);
             expect(refinedPrompt).not.toMatch(/trouble de l'attention/i);
-            expect(refinedPrompt).toContain('[AMÉNAGEMENT]');
+            expect(refinedPrompt).toContain('[MASQUÉ]');
             expect(refinedPrompt).toContain('[CAMARADE]');
+            expect(refinedPrompt).toContain('ne conserve jamais de crochets');
+
+            const cleanRefined = PromptService.getRefinementPrompts('polish', 'Travail sérieux et régulier.');
+            expect(cleanRefined.systemPrompt).not.toContain('ne conserve jamais de crochets');
         });
 
         it('corrige proprement l\'élision française dans deanonymizeText pour voyelles et h muet sans toucher aux autres cas', () => {
@@ -968,15 +996,17 @@ describe('PromptService', () => {
             expect(PromptService.deanonymizeText(null, 'Arthur')).toBeNull();
         });
 
-        it('nettoie les marqueurs techniques [CAMARADE] et [AMÉNAGEMENT] si un LLM les recopie en sortie', () => {
+        it('nettoie les marqueurs techniques [CAMARADE] et [MASQUÉ] sans faute d\'élision ni allusion médicale si un LLM les recopie en sortie', () => {
             expect(PromptService.deanonymizeText('[PRÉNOM] bavarde avec [CAMARADE].', 'Lucas'))
                 .toBe('Lucas bavarde avec un camarade.');
             expect(PromptService.deanonymizeText('[PRÉNOM] travaille bien avec un [CAMARADE] et ses [CAMARADE].', 'Lucas'))
                 .toBe('Lucas travaille bien avec un camarade et ses camarades.');
-            expect(PromptService.deanonymizeText("[PRÉNOM] progresse grâce à l'[AMÉNAGEMENT] et ses [AMÉNAGEMENT].", 'Emma'))
-                .toBe("Emma progresse grâce à l'accompagnement et ses aménagements.");
-            expect(PromptService.deanonymizeText('[PRÉNOM] suit [AMÉNAGEMENT] avec sérieux.', 'Emma'))
-                .toBe('Emma suit un accompagnement adapté avec sérieux.');
+            expect(PromptService.deanonymizeText("[PRÉNOM] progresse grâce à l'[MASQUÉ] et ses [MASQUÉ].", 'Emma'))
+                .toBe('Emma progresse grâce au suivi et ses méthodes.');
+            expect(PromptService.deanonymizeText("L'[MASQUÉ] et cet [MASQUÉ] aident [PRÉNOM] ; profite de l'[MASQUÉ] et d'[MASQUÉ].", 'Emma'))
+                .toBe("Le suivi et ce suivi aident Emma ; profite du suivi et d'un suivi.");
+            expect(PromptService.deanonymizeText('[PRÉNOM] progresse grâce à son [MASQUÉ] et [MASQUÉ].', 'Emma'))
+                .toBe('Emma progresse grâce à son suivi et un suivi régulier.');
         });
 
         it('omet le nom de classe brut lorsqu\'il contient un terme Art. 9 (ULIS, SEGPA, UPE2A) tout en conservant le niveau', () => {
@@ -1396,12 +1426,17 @@ describe('PromptService', () => {
                 ]);
                 expect(summaryAnon.previousAppreciations).toHaveLength(1);
                 expect(summaryAnon.previousAppreciations[0].preview).toContain('[PRÉNOM]');
-                expect(summaryAnon.statuses.find(s => s.raw === 'PAP').isGdprSensitive).toBe(true);
-                expect(summaryAnon.statuses.find(s => s.raw === 'delegue').isGdprSensitive).toBe(false);
+                const papStatus = summaryAnon.statuses.find(s => s.raw === 'PAP');
+                expect(papStatus.isGdprSensitive).toBe(true);
+                expect(papStatus.isExcludedFromAI).toBe(true);
+                expect(papStatus.instruction).toBe('');
+                const delegueStatus = summaryAnon.statuses.find(s => s.raw === 'delegue');
+                expect(delegueStatus.isGdprSensitive).toBe(false);
+                expect(delegueStatus.isExcludedFromAI).toBe(false);
                 expect(summaryAnon.journal.notes).toHaveLength(1);
                 expect(summaryAnon.journal.notes[0].text).toContain('[PRÉNOM]');
                 expect(summaryAnon.journal.notes[0].text).toContain('[CAMARADE]');
-                expect(summaryAnon.journal.notes[0].text).toContain('[AMÉNAGEMENT]');
+                expect(summaryAnon.journal.notes[0].text).toContain('[MASQUÉ]');
                 expect(summaryAnon.journal.notes[0].text).not.toContain('Sophie');
                 expect(summaryAnon.journal.notes[0].text).not.toContain('Lucas');
                 expect(summaryAnon.journal.notes[0].text).not.toContain('PAP');

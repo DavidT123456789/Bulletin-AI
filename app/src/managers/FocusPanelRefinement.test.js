@@ -9,6 +9,7 @@ import { FocusPanelStatus } from './FocusPanelStatus.js';
 import { AIService } from '../services/AIService.js';
 import { PromptService } from '../services/PromptService.js';
 import { StorageManager } from './StorageManager.js';
+import { HistoryManager } from './HistoryManager.js';
 import { appState } from '../state/State.js';
 
 describe('FocusPanelRefinement', () => {
@@ -143,6 +144,7 @@ describe('FocusPanelRefinement', () => {
 
     afterEach(() => {
         FocusPanelHistory.reset();
+        HistoryManager.destroy();
         vi.restoreAllMocks();
         document.body.innerHTML = '';
     });
@@ -266,5 +268,82 @@ describe('FocusPanelRefinement', () => {
         await FocusPanelRefinement.apply('polish');
         expect(FocusPanelRefinement.isCustomInputOpen()).toBe(false);
         expect(input.value).toBe('Mentionner son exposé');
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(false);
+    });
+
+    it('ferme la barre de consigne libre sur Retour mobile (popstate) sans fermer le Focus Panel et nettoie l\'historique à la fermeture manuelle', () => {
+        const panelCloseCb = vi.fn();
+        HistoryManager.pushState('focusPanel', panelCloseCb);
+
+        FocusPanelRefinement.openCustomInput();
+        const input = document.getElementById('focusCustomRefineInput');
+        expect(FocusPanelRefinement.isCustomInputOpen()).toBe(true);
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(true);
+        expect(document.activeElement).toBe(input);
+
+        // 1. Retour mobile -> ferme uniquement la barre de consigne libre
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        expect(FocusPanelRefinement.isCustomInputOpen()).toBe(false);
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(false);
+        expect(panelCloseCb).not.toHaveBeenCalled();
+        expect(document.activeElement).not.toBe(input);
+
+        // 2. Fermeture manuelle -> dépile proprement sans laisser d'entrée fantôme
+        FocusPanelRefinement.openCustomInput();
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(true);
+        const manualCloseSpy = vi.spyOn(HistoryManager, 'handleManualClose');
+        FocusPanelRefinement.closeCustomInput({ restoreFocus: true });
+        expect(manualCloseSpy).toHaveBeenCalledWith('focusCustomRefine');
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(false);
+
+        // 3. Vidage manuel de l'appréciation -> nettoie aussi l'entrée HistoryManager
+        FocusPanelRefinement.openCustomInput();
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(true);
+        document.getElementById('focusAppreciationText').textContent = '';
+        FocusPanelStatus.updateWordCount();
+        expect(FocusPanelRefinement.isCustomInputOpen()).toBe(false);
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(false);
+    });
+
+    it('annule d\'abord la génération sur Retour mobile si une retouche libre est en cours, puis ferme la barre au second Retour', async () => {
+        vi.spyOn(AIService, 'callAIWithFallback').mockImplementation((_prompt, { signal }) => new Promise((_resolve, reject) => {
+            signal?.addEventListener('abort', () => {
+                const err = new Error('Annulé');
+                err.name = 'AbortError';
+                reject(err);
+            });
+        }));
+
+        mockPanel._cancelGenerationForStudent = vi.fn((studentId, { restoreUI = true } = {}) => {
+            const controller = mockPanel._activeGenerations.get(studentId);
+            if (!controller) return;
+            mockPanel._activeGenerations.delete(studentId);
+            controller.abort();
+            if (restoreUI) {
+                const submitBtn = document.getElementById('focusCustomRefineSubmitBtn');
+                submitBtn?.classList.remove('is-generating');
+            }
+        });
+
+        FocusPanelRefinement.openCustomInput();
+        const input = document.getElementById('focusCustomRefineInput');
+        input.value = 'Parler des TP';
+
+        const pendingApply = FocusPanelRefinement.applyCustom();
+        expect(mockPanel._activeGenerations.has('stu-1')).toBe(true);
+        expect(document.getElementById('focusCustomRefineSubmitBtn').classList.contains('is-generating')).toBe(true);
+
+        // 1er Retour : annule la génération, garde la barre ouverte et la pile synchronisée
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        await pendingApply;
+        expect(mockPanel._cancelGenerationForStudent).toHaveBeenCalledWith('stu-1');
+        expect(FocusPanelRefinement.isCustomInputOpen()).toBe(true);
+        expect(input.value).toBe('Parler des TP');
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(true);
+
+        // 2e Retour : referme la barre de consigne libre
+        window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+        expect(FocusPanelRefinement.isCustomInputOpen()).toBe(false);
+        expect(HistoryManager.isOpen('focusCustomRefine')).toBe(false);
     });
 });

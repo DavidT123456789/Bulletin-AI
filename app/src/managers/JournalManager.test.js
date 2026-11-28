@@ -884,5 +884,120 @@ describe('JournalManager', () => {
                 vi.useRealTimers();
             }
         });
+
+        it('met à jour en place la timeline et les compteurs sans détruire les <iconify-icon> lors d\'un changement de seuil ou du mode Hors IA', () => {
+            vi.useFakeTimers();
+            const physicalClass = { id: 'cls-1', name: '3ème A', journalThreshold: 1, journalIncludeInAI: true };
+            appState.classes = [physicalClass];
+            userSettings.academic.classes = [physicalClass];
+            appState.currentClassId = 'cls-1';
+            appState.currentPeriod = 'T1';
+            appState.generatedResults = [{
+                id: 'stu-1',
+                classId: 'cls-1',
+                name: 'DUPONT Thomas',
+                journal: [
+                    { id: 'j1', date: '2026-11-28T10:00:00.000Z', tags: ['oubli'], note: '', period: 'T1' },
+                    { id: 'j2', date: '2026-11-28T09:00:00.000Z', tags: ['participation+'], note: '', period: 'T1' }
+                ]
+            }];
+
+            const updateClassSpy = vi.spyOn(ClassManager, 'updateClass').mockImplementation((id, updates) => {
+                if (id === physicalClass.id) Object.assign(physicalClass, updates);
+                return physicalClass;
+            });
+            const statusRefreshSpy = vi.fn();
+
+            document.body.innerHTML = `
+                <div class="journal-section" id="focusJournalSection">
+                    <span id="focusJournalTitle"></span>
+                    <span id="focusJournalEmptyHint"></span>
+                    <span id="focusJournalCount"></span>
+                    <button type="button" id="focusJournalNoteBtn"></button>
+                    <div class="journal-content" id="focusJournalContent"></div>
+                    <div id="journalThresholdControl">
+                        <button type="button" id="journalThresholdBtn">
+                            <iconify-icon id="journalThresholdIcon" icon="solar:stars-line-duotone"></iconify-icon>
+                            <span id="journalThresholdValue"></span>
+                        </button>
+                        <div id="journalThresholdPopover">
+                            <span id="journalThresholdScope"></span>
+                            <input type="checkbox" id="journalIncludeAIToggle" checked>
+                            <div id="journalThresholdStepperBlock">
+                                <div id="journalThresholdSegmented" data-active-index="0">
+                                    <button type="button" class="ui-segment journal-threshold-option active" data-threshold="1">Dès 1×</button>
+                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="2">Dès 2×</button>
+                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="3">Dès 3×</button>
+                                </div>
+                                <span id="thresholdHintText"></span>
+                            </div>
+                            <div id="journalAiOffHint" class="is-hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                FocusPanelJournal._lastRenderedContext = null;
+                FocusPanelJournal.init({
+                    getCurrentStudentId: () => 'stu-1',
+                    onStatusRefresh: statusRefreshSpy
+                });
+                FocusPanelJournal.render(appState.generatedResults[0]);
+
+                const entryNodesBefore = Array.from(document.querySelectorAll('.journal-entry'));
+                const timelineIconsBefore = Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'));
+                const headerIconsBefore = Array.from(document.querySelectorAll('#focusJournalCount .journal-count-tag iconify-icon'));
+                expect(entryNodesBefore).toHaveLength(2);
+                expect(timelineIconsBefore).toHaveLength(2);
+                expect(headerIconsBefore).toHaveLength(2);
+
+                // Dès 1× -> Dès 2× : bascule visuelle en place (isolated + below-threshold + info icon), mêmes nœuds DOM & icônes
+                document.querySelector('.journal-threshold-option[data-threshold="2"]').click();
+                vi.runAllTimers();
+
+                const entryNodesAfter2 = Array.from(document.querySelectorAll('.journal-entry'));
+                const timelineIconsAfter2 = Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'));
+                const headerIconsAfter2 = Array.from(document.querySelectorAll('#focusJournalCount .journal-count-tag iconify-icon'));
+
+                expect(entryNodesAfter2).toEqual(entryNodesBefore);
+                expect(timelineIconsAfter2).toEqual(timelineIconsBefore);
+                expect(headerIconsAfter2).toEqual(headerIconsBefore);
+                expect(entryNodesAfter2.every(el => el.classList.contains('isolated'))).toBe(true);
+                expect(document.querySelectorAll('#journalTimelineContainer .journal-tag.below-threshold')).toHaveLength(2);
+                expect(document.querySelectorAll('#journalTimelineContainer .journal-entry-info')).toHaveLength(2);
+                expect(document.querySelectorAll('#focusJournalCount .journal-count-tag.below-threshold')).toHaveLength(2);
+                expect(statusRefreshSpy).toHaveBeenCalledWith({ dirtyOnly: true });
+
+                // Dès 2× -> Dès 3× : met à jour le tooltip de .journal-entry-info en place sans recréer l'icône info
+                const infoIconsBefore3 = Array.from(document.querySelectorAll('#journalTimelineContainer .journal-entry-info'));
+                document.querySelector('.journal-threshold-option[data-threshold="3"]').click();
+                vi.runAllTimers();
+
+                expect(Array.from(document.querySelectorAll('#journalTimelineContainer .journal-entry-info'))).toEqual(infoIconsBefore3);
+                expect(infoIconsBefore3[0].getAttribute('data-tooltip')).toContain('3×');
+
+                // Retour Dès 1× : retire isolated/below-threshold/info sans reconstruire les icônes
+                document.querySelector('.journal-threshold-option[data-threshold="1"]').click();
+                vi.runAllTimers();
+
+                expect(Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'))).toEqual(timelineIconsBefore);
+                expect(Array.from(document.querySelectorAll('#focusJournalCount .journal-count-tag iconify-icon'))).toEqual(headerIconsBefore);
+                expect(document.querySelectorAll('#journalTimelineContainer .journal-entry.isolated')).toHaveLength(0);
+                expect(document.querySelectorAll('#journalTimelineContainer .journal-entry-info')).toHaveLength(0);
+
+                // Toggle Hors IA : préserve les icônes des entrées et met à jour l'icône du pied de carte
+                const toggle = document.getElementById('journalIncludeAIToggle');
+                toggle.checked = false;
+                toggle.dispatchEvent(new Event('change', { bubbles: true }));
+                vi.runAllTimers();
+
+                expect(Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'))).toEqual(timelineIconsBefore);
+                expect(document.getElementById('journalThresholdIcon').getAttribute('icon')).toBe('solar:lock-keyhole-minimalistic-linear');
+            } finally {
+                updateClassSpy.mockRestore();
+                vi.useRealTimers();
+            }
+        });
     });
 });

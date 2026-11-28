@@ -140,9 +140,15 @@ export const FocusPanelGrades = {
                 const prevGradeNum = (prevGradeVal !== undefined && prevGradeVal !== null && prevGradeVal !== '')
                     ? parseFloat(prevGradeVal)
                     : null;
-                TooltipsUI.cleanupTooltipsIn(arrowEl);
-                arrowEl.innerHTML = this.getEvolutionHtml(prevGradeNum, gradeVal);
-                TooltipsUI.initTooltips(arrowEl);
+                const nextEvolutionHtml = this.getEvolutionHtml(prevGradeNum, gradeVal);
+                const isUnchanged = arrowEl._lastEvolutionHtml === nextEvolutionHtml
+                    && (nextEvolutionHtml === '' ? arrowEl.innerHTML === '' : Boolean(arrowEl.firstChild));
+                if (!isUnchanged) {
+                    arrowEl._lastEvolutionHtml = nextEvolutionHtml;
+                    TooltipsUI.cleanupTooltipsIn(arrowEl);
+                    arrowEl.innerHTML = nextEvolutionHtml;
+                    TooltipsUI.initTooltips(arrowEl);
+                }
             }
         }
 

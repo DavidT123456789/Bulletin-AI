@@ -30,6 +30,7 @@ describe('SpeechRecognitionManager', () => {
             <button id="focusMicBtn"></button>
             <textarea id="focusContextInput"></textarea>
             <button id="focusAppreciationMicBtn"></button>
+            <span id="focusAppreciationBadge" class="appreciation-status-badge tooltip"></span>
             <div id="focusAppreciationText" class="empty" contenteditable="true"></div>
             <button id="focusGenerateBtn"></button>
         `;
@@ -531,6 +532,24 @@ describe('SpeechRecognitionManager', () => {
                 'dictation',
                 { studentId: 'student-123', period: 'T1', autoSeed: false }
             );
+        });
+
+        it('should keep dictating badge active across spoken segments and clear it on stop without flashing saved', () => {
+            startDictation('appreciation');
+            const badge = document.getElementById('focusAppreciationBadge');
+            expect(badge.classList.contains('visible')).toBe(true);
+            expect(badge.classList.contains('is-dictating')).toBe(true);
+
+            // Spoken segment saves appreciation without overwriting the active dictation badge
+            mockRecognition.onresult(finalResult('bon trimestre'));
+            expect(badge.classList.contains('is-dictating')).toBe(true);
+            expect(badge.classList.contains('saved')).toBe(false);
+
+            // Stopping dictation restores real status (hidden since appreciation is up-to-date)
+            SpeechRecognitionManager.stop();
+            mockRecognition.onend();
+            expect(badge.classList.contains('is-dictating')).toBe(false);
+            expect(badge.classList.contains('visible')).toBe(false);
         });
 
         it('should clear errorMessage and push history even if student is switched without pressing stop (abort)', () => {

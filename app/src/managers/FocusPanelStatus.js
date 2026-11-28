@@ -13,6 +13,8 @@ import * as HistoryPopoverUI from '../utils/HistoryPopoverUI.js';
 import { JournalManager } from './JournalManager.js';
 import { PromptService } from '../services/PromptService.js';
 import { SpeechSynthesisManager } from './SpeechSynthesisManager.js';
+import { HistoryManager } from './HistoryManager.js';
+import { filterAiEligibleStatuses } from '../config/academicConstants.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
 const COPY_BUTTON_MODES = {
@@ -108,9 +110,9 @@ export const FocusPanelStatus = {
     compareDataWithSnapshot(current, snapshot) {
         if (!snapshot) return false;
 
-        // 1. Compare Statuses
-        const currentStatuses = (current.statuses || []).sort();
-        const snapshotStatuses = (snapshot.statuses || []).sort();
+        // 1. Compare Statuses (statuts d'accompagnement RGPD exclus car hors IA)
+        const currentStatuses = filterAiEligibleStatuses(current.statuses).sort();
+        const snapshotStatuses = filterAiEligibleStatuses(snapshot.statuses).sort();
         if (!Utils.isEqual(currentStatuses, snapshotStatuses)) return true;
 
         // 2. Compare Data (Period)
@@ -390,6 +392,27 @@ export const FocusPanelStatus = {
     },
 
     /**
+     * Synchronise le tooltip d'un seul élément sans réinitialiser tous les tooltips de la page.
+     * @param {HTMLElement|null} el
+     * @param {string} tooltip
+     * @private
+     */
+    _syncElementTooltip(el, tooltip) {
+        if (!el) return;
+        if (tooltip) {
+            el.setAttribute('data-tooltip', tooltip);
+            UI?.updateTooltip?.(el, tooltip);
+        } else {
+            el.removeAttribute('data-tooltip');
+            if (typeof UI?.cleanupTooltipsIn === 'function') {
+                UI.cleanupTooltipsIn(el);
+            } else {
+                el._tippy?.destroy?.();
+            }
+        }
+    },
+
+    /**
      * Unified Appreciation Status Badge Manager
      * NOW: Only manages STATUS (pending/dirty/empty/uptodate)
      * Source (AI/Manual) is handled separately by updateSourceIndicator()
@@ -410,37 +433,38 @@ export const FocusPanelStatus = {
             tooltip = status.tooltip;
         }
 
+        const isHiddenAIDirty = state === 'dirty' && result && this._resolveSource(result) === 'ai';
+        if (isHiddenAIDirty) {
+            tooltip = '';
+        }
+
+        const visualState = isHiddenAIDirty || state === 'pending' || state === 'empty' || state === 'uptodate'
+            ? 'hidden'
+            : (state === 'dirty' ? 'modified' : state);
+
+        // Skip DOM rebuild when visual state is already rendered (prevents <iconify-icon> flash)
+        if (badge.dataset.statusState === visualState) {
+            this._syncElementTooltip(badge, tooltip);
+            return;
+        }
+
         // Reset badge state
         badge.className = 'appreciation-status-badge tooltip';
         badge.innerHTML = '';
-        badge.removeAttribute('data-tooltip');
+        badge.dataset.statusState = visualState;
+        badge.removeAttribute('role');
+        badge.removeAttribute('tabindex');
+        badge.removeAttribute('aria-label');
 
-        switch (state) {
-            case 'pending':
-                badge.classList.remove('visible', 'pending');
-                badge.innerHTML = '';
+        switch (visualState) {
+            case 'hidden':
                 break;
-            case 'dirty':
-                if (result && this._resolveSource(result) === 'ai') {
-                    badge.classList.remove('visible');
-                    tooltip = '';
-                    break;
-                }
+            case 'modified':
                 badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon>';
                 badge.classList.add('visible', 'modified', 'icon-only');
-                break;
-            case 'empty':
-                badge.classList.remove('visible', 'empty');
-                badge.innerHTML = '';
-                break;
-            case 'saved':
-                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon><span class="badge-text">Enregistré</span>';
-                badge.classList.add('visible', 'saved');
-                setTimeout(() => {
-                    if (badge.classList.contains('saved')) {
-                        badge.classList.remove('visible', 'saved');
-                    }
-                }, 2000);
+                badge.setAttribute('role', 'button');
+                badge.setAttribute('tabindex', '0');
+                badge.setAttribute('aria-label', "Marquer l'appréciation comme vérifiée");
                 break;
             case 'dictating':
                 badge.innerHTML = '<iconify-icon icon="lucide:mic"></iconify-icon><span class="badge-text">Dictée...</span>';
@@ -450,41 +474,20 @@ export const FocusPanelStatus = {
                 badge.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold"></iconify-icon>';
                 badge.classList.add('visible', 'error', 'icon-only');
                 break;
-            case 'generated':
-                // Success state after generation - show brief confirmation then restore actual status (e.g. dirty after refinement)
-                badge.innerHTML = '<iconify-icon icon="ph:check"></iconify-icon>';
-                badge.classList.add('visible', 'generated', 'icon-only');
-                setTimeout(() => {
-                    if (badge.classList.contains('generated')) {
-                        badge.classList.remove('visible', 'generated', 'icon-only');
-                        const currentId = this._getCurrentStudentId();
-                        const currentResult = currentId
-                            ? appState.generatedResults?.find(r => r.id === currentId)
-                            : result;
-                        if (currentResult) {
-                            this.updateAppreciationStatus(currentResult);
-                        }
-                    }
-                }, 1500);
-                break;
-            case 'uptodate':
             default:
-                // When up-to-date, hide badge - source indicator is sufficient
-                badge.classList.remove('visible');
+                badge.dataset.statusState = 'hidden';
                 break;
         }
 
-        if (tooltip) {
-            badge.setAttribute('data-tooltip', tooltip);
-        }
-
-        setTimeout(() => UI.initTooltips(), 50);
+        this._syncElementTooltip(badge, tooltip);
     },
 
     /**
      * Quick helper to refresh both Status and Source indicators from current student
+     * @param {Object} [options={}]
+     * @param {boolean} [options.dirtyOnly=false] - When true, update the list row dirty indicator in place
      */
-    refreshAppreciationStatus() {
+    refreshAppreciationStatus(options = {}) {
         const currentStudentId = this._getCurrentStudentId();
         if (!currentStudentId) return;
         const result = appState.generatedResults.find(r => r.id === currentStudentId);
@@ -495,11 +498,13 @@ export const FocusPanelStatus = {
 
             // Also update generate button to reflect dirty state
             this._callbacks?.onUpdateGenerateButton?.(result);
-            // CRITICAL: Also update the List View row to show/hide dirty indicator
-            this._callbacks?.onUpdateListRow?.(result);
-
-            // FALLBACK: Emit event for decoupled sync (works even if callbacks not set)
-            bus.emit(EVENTS.STUDENT_DIRTY_STATE_CHANGED, { studentId: currentStudentId, result });
+            // Update the List View row (or fall back to decoupled event when callback is not wired)
+            if (this._callbacks?.onUpdateListRow) {
+                const rowOptions = options?.dirtyOnly ? { dirtyOnly: true } : undefined;
+                this._callbacks.onUpdateListRow(result, rowOptions);
+            } else {
+                bus.emit(EVENTS.STUDENT_DIRTY_STATE_CHANGED, { studentId: currentStudentId, result });
+            }
         }
     },
 
@@ -559,6 +564,9 @@ export const FocusPanelStatus = {
                 refinementOptions.style.display = isEmpty ? 'none' : 'flex';
                 if (isEmpty) {
                     refinementOptions.classList.remove('is-custom-mode');
+                    if (HistoryManager.isOpen('focusCustomRefine')) {
+                        HistoryManager.handleManualClose('focusCustomRefine');
+                    }
                 }
                 const refineButtons = refinementOptions.querySelectorAll('[data-refine-type], #focusCustomRefineTrigger');
                 refineButtons.forEach(btn => {
@@ -848,48 +856,55 @@ export const FocusPanelStatus = {
 
         // Hide source indicator when an error is active — error badge takes priority
         const hasError = !!(result?.errorMessage && result?.errorPeriod === appState.currentPeriod);
-        if (hasError) {
-            sourceIndicator.style.display = 'none';
+        const effectiveSource = hasError ? 'none' : this._resolveSource(result);
+
+        let tooltip = '';
+        let iconName = '';
+        let sourceClass = '';
+        if (effectiveSource === 'ai') {
+            iconName = 'solar:stars-bold-duotone';
+            sourceClass = 'source-ai';
+            tooltip = Utils.getGenerationModeInfo(result).tooltip || 'Généré par IA';
+        } else if (effectiveSource === 'imported') {
+            iconName = 'solar:file-download-linear';
+            sourceClass = 'source-imported';
+            tooltip = 'Importé depuis un fichier';
+        } else if (effectiveSource === 'manual') {
+            iconName = 'solar:pen-linear';
+            sourceClass = 'source-manual';
+            tooltip = 'Rédigé manuellement';
+        }
+
+        const expectedDisplay = effectiveSource === 'none' ? 'none' : 'inline-flex';
+        const existingIcon = sourceIndicator.querySelector('iconify-icon');
+        const isSameSource = sourceIndicator.dataset.sourceState === effectiveSource
+            && (effectiveSource === 'none' || Boolean(existingIcon));
+
+        if (!isSameSource) {
+            sourceIndicator.dataset.sourceState = effectiveSource;
             sourceIndicator.classList.remove('source-ai', 'source-manual', 'source-imported');
-            sourceIndicator.removeAttribute('data-tooltip');
-            return;
-        }
 
-        const source = this._resolveSource(result);
-
-        // Reset
-        sourceIndicator.style.display = 'none';
-        sourceIndicator.classList.remove('source-ai', 'source-manual', 'source-imported');
-        sourceIndicator.removeAttribute('data-tooltip');
-
-        switch (source) {
-            case 'ai': {
-                sourceIndicator.innerHTML = '<iconify-icon icon="solar:stars-bold-duotone"></iconify-icon>';
-                sourceIndicator.style.display = 'inline-flex';
-                sourceIndicator.classList.add('source-ai');
-                const { tooltip } = Utils.getGenerationModeInfo(result);
-                sourceIndicator.setAttribute('data-tooltip', tooltip || 'Généré par IA');
-                break;
+            if (effectiveSource !== 'none') {
+                if (existingIcon) {
+                    if (existingIcon.getAttribute('icon') !== iconName) {
+                        existingIcon.setAttribute('icon', iconName);
+                    }
+                } else {
+                    sourceIndicator.innerHTML = `<iconify-icon icon="${iconName}"></iconify-icon>`;
+                }
+                sourceIndicator.classList.add(sourceClass);
             }
-            case 'imported':
-                sourceIndicator.innerHTML = '<iconify-icon icon="solar:file-download-linear"></iconify-icon>';
-                sourceIndicator.style.display = 'inline-flex';
-                sourceIndicator.classList.add('source-imported');
-                sourceIndicator.setAttribute('data-tooltip', 'Importé depuis un fichier');
-                break;
-            case 'manual':
-                sourceIndicator.innerHTML = '<iconify-icon icon="solar:pen-linear"></iconify-icon>';
-                sourceIndicator.style.display = 'inline-flex';
-                sourceIndicator.classList.add('source-manual');
-                sourceIndicator.setAttribute('data-tooltip', 'Rédigé manuellement');
-                break;
-            case 'none':
-            default:
-                break;
         }
 
-        UI.initTooltips();
-        this.syncRefinementStates(result);
+        // Always restore display (e.g. after showAppreciationSkeleton() hides #focusAiIndicator during regeneration)
+        if (sourceIndicator.style.display !== expectedDisplay) {
+            sourceIndicator.style.display = expectedDisplay;
+        }
+
+        this._syncElementTooltip(sourceIndicator, tooltip);
+        if (!hasError) {
+            this.syncRefinementStates(result);
+        }
     },
 
 

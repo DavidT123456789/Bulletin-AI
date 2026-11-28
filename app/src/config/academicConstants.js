@@ -24,7 +24,7 @@ const MOVEMENT_PERIOD_LABELS = Object.freeze({
 function formatMovementStatusPrompt(raw, kind) {
     const trimmed = String(raw || '').trim();
     const baseText = kind === 'new'
-        ? "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation."
+        ? "Tenir compte de l'arrivée récente de l'élève en cours d'année."
         : "Tenir compte du départ de l'élève en dressant un bilan factuel et bienveillant de sa présence.";
 
     if (!trimmed || GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed)) {
@@ -36,7 +36,7 @@ function formatMovementStatusPrompt(raw, kind) {
         const periodPhrase = MOVEMENT_PERIOD_LABELS[periodMatch[1].toUpperCase()];
         if (periodPhrase) {
             return kind === 'new'
-                ? `Tenir compte de l'arrivée récente de l'élève ${periodPhrase} et valoriser son adaptation.`
+                ? `Tenir compte de l'arrivée récente de l'élève ${periodPhrase}.`
                 : `Tenir compte du départ de l'élève ${periodPhrase} en dressant un bilan factuel et bienveillant de sa présence.`;
         }
     }
@@ -47,14 +47,14 @@ function formatMovementStatusPrompt(raw, kind) {
     }
 
     return kind === 'new'
-        ? `Tenir compte de l'arrivée récente de l'élève en cours d'année (${trimmed}) et valoriser son adaptation.`
+        ? `Tenir compte de l'arrivée récente de l'élève en cours d'année (${trimmed}).`
         : `Tenir compte du départ de l'élève (${trimmed}) en dressant un bilan factuel et bienveillant de sa présence.`;
 }
 
 /**
  * Registre canonique des statuts d'élèves.
  * Réconcilie les définitions d'interface (Focus Panel, Formulaire, Plan de classe, Liste)
- * et la traduction pédagogique neutre RGPD (Art. 9) pour les prompts IA.
+ * et le filtrage RGPD (Art. 9) : les badges d'accompagnement sont strictement exclus des prompts IA.
  */
 export const STUDENT_STATUS_REGISTRY = Object.freeze({
     NOUVEAU: Object.freeze({
@@ -71,7 +71,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: true,
         isGdprSensitive: false,
         aliases: Object.freeze(['nouveau']),
-        promptInstruction: "Tenir compte de l'arrivée récente de l'élève en cours d'année et valoriser son adaptation.",
+        promptInstruction: "Tenir compte de l'arrivée récente de l'élève en cours d'année.",
         formatPromptInstruction: (raw) => formatMovementStatusPrompt(raw, 'new'),
     }),
     DEPART: Object.freeze({
@@ -103,7 +103,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: true,
         isGdprSensitive: true,
         aliases: Object.freeze(['ppre']),
-        promptInstruction: "Encourager les efforts sur les compétences fondamentales ciblées et donner des conseils méthodologiques accessibles, sans mentionner de programme d'accompagnement.",
+        promptInstruction: null,
     }),
     PAP: Object.freeze({
         id: 'PAP',
@@ -117,7 +117,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: true,
         isGdprSensitive: true,
         aliases: Object.freeze(['pap']),
-        promptInstruction: "Valoriser les progrès réalisés au regard des aménagements pédagogiques mis en place, avec un ton bienveillant, sans jamais mentionner de dispositif administratif ou médical.",
+        promptInstruction: null,
     }),
     PAI: Object.freeze({
         id: 'PAI',
@@ -131,7 +131,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: true,
         isGdprSensitive: true,
         aliases: Object.freeze(['pai']),
-        promptInstruction: "Tenir compte avec bienveillance du rythme de l'élève sans jamais faire allusion à sa santé ou à un protocole médical.",
+        promptInstruction: null,
     }),
     AESH: Object.freeze({
         id: 'AESH',
@@ -145,7 +145,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: true,
         isGdprSensitive: true,
         aliases: Object.freeze(['aesh']),
-        promptInstruction: "Mettre en avant l'autonomie progressive et les réussites de l'élève, sans mentionner d'accompagnement humain en classe.",
+        promptInstruction: null,
     }),
     ULIS: Object.freeze({
         id: 'ULIS',
@@ -159,7 +159,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: true,
         isGdprSensitive: true,
         aliases: Object.freeze(['ulis']),
-        promptInstruction: "Évaluer les acquis par rapport aux objectifs personnalisés de l'élève en valorisant son implication et ses progrès, sans jamais mentionner de dispositif d'inclusion scolaire ou de handicap.",
+        promptInstruction: null,
     }),
     GEVASCO: Object.freeze({
         id: 'Geva-Sco',
@@ -173,7 +173,7 @@ export const STUDENT_STATUS_REGISTRY = Object.freeze({
         isSelectableInUI: false,
         isGdprSensitive: true,
         aliases: Object.freeze(['geva-sco', 'gevasco', 'geva', 'mdph', 'pps']),
-        promptInstruction: "Valoriser les progrès et l'investissement de l'élève au regard de son parcours adapté, sans jamais mentionner de dossier médico-scolaire ou administratif.",
+        promptInstruction: null,
     }),
     DELEGUE: Object.freeze({
         id: 'Délégué',
@@ -231,35 +231,22 @@ export const GDPR_SENSITIVE_STATUS_PATTERN = new RegExp(
 );
 
 /**
- * Consigne pédagogique neutre de repli pour tout statut médico-scolaire libre détecté.
+ * Filtre une liste de statuts pour ne conserver que ceux transmis à l'IA
+ * (exclut les dispositifs d'accompagnement et tout statut libre relevant de l'Art. 9 RGPD).
+ * Les statuts composites dont le préfixe canonique est non sensible (ex. « Nouveau ULIS »,
+ * « Délégué PAP ») restent éligibles car leur partie sensible est écartée par `formatPromptInstruction`.
+ * @param {string[]} statuses
+ * @returns {string[]}
  */
-export const DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION =
-    "Adapter le propos avec bienveillance aux aménagements pédagogiques de l'élève, sans jamais mentionner de dispositif médical ou administratif.";
-
-/**
- * Identifie tous les dispositifs médico-scolaires canoniques (isGdprSensitive) présents dans une chaîne
- * de statut libre ou composite (ex: "Nouveau ULIS", "Délégué PAP", "Suivi PAI").
- * @param {string} rawStatus
- * @returns {Array<Object>}
- */
-export function resolveSensitiveStatusEntries(rawStatus) {
-    const trimmed = String(rawStatus || '').trim();
-    if (!trimmed) return [];
-
-    const matched = [];
-    const seen = new Set();
-    for (const entry of Object.values(STUDENT_STATUS_REGISTRY)) {
-        if (!entry.isGdprSensitive || !Array.isArray(entry.aliases)) continue;
-        const hasAlias = entry.aliases.some(alias => {
-            const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/-/g, '[-\\s]?');
-            return new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, 'iu').test(trimmed);
-        });
-        if (hasAlias && !seen.has(entry.id)) {
-            seen.add(entry.id);
-            matched.push(entry);
-        }
-    }
-    return matched;
+export function filterAiEligibleStatuses(statuses) {
+    if (!Array.isArray(statuses) || statuses.length === 0) return [];
+    return statuses.filter(rawStatus => {
+        const trimmed = String(rawStatus || '').trim();
+        if (!trimmed) return false;
+        const meta = resolveStudentStatus(trimmed);
+        if (meta) return !meta.isGdprSensitive;
+        return !GDPR_SENSITIVE_STATUS_PATTERN.test(trimmed);
+    });
 }
 
 /**

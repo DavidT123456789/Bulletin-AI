@@ -452,8 +452,25 @@ describe('FocusPanelNavigation', () => {
             expect(currentIndex).toBe(1);
         });
 
-        it('respects prefers-reduced-motion without cloning DOM and cancels pending rAF via cancelActiveTransition()', () => {
-            const { content } = setupSwipeDom();
+        it('starts carousel cross-slide synchronously calibrated to panel width, respects reduced motion & instant repeat, and cleans up via cancelActiveTransition()', () => {
+            document.body.innerHTML = `
+                <div id="focusPanel">
+                    <div class="focus-header">
+                        <div class="focus-header-identity"></div>
+                    </div>
+                    <div id="focusPagesContainer">
+                        <div class="focus-main-page">
+                            <div class="focus-content"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const container = document.getElementById('focusPanel');
+            const content = document.querySelector('.focus-main-page .focus-content');
+            Object.defineProperty(container, 'clientWidth', { value: 480, configurable: true });
+            Object.defineProperty(content, 'clientWidth', { value: 480, configurable: true });
+            Object.defineProperty(window, 'innerWidth', { value: 1920, configurable: true });
+
             const student1 = { id: 's1', nom: 'Alice' };
             const student2 = { id: 's2', nom: 'Bob' };
             appState.filteredResults = [student1, student2];
@@ -483,22 +500,112 @@ describe('FocusPanelNavigation', () => {
                 window.matchMedia = origMatchMedia;
             }
 
-            // Without reduced motion, cancelActiveTransition cleans up rAF + clone + inline opacity
+            // Carousel starts synchronously on Frame 0 calibrated to panelWidth (480px, not 1920*0.6)
             window.matchMedia = vi.fn().mockReturnValue({ matches: false });
-            const cancelRafSpy = vi.spyOn(window, 'cancelAnimationFrame');
-            const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(42);
             try {
                 FocusPanelNavigation.navigatePrev();
+                expect(currentIndex).toBe(0);
                 expect(FocusPanelNavigation._activeClone).not.toBeNull();
                 expect(FocusPanelNavigation._activeClone.getAttribute('aria-hidden')).toBe('true');
+                expect(FocusPanelNavigation._activeClone.style.transform).toContain('translate3d(480px, 0, 0)');
+                expect(content.style.transform).toContain('translate3d(0, 0, 0)');
+                expect(content.style.opacity).toBe('1');
+
+                // cancelActiveTransition cleans up outgoing clone and inline styles
                 FocusPanelNavigation.cancelActiveTransition();
-                expect(cancelRafSpy).toHaveBeenCalledWith(42);
+                expect(FocusPanelNavigation._activeClone).toBeNull();
+                expect(content.style.opacity).toBe('');
+                expect(content.style.transform).toBe('');
+
+                // instant: true (held key repeat) skips cloning and animation
+                FocusPanelNavigation.navigateNext({ instant: true });
+                expect(currentIndex).toBe(1);
                 expect(FocusPanelNavigation._activeClone).toBeNull();
                 expect(content.style.opacity).toBe('');
             } finally {
-                rafSpy.mockRestore();
-                cancelRafSpy.mockRestore();
                 window.matchMedia = origMatchMedia;
+            }
+        });
+
+        it('plays directional boundary bounce at list start/end, respects bounce: false and reduced motion, and cleans up on animationend/timeout', () => {
+            vi.useFakeTimers();
+            document.body.innerHTML = `
+                <div id="focusPanel">
+                    <div class="focus-header">
+                        <div class="focus-header-identity"></div>
+                    </div>
+                    <div id="focusPagesContainer">
+                        <div class="focus-main-page">
+                            <div class="focus-content"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const content = document.querySelector('.focus-main-page .focus-content');
+            const identity = document.querySelector('.focus-header-identity');
+
+            const student1 = { id: 's1', nom: 'Alice' };
+            const student2 = { id: 's2', nom: 'Bob' };
+            appState.filteredResults = [student1, student2];
+            appState.generatedResults = [student1, student2];
+
+            let currentIndex = 0;
+            FocusPanelNavigation.init({
+                getCurrentIndex: () => currentIndex,
+                setCurrentIndex: (idx) => { currentIndex = idx; },
+                getCurrentStudentId: () => appState.filteredResults[currentIndex]?.id,
+                setCurrentStudentId: vi.fn(),
+                saveContext: vi.fn(),
+                renderContent: vi.fn(),
+                onUpdateActiveRow: vi.fn(),
+                updateAppreciationStatus: vi.fn(),
+                updateScrollAffordances: vi.fn()
+            });
+
+            const origMatchMedia = window.matchMedia;
+            window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+            try {
+                // Start boundary -> nudges rightward (+10px / +6px)
+                FocusPanelNavigation.navigatePrev();
+                expect(currentIndex).toBe(0);
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(content.style.getPropertyValue('--nav-bounce-x')).toBe('10px');
+                expect(identity.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(identity.style.getPropertyValue('--nav-bounce-x')).toBe('6px');
+
+                // Auto cleanup after fallback timer
+                vi.advanceTimersByTime(270);
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(false);
+                expect(identity.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // bounce: false (key repeat) does not trigger bounce
+                FocusPanelNavigation.navigatePrev({ bounce: false });
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // End boundary -> nudges leftward (-10px / -6px), cleared on animationend
+                currentIndex = 1;
+                FocusPanelNavigation.navigateNext();
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(true);
+                expect(content.style.getPropertyValue('--nav-bounce-x')).toBe('-10px');
+                expect(identity.style.getPropertyValue('--nav-bounce-x')).toBe('-6px');
+
+                content.dispatchEvent(new Event('animationend'));
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // Reduced motion skips boundary bounce
+                window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+                FocusPanelNavigation.navigateNext();
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(false);
+
+                // Empty list / creation mode (index -1) never bounces
+                window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+                currentIndex = -1;
+                FocusPanelNavigation.navigatePrev();
+                FocusPanelNavigation.navigateNext();
+                expect(content.classList.contains('nav-boundary-bounce')).toBe(false);
+            } finally {
+                window.matchMedia = origMatchMedia;
+                vi.useRealTimers();
             }
         });
     });

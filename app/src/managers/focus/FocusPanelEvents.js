@@ -333,11 +333,13 @@ export const FocusPanelEvents = {
 
             const target = e.target;
             let changed = false;
+            let dirtyOnly = false;
 
             if (target.id === 'focusContextInput') {
                 Utils.markStudentModified(result, currentPeriod);
                 result.studentData.periods[currentPeriod].context = target.value;
                 changed = true;
+                dirtyOnly = true;
                 panel._isContextEdited = true;
             } else if (e.type === 'change' && target.type === 'checkbox' && target.closest('.focus-header-edit')) {
                 const allBoxes = Array.from(document.querySelectorAll('.focus-header-edit input[type="checkbox"]'));
@@ -351,8 +353,7 @@ export const FocusPanelEvents = {
             if (changed) {
                 clearTimeout(panel._uiUpdateTimeout);
                 panel._uiUpdateTimeout = setTimeout(() => {
-                    FocusPanelStatus.refreshAppreciationStatus();
-                    panel._updateListRow(result);
+                    FocusPanelStatus.refreshAppreciationStatus(dirtyOnly ? { dirtyOnly: true } : undefined);
                 }, 300);
             }
         };
@@ -424,10 +425,10 @@ export const FocusPanelEvents = {
                 panel.close();
             } else if (e.key === 'ArrowLeft' && !isEditing && !isThresholdPopoverOpen()) {
                 e.preventDefault();
-                FocusPanelNavigation.navigatePrev();
+                FocusPanelNavigation.navigatePrev({ bounce: !e.repeat, instant: Boolean(e.repeat) });
             } else if (e.key === 'ArrowRight' && !isEditing && !isThresholdPopoverOpen()) {
                 e.preventDefault();
-                FocusPanelNavigation.navigateNext();
+                FocusPanelNavigation.navigateNext({ bounce: !e.repeat, instant: Boolean(e.repeat) });
             }
         });
 
@@ -532,10 +533,12 @@ export const FocusPanelEvents = {
                 const content = appreciationText.textContent?.trim() || '';
                 const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
                 const isGenerating = FocusPanelStatus._isGenerating(panel.currentStudentId);
+                const isDictatingAppreciation = SpeechRecognitionManager.isRecording?.()
+                    && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation';
 
                 if (result && !isGenerating) {
                     // Ensure existing appreciation is seeded into history before live mutation
-                    if (result.studentData?.periods?.[appState.currentPeriod]?.appreciation?.trim()) {
+                    if (!isDictatingAppreciation && result.studentData?.periods?.[appState.currentPeriod]?.appreciation?.trim()) {
                         FocusPanelHistory._getState?.(true);
                     }
                     Utils.markStudentModified(result, appState.currentPeriod);
@@ -554,7 +557,9 @@ export const FocusPanelEvents = {
                         if (result.studentData?.periods?.[appState.currentPeriod]) {
                             result.studentData.periods[appState.currentPeriod].appreciation = content;
                         }
-                        FocusPanelHistory.scheduleEditCommit(content);
+                        if (!isDictatingAppreciation) {
+                            FocusPanelHistory.scheduleEditCommit(content);
+                        }
                     } else {
                         FocusPanelHistory.endEditSession();
                         result.appreciation = '';
@@ -576,13 +581,18 @@ export const FocusPanelEvents = {
                         result.generationSnapshot = null;
 
                         FocusPanelStatus.updateSourceIndicator(result);
-                        FocusPanelStatus.updateAppreciationStatus(result);
+                        const stillDictating = SpeechRecognitionManager.isRecording?.()
+                            && SpeechRecognitionManager.getActiveTarget?.() === 'appreciation';
+                        if (!stillDictating) {
+                            FocusPanelStatus.updateAppreciationStatus(result);
+                        }
                         panel._updateListRow(result);
                     }, 300);
                 }
             });
 
             appreciationText.addEventListener('blur', () => {
+                clearTimeout(panel._appreciationUITimeout);
                 if (!panel._isAppreciationEdited) {
                     FocusPanelHistory.endEditSession();
                     return;
@@ -613,7 +623,7 @@ export const FocusPanelEvents = {
                         panel._saveContext();
 
                         if (result.wasGenerated === false) {
-                            FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                            FocusPanelStatus.updateAppreciationStatus(result);
                             panel._updateGenerateButton(result);
                             FocusPanelStatus.updateSourceIndicator(result);
                             panel._updateListRow(result);
@@ -706,20 +716,22 @@ export const FocusPanelEvents = {
 
         const appreciationBadge = document.getElementById('focusAppreciationBadge');
         if (appreciationBadge) {
-            appreciationBadge.addEventListener('click', () => {
+            const handleVerifyBadgeAction = () => {
                 if (!appreciationBadge.classList.contains('modified')) return;
                 const result = appState.generatedResults.find(r => r.id === panel.currentStudentId);
                 if (!result) return;
 
-                if (FocusPanelStatus._resolveSource(result) === 'ai') {
-                    const genBtn = document.getElementById('focusGenerateBtn');
-                    genBtn?.click();
-                } else {
-                    FocusPanelStatus.markDirtyAsVerified(result);
-                    StorageManager.saveAppState();
-                    panel._updateListRow(result);
-                    FocusPanelStatus.updateSourceIndicator(result);
-                    FocusPanelStatus.updateAppreciationStatus(null, { state: 'saved' });
+                FocusPanelStatus.markDirtyAsVerified(result);
+                StorageManager.saveAppState();
+                panel._updateListRow(result);
+                FocusPanelStatus.updateSourceIndicator(result);
+                FocusPanelStatus.updateAppreciationStatus(result);
+            };
+            appreciationBadge.addEventListener('click', handleVerifyBadgeAction);
+            appreciationBadge.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleVerifyBadgeAction();
                 }
             });
         }

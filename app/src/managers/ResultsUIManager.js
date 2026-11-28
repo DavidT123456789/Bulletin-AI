@@ -736,8 +736,9 @@ export const ResultsUIManager = {
 
         // === HEADER GENERATE CHIP (idle-pending state) + Reinitialize tooltips ===
         UI?.updateDashboardCounts?.();
-        // Avoid full Tippy destroy/recreate during incremental batch countdown so active cancel tooltips never flicker
-        if ((!isGenerating || results !== undefined) && UI?.initTooltips) {
+        // Only run full-page Tippy initialization after a fresh results render (results !== undefined);
+        // incremental calls already update generateBtn, updateBtn and header tooltips individually.
+        if (results !== undefined && UI?.initTooltips) {
             UI.initTooltips();
         }
     },

@@ -9,9 +9,8 @@ import {
     STUDENT_STATUS_REGISTRY,
     STATUS_DESCRIPTIONS,
     GDPR_SENSITIVE_STATUS_PATTERN,
-    DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION,
     resolveStudentStatus,
-    resolveSensitiveStatusEntries,
+    filterAiEligibleStatuses,
     isGdprSensitiveStatus,
     getStatusDescription,
     getSelectableStatusLabels,
@@ -54,14 +53,13 @@ describe('SSOT 3 — STUDENT_STATUS_REGISTRY & Neutralisation RGPD (Art. 9)', ()
         expect(ids).toEqual(['Nouveau', 'Départ', 'PPRE', 'PAP', 'PAI', 'AESH', 'ULIS', 'Geva-Sco', 'Délégué']);
     });
 
-    it('garantit qu’aucune consigne de prompt médico-scolaire ne contient son acronyme médical brut (RGPD Art. 9)', () => {
+    it('exclut strictement les statuts médico-scolaires des consignes IA (promptInstruction: null, RGPD Art. 9)', () => {
         const sensitiveKeys = ['PAP', 'PPRE', 'ULIS', 'PAI', 'AESH', 'GEVASCO'];
         for (const key of sensitiveKeys) {
             const entry = STUDENT_STATUS_REGISTRY[key];
-            expect(entry.promptInstruction).toBeTruthy();
-            expect(entry.promptInstruction).not.toMatch(/\b(PAP|PPRE|ULIS|PAI|AESH|Geva-Sco|GevaSco|PPS|MDPH)\b/i);
+            expect(entry.isGdprSensitive).toBe(true);
+            expect(entry.promptInstruction).toBeNull();
         }
-        expect(DEFAULT_GDPR_SENSITIVE_PROMPT_INSTRUCTION).not.toMatch(/\b(PAP|PPRE|ULIS|PAI|AESH|Geva-Sco)\b/i);
         expect(GDPR_SENSITIVE_STATUS_PATTERN.test('Élève dyslexique avec TDAH')).toBe(true);
     });
 
@@ -79,23 +77,24 @@ describe('SSOT 3 — STUDENT_STATUS_REGISTRY & Neutralisation RGPD (Art. 9)', ()
         }
     });
 
-    it('neutralise les statuts composites (Nouveau ULIS, Départ PAI, Délégué PAP) sans fuite Art. 9 et identifie les dispositifs imbriqués', () => {
+    it('formate factuellement Nouveau/Départ/Délégué sans fuite Art. 9 et filtre les statuts éligibles IA', () => {
         const nouveauT2 = STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau T2');
-        expect(nouveauT2).toContain('au 2e trimestre');
+        expect(nouveauT2).toBe("Tenir compte de l'arrivée récente de l'élève au 2e trimestre.");
         expect(nouveauT2).not.toMatch(/\bT2\b/);
+        expect(nouveauT2).not.toMatch(/valoriser son adaptation/i);
         const departS1 = STUDENT_STATUS_REGISTRY.DEPART.formatPromptInstruction('Départ S1');
         expect(departS1).toContain('au 1er semestre');
         expect(departS1).not.toMatch(/\bS1\b/);
         expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau octobre')).toContain('(Nouveau octobre)');
-        expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau ULIS')).not.toMatch(/ULIS/i);
+        expect(STUDENT_STATUS_REGISTRY.NOUVEAU.formatPromptInstruction('Nouveau ULIS')).toBe("Tenir compte de l'arrivée récente de l'élève en cours d'année.");
         expect(STUDENT_STATUS_REGISTRY.DEPART.formatPromptInstruction('Départ PAI')).not.toMatch(/PAI/i);
         expect(STUDENT_STATUS_REGISTRY.DELEGUE.formatPromptInstruction('Délégué dyslexique')).not.toMatch(/dyslexi/i);
 
-        expect(resolveSensitiveStatusEntries('Nouveau ULIS').map(e => e.id)).toEqual(['ULIS']);
-        expect(resolveSensitiveStatusEntries('Délégué PAP AESH').map(e => e.id)).toEqual(['PAP', 'AESH']);
-        expect(resolveSensitiveStatusEntries('Nouveau dyslexique')).toEqual([]);
-        expect(resolveSensitiveStatusEntries('Nouveau T2')).toEqual([]);
-        expect(resolveSensitiveStatusEntries(null)).toEqual([]);
+        expect(filterAiEligibleStatuses(['PAP', 'PPRE', 'PAI', 'AESH', 'ULIS', 'Geva-Sco', 'TDAH', 'Suivi PAP'])).toEqual([]);
+        expect(filterAiEligibleStatuses(['Nouveau T2', 'PAP', 'Délégué', 'ULIS', 'Option Latin'])).toEqual(['Nouveau T2', 'Délégué', 'Option Latin']);
+        expect(filterAiEligibleStatuses(['Nouveau ULIS', 'Délégué PAP'])).toEqual(['Nouveau ULIS', 'Délégué PAP']);
+        expect(filterAiEligibleStatuses(null)).toEqual([]);
+        expect(filterAiEligibleStatuses([])).toEqual([]);
     });
 
     it('résout les variantes de casse, d’accents, d’alias et de périodes via resolveStudentStatus', () => {

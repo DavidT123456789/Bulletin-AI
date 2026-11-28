@@ -99,10 +99,11 @@ export const FocusPanelJournal = {
 
     /**
      * Refresh appreciation status via callback
+     * @param {Object} [options]
      * @private
      */
-    _refreshStatus() {
-        this._callbacks.onStatusRefresh?.();
+    _refreshStatus(options) {
+        this._callbacks.onStatusRefresh?.(options);
     },
 
     /**
@@ -210,7 +211,7 @@ export const FocusPanelJournal = {
                     StorageManager.saveAppState();
                 }
                 if (pendingStudentId && this._getCurrentStudentId() === pendingStudentId) {
-                    this._refreshStatus();
+                    this._refreshStatus({ dirtyOnly: true });
                 }
                 bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, {
                     newThreshold: JournalManager.getThreshold(pendingClassId),
@@ -242,7 +243,7 @@ export const FocusPanelJournal = {
                 }
 
                 if (result) {
-                    this.render(result);
+                    this._syncAIStateInPlace(result);
                 } else {
                     this._updateThresholdUI();
                 }
@@ -473,6 +474,21 @@ export const FocusPanelJournal = {
     },
 
     /**
+     * Sync existing .journal-empty title & subtitle in place without replacing DOM
+     * @param {HTMLElement|null} existingEmpty
+     * @param {string|null} [classId=null]
+     * @private
+     */
+    _syncEmptyStateCopy(existingEmpty, classId = null) {
+        if (!existingEmpty) return;
+        const { title, subtitle } = JournalManager.getEmptyStateCopy(classId, appState.currentPeriod);
+        const titleEl = existingEmpty.querySelector('.journal-empty-title');
+        const subtitleEl = existingEmpty.querySelector('.journal-empty-subtitle');
+        if (titleEl && titleEl.textContent !== title) titleEl.textContent = title;
+        if (subtitleEl && subtitleEl.textContent !== subtitle) subtitleEl.textContent = subtitle;
+    },
+
+    /**
      * Render Journal section for current student
      * @param {Object} result - Student data
      * @param {string|null} [highlightEntryId=null] - Entry ID to highlight after save
@@ -564,11 +580,7 @@ export const FocusPanelJournal = {
 
         if (isNewEmpty && existingEmpty) {
             // Keep DOM node intact (no flicker/layout shift) while keeping title/subtitle synced
-            const { title, subtitle } = JournalManager.getEmptyStateCopy(result.classId, appState.currentPeriod);
-            const titleEl = existingEmpty.querySelector('.journal-empty-title');
-            const subtitleEl = existingEmpty.querySelector('.journal-empty-subtitle');
-            if (titleEl && titleEl.textContent !== title) titleEl.textContent = title;
-            if (subtitleEl && subtitleEl.textContent !== subtitle) subtitleEl.textContent = subtitle;
+            this._syncEmptyStateCopy(existingEmpty, result.classId);
         } else if (isNewEmpty) {
             TooltipsUI.cleanupTooltipsIn(timelineContainer);
             timelineContainer.innerHTML = JournalManager.renderTimeline(
@@ -617,6 +629,95 @@ export const FocusPanelJournal = {
         // Update count badge
         this._updateCountBadge(result, aiSummary);
         this._callbacks.bindScrollAffordances?.(contentEl);
+    },
+
+    /**
+     * Surgically sync AI transmission & threshold visuals in place without rebuilding
+     * timeline DOM or destroying <iconify-icon> elements (zero icon flicker, preserves inline editor).
+     * Falls back to full render() only if the timeline has not been mounted yet.
+     * @param {Object} result - Student data
+     * @private
+     */
+    _syncAIStateInPlace(result) {
+        if (!result?.id) {
+            this._updateThresholdUI();
+            return;
+        }
+
+        const contentEl = document.getElementById('focusJournalContent');
+        if (!contentEl?.querySelector('#journalTimelineContainer, .journal-timeline, .journal-empty')) {
+            this.render(result, null, { animateTimeline: false });
+            return;
+        }
+
+        const aiSummary = JournalManager.getAISummary(result, appState.currentPeriod);
+        this._updateThresholdUI(result, aiSummary);
+
+        const entries = JournalManager.getEntriesForPeriod(result.id, appState.currentPeriod);
+        const classId = result.classId || null;
+
+        if (entries.length === 0) {
+            this._syncEmptyStateCopy(contentEl.querySelector('.journal-empty'), classId);
+            this._updateCountBadge(result, aiSummary);
+            return;
+        }
+
+        const threshold = JournalManager.getThreshold(classId);
+        const tagCounts = JournalManager.countTags(entries, null, { excludePrivate: true });
+        const entriesById = new Map(entries.map(e => [String(e.id), e]));
+
+        contentEl.querySelectorAll('.journal-entry[data-entry-id]').forEach(entryEl => {
+            const entry = entriesById.get(entryEl.dataset.entryId);
+            if (!entry) return;
+
+            const { isIsolated, isolatedTooltip, tagStates } = JournalManager.getEntryVisualState(
+                entry,
+                tagCounts,
+                threshold,
+                classId
+            );
+            entryEl.classList.toggle('isolated', isIsolated);
+
+            const tagsContainer = entryEl.querySelector('.journal-entry-tags');
+            if (!tagsContainer) return;
+
+            const tagStateById = new Map(tagStates.map(s => [s.tagId, s]));
+            tagsContainer.querySelectorAll('.journal-tag[data-tag-id]').forEach(tagEl => {
+                const tagState = tagStateById.get(tagEl.dataset.tagId);
+                if (!tagState) return;
+                tagEl.classList.toggle('below-threshold', tagState.isBelow);
+
+                if (tagState.tooltip) {
+                    TooltipsUI.updateTooltip(tagEl, tagState.tooltip);
+                } else {
+                    if (tagEl.hasAttribute('data-tooltip')) {
+                        tagEl.removeAttribute('data-tooltip');
+                        delete tagEl.dataset.tooltip;
+                    }
+                    if (tagEl._tippy) {
+                        TooltipsUI.cleanupTooltipsIn(tagEl);
+                    }
+                }
+            });
+
+            const existingInfo = tagsContainer.querySelector('.journal-entry-info');
+            if (isIsolated) {
+                if (existingInfo) {
+                    TooltipsUI.updateTooltip(existingInfo, isolatedTooltip);
+                } else {
+                    const infoEl = document.createElement('span');
+                    infoEl.className = 'journal-entry-info tooltip';
+                    infoEl.innerHTML = '<iconify-icon icon="solar:info-circle-linear"></iconify-icon>';
+                    tagsContainer.appendChild(infoEl);
+                    TooltipsUI.updateTooltip(infoEl, isolatedTooltip);
+                }
+            } else if (existingInfo) {
+                TooltipsUI.cleanupTooltipsIn(existingInfo);
+                existingInfo.remove();
+            }
+        });
+
+        this._updateCountBadge(result, aiSummary);
     },
 
     /**
@@ -767,23 +868,54 @@ export const FocusPanelJournal = {
                 const visibleItems = aggregated.slice(0, maxVisible);
                 const overflowItems = aggregated.slice(maxVisible);
 
-                // Render top 3 tag counts + neutral +N overflow pill to keep header compact
-                let html = visibleItems.map(item => {
+                // Build state & tooltip for each visible count tag
+                const visibleMeta = visibleItems.map(item => {
                     const isBelow = includeInAI && !transmittedTagIds.has(item.id);
-                    const belowClass = isBelow ? ' below-threshold' : '';
-                    const escapedLabel = Utils.escapeHtml(item.label);
+                    const rawLabel = item.label;
                     let tooltipText;
                     if (isBelow) {
                         tooltipText = item.count >= threshold
-                            ? `${escapedLabel} : ${item.count} (hors top 5 transmis à l'IA)`
-                            : `${escapedLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`;
+                            ? `${rawLabel} : ${item.count} (hors top 5 transmis à l'IA)`
+                            : `${rawLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`;
                     } else if (includeInAI && item.count < threshold) {
-                        tooltipText = `${escapedLabel} : ${item.count} (transmis via observation écrite)`;
+                        tooltipText = `${rawLabel} : ${item.count} (transmis via observation écrite)`;
                     } else {
-                        tooltipText = `${escapedLabel} : ${item.count}`;
+                        tooltipText = `${rawLabel} : ${item.count}`;
                     }
+                    return { item, isBelow, tooltipText };
+                });
+
+                const existingTags = Array.from(countBadge.querySelectorAll('.journal-count-tag'));
+                const existingOverflow = countBadge.querySelector('.tag-more-count');
+                const expectedOverflowText = overflowItems.length > 0 ? `+${overflowItems.length}` : null;
+                const canPatchInPlace = existingTags.length === visibleMeta.length
+                    && visibleMeta.every(({ item }, i) =>
+                        existingTags[i].dataset.tagId === item.id &&
+                        existingTags[i].dataset.count === String(item.count)
+                    )
+                    && (existingOverflow ? existingOverflow.textContent : null) === expectedOverflowText;
+
+                if (canPatchInPlace) {
+                    visibleMeta.forEach(({ isBelow, tooltipText }, i) => {
+                        const tagEl = existingTags[i];
+                        tagEl.classList.toggle('below-threshold', isBelow);
+                        TooltipsUI.updateTooltip(tagEl, tooltipText);
+                    });
+                    if (existingOverflow && overflowItems.length > 0) {
+                        const overflowTooltip = overflowItems
+                            .map(item => `${item.label} : ${item.count}`)
+                            .join(' • ');
+                        TooltipsUI.updateTooltip(existingOverflow, overflowTooltip);
+                    }
+                    countBadge.classList.remove('is-hidden');
+                    return;
+                }
+
+                // Render top 3 tag counts + neutral +N overflow pill to keep header compact
+                let html = visibleMeta.map(({ item, isBelow, tooltipText }) => {
+                    const belowClass = isBelow ? ' below-threshold' : '';
                     return `
-                    <span class="journal-tag journal-count-tag${belowClass}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${tooltipText}">
+                    <span class="journal-tag journal-count-tag${belowClass}" data-tag-id="${Utils.escapeHtml(String(item.id))}" data-count="${item.count}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
                 `}).join('');
@@ -882,7 +1014,10 @@ export const FocusPanelJournal = {
         }
         const btnIcon = document.getElementById('journalThresholdIcon');
         if (btnIcon) {
-            btnIcon.setAttribute('icon', includeInAI ? 'solar:stars-line-duotone' : 'solar:lock-keyhole-minimalistic-linear');
+            const nextIcon = includeInAI ? 'solar:stars-line-duotone' : 'solar:lock-keyhole-minimalistic-linear';
+            if (btnIcon.getAttribute('icon') !== nextIcon) {
+                btnIcon.setAttribute('icon', nextIcon);
+            }
         }
 
         // Update scope subtitle in popover

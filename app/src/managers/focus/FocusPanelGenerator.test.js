@@ -125,12 +125,22 @@ describe('FocusPanelGenerator._buildPromptSummaryHtml', () => {
                     raw: 'PPRE',
                     label: 'PPRE',
                     isGdprSensitive: true,
-                    instruction: 'Encourager les efforts sur les compétences fondamentales.'
+                    isExcludedFromAI: true,
+                    instruction: ''
+                },
+                {
+                    raw: 'Délégué',
+                    label: 'Délégué',
+                    isGdprSensitive: false,
+                    isExcludedFromAI: false,
+                    instruction: "Prendre en compte l'engagement citoyen de l'élève si pertinent."
                 }
             ]
         });
         const rgpdHtml = FocusPanelGenerator._buildPromptSummaryHtml(rgpdSummary);
-        expect(rgpdHtml).toContain('PPRE masqué · RGPD');
-        expect(rgpdHtml).toContain('« Encourager les efforts sur les compétences fondamentales. »');
+        expect(rgpdHtml).toContain('PPRE · Hors IA');
+        expect(rgpdHtml).toContain("Non transmis à l'IA (repère local · RGPD)");
+        expect(rgpdHtml).toContain('Délégué');
+        expect(rgpdHtml).toContain('« Prendre en compte l&#39;engagement citoyen de l&#39;élève si pertinent. »');
     });
 });

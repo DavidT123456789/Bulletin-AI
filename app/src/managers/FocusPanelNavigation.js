@@ -127,6 +127,7 @@ export const FocusPanelNavigation = {
             suppressNextClickUntil = 0;
             if (e.touches.length > 1) return; // Ignore multi-touch
 
+            this._clearBoundaryBounce();
             cancelSnapBack();
             resetGestureVars();
             currentTranslateX = 0;
@@ -261,23 +262,126 @@ export const FocusPanelNavigation = {
         targetArea.addEventListener('touchcancel', () => finishSwipe(false), { passive: true });
     },
 
+    _prefersReducedMotion() {
+        return Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    },
+
+    _getActiveNavigationTargets() {
+        const isAnalysisVisible = Boolean(FocusPanelAnalysis.isVisible && FocusPanelAnalysis.isVisible());
+        if (isAnalysisVisible) {
+            return {
+                isAnalysisVisible: true,
+                content: document.querySelector('.focus-analysis-content-area'),
+                headerIdentity: document.querySelector('.focus-analysis-header-left')
+            };
+        }
+        const header = document.querySelector('.focus-header');
+        const isEditingHeader = Boolean(header?.classList.contains('editing'));
+        return {
+            isAnalysisVisible: false,
+            content: document.querySelector('.focus-main-page .focus-content'),
+            headerIdentity: (!isEditingHeader && header) ? header.querySelector('.focus-header-identity') : null
+        };
+    },
+
+    _clearBoundaryBounce() {
+        if (this._boundaryBounceTimer) {
+            clearTimeout(this._boundaryBounceTimer);
+            this._boundaryBounceTimer = null;
+        }
+        if (this._boundaryBouncePrimaryEl && this._boundaryBounceEndHandler) {
+            this._boundaryBouncePrimaryEl.removeEventListener('animationend', this._boundaryBounceEndHandler);
+        }
+        this._boundaryBouncePrimaryEl = null;
+        this._boundaryBounceEndHandler = null;
+        const tracked = this._boundaryBounceTargets || [];
+        this._boundaryBounceTargets = null;
+        const els = new Set(tracked);
+        document.querySelectorAll('#focusPanel .nav-boundary-bounce').forEach(el => els.add(el));
+        els.forEach(el => {
+            el.classList.remove('nav-boundary-bounce');
+            el.style.removeProperty('--nav-bounce-x');
+            el.style.removeProperty('--nav-bounce-y');
+        });
+    },
+
+    /**
+     * Joue un rebond directionnel en bout de liste (mutualise `.nav-boundary-bounce` de layout.css).
+     * @param {'prev'|'next'} direction - Direction tentée
+     * @private
+     */
+    _animateBoundaryBounce(direction) {
+        if (this._prefersReducedMotion() || this._activeClone) return;
+        const { content, headerIdentity, isAnalysisVisible } = this._getActiveNavigationTargets();
+        if (!content) return;
+        if (!isAnalysisVisible && document.querySelector('.focus-header')?.classList.contains('editing')) return;
+
+        // Prev (début de liste) -> rebond vers la droite (+10px), Next (fin de liste) -> vers la gauche (-10px)
+        const x = direction === 'prev' ? 10 : -10;
+        const targets = [{ el: content, x }];
+        if (headerIdentity) {
+            targets.push({ el: headerIdentity, x: Math.round(x * 0.6) });
+        }
+
+        const wasAlreadyBouncing = targets.some(({ el }) => el.classList.contains('nav-boundary-bounce'));
+        this._clearBoundaryBounce();
+        if (wasAlreadyBouncing) {
+            void content.offsetWidth;
+        }
+
+        this._boundaryBounceTargets = targets.map(({ el }) => el);
+        targets.forEach(({ el, x: offsetX }) => {
+            el.style.setProperty('--nav-bounce-x', `${offsetX}px`);
+            el.style.setProperty('--nav-bounce-y', '0px');
+            el.classList.add('nav-boundary-bounce');
+        });
+
+        const onAnimEnd = (e) => {
+            if (e && e.target !== content) return;
+            this._clearBoundaryBounce();
+        };
+        this._boundaryBouncePrimaryEl = content;
+        this._boundaryBounceEndHandler = onAnimEnd;
+        content.addEventListener('animationend', onAnimEnd);
+        this._boundaryBounceTimer = setTimeout(() => {
+            this._clearBoundaryBounce();
+        }, 260);
+    },
+
     /**
      * Navigue vers l'élève précédent avec animation
+     * @param {Object} [options={}]
+     * @param {boolean} [options.bounce=true] - Joue un rebond en début de liste
+     * @param {boolean} [options.instant=false] - Coupe l'animation (ex: touche maintenue)
      */
-    navigatePrev() {
+    navigatePrev({ bounce = true, instant = false } = {}) {
         const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
-        if (currentIndex <= 0) return;
-        this._navigateWithAnimation('prev');
+        const total = appState.filteredResults?.length ?? 0;
+        if (currentIndex <= 0) {
+            if (bounce && currentIndex === 0 && total > 0) {
+                this._animateBoundaryBounce('prev');
+            }
+            return;
+        }
+        this._navigateWithAnimation('prev', null, { instant });
     },
 
     /**
      * Navigue vers l'élève suivant avec animation
+     * @param {Object} [options={}]
+     * @param {boolean} [options.bounce=true] - Joue un rebond en fin de liste
+     * @param {boolean} [options.instant=false] - Coupe l'animation (ex: touche maintenue)
      */
-    navigateNext() {
+    navigateNext({ bounce = true, instant = false } = {}) {
         const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
         const filteredResults = appState.filteredResults || [];
-        if (currentIndex < 0 || currentIndex >= filteredResults.length - 1) return;
-        this._navigateWithAnimation('next');
+        if (currentIndex < 0 || currentIndex >= filteredResults.length - 1) {
+            if (bounce && currentIndex >= 0 && filteredResults.length > 0) {
+                this._animateBoundaryBounce('next');
+            }
+            return;
+        }
+        this._navigateWithAnimation('next', null, { instant });
     },
 
     /**
@@ -305,13 +409,10 @@ export const FocusPanelNavigation = {
     },
 
     /**
-     * Annule immédiatement toute transition en cours (clone, rAF, timeout et styles inline).
+     * Annule immédiatement toute transition en cours (clone, timeout, rebond et styles inline).
      */
     cancelActiveTransition() {
-        if (this._animRafId) {
-            cancelAnimationFrame(this._animRafId);
-            this._animRafId = null;
-        }
+        this._clearBoundaryBounce();
         if (this._animTimeout) {
             clearTimeout(this._animTimeout);
             this._animTimeout = null;
@@ -330,12 +431,15 @@ export const FocusPanelNavigation = {
     },
 
     /**
-     * Navigation avec animation de transition
+     * Navigation avec animation carrousel (iOS Gallery Physics)
+     * Démarre dès la 1ère frame (sans attente rAF) et calibre la course sur la largeur réelle du volet.
      * @param {'prev'|'next'} direction - Direction de navigation
      * @param {number|null} swipeStartX - Position X de départ si c'est un swipe
+     * @param {Object} [options={}]
+     * @param {boolean} [options.instant=false] - Bascule instantanée sans animation (ex: touche maintenue)
      * @private
      */
-    _navigateWithAnimation(direction, swipeStartX = null) {
+    _navigateWithAnimation(direction, swipeStartX = null, { instant = false } = {}) {
         // Blur active element to clear any focus rings (e.g. copy button) and trigger text saving
         if (document.activeElement && document.activeElement !== document.body) {
             document.activeElement.blur();
@@ -347,10 +451,7 @@ export const FocusPanelNavigation = {
         // Abort voice dictation immediately so recording does not spill over
         SpeechRecognitionManager.abort?.();
 
-        const isAnalysisVisible = FocusPanelAnalysis.isVisible && FocusPanelAnalysis.isVisible();
-        const content = isAnalysisVisible
-            ? document.querySelector('.focus-analysis-content-area')
-            : document.querySelector('.focus-main-page .focus-content');
+        const { content, isAnalysisVisible } = this._getActiveNavigationTargets();
 
         const currentIndex = this.callbacks?.getCurrentIndex?.() ?? -1;
         if (currentIndex < 0) return;
@@ -358,40 +459,34 @@ export const FocusPanelNavigation = {
         // Clean up any ongoing animations before starting a new transition or instant switch
         this.cancelActiveTransition();
 
-        const prefersReducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+        const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+        const filteredResult = appState.filteredResults?.[targetIndex];
+        if (!filteredResult) return;
 
-        if (!content || prefersReducedMotion) {
-            // Fallback sans animation (ou prefers-reduced-motion)
+        const targetResult = appState.generatedResults?.find(r => r.id === filteredResult.id) || filteredResult;
+        const prefersReducedMotion = this._prefersReducedMotion();
+
+        if (!content || prefersReducedMotion || instant) {
+            // Fallback sans animation (prefers-reduced-motion ou touche maintenue)
             this.callbacks?.saveContext?.();
-            const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
-            const filteredResult = appState.filteredResults?.[targetIndex];
-            if (filteredResult) {
-                const targetResult = appState.generatedResults?.find(r => r.id === filteredResult.id) || filteredResult;
-                this._switchToStudent(targetResult, targetIndex);
-                if (isAnalysisVisible && FocusPanelAnalysis.show) {
-                    FocusPanelAnalysis.show();
-                }
-                if (content) {
-                    content.style.transition = '';
-                    content.style.transform = '';
-                    content.style.opacity = '';
-                    content.style.willChange = '';
-                    content.scrollTop = 0;
-                }
-                FocusPanelHeader.resetScrollState({ syncOffset: true });
-                this.callbacks?.updateScrollAffordances?.();
+            if (content) {
+                content.style.transition = '';
+                content.style.transform = '';
+                content.style.opacity = '';
+                content.style.willChange = '';
+                content.scrollTop = 0;
             }
+            FocusPanelHeader.resetScrollState();
+            this._switchToStudent(targetResult, targetIndex);
+            if (isAnalysisVisible && FocusPanelAnalysis.show) {
+                FocusPanelAnalysis.show();
+            }
+            FocusPanelHeader.resetScrollState({ syncOffset: true });
+            this.callbacks?.updateScrollAffordances?.();
             return;
         }
 
-        // 1. Prepare Target Data
-        const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
-        const filteredResult = appState.filteredResults[targetIndex];
-        if (!filteredResult) return;
-
-        const targetResult = appState.generatedResults.find(r => r.id === filteredResult.id) || filteredResult;
-
-        // 2. Clone Current Content (Retains the swipe-induced inline styles)
+        // 1. Clone outgoing content (preserves drag transform if coming from touch swipe)
         const clone = content.cloneNode(true);
         // Isolate outgoing clone from assistive tech, focus trap and duplicate non-styled IDs
         clone.setAttribute('aria-hidden', 'true');
@@ -421,6 +516,9 @@ export const FocusPanelNavigation = {
         this._activeClone = clone;
         this._animContentEl = content;
         const parent = content.offsetParent || document.body;
+        const travelDistance = content.clientWidth || content.offsetWidth || Math.min(window.innerWidth || 400, 610);
+        const exitX = direction === 'next' ? -travelDistance : travelDistance;
+        const enterX = direction === 'next' ? travelDistance : -travelDistance;
 
         clone.style.position = 'absolute';
         clone.style.top = `${content.offsetTop}px`;
@@ -431,10 +529,12 @@ export const FocusPanelNavigation = {
         clone.style.zIndex = '10';
         clone.style.pointerEvents = 'none';
         clone.style.overflow = 'hidden';
+        clone.style.willChange = 'transform, opacity';
+        clone.style.transition = 'none';
         clone.scrollTop = content.scrollTop;
 
         if (swipeStartX === null) {
-            clone.style.transform = 'translateX(0) scale(1)';
+            clone.style.transform = 'translate3d(0, 0, 0) scale(1)';
             clone.style.opacity = '1';
         }
 
@@ -446,53 +546,38 @@ export const FocusPanelNavigation = {
 
         parent.appendChild(clone);
 
-        // 3. Update State & Content IMMEDIATELY
+        // 2. Update state & render incoming student immediately at its entry edge (flush with panel border)
         this.callbacks?.saveContext?.();
 
-        // Prepare new content for animation
         content.style.transition = 'none';
+        content.style.transform = `translate3d(${enterX}px, 0, 0) scale(0.92)`;
         content.style.opacity = '0';
         content.style.willChange = 'transform, opacity';
+        content.scrollTop = 0;
 
-        // Switch Logic
+        FocusPanelHeader.resetScrollState();
         this._switchToStudent(targetResult, targetIndex);
 
-        // Analysis Refresh if needed
         if (isAnalysisVisible && FocusPanelAnalysis.show) {
             FocusPanelAnalysis.show();
         }
 
-        content.scrollTop = 0;
         FocusPanelHeader.resetScrollState({ syncOffset: true });
         this.callbacks?.updateScrollAffordances?.();
 
-        // 4. Trigger Inline Animations (iOS Gallery Physics)
-        this._animRafId = requestAnimationFrame(() => {
-            this._animRafId = null;
-            const viewportMultiplier = window.innerWidth > 600 ? 0.6 : 1.0;
-            const exitX = direction === 'next' ? -window.innerWidth * viewportMultiplier : window.innerWidth * viewportMultiplier;
-            const enterX = direction === 'next' ? window.innerWidth * viewportMultiplier : -window.innerWidth * viewportMultiplier;
+        // 3. Commit before-change styles once and start carousel immediately on Frame 0 (zero rAF lag)
+        void content.offsetWidth;
 
-            // Animate Clone Out
-            clone.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
-            clone.style.transform = `translateX(${exitX}px) scale(0.92)`;
-            clone.style.opacity = '0';
+        const carouselTransition = 'transform 0.34s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.28s ease';
+        clone.style.transition = carouselTransition;
+        clone.style.transform = `translate3d(${exitX}px, 0, 0) scale(0.92)`;
+        clone.style.opacity = '0';
 
-            // Position Content for Enter
-            content.style.transition = 'none';
-            content.style.transform = `translateX(${enterX}px) scale(0.92)`;
-            content.style.opacity = '0';
+        content.style.transition = carouselTransition;
+        content.style.transform = 'translate3d(0, 0, 0) scale(1)';
+        content.style.opacity = '1';
 
-            // Force reflow
-            void content.offsetWidth;
-
-            // Animate Content In
-            content.style.transition = 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease';
-            content.style.transform = 'translateX(0) scale(1)';
-            content.style.opacity = '1';
-        });
-
-        // 5. Cleanup
+        // 4. Cleanup
         this._animTimeout = setTimeout(() => {
             if (this._activeClone === clone) {
                 this._activeClone.remove();
@@ -508,7 +593,7 @@ export const FocusPanelNavigation = {
                 this._animContentEl = null;
             }
             this._animTimeout = null;
-        }, 480);
+        }, 370);
     },
 
     /**
