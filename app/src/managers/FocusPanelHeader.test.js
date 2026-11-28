@@ -56,10 +56,13 @@ describe('FocusPanelHeader — Layout Offset Sync & Identity Rendering', () => {
             const header = panel.querySelector('.focus-header');
             Object.defineProperty(header, 'offsetHeight', { value: 138, configurable: true });
 
-            FocusPanelHeader.syncHeaderOffset();
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(true);
 
             // 138 (height) + 8 (margin-top) + 14 (desktop gap) = 160px
             expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('160px');
+
+            // Unchanged on subsequent call with identical offset
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(false);
         });
 
         it('uses the compact 12px mobile gap when viewport width <= 600px', () => {
@@ -68,7 +71,7 @@ describe('FocusPanelHeader — Layout Offset Sync & Identity Rendering', () => {
             const header = panel.querySelector('.focus-header');
             Object.defineProperty(header, 'offsetHeight', { value: 114, configurable: true });
 
-            FocusPanelHeader.syncHeaderOffset();
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(true);
 
             // 114 + 8 + 12 = 134px
             expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('134px');
@@ -81,12 +84,12 @@ describe('FocusPanelHeader — Layout Offset Sync & Identity Rendering', () => {
             Object.defineProperty(header, 'offsetHeight', { value: 52, configurable: true });
 
             header.classList.add('scrolled');
-            FocusPanelHeader.syncHeaderOffset();
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(false);
             expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('154px');
 
             header.classList.remove('scrolled');
             header.classList.add('editing');
-            FocusPanelHeader.syncHeaderOffset();
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(false);
             expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('154px');
         });
 
@@ -95,11 +98,91 @@ describe('FocusPanelHeader — Layout Offset Sync & Identity Rendering', () => {
             const header = panel.querySelector('.focus-header');
             Object.defineProperty(header, 'offsetHeight', { value: 0, configurable: true });
 
-            FocusPanelHeader.syncHeaderOffset();
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(false);
             expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('');
 
             document.body.innerHTML = '';
             expect(() => FocusPanelHeader.syncHeaderOffset()).not.toThrow();
+            expect(FocusPanelHeader.syncHeaderOffset()).toBe(false);
+        });
+    });
+
+    describe('syncScrollState() & _exitEditModeUI() scroll preservation', () => {
+        it('applies hysteresis thresholds (enter >= 16, stay until <= 4) and syncs offset on exit', () => {
+            const panel = document.getElementById('focusPanel');
+            const header = panel.querySelector('.focus-header');
+            const content = panel.querySelector('.focus-content');
+            Object.defineProperty(header, 'offsetHeight', { value: 110, configurable: true });
+
+            content.scrollTop = 12;
+            FocusPanelHeader.syncScrollState(content);
+            expect(header.classList.contains('scrolled')).toBe(false);
+
+            content.scrollTop = 16;
+            FocusPanelHeader.syncScrollState(content);
+            expect(header.classList.contains('scrolled')).toBe(true);
+
+            // Hysteresis band: remains scrolled between 5 and 15
+            content.scrollTop = 10;
+            FocusPanelHeader.syncScrollState(content);
+            expect(header.classList.contains('scrolled')).toBe(true);
+
+            // Exit band: removes .scrolled and resyncs resting offset
+            content.scrollTop = 4;
+            FocusPanelHeader.syncScrollState(content);
+            expect(header.classList.contains('scrolled')).toBe(false);
+            expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('132px');
+        });
+
+        it('keeps .scrolled disabled while header is in editing mode and handles missing DOM safely', () => {
+            const panel = document.getElementById('focusPanel');
+            const header = panel.querySelector('.focus-header');
+            const content = panel.querySelector('.focus-content');
+
+            header.classList.add('editing', 'scrolled');
+            content.scrollTop = 200;
+            FocusPanelHeader.syncScrollState(content);
+            expect(header.classList.contains('scrolled')).toBe(false);
+
+            document.body.innerHTML = '';
+            expect(() => FocusPanelHeader.syncScrollState()).not.toThrow();
+        });
+
+        it('updates resting --focus-header-offset before re-applying .scrolled when exiting edit mode while scrolled', () => {
+            const panel = document.getElementById('focusPanel');
+            const header = panel.querySelector('.focus-header');
+            const readMode = header.querySelector('.focus-header-read');
+            const editMode = header.querySelector('.focus-header-edit');
+            const content = panel.querySelector('.focus-content');
+
+            Object.defineProperty(header, 'offsetHeight', { value: 126, configurable: true });
+            header.classList.add('editing');
+            readMode.classList.add('hidden');
+            editMode.classList.add('visible');
+            content.scrollTop = 200;
+
+            FocusPanelHeader._exitEditModeUI(header, readMode, editMode, null, { silentHistory: true });
+
+            expect(header.classList.contains('editing')).toBe(false);
+            expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('148px');
+            expect(header.classList.contains('scrolled')).toBe(true);
+        });
+
+        it('leaves .scrolled off when exiting edit mode at scrollTop = 0', () => {
+            const panel = document.getElementById('focusPanel');
+            const header = panel.querySelector('.focus-header');
+            const readMode = header.querySelector('.focus-header-read');
+            const editMode = header.querySelector('.focus-header-edit');
+            const content = panel.querySelector('.focus-content');
+
+            Object.defineProperty(header, 'offsetHeight', { value: 120, configurable: true });
+            header.classList.add('editing');
+            content.scrollTop = 0;
+
+            FocusPanelHeader._exitEditModeUI(header, readMode, editMode, null, { silentHistory: true });
+
+            expect(header.classList.contains('scrolled')).toBe(false);
+            expect(panel.style.getPropertyValue('--focus-header-offset')).toBe('142px');
         });
     });
 

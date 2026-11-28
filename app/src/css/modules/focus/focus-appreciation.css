@@ -1889,13 +1889,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--warning-text);
+    color: color-mix(in srgb, var(--warning-text) 55%, var(--warning-color));
     font-size: 16px;
     cursor: pointer;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.15));
     /* Premium transition for opacity/transform */
     transition: opacity 0.25s cubic-bezier(0.32, 0.72, 0, 1),
         transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-theme="dark"] .dirty-indicator:not(.error-indicator) {
+    color: var(--warning-text);
 }
 
 .dirty-indicator:hover {

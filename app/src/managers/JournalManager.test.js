@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JournalManager } from './JournalManager.js';
 import { FocusPanelJournal } from './FocusPanelJournal.js';
+import { ClassManager } from './ClassManager.js';
 import { appState, userSettings } from '../state/State.js';
 
 // Mock dependencies
@@ -474,7 +475,8 @@ describe('JournalManager', () => {
                 isPrivate: true
             });
 
-            // Identique en Dès 1, Dès 2 et Dès 3 : pas de bascule visuelle ni de doublon
+            // Identique en Dès 1, Dès 2 et Dès 3 : pas de bascule visuelle, ni de doublon, ni de variation du prompt
+            const syntheses = [];
             for (const threshold of [1, 2, 3]) {
                 appState.journalThreshold = threshold;
                 const summary = JournalManager.getAISummary('student-1', 'T1');
@@ -483,7 +485,11 @@ describe('JournalManager', () => {
                 expect(summary.compactText).toBe('1 observation');
                 expect(summary.displayText).toContain('Progrès : « Méthode bien appliquée');
                 expect(summary.displayText).not.toContain('[Progrès]');
+                syntheses.push(JournalManager.synthesizeForPrompt('student-1', 'T1'));
             }
+            expect(syntheses[0]).toBe('Notes: "[Progrès] Méthode bien appliquée lors de l\'exercice en autonomie."');
+            expect(syntheses[1]).toBe(syntheses[0]);
+            expect(syntheses[2]).toBe(syntheses[0]);
 
             // excludeRemarque filtre le tag technique tout en préservant l'id sur les vrais tags
             appState.journalThreshold = 2;
@@ -688,6 +694,194 @@ describe('JournalManager', () => {
                 expect(document.querySelector('.journal-entry')).toBe(existingEntryNode);
             } finally {
                 matchMediaSpy.mockRestore();
+            }
+        });
+
+        it('termine la fermeture exactement sur transitionend(grid-template-rows), libère .is-collapsing, ferme le popover et rafraîchit les brumes de scroll', () => {
+            vi.useFakeTimers();
+            try {
+                mountJournalDOM();
+                const bindScrollAffordances = vi.fn();
+                FocusPanelJournal._callbacks.bindScrollAffordances = bindScrollAffordances;
+                JournalManager.addEntry('student-1', { tags: ['progres'], note: 'Bon travail' });
+                const student1 = appState.generatedResults[0];
+
+                FocusPanelJournal.render(student1);
+                bindScrollAffordances.mockClear();
+
+                const contentEl = document.getElementById('focusJournalContent');
+                const thresholdControl = document.getElementById('journalThresholdControl');
+                Object.defineProperty(contentEl, 'offsetHeight', { configurable: true, value: 360 });
+
+                FocusPanelJournal.toggleQuickAdd(true, true);
+                thresholdControl.classList.add('open');
+
+                FocusPanelJournal.toggleQuickAdd(false);
+
+                const draftPreview = document.getElementById('journalDraftPreview');
+                expect(draftPreview.classList.contains('closing')).toBe(true);
+                expect(contentEl.classList.contains('is-collapsing')).toBe(true);
+                expect(contentEl.style.maxHeight).toBe('');
+                expect(thresholdControl.classList.contains('open')).toBe(false);
+
+                // Un transitionend sur une autre propriété (ex. opacity) ne doit pas clore prématurément
+                const opacityEv = new Event('transitionend');
+                Object.defineProperty(opacityEv, 'propertyName', { value: 'opacity' });
+                draftPreview.dispatchEvent(opacityEv);
+                expect(draftPreview.classList.contains('visible')).toBe(true);
+                expect(contentEl.classList.contains('is-collapsing')).toBe(true);
+
+                // Le transitionend sur grid-template-rows conclut proprement en un seul appel
+                const gridEv = new Event('transitionend');
+                Object.defineProperty(gridEv, 'propertyName', { value: 'grid-template-rows' });
+                draftPreview.dispatchEvent(gridEv);
+
+                expect(draftPreview.classList.contains('visible')).toBe(false);
+                expect(draftPreview.classList.contains('closing')).toBe(false);
+                expect(contentEl.classList.contains('is-collapsing')).toBe(false);
+                expect(FocusPanelJournal._closeTimer).toBeNull();
+                expect(bindScrollAffordances).toHaveBeenCalledTimes(1);
+
+                // Le timer fallback ne déclenche pas de second nettoyage après transitionend
+                vi.advanceTimersByTime(300);
+                expect(bindScrollAffordances).toHaveBeenCalledTimes(1);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('annule proprement listener transitionend et .is-collapsing lors d\'une réouverture en cours de fermeture', () => {
+            vi.useFakeTimers();
+            try {
+                mountJournalDOM();
+                JournalManager.addEntry('student-1', { tags: ['progres'], note: 'Bon travail' });
+                const student1 = appState.generatedResults[0];
+                FocusPanelJournal.render(student1);
+
+                const contentEl = document.getElementById('focusJournalContent');
+                Object.defineProperty(contentEl, 'offsetHeight', { configurable: true, value: 320 });
+
+                FocusPanelJournal.toggleQuickAdd(true, true);
+                FocusPanelJournal.toggleQuickAdd(false);
+                expect(contentEl.classList.contains('is-collapsing')).toBe(true);
+
+                // Réouverture immédiate avant la fin de la transition
+                FocusPanelJournal.toggleQuickAdd(true, true);
+                expect(contentEl.classList.contains('is-collapsing')).toBe(false);
+                expect(FocusPanelJournal._closeTimer).toBeNull();
+
+                // Un transitionend tardif ne doit pas refermer le brouillon rouvert
+                const draftPreview = document.getElementById('journalDraftPreview');
+                const gridEv = new Event('transitionend');
+                Object.defineProperty(gridEv, 'propertyName', { value: 'grid-template-rows' });
+                draftPreview.dispatchEvent(gridEv);
+                vi.advanceTimersByTime(300);
+
+                expect(draftPreview.classList.contains('visible')).toBe(true);
+                expect(document.getElementById('focusJournalSection').classList.contains('editing')).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
+    describe('renderTimeline period isolation & virtual class threshold targeting', () => {
+        it('ne compte pas les tags d\'autres périodes quand renderTimeline est appelé sans argument period', () => {
+            appState.currentPeriod = 'T2';
+            appState.journalThreshold = 2;
+            appState.generatedResults = [{
+                id: 'student-1',
+                name: 'DUPONT Jean',
+                journal: [
+                    { id: 'j_t1', date: '2026-10-01T10:00:00.000Z', tags: ['bavardage'], note: '', period: 'T1' },
+                    { id: 'j_t2', date: '2026-11-01T10:00:00.000Z', tags: ['bavardage'], note: '', period: 'T2' }
+                ]
+            }];
+
+            const html = JournalManager.renderTimeline('student-1');
+            expect(html).toContain('isolated');
+            expect(html).toContain('below-threshold');
+        });
+
+        it('cible la classe physique de l\'élève (et non une classe virtuelle) lors du changement de seuil ou navigation clavier', () => {
+            vi.useFakeTimers();
+            const physicalClass = { id: 'grp-3a-1', name: '3A Grp 1', journalThreshold: 2, journalIncludeInAI: true };
+            appState.classes = [physicalClass];
+            userSettings.academic.classes = [physicalClass];
+            appState.currentClassId = 'virtual_3a';
+            appState.generatedResults = [{
+                id: 'stu-v1',
+                classId: 'grp-3a-1',
+                name: 'ROBERT Léo',
+                journal: [{ id: 'j1', date: '2026-11-01T10:00:00.000Z', tags: ['bavardage'], note: '', period: 'T1' }]
+            }];
+
+            const updateClassSpy = vi.spyOn(ClassManager, 'updateClass').mockImplementation((id, updates) => {
+                if (id === physicalClass.id) Object.assign(physicalClass, updates);
+                return physicalClass;
+            });
+
+            document.body.innerHTML = `
+                <div class="journal-section" id="focusJournalSection">
+                    <span id="focusJournalTitle"></span>
+                    <span id="focusJournalEmptyHint"></span>
+                    <span id="focusJournalCount"></span>
+                    <button type="button" id="focusJournalNoteBtn"></button>
+                    <div class="journal-content" id="focusJournalContent"></div>
+                    <div id="journalThresholdControl">
+                        <button type="button" id="journalThresholdBtn">
+                            <iconify-icon id="journalThresholdIcon"></iconify-icon>
+                            <span id="journalThresholdValue"></span>
+                        </button>
+                        <div id="journalThresholdPopover">
+                            <span id="journalThresholdScope"></span>
+                            <input type="checkbox" id="journalIncludeAIToggle" checked>
+                            <div id="journalThresholdStepperBlock">
+                                <div id="journalThresholdSegmented" data-active-index="1">
+                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="1">Dès 1</button>
+                                    <button type="button" class="ui-segment journal-threshold-option active" data-threshold="2">Dès 2</button>
+                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="3">Dès 3</button>
+                                </div>
+                                <span id="thresholdHintText"></span>
+                            </div>
+                            <div id="journalAiOffHint" class="is-hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            try {
+                FocusPanelJournal._lastRenderedContext = null;
+                FocusPanelJournal.init({
+                    getCurrentStudentId: () => 'stu-v1',
+                    onStatusRefresh: vi.fn()
+                });
+                FocusPanelJournal.render(appState.generatedResults[0]);
+
+                expect(document.getElementById('journalThresholdScope').textContent).toBe('Classe : 3A Grp 1');
+
+                // Clic sur "Dès 1" en vue classe virtuelle -> met à jour grp-3a-1 (et non virtual_3a)
+                const opt1 = document.querySelector('.journal-threshold-option[data-threshold="1"]');
+                opt1.click();
+                vi.runAllTimers();
+
+                expect(physicalClass.journalThreshold).toBe(1);
+                expect(typeof physicalClass.journalSettingsUpdatedAt).toBe('number');
+                expect(updateClassSpy).toHaveBeenCalledWith(
+                    'grp-3a-1',
+                    expect.objectContaining({ journalThreshold: 1, journalSettingsUpdatedAt: expect.any(Number) })
+                );
+                expect(document.getElementById('journalThresholdSegmented').dataset.activeIndex).toBe('0');
+                expect(document.getElementById('journalThresholdValue').textContent).toContain('1 observation');
+
+                // Flèche droite sur "Dès 1" -> bascule proprement sur "Dès 2"
+                opt1.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+                vi.runAllTimers();
+                expect(physicalClass.journalThreshold).toBe(2);
+                expect(document.getElementById('journalThresholdSegmented').dataset.activeIndex).toBe('1');
+            } finally {
+                updateClassSpy.mockRestore();
+                vi.useRealTimers();
             }
         });
     });

@@ -24,12 +24,8 @@
     }
 }
 
-/* Mobile Breakpoint (max-width: 600px) */
+/* Small Tablet / Large Phone Breakpoint (max-width: 600px) */
 @media (max-width: 600px) {
-
-    :root {
-        --focus-header-offset: 114px;
-    }
 
     /* Focus Panel: Full screen takeover - positioned below general header */
     .focus-panel {
@@ -51,144 +47,15 @@
         height: calc(100% - 56px);
     }
 
-    /* Header: Two-tier hero at rest on mobile (Toolbar row 1; Identity + Grades row 2) */
-    .focus-header:not(.scrolled):not(.editing) {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-template-rows: auto auto;
-        padding: 2px 0;
-        margin: 6px 12px 0 12px;
-        column-gap: 10px;
-        row-gap: 4px;
+    /* Align desktop/tablet 2-column header & scrolled capsule with 12px content gutter */
+    .focus-header:not(.scrolled):not(.editing),
+    .focus-header.scrolled:not(.editing) {
+        margin: 8px 12px 0 12px;
     }
 
-    .focus-header:not(.scrolled):not(.editing) .focus-header-toolbar {
-        grid-column: 1 / -1;
-        grid-row: 1;
-        width: 100%;
-        margin-right: 0;
-        justify-self: stretch;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons {
-        order: 1;
-        margin-right: auto;
-        margin-left: 0;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-header-tools {
-        order: 2;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-header-divider {
-        order: 3;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-header-close-group {
-        order: 4;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
-        grid-column: 1;
-        grid-row: 2;
-        gap: 12px;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
-        grid-column: 2;
-        grid-row: 2;
-        justify-self: end;
-        align-self: center;
-        padding-bottom: 0;
-    }
-
-    .focus-header:not(.editing) .focus-header-left,
-    .focus-header:not(.editing) .focus-panel-avatar-container {
-        width: 54px !important;
-        height: 54px !important;
-        min-width: 54px;
-        min-height: 54px;
-    }
-
-    .focus-header:not(.editing) .focus-panel-avatar-container .student-avatar {
-        width: 54px !important;
-        height: 54px !important;
-        font-size: 21px !important;
-    }
-
-    .focus-header-read {
-        gap: 4px;
-    }
-
-    .focus-header:not(.editing) .focus-name-details {
-        gap: 2px;
-    }
-
-    .focus-header:not(.editing) .focus-name-nom {
-        font-size: 18px;
-        line-height: 1.18;
-    }
-
-    .focus-header:not(.editing) .focus-name-prenom {
-        font-size: 14.5px;
-        line-height: 1.25;
-    }
-
-    .focus-name-edit-icon {
-        display: none;
-    }
-
-    .focus-status-badges {
-        gap: 5px;
-    }
-
-    .focus-origin-class-badge {
-        font-size: 10px;
-        padding: 1.5px 6px;
-    }
-
-    .focus-header-read .focus-status-badges .tag-badge {
-        font-size: 10px;
-        padding: 2.5px 7px;
-    }
-
-    /* Keep navigation arrows in unscrolled Focus Header for one-handed tap nav; hide in compact Analysis & scrolled capsule */
-    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons {
-        margin-left: -4px;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons > .focus-nav-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 16.5px;
-    }
-
-    .analysis-nav-buttons > .focus-nav-btn,
+    .focus-name-edit-icon,
     .focus-header.scrolled:not(.editing) .focus-nav-buttons {
         display: none;
-    }
-
-    .focus-position {
-        font-size: 12.5px;
-        min-width: auto;
-        padding: 0 2px;
-        line-height: 1;
-    }
-
-    .analysis-nav-buttons::after {
-        margin: 0 0 0 8px;
-    }
-
-    .focus-analyze-btn,
-    .focus-print-btn,
-    .focus-save-btn,
-    .focus-close-btn {
-        width: 34px;
-        height: 34px;
-        font-size: 16px;
     }
 
     /* Le focus content sur mobile: compensation dynamique du header */
@@ -208,61 +75,6 @@
     /* Le focus content sur mobile + mode édition (in-flow header card) */
     .focus-header.editing + .focus-pages-container .focus-main-page .focus-content {
         padding-top: 8px;
-    }
-
-    /* =======================================================
-       MOBILE SCROLLED STATE — Compact Dynamic Island Capsule
-       ======================================================= */
-    .focus-header.scrolled:not(.editing) {
-        padding: 4px 6px 4px 4px;
-        margin: 8px 12px 0 12px;
-        gap: 6px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-header-identity {
-        gap: 8px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-header-left,
-    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px;
-        min-height: 36px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
-        width: 36px !important;
-        height: 36px !important;
-        font-size: 14.5px !important;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-name-nom {
-        font-size: 13.5px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-name-prenom {
-        font-size: 11.5px;
-        gap: 5px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-inline-status-dots {
-        gap: 4px;
-    }
-
-    .focus-header.scrolled:not(.editing) .focus-status-dot {
-        width: 6.5px;
-        height: 6.5px;
-    }
-
-    /* Compact grades inside scrolled capsule: drop period prefixes (3T truncation mutualized in focus-grades.css) */
-    .focus-header.scrolled:not(.editing) .focus-grades-strip {
-        margin-left: auto;
-    }
-
-    .focus-header.scrolled:not(.editing) .previous-grade-chip .period-prefix,
-    .focus-header.scrolled:not(.editing) .context-grade-group label {
-        display: none;
     }
 
     /* ============================================
@@ -559,6 +371,200 @@
     /* Header radius overrides removed: They naturally match the container (radius-lg) now. */
 }
 
+/* Mobile Breakpoint (max-width: 480px) — Two-tier hero header & compact scrolled capsule */
+@media (max-width: 480px) {
+
+    :root {
+        --focus-header-offset: 114px;
+    }
+
+    /* Header: Two-tier hero at rest on mobile (Toolbar row 1; Identity + Grades row 2) */
+    .focus-header:not(.scrolled):not(.editing) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        padding: 2px 0;
+        margin: 6px 12px 0 12px;
+        column-gap: 10px;
+        row-gap: 4px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-toolbar {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        width: 100%;
+        margin-right: 0;
+        justify-self: stretch;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Keep navigation arrows in unscrolled Focus Header for one-handed tap nav; hide in compact Analysis & scrolled capsule */
+    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons {
+        order: 1;
+        margin-right: auto;
+        margin-left: -4px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-tools {
+        order: 2;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-divider {
+        order: 3;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-close-group {
+        order: 4;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
+        grid-column: 1;
+        grid-row: 2;
+        gap: 12px;
+        min-height: 54px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: end;
+        align-self: center;
+        padding-bottom: 0;
+    }
+
+    .focus-header:not(.editing) .focus-header-left,
+    .focus-header:not(.editing) .focus-panel-avatar-container {
+        width: 54px !important;
+        height: 54px !important;
+        min-width: 54px;
+        min-height: 54px;
+    }
+
+    .focus-header:not(.editing) .focus-panel-avatar-container .student-avatar {
+        width: 54px !important;
+        height: 54px !important;
+        font-size: 21px !important;
+    }
+
+    .focus-header-read {
+        gap: 4px;
+    }
+
+    .focus-header:not(.editing) .focus-name-details {
+        gap: 2px;
+    }
+
+    .focus-header:not(.editing) .focus-name-nom {
+        font-size: 18px;
+        line-height: 1.18;
+    }
+
+    .focus-header:not(.editing) .focus-name-prenom {
+        font-size: 14.5px;
+        line-height: 1.25;
+    }
+
+    .focus-status-badges {
+        gap: 5px;
+    }
+
+    .focus-origin-class-badge {
+        font-size: 10px;
+        padding: 1.5px 6px;
+    }
+
+    .focus-header-read .focus-status-badges .tag-badge {
+        font-size: 10px;
+        padding: 2.5px 7px;
+    }
+
+    .focus-header:not(.scrolled):not(.editing) .focus-nav-buttons > .focus-nav-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 16.5px;
+    }
+
+    .analysis-nav-buttons > .focus-nav-btn {
+        display: none;
+    }
+
+    .focus-position {
+        font-size: 12.5px;
+        min-width: auto;
+        padding: 0 2px;
+        line-height: 1;
+    }
+
+    .analysis-nav-buttons::after {
+        margin: 0 0 0 8px;
+    }
+
+    .focus-analyze-btn,
+    .focus-print-btn,
+    .focus-save-btn,
+    .focus-close-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+    }
+
+    /* =======================================================
+       MOBILE SCROLLED STATE — Compact Dynamic Island Capsule
+       ======================================================= */
+    .focus-header.scrolled:not(.editing) {
+        padding: 4px 6px 4px 4px;
+        gap: 6px;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-header-identity {
+        gap: 8px;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-header-left,
+    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-panel-avatar-container .student-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 14.5px !important;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-name-nom {
+        font-size: 13.5px;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-name-prenom {
+        font-size: 11.5px;
+        gap: 5px;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-inline-status-dots {
+        gap: 4px;
+    }
+
+    .focus-header.scrolled:not(.editing) .focus-status-dot {
+        width: 6.5px;
+        height: 6.5px;
+    }
+
+    /* Compact grades inside scrolled capsule: drop period prefixes (3T truncation mutualized in focus-grades.css) */
+    .focus-header.scrolled:not(.editing) .focus-grades-strip {
+        margin-left: auto;
+    }
+
+    .focus-header.scrolled:not(.editing) .previous-grade-chip .period-prefix,
+    .focus-header.scrolled:not(.editing) .context-grade-group label {
+        display: none;
+    }
+}
+
 /* Adaptively wrap 3-trimester grades to Row 3 on narrow phones so student names never get crushed */
 @media (max-width: 440px) {
     .focus-header:not(.scrolled):not(.editing):has(.previous-grade-chip:nth-of-type(2)) .focus-header-identity {
@@ -593,6 +599,8 @@
 
     .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
         grid-column: 1 / -1;
+        gap: 10px;
+        min-height: 48px;
     }
 
     .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
@@ -615,10 +623,6 @@
     .focus-header.editing {
         padding: 10px 12px;
         margin: 6px 10px 4px 10px;
-    }
-
-    .focus-header:not(.scrolled):not(.editing) .focus-header-identity {
-        gap: 10px;
     }
 
     .focus-header:not(.scrolled):not(.editing) .focus-header-left,

@@ -648,26 +648,33 @@ export const SettingsUIManager = {
         if (btn) btn.disabled = true;
         if (icon) icon.classList.add('rotate-icon');
 
+        let okCount = 0;
         try {
-            UI.showNotification(`Test de ${totalTests} connexion(s)...`, "info");
-
             for (const provider of configuredProviders) {
-                // Valider chaque clé séquentiellement
-                await ApiValidationManager.validateApiKeyUI(
+                // Valider chaque clé séquentiellement sans rafale de toasts individuels
+                const ok = await ApiValidationManager.validateApiKeyUI(
                     provider.id,
                     provider.inputEl,
                     provider.errorEl,
-                    provider.btnEl
+                    provider.btnEl,
+                    undefined,
+                    { silent: true }
                 );
+                if (ok) okCount++;
                 // Petit délai entre chaque test pour éviter le rate limiting
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
             if (hasOllama) {
-                await this.validateOllamaConnection();
+                const ok = await this.validateOllamaConnection({ silent: true });
+                if (ok) okCount++;
             }
 
-            UI.showNotification("Test des connexions terminé.", "success");
+            if (okCount === totalTests) {
+                UI.showNotification(`${okCount} connexion${okCount > 1 ? 's' : ''} validée${okCount > 1 ? 's' : ''}.`, 'success');
+            } else {
+                UI.showNotification(`${okCount}/${totalTests} connexion${totalTests > 1 ? 's' : ''} valide${okCount > 1 ? 's' : ''}.`, 'warning');
+            }
         } finally {
             if (btn) btn.disabled = false;
             if (icon) icon.classList.remove('rotate-icon');
@@ -865,9 +872,11 @@ export const SettingsUIManager = {
 
     /**
      * Valide la connexion à Ollama et met à jour l'UI.
+     * @param {Object} [options={}]
+     * @param {boolean} [options.silent=false] - Supprime le toast de succès (ex. test groupé)
      * @returns {Promise<boolean>} true si Ollama est disponible
      */
-    async validateOllamaConnection() {
+    async validateOllamaConnection({ silent = false } = {}) {
         // Afficher le spinner
         if (DOM.validateOllamaBtn) {
             DOM.validateOllamaBtn.innerHTML = '<iconify-icon icon="ph:spinner-gap-bold" class="rotate-icon"></iconify-icon>';
@@ -893,7 +902,6 @@ export const SettingsUIManager = {
                         DOM.validateOllamaBtn.innerHTML = 'Vérifier';
                         DOM.validateOllamaBtn.disabled = false;
                     }
-                    UI.showNotification(errMsg, 'warning');
                     return false;
                 }
                 DOM.ollamaBaseUrl.value = normalizedUrl;
@@ -923,7 +931,9 @@ export const SettingsUIManager = {
                 // Sauvegarder immédiatement l'état
                 StorageManager.saveAppState();
 
-                UI.showNotification(`Ollama connecté ! ${models.length} modèle(s) disponible(s).`, 'success');
+                if (!silent) {
+                    UI.showNotification(`Ollama connecté (${models.length} modèle${models.length > 1 ? 's' : ''}).`, 'success');
+                }
                 return true;
             } else {
                 this.updateOllamaStatus('error');
@@ -937,7 +947,6 @@ export const SettingsUIManager = {
                     DOM.validateOllamaBtn.innerHTML = 'Vérifier';
                     DOM.validateOllamaBtn.disabled = false;
                 }
-                UI.showNotification('Ollama non détecté. Vérifiez qu\'il est lancé.', 'error');
                 return false;
             }
         } catch (e) {

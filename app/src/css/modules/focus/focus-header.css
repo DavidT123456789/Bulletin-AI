@@ -95,7 +95,6 @@
     left: 0;
     right: 0;
     transform: translateZ(0);
-    will-change: transform;
 }
 
 [data-theme="dark"] .focus-header {
@@ -146,6 +145,10 @@
     min-width: 0;
 }
 
+.focus-header:not(.scrolled):not(.editing) .focus-header-identity {
+    min-height: 64px;
+}
+
 /* --- BOTTOM-RIGHT: Typographic Grades Strip (directly under toolbar) --- */
 .focus-header:not(.scrolled):not(.editing) .focus-grades-strip {
     grid-column: 2;
@@ -167,10 +170,10 @@
     padding: 4px 6px 4px 4px;
     margin: 6px 16px 0 16px;
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.86);
+    background: rgba(var(--surface-color-rgb), 0.86);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-default);
     box-shadow:
         0 8px 28px -4px rgba(0, 0, 0, 0.12),
         0 2px 6px -2px rgba(0, 0, 0, 0.04);
@@ -179,7 +182,7 @@
 
 [data-theme="dark"] .focus-header.scrolled:not(.editing) {
     background: rgba(var(--surface-color-rgb), 0.84);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color-strong);
     box-shadow:
         0 12px 32px -4px rgba(0, 0, 0, 0.45),
         0 4px 12px -2px rgba(0, 0, 0, 0.25);
@@ -867,5 +870,11 @@
     .focus-header:not(.editing) .focus-nav-buttons,
     .focus-header.editing + .focus-pages-container .focus-main-page .focus-content {
         animation: none !important;
+    }
+
+    .focus-header-left,
+    .focus-header .focus-panel-avatar-container,
+    .focus-header .focus-panel-avatar-container .student-avatar {
+        transition: none !important;
     }
 }

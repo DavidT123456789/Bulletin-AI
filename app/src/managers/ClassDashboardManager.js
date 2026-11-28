@@ -3417,7 +3417,6 @@ ${stats.appreciationsList.map((a, idx) => {
 
         return navigator.clipboard.writeText(textToCopy)
             .then(() => {
-                UI.showNotification("Appréciation de classe copiée !", "success");
                 this._triggerCopyFeedback(targetBtn, true);
             })
             .catch(() => UI.showNotification("Erreur lors de la copie.", "error"));
@@ -3466,7 +3465,6 @@ ${stats.appreciationsList.map((a, idx) => {
 
         return navigator.clipboard.writeText(textToCopy)
             .then(() => {
-                UI.showNotification("Bilan copié !", "success");
                 this._triggerCopyFeedback(copyBtn, false);
             })
             .catch(() => UI.showNotification("Erreur lors de la copie.", "error"));

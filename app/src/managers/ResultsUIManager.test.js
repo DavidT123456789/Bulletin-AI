@@ -674,7 +674,7 @@ describe('ResultsUIManager - Empty State & In-Situ Class Renaming', () => {
 
             expect(appState.periodSystem).toBe('semestres');
             expect(appState.currentPeriod).toBe('S1');
-            expect(mockUI.showNotification).toHaveBeenCalledWith('Affichage basculé en mode Semestres.', 'success');
+            expect(mockUI.showNotification).not.toHaveBeenCalled();
         });
 
         it('devrait adapter automatiquement et silencieusement la Classe Démo sans jamais afficher le bandeau d\'erreur', () => {

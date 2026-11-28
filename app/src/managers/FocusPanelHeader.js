@@ -19,6 +19,9 @@ import { TooltipsUI } from './TooltipsManager.js';
 import { STATUS_DESCRIPTIONS, getStatusDescription, resolveStudentStatus } from '../config/academicConstants.js';
 import { bus, EVENTS } from '../core/EventBus.js';
 
+const HEADER_SCROLL_ENTER = 16;
+const HEADER_SCROLL_EXIT = 4;
+
 export const FocusPanelHeader = {
     // Callbacks to main manager
     callbacks: {
@@ -471,6 +474,7 @@ export const FocusPanelHeader = {
         readMode?.classList.remove('hidden');
         editMode?.classList.remove('visible');
         this.syncHeaderOffset();
+        this.syncScrollState();
 
         // Restore original tooltips and accessibility
         const saveBtn = document.getElementById('focusEditSaveBtn');
@@ -664,7 +668,6 @@ export const FocusPanelHeader = {
 
         if (wasCreating) {
             this.callbacks.onStudentCreated?.(result);
-            UI.showNotification('Élève créé avec succès', 'success');
         }
 
         StudentDataManager.syncFilteredStudent(result.id, result);
@@ -754,24 +757,52 @@ export const FocusPanelHeader = {
     },
 
     /**
+     * Synchronise l'état `.scrolled` de l'entête selon `focusContent.scrollTop` avec hystérésis.
+     * @param {HTMLElement|null} [focusContentEl=null] - Conteneur scrollable (résolu automatiquement si omis)
+     */
+    syncScrollState(focusContentEl = null) {
+        const panel = document.getElementById('focusPanel');
+        const header = panel?.querySelector('.focus-header');
+        const content = focusContentEl || panel?.querySelector('.focus-main-page .focus-content');
+        if (!header || !content) return;
+
+        if (header.classList.contains('editing')) {
+            this.resetScrollState();
+            return;
+        }
+
+        const scrollTop = Math.max(0, content.scrollTop);
+        const isScrolled = header.classList.contains('scrolled');
+        if (!isScrolled && scrollTop >= HEADER_SCROLL_ENTER) {
+            header.classList.add('scrolled');
+        } else if (isScrolled && scrollTop <= HEADER_SCROLL_EXIT) {
+            header.classList.remove('scrolled');
+            this.syncHeaderOffset();
+        }
+    },
+
+    /**
      * Synchronise --focus-header-offset sur #focusPanel avec la hauteur réelle de l'entête
      * au repos afin que les noms longs ou badges multiples ne recouvrent jamais le contenu.
+     * @returns {boolean} True si --focus-header-offset a été modifié
      */
     syncHeaderOffset() {
         const panel = document.getElementById('focusPanel');
         const header = panel?.querySelector('.focus-header');
-        if (!panel || !header) return;
-        if (header.classList.contains('editing') || header.classList.contains('scrolled')) return;
+        if (!panel || !header) return false;
+        if (header.classList.contains('editing') || header.classList.contains('scrolled')) return false;
 
         const height = header.offsetHeight;
-        if (height <= 0) return;
+        if (height <= 0) return false;
 
         const marginTop = parseFloat(window.getComputedStyle(header).marginTop) || 0;
         const gap = window.innerWidth <= 600 ? 12 : 14;
         const nextOffset = `${Math.ceil(height + marginTop + gap)}px`;
         if (panel.style.getPropertyValue('--focus-header-offset') !== nextOffset) {
             panel.style.setProperty('--focus-header-offset', nextOffset);
+            return true;
         }
+        return false;
     },
 
     /**

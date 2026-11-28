@@ -1451,5 +1451,49 @@ describe('PromptService', () => {
                 appState.journalIncludeInAI = prevInclude;
             }
         });
+
+        it('garde getPromptHash invariant entre Dès 1, Dès 2 et Dès 3 pour une note écrite taguée sans tag isolé, mais le modifie pour un tag sans note', () => {
+            const prevInclude = appState.journalIncludeInAI;
+            const prevThreshold = appState.journalThreshold;
+            try {
+                appState.journalIncludeInAI = true;
+                const writtenOnlyStudent = {
+                    id: 'stu-written',
+                    nom: 'Durand',
+                    prenom: 'Emma',
+                    currentPeriod: 'T1',
+                    statuses: [],
+                    periods: { T1: { grade: 13.5, context: '' } },
+                    journal: [
+                        { id: 'e1', period: 'T1', tags: ['progres'], note: 'Méthode bien appliquée en autonomie.' }
+                    ]
+                };
+                const tagOnlyStudent = {
+                    ...writtenOnlyStudent,
+                    id: 'stu-tag-only',
+                    journal: [
+                        { id: 'e2', period: 'T1', tags: ['bavardage'], note: '' }
+                    ]
+                };
+
+                appState.journalThreshold = 1;
+                const writtenHash1 = PromptService.getPromptHash(writtenOnlyStudent);
+                const tagOnlyHash1 = PromptService.getPromptHash(tagOnlyStudent);
+
+                appState.journalThreshold = 2;
+                const writtenHash2 = PromptService.getPromptHash(writtenOnlyStudent);
+                const tagOnlyHash2 = PromptService.getPromptHash(tagOnlyStudent);
+
+                appState.journalThreshold = 3;
+                const writtenHash3 = PromptService.getPromptHash(writtenOnlyStudent);
+
+                expect(writtenHash1).toBe(writtenHash2);
+                expect(writtenHash2).toBe(writtenHash3);
+                expect(tagOnlyHash1).not.toBe(tagOnlyHash2);
+            } finally {
+                appState.journalIncludeInAI = prevInclude;
+                appState.journalThreshold = prevThreshold;
+            }
+        });
     });
 });

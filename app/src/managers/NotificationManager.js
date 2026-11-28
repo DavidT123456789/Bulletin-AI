@@ -70,10 +70,9 @@ export const NotificationCoalescer = {
         }
 
         const container = document.getElementById('notification-container');
-        const visibleCount = container?.querySelectorAll('.notification.show:not([data-removing])')?.length || 0;
+        const visibleCount = container?.querySelectorAll('.notification:not([data-removing])')?.length || 0;
         if (visibleCount >= MAX_VISIBLE_NOTIFICATIONS && !options.bypassCoalescing && !isPersistentLoading) {
-            this._hiddenQueue.push({ group, type, message, timestamp: Date.now() });
-            return { action: 'queue' };
+            return { action: 'show', evictOldest: true };
         }
 
         return { action: 'show' };
@@ -173,12 +172,12 @@ export const NotificationCoalescer = {
         const lines = [];
         for (const [, data] of grouped) {
             const shortMsg = this._truncate(data.message.replace(/<[^>]*>/g, ''), 50);
-            lines.push(data.count > 1 ? `${shortMsg} <strong>×${data.count}</strong>` : shortMsg);
+            lines.push(data.count > 1 ? `${shortMsg} (×${data.count})` : shortMsg);
         }
 
         const summaryMessage = lines.length <= 3
-            ? lines.join('<br>')
-            : `${lines.slice(0, 2).join('<br>')}<br><em>+${lines.length - 2} autre(s)</em>`;
+            ? lines.join('\n')
+            : `${lines.slice(0, 2).join('\n')}\n+${lines.length - 2} autre(s)`;
 
         window.UI?.showNotification(
             summaryMessage,
@@ -212,10 +211,18 @@ export const NotificationCoalescer = {
     },
 
     /**
-     * Clears all tracked groups. Called when mass operations end.
+     * Clears tracked coalescing groups. Preserves `_hiddenQueue` by default so
+     * background-tab completion summaries are not wiped at the end of a batch.
+     * @param {Object} [options={}]
+     * @param {boolean} [options.clearHiddenQueue=false]
      */
-    reset() {
+    reset({ clearHiddenQueue = false } = {}) {
+        for (const data of this._activeGroups.values()) {
+            if (data.cleanupTimerId) clearTimeout(data.cleanupTimerId);
+        }
         this._activeGroups.clear();
-        this._hiddenQueue = [];
+        if (clearHiddenQueue) {
+            this._hiddenQueue = [];
+        }
     }
 };

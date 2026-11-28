@@ -36,6 +36,9 @@ export const FocusPanelJournal = {
     /** Pending close/crossfade timer handle */
     _closeTimer: null,
 
+    /** Active transitionend cleanup callback for draft close */
+    _closeTransitionCleanup: null,
+
     /**
      * Check whether the user prefers reduced motion
      * @returns {boolean}
@@ -46,13 +49,22 @@ export const FocusPanelJournal = {
     },
 
     /**
-     * Cancel any pending draft close/crossfade timeout
+     * Cancel any pending draft close/crossfade timeout, transition listener, and height-lock style
      * @private
      */
     _clearCloseTimer() {
         if (this._closeTimer) {
             clearTimeout(this._closeTimer);
             this._closeTimer = null;
+        }
+        if (this._closeTransitionCleanup) {
+            this._closeTransitionCleanup();
+            this._closeTransitionCleanup = null;
+        }
+        const contentEl = document.getElementById('focusJournalContent');
+        if (contentEl) {
+            contentEl.classList.remove('is-collapsing');
+            contentEl.style.maxHeight = '';
         }
     },
 
@@ -116,6 +128,24 @@ export const FocusPanelJournal = {
     },
 
     /**
+     * Resolve the physical class ID owning the current student's journal AI settings.
+     * Falls back to null (global settings) when viewing a virtual class without a physical student class.
+     * @param {Object|null} [result=null]
+     * @returns {string|null}
+     * @private
+     */
+    _resolveTargetClassId(result = null) {
+        const targetResult = result || (this._getCurrentStudentId()
+            ? appState.generatedResults?.find(r => r.id === this._getCurrentStudentId())
+            : null);
+        const candidateId = targetResult?.classId || appState.currentClassId || null;
+        if (candidateId && ClassManager.isVirtualClass?.(candidateId)) {
+            return null;
+        }
+        return candidateId;
+    },
+
+    /**
      * Close the threshold popover and sync HistoryManager
      * @param {Object} [options={}]
      */
@@ -161,17 +191,56 @@ export const FocusPanelJournal = {
                 }
             });
 
+            const flushDeferredThresholdUpdates = () => {
+                if (this._thresholdDeferredTimer) {
+                    clearTimeout(this._thresholdDeferredTimer);
+                    this._thresholdDeferredTimer = null;
+                }
+                const pending = this._pendingThresholdUpdates;
+                const pendingClassId = this._pendingThresholdClassId ?? null;
+                const pendingStudentId = this._pendingThresholdStudentId ?? null;
+                this._pendingThresholdUpdates = null;
+                this._pendingThresholdClassId = null;
+                this._pendingThresholdStudentId = null;
+                if (!pending) return;
+
+                if (pendingClassId) {
+                    ClassManager.updateClass(pendingClassId, pending);
+                } else {
+                    StorageManager.saveAppState();
+                }
+                if (pendingStudentId && this._getCurrentStudentId() === pendingStudentId) {
+                    this._refreshStatus();
+                }
+                bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, {
+                    newThreshold: JournalManager.getThreshold(pendingClassId),
+                    includeInAI: JournalManager.isIncludedInAI(pendingClassId),
+                    classId: pendingClassId
+                });
+            };
+
             const applyJournalAISetting = (updates) => {
-                const currentClassId = appState.currentClassId;
-                const currentClass = currentClassId ? ClassManager.getClassById(currentClassId) : null;
-                if (currentClass) {
-                    Object.assign(currentClass, updates);
+                const studentId = this._getCurrentStudentId();
+                const result = studentId ? appState.generatedResults?.find(r => r.id === studentId) : null;
+                const targetClassId = this._resolveTargetClassId(result);
+                const targetClass = targetClassId ? ClassManager.getClassById(targetClassId) : null;
+                const effectiveClassId = targetClass ? targetClassId : null;
+
+                // If a pending deferred update targets another class, commit it before switching targets
+                if (this._pendingThresholdUpdates && this._pendingThresholdClassId !== effectiveClassId) {
+                    flushDeferredThresholdUpdates();
+                }
+
+                const payloadWithTimestamp = effectiveClassId
+                    ? { ...updates, journalSettingsUpdatedAt: Date.now() }
+                    : updates;
+
+                if (targetClass) {
+                    Object.assign(targetClass, payloadWithTimestamp);
                 } else {
                     Object.assign(appState, updates);
                 }
 
-                const studentId = this._getCurrentStudentId();
-                const result = appState.generatedResults.find(r => r.id === studentId);
                 if (result) {
                     this.render(result);
                 } else {
@@ -182,31 +251,13 @@ export const FocusPanelJournal = {
                 if (this._thresholdDeferredTimer) {
                     clearTimeout(this._thresholdDeferredTimer);
                 }
+                this._pendingThresholdClassId = effectiveClassId;
+                this._pendingThresholdStudentId = result?.id || null;
                 this._pendingThresholdUpdates = {
                     ...(this._pendingThresholdUpdates || {}),
-                    ...updates
+                    ...payloadWithTimestamp
                 };
-                const flushDeferred = () => {
-                    this._thresholdDeferredTimer = null;
-                    const pending = this._pendingThresholdUpdates;
-                    this._pendingThresholdUpdates = null;
-                    if (!pending) return;
-
-                    if (currentClassId) {
-                        ClassManager.updateClass(currentClassId, pending);
-                    } else {
-                        StorageManager.saveAppState();
-                    }
-                    if (result) {
-                        this._refreshStatus();
-                    }
-                    bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, {
-                        newThreshold: JournalManager.getThreshold(),
-                        includeInAI: JournalManager.isIncludedInAI(),
-                        classId: currentClassId || null
-                    });
-                };
-                this._thresholdDeferredTimer = setTimeout(flushDeferred, 0);
+                this._thresholdDeferredTimer = setTimeout(flushDeferredThresholdUpdates, 0);
             };
 
             // AI Inclusion toggle ("Transmettre à l'IA" / Hors IA personal notepad mode)
@@ -219,14 +270,41 @@ export const FocusPanelJournal = {
             }
 
             // Threshold segmented buttons (1, 2, 3)
-            thresholdControl.querySelectorAll('.journal-threshold-option[data-threshold]').forEach(btn => {
+            const selectThresholdOption = (newValue) => {
+                const targetClassId = this._resolveTargetClassId();
+                if (!JournalManager.isIncludedInAI(targetClassId)) return;
+                if (Number.isNaN(newValue) || newValue < 1 || newValue > 3) return;
+                if (newValue === JournalManager.getThreshold(targetClassId)) return;
+                applyJournalAISetting({ journalThreshold: newValue });
+            };
+
+            const thresholdOptions = Array.from(
+                thresholdControl.querySelectorAll('.journal-threshold-option[data-threshold]')
+            );
+            thresholdOptions.forEach((btn, idx) => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (!JournalManager.isIncludedInAI()) return;
-                    const newValue = parseInt(btn.dataset.threshold, 10);
-                    if (Number.isNaN(newValue) || newValue < 1 || newValue > 3) return;
-                    if (newValue === JournalManager.getThreshold()) return;
-                    applyJournalAISetting({ journalThreshold: newValue });
+                    selectThresholdOption(parseInt(btn.dataset.threshold, 10));
+                });
+                btn.addEventListener('keydown', (e) => {
+                    let nextIdx = -1;
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        nextIdx = (idx + 1) % thresholdOptions.length;
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        nextIdx = (idx - 1 + thresholdOptions.length) % thresholdOptions.length;
+                    } else if (e.key === 'Home') {
+                        nextIdx = 0;
+                    } else if (e.key === 'End') {
+                        nextIdx = thresholdOptions.length - 1;
+                    }
+                    if (nextIdx === -1) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const nextBtn = thresholdOptions[nextIdx];
+                    if (nextBtn && !nextBtn.disabled) {
+                        nextBtn.focus();
+                        selectThresholdOption(parseInt(nextBtn.dataset.threshold, 10));
+                    }
                 });
             });
         }
@@ -700,7 +778,7 @@ export const FocusPanelJournal = {
                             ? `${escapedLabel} : ${item.count} (hors top 5 transmis à l'IA)`
                             : `${escapedLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`;
                     } else if (includeInAI && item.count < threshold) {
-                        tooltipText = `${escapedLabel} : ${item.count} (transmis via note écrite)`;
+                        tooltipText = `${escapedLabel} : ${item.count} (transmis via observation écrite)`;
                     } else {
                         tooltipText = `${escapedLabel} : ${item.count}`;
                     }
@@ -771,7 +849,7 @@ export const FocusPanelJournal = {
         const targetResult = result || (this._getCurrentStudentId()
             ? appState.generatedResults?.find(r => r.id === this._getCurrentStudentId())
             : null);
-        const targetClassId = targetResult?.classId || appState.currentClassId || null;
+        const targetClassId = this._resolveTargetClassId(targetResult);
         const threshold = JournalManager.getThreshold(targetClassId);
         const includeInAI = JournalManager.isIncludedInAI(targetClassId);
         const currentClass = targetClassId ? ClassManager.getClassById(targetClassId) : null;
@@ -854,9 +932,9 @@ export const FocusPanelJournal = {
         const hintEl = document.getElementById('thresholdHintText');
         if (hintEl) {
             if (threshold <= 1) {
-                hintEl.textContent = 'Tous les tags et les notes écrites (hors Privé) sont transmis.';
+                hintEl.textContent = 'Tous les tags et les observations écrites (hors Privé) sont transmis.';
             } else {
-                hintEl.textContent = `Un tag sans note est transmis dès ${threshold} occurrences. Les notes écrites (hors Privé) le sont toujours.`;
+                hintEl.textContent = `Un tag sans texte est transmis dès ${threshold} occurrences. Les observations écrites (hors Privé) le sont toujours.`;
             }
         }
 
@@ -871,7 +949,7 @@ export const FocusPanelJournal = {
             } else if (threshold <= 1) {
                 tooltip = 'Régler la transmission à l\'IA';
             } else {
-                tooltip = `Régler la transmission à l'IA · Tags sans note dès ${threshold}×`;
+                tooltip = `Régler la transmission à l'IA · Tags sans texte dès ${threshold}×`;
             }
             TooltipsUI.updateTooltip(btn, tooltip);
         }
@@ -942,12 +1020,15 @@ export const FocusPanelJournal = {
             if (result) {
                 this.render(result, highlightEntryId, { animateTimeline: false, highlightClass });
             }
+        } else if (contentEl) {
+            this._callbacks.bindScrollAffordances?.(contentEl);
         }
     },
 
     /**
      * Smoothly collapse the draft/inline-editor while optionally expanding an incoming entry row in lockstep.
-     * Both transitions share the exact same duration & spring easing so total height glides monotonically.
+     * Both transitions (plus container max-height when scrollable) share the exact same duration & spring easing
+     * so total height glides monotonically in a single gesture.
      * @param {HTMLElement|null} draftPreview
      * @param {Object|null} entry - Entry to crossfade into (null for plain cancel)
      * @param {Object|null} result - Student result object
@@ -958,17 +1039,27 @@ export const FocusPanelJournal = {
      */
     _animateDraftClose(draftPreview, entry, result, { isIncoming = false, onComplete } = {}) {
         this._clearCloseTimer();
+        this.closeThresholdPopover();
+
+        const section = document.getElementById('focusJournalSection');
+        const contentEl = document.getElementById('focusJournalContent');
+        const canAnimate = Boolean(draftPreview && !this._prefersReducedMotion());
+        // Measure before mutating DOM classes to avoid an extra forced reflow
+        const startHeight = (canAnimate && contentEl && !section?.classList.contains('is-empty'))
+            ? contentEl.offsetHeight
+            : 0;
+        const lockContentHeight = startHeight > 0;
 
         // Sync header toggle button immediately so × -> + rotates in lockstep with the collapsing editor
-        const section = document.getElementById('focusJournalSection');
         section?.classList.remove('editing');
         this._syncNoteButtonState(false);
 
-        if (!draftPreview || this._prefersReducedMotion()) {
+        if (!canAnimate) {
             onComplete?.();
             return;
         }
 
+        let entryWrapper = null;
         if (entry && result) {
             const classId = result.classId || null;
             const tagCounts = JournalManager.countTags(result.id, appState.currentPeriod, { excludePrivate: true });
@@ -981,22 +1072,48 @@ export const FocusPanelJournal = {
                 isIncoming ? 'is-incoming' : ''
             );
 
-            const entryWrapper = document.createElement('div');
+            entryWrapper = document.createElement('div');
             entryWrapper.className = 'journal-crossfade-wrapper';
             entryWrapper.innerHTML = `<div class="journal-crossfade-inner">${entryHTML}</div>`;
             draftPreview.after(entryWrapper);
-            void entryWrapper.offsetHeight;
-
-            draftPreview.classList.add('closing');
-            entryWrapper.classList.add('is-visible');
-        } else {
-            draftPreview.classList.add('closing');
         }
 
-        this._closeTimer = setTimeout(() => {
-            this._closeTimer = null;
+        if (lockContentHeight) {
+            contentEl.style.maxHeight = `${startHeight}px`;
+        }
+
+        // Single forced reflow to commit entryWrapper's 0fr & contentEl's locked start height
+        if (entryWrapper || lockContentHeight) {
+            void (entryWrapper || contentEl).offsetHeight;
+        }
+
+        if (lockContentHeight) {
+            contentEl.classList.add('is-collapsing');
+        }
+        draftPreview.classList.add('closing');
+        entryWrapper?.classList.add('is-visible');
+        if (lockContentHeight) {
+            contentEl.style.maxHeight = '';
+        }
+
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            this._clearCloseTimer();
             onComplete?.();
-        }, 250);
+        };
+
+        const onTransitionEnd = (e) => {
+            if (e.target === draftPreview && e.propertyName === 'grid-template-rows') {
+                finish();
+            }
+        };
+        draftPreview.addEventListener('transitionend', onTransitionEnd);
+        this._closeTransitionCleanup = () => {
+            draftPreview.removeEventListener('transitionend', onTransitionEnd);
+        };
+        this._closeTimer = setTimeout(finish, 280);
     },
 
     /**

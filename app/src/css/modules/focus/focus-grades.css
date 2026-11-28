@@ -415,7 +415,6 @@ body:has(#historyPopover) #focusPanel :is(.focus-appreciation > :not(.focus-appr
     box-shadow: none !important;
     cursor: inherit;
     user-select: none;
-    opacity: 0.85;
 }
 
 .previous-grade-chip .prev-grade-value:not([class*="grade-range-"]) {

@@ -437,8 +437,9 @@ export const JournalManager = {
             }));
 
         const significantSet = new Set(tags.map(t => t.id));
-        // Standalone UI tags: repeated trends (count >= 2) or tags with at least one tag-only occurrence.
-        // Prevents a single written note's tag from shifting between "Tag · « note »" and "Tag : « note »" when threshold = 1.
+        // Standalone tags (shared by UI and prompt): repeated trends (count >= 2) or tags with at least one tag-only occurrence.
+        // Prevents a single written note's tag from shifting between "Observations: Tag. Notes: ..." and 'Notes: "[Tag] ..."'
+        // when threshold = 1 (which would alter promptHash on students with no tag-only entries).
         const standaloneTags = tags.filter(t => t.count >= 2 || (tagOnlyCounts[t.id] || 0) > 0);
         const standaloneTagSet = new Set(standaloneTags.map(t => t.id));
 
@@ -459,19 +460,18 @@ export const JournalManager = {
             const explicitTagIds = (Array.isArray(e.tags) ? e.tags : [])
                 .filter(tagId => tagId && tagId !== 'remarque');
             const extraTagLabels = [];
-            const uiTagLabels = [];
 
             for (const tagId of explicitTagIds) {
                 transmittedTagIdSet.add(tagId);
-                const promptLabel = this.getPromptLabel(tagId);
-                if (!significantSet.has(tagId)) extraTagLabels.push(promptLabel);
-                if (!standaloneTagSet.has(tagId)) uiTagLabels.push(promptLabel);
+                if (!standaloneTagSet.has(tagId)) {
+                    extraTagLabels.push(this.getPromptLabel(tagId));
+                }
             }
 
-            notes.unshift({ text, extraTagLabels, uiTagLabels });
+            notes.unshift({ text, extraTagLabels, uiTagLabels: extraTagLabels });
             const short = text.length > 42 ? `${text.slice(0, 42).trimEnd()}…` : text;
             noteDisplayParts.unshift(
-                uiTagLabels.length > 0 ? `${uiTagLabels.join(', ')} : « ${short} »` : `« ${short} »`
+                extraTagLabels.length > 0 ? `${extraTagLabels.join(', ')} : « ${short} »` : `« ${short} »`
             );
         }
 
@@ -515,8 +515,8 @@ export const JournalManager = {
         if (!summary.includedInAI) return '';
 
         const parts = [];
-        if (summary.tags.length > 0) {
-            parts.push(`Observations: ${summary.tags.map(t => t.label).join(', ')}`);
+        if (summary.standaloneLabels.length > 0) {
+            parts.push(`Observations: ${summary.standaloneLabels.join(', ')}`);
         }
 
         if (summary.notes.length > 0) {
@@ -620,7 +620,7 @@ export const JournalManager = {
         const isolatedClass = isIsolated ? 'isolated' : '';
 
         const infoIcon = isIsolated
-            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (&lt; ${threshold}×) — non transmise à l'IA<br>Ajoutez une note ou répétez l'observation"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
+            ? `<span class="journal-entry-info tooltip" data-tooltip="Observation isolée (&lt; ${threshold}×) — non transmise à l'IA<br>Ajoutez une précision ou répétez l'observation"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
             : '';
 
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
@@ -667,7 +667,7 @@ export const JournalManager = {
             ? `Aucune observation pour le ${periodLabel}`
             : 'Aucune observation pour cette période';
         const subtitle = this.isIncludedInAI(classId)
-            ? 'Faits datés au fil de la période (notes rédigées et tags répétés transmis à l\'IA)'
+            ? 'Faits datés au fil de la période (observations écrites et tags répétés transmis à l\'IA)'
             : 'Mode bloc-notes personnel (non transmis à l\'IA)';
         return { title, subtitle };
     },
@@ -707,7 +707,7 @@ export const JournalManager = {
         }
 
         // Compute tag counts for threshold check (visual feedback — exclude private entries)
-        const tagCounts = this.countTags(studentId, period, { excludePrivate: true });
+        const tagCounts = this.countTags(entries, null, { excludePrivate: true });
         const threshold = this.getThreshold(classId);
 
         // Sort by date (newest first)

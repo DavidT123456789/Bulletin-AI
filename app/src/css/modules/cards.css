@@ -298,7 +298,7 @@
     font-weight: 500;
 }
 
-[data-theme="dark"] .grade-value.past-period-grade[class*="grade-range-"] {
+[data-theme="dark"] .grade-value:is(.past-period-grade, .prev-grade-value)[class*="grade-range-"] {
     color: color-mix(in srgb, var(--grade-ink) 88%, var(--text-secondary));
 }
 

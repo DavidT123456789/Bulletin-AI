@@ -376,8 +376,6 @@ export const GeneralListeners = {
                     const connected = await SyncService.connect('google');
                     if (connected) {
                         UI.showNotification('Connecté à Google Drive', 'success');
-                    } else {
-                        UI.showNotification('Connexion annulée.', 'warning');
                     }
                 } catch (error) {
                     const errorMsg = error?.message || error?.result?.error?.message || 'Erreur inconnue';

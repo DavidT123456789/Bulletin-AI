@@ -427,7 +427,6 @@ export const FocusPanelRefinement = {
             const handleCopy = async () => {
                 try {
                     await navigator.clipboard.writeText(promptText);
-                    UI.showNotification('Prompt copié dans le presse-papier', 'prompt');
                     if (copyResetTimer) clearTimeout(copyResetTimer);
                     copyBtn.innerHTML = '<iconify-icon icon="solar:check-read-linear"></iconify-icon> Copié';
                     copyBtn.classList.replace('btn-primary', 'btn-success');

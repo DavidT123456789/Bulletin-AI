@@ -1912,6 +1912,47 @@ describe('StorageManager', () => {
             expect(parsed.categories.classes.description).toContain('3 mémos');
         });
 
+        it('fusionne journalThreshold et journalIncludeInAI selon journalSettingsUpdatedAt dans _mergeClassesList et exclut journalSettingsUpdatedAt du hash', () => {
+            userSettings.academic.classes = [
+                { id: 'c1', name: '3e1', journalThreshold: 2, journalIncludeInAI: true, journalSettingsUpdatedAt: 1000 },
+                { id: 'c2', name: '4e2', journalThreshold: 3, journalIncludeInAI: false, journalSettingsUpdatedAt: 3000 },
+                { id: 'c3', name: '5e1' }
+            ];
+            const remoteClasses = [
+                { id: 'c1', name: '3e1', journalThreshold: 1, journalIncludeInAI: false, journalSettingsUpdatedAt: 2000 },
+                { id: 'c2', name: '4e2', journalThreshold: 1, journalIncludeInAI: true, journalSettingsUpdatedAt: 1500 },
+                { id: 'c3', name: '5e1', journalThreshold: 3, journalIncludeInAI: true }
+            ];
+
+            StorageManager._mergeClassesList(remoteClasses, new Map());
+            const merged = userSettings.academic.classes;
+
+            expect(merged.find(c => c.id === 'c1')).toMatchObject({
+                journalThreshold: 1,
+                journalIncludeInAI: false,
+                journalSettingsUpdatedAt: 2000
+            });
+            expect(merged.find(c => c.id === 'c2')).toMatchObject({
+                journalThreshold: 3,
+                journalIncludeInAI: false,
+                journalSettingsUpdatedAt: 3000
+            });
+            expect(merged.find(c => c.id === 'c3')).toMatchObject({
+                journalThreshold: 3,
+                journalIncludeInAI: true
+            });
+
+            userSettings.academic.classes = [{ id: 'c1', name: '3e1', journalThreshold: 1, journalIncludeInAI: true, journalSettingsUpdatedAt: 1111 }];
+            const hash1 = StorageManager.computeCurrentDataHash();
+            userSettings.academic.classes = [{ id: 'c1', name: '3e1', journalThreshold: 1, journalIncludeInAI: true, journalSettingsUpdatedAt: 9999 }];
+            const hash2 = StorageManager.computeCurrentDataHash();
+            expect(hash1).toBe(hash2);
+
+            userSettings.academic.classes = [{ id: 'c1', name: '3e1', journalThreshold: 3, journalIncludeInAI: true, journalSettingsUpdatedAt: 9999 }];
+            const hash3 = StorageManager.computeCurrentDataHash();
+            expect(hash3).not.toBe(hash1);
+        });
+
         it('devrait compter les personnes uniques (et photos uniques) dans parseBackupFile quand un élève est partagé entre sa classe et un groupe', () => {
             const parsed = StorageManager.parseBackupFile(JSON.stringify({
                 _meta: { exportType: 'full_backup' },

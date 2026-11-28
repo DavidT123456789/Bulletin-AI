@@ -230,7 +230,6 @@ export const ResultsUIManager = {
         UI?.updateSettingsPromptFields?.();
         this.renderResults();
         bus.emit(EVENTS.PERIOD_CHANGED, { period: appState.currentPeriod });
-        UI?.showNotification?.(`Affichage basculé en mode ${label}.`, 'success');
     },
 
     _renderPeriodMismatchBanner(isPeriodMismatch) {
@@ -1049,13 +1048,18 @@ export const ResultsUIManager = {
             UI.hideHeaderProgress(newErrorCount > 0 || wasAborted);
 
             if (wasAborted) {
-                const abortMsg = successCount > 0
-                    ? `Actualisation interrompue (${successCount}/${total} actualisée${successCount > 1 ? 's' : ''}).`
-                    : 'Actualisation annulée.';
-                UI.showNotification(abortMsg, 'info');
+                if (successCount > 0) {
+                    UI.showNotification(`Actualisation interrompue (${successCount}/${total} actualisée${successCount > 1 ? 's' : ''}).`, 'info');
+                }
                 this.renderResults();
+            } else if (newErrorCount > 0) {
+                const errorMsg = successCount > 0
+                    ? `${successCount}/${total} actualisée${successCount > 1 ? 's' : ''} (${newErrorCount} erreur${newErrorCount > 1 ? 's' : ''}).`
+                    : `${newErrorCount} erreur${newErrorCount > 1 ? 's' : ''} lors de l'actualisation.`;
+                UI.showNotification(errorMsg, 'warning');
+                if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
             } else {
-                UI.showNotification(`${successCount}/${total} actualisée(s) avec succès.`, "success");
+                UI.showNotification(`${successCount}/${total} actualisée${successCount > 1 ? 's' : ''} avec succès.`, 'success');
                 if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
             }
             StorageManager.saveAppState();

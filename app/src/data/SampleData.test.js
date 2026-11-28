@@ -157,6 +157,7 @@ describe('SampleData', () => {
 
             const sophie = demo.students.find(s => s.nom === 'DURAND');
             expect(sophie.journal.some(e => e.isPrivate === true)).toBe(true);
+            expect(sophie.journal.some(e => !e.isPrivate && e.note === '')).toBe(true);
         });
     });
 });

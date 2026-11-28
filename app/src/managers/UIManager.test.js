@@ -252,6 +252,51 @@ describe('UIManager', () => {
             expect(second.element.querySelector('.notification-coalesce-badge')).toBeNull();
             second.dismiss();
         });
+
+        it('should evict the oldest standard toast instead of queueing into _hiddenQueue when 3 toasts are already visible', async () => {
+            const { NotificationCoalescer } = await import('./NotificationManager.js');
+            NotificationCoalescer.reset({ clearHiddenQueue: true });
+            NotificationCoalescer._tabHidden = false;
+            document.body.innerHTML = '';
+
+            const n1 = UI.showNotification('Toast un', 'info');
+            const n2 = UI.showNotification('Toast deux', 'info');
+            const n3 = UI.showNotification('Toast trois', 'info');
+            // Trigger rAF callbacks so .show is applied
+            vi.advanceTimersByTime(50);
+
+            const n4 = UI.showNotification('Toast quatre', 'success');
+            expect(n1.element.dataset.removing).toBe('true');
+            expect(n4?.element).toBeDefined();
+            expect(NotificationCoalescer._hiddenQueue).toHaveLength(0);
+
+            n2.dismiss();
+            n3.dismiss();
+            n4.dismiss();
+        });
+
+        it('should preserve _hiddenQueue across reset() and flush plain-text summary without raw HTML tags', async () => {
+            const { NotificationCoalescer } = await import('./NotificationManager.js');
+            NotificationCoalescer.reset({ clearHiddenQueue: true });
+            document.body.innerHTML = '';
+            window.UI = UI;
+
+            NotificationCoalescer._tabHidden = true;
+            UI.showNotification('Lot terminé (30/30).', 'success');
+            UI.showNotification('Modèle de repli utilisé.', 'warning');
+
+            // MassImportManager.finally() calls reset() without clearing hidden queue
+            NotificationCoalescer.reset();
+            expect(NotificationCoalescer._hiddenQueue).toHaveLength(2);
+
+            NotificationCoalescer._tabHidden = false;
+            NotificationCoalescer._flushHiddenQueue();
+
+            const subtitle = document.querySelector('#notification-container .notification-subtitle')?.textContent || '';
+            expect(subtitle).toContain('Lot terminé (30/30).');
+            expect(subtitle).toContain('Modèle de repli utilisé.');
+            expect(subtitle).not.toMatch(/<br>|<strong>|<em>/);
+        });
     });
 
     describe('showUndoNotification', () => {

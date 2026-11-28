@@ -368,7 +368,6 @@ export const ImportWizardManager = {
         // Step 2: "Détection auto" button - forces re-detection of column types
         document.getElementById('wizardAutoDetectBtn')?.addEventListener('click', () => {
             this._forceAutoDetect();
-            UI.showNotification('Détection automatique relancée', 'info');
         });
 
         // Step 3: Import button (single action)

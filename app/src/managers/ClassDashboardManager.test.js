@@ -384,7 +384,7 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
 
         expect(writeTextMock).toHaveBeenCalledTimes(1);
         expect(writeTextMock).toHaveBeenCalledWith('Classe dynamique et investie tout au long du trimestre.');
-        expect(notifySpy).toHaveBeenCalledWith('Appréciation de classe copiée !', 'success');
+        expect(notifySpy).not.toHaveBeenCalled();
         expect(introCopyBtn.classList.contains('copied')).toBe(true);
     });
 

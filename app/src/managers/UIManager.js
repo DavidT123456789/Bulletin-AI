@@ -251,6 +251,11 @@ export const UI = {
 
         if (evaluation.action === 'queue' || evaluation.action === 'skip') return;
 
+        if (evaluation.evictOldest) {
+            const oldest = container.querySelector('.notification:not([data-removing]):not(.loading):not(.notification-undo)');
+            if (oldest) this._dismissNotification(oldest);
+        }
+
         if (evaluation.action === 'coalesce' && evaluation.existingElement) {
             const el = evaluation.existingElement;
             if (el._timeoutId) {
@@ -331,6 +336,7 @@ export const UI = {
 
         // Register for coalescing tracking
         requestAnimationFrame(() => {
+            if (notif.dataset.removing) return;
             notif.classList.add('show');
             startTimer();
             NotificationCoalescer.register(message, type, notif, coalescingOptions);

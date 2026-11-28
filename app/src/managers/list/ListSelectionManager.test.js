@@ -413,7 +413,7 @@ describe('ListSelectionManager', () => {
             );
             // updateStudentRow called only for remaining uncompleted rows (student-2 and student-3) on abort cleanup
             expect(mockCallbacks.updateStudentRow.mock.calls.map(c => c[0])).toEqual(['student-2', 'student-3']);
-            expect(UI.showNotification).toHaveBeenCalledWith('Régénération interrompue (1/3 régénérée).', 'warning');
+            expect(UI.showNotification).toHaveBeenCalledWith('Régénération interrompue (1/3 régénérée).', 'info');
         });
 
         it('should abort bulkRegenerate before clearing selection or calling AI when API key is missing (B3)', async () => {

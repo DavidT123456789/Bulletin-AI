@@ -870,7 +870,6 @@ export const SettingsModalListeners = {
                 ? 'Activez Ollama dans Paramètres › IA & Clés pour utiliser ce modèle local.'
                 : 'Configurez une clé API dans Paramètres › IA & Clés pour tester le rendu.';
             this._renderPreviewError(title, message);
-            UI.showNotification(message, 'error');
             return;
         }
 
@@ -915,7 +914,6 @@ export const SettingsModalListeners = {
             this._setGenerateButtonState('done');
         } catch (error) {
             const errorMessage = error.message || 'Erreur inconnue';
-            UI.showNotification(`Erreur de génération : ${errorMessage}`, 'error');
             if (DOM.previewStudentSelect?.value !== studentId) return;
             this._renderPreviewError('Échec de la génération', errorMessage, this._getGenerationErrorHint(errorMessage));
             this._setGenerateButtonState('idle');
@@ -1060,19 +1058,15 @@ export const SettingsModalListeners = {
 
                 if (isUpdateAvailable) {
                     btn.innerHTML = '<iconify-icon icon="solar:download-minimalistic-bold" style="color: var(--primary-color);"></iconify-icon> Mise à jour dispo !';
-                    UI.showNotification("Une nouvelle version est disponible !", "info", 4000, { icon: 'solar:download-minimalistic-linear' });
-                    await new Promise((r) => setTimeout(r, 1600));
+                    await new Promise((r) => setTimeout(r, 2000));
                 } else {
                     btn.innerHTML = '<iconify-icon icon="solar:check-circle-bold" style="color: var(--success-text);"></iconify-icon> À jour !';
-                    const buildInfo = currentHash ? ` (Build ${currentHash})` : '';
-                    UI.showNotification(`Votre application est à jour${buildInfo}.`, "success");
-                    await new Promise((r) => setTimeout(r, 1400));
+                    await new Promise((r) => setTimeout(r, 2000));
                 }
             } catch (e) {
                 console.error("Update check failed", e);
                 btn.innerHTML = '<iconify-icon icon="solar:danger-triangle-bold" style="color: var(--warning-text);"></iconify-icon> Erreur';
-                UI.showNotification("Impossible de vérifier les mises à jour.", "warning");
-                await new Promise((r) => setTimeout(r, 1400));
+                await new Promise((r) => setTimeout(r, 2000));
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
@@ -1117,11 +1111,10 @@ export const SettingsModalListeners = {
                     if (connected) {
                         await this.updateCloudSyncUI();
                         this.updateLocalBackupUI();
-                        UI.showNotification('Google Drive connecté ! Utilisez les boutons Sauvegarder/Charger.', 'success');
+                        UI.showNotification('Connecté à Google Drive', 'success');
                     } else {
                         await this.updateCloudSyncUI();
                         DOM.connectGoogleBtn.disabled = false;
-                        UI.showNotification('Connexion annulée.', 'warning');
                     }
                 } catch (error) {
                     console.error('Google sync connection error:', error);

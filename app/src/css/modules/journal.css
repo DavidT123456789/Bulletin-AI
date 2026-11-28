@@ -54,25 +54,95 @@
     opacity: 0.7;
 }
 
-/* Compact 1-line state when journal is empty and not actively drafting/editing */
-.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-header {
+/* Compact 1-line state when journal is empty and not actively drafting/editing
+   (collapses content padding & AI footer in lockstep with .journal-draft-preview) */
+.journal-section.is-empty .journal-header {
     border-bottom: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
+    box-shadow: inset 0 -1px 0 var(--border-color);
+    transition:
+        background-color var(--transition-fast),
+        box-shadow 0.2s var(--ease-material),
+        border-radius 0.24s var(--ease-spring);
 }
 
-.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-header:hover {
+.journal-section.is-empty:not(.editing) .journal-header {
+    box-shadow: inset 0 -1px 0 transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.journal-section.is-empty:not(.editing) .journal-header:hover {
     background: var(--item-hover-bg);
 }
 
-.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-empty-inline-hint {
+.journal-section.is-empty .journal-empty-inline-hint {
     display: inline;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 0.16s var(--ease-material),
+        visibility 0s linear 0.16s;
 }
 
-.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-content,
-.journal-section.is-empty:not(.editing):not(:has(.journal-draft-preview.visible)) .journal-ai-footer {
-    display: none;
+.journal-section.is-empty:not(.editing) .journal-empty-inline-hint {
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity 0.2s var(--ease-material) 0.04s,
+        visibility 0s linear 0s;
+}
+
+.journal-section.is-empty .journal-content {
+    max-height: none;
+    overflow: hidden;
+    transition: padding-block 0.24s var(--ease-spring);
+}
+
+.journal-section.is-empty:not(.editing) .journal-content {
+    padding-block: 0;
+}
+
+.journal-section.is-empty .journal-ai-footer {
+    display: grid;
+    grid-template-rows: 1fr;
+    border-top: none;
+    opacity: 1;
+    visibility: visible;
+    transition:
+        grid-template-rows 0.26s var(--ease-spring),
+        opacity 0.2s var(--ease-material),
+        visibility 0s linear 0s;
+}
+
+.journal-section.is-empty .journal-threshold-control {
+    min-height: 0;
+    overflow: visible;
+    transition: overflow 0.01s allow-discrete 0.25s;
+}
+
+.journal-section.is-empty .journal-threshold-control.open {
+    overflow: visible;
+    transition: none;
+}
+
+.journal-section.is-empty .journal-ai-footer-btn {
+    border-top: 1px solid var(--border-color);
+}
+
+.journal-section.is-empty:not(.editing) .journal-ai-footer {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        grid-template-rows 0.24s var(--ease-spring),
+        opacity 0.18s var(--ease-material),
+        visibility 0s linear 0.24s;
+}
+
+.journal-section.is-empty:not(.editing) .journal-threshold-control {
+    overflow: hidden;
+    transition: none;
 }
 
 .journal-header-right {
@@ -884,17 +954,23 @@
     overflow-y: auto;
 }
 
+.journal-content.is-collapsing {
+    overflow-y: hidden;
+    transition: max-height 0.24s var(--ease-spring);
+}
+
 .journal-content::-webkit-scrollbar-track {
     margin-block: 6px 8px;
 }
 
 /* Full expansion when draft is open — no nested scrollbar */
-.journal-content:has(.journal-draft-preview.visible) {
+.journal-content:has(.journal-draft-preview.visible:not(.closing)) {
     max-height: none;
     overflow-y: visible;
 }
 
-/* Hide empty state message while actively editing/drafting */
+/* Hide empty state block in compact 1-line empty mode and while actively editing/drafting */
+.journal-section.is-empty .journal-empty,
 .journal-content:has(.journal-draft-preview.visible) .journal-empty,
 .journal-section.editing .journal-empty {
     display: none;
@@ -1462,7 +1538,7 @@
         font-size: 12px;
     }
 
-    .journal-content:has(.journal-draft-preview.visible) {
+    .journal-content:has(.journal-draft-preview.visible:not(.closing)) {
         max-height: none;
     }
 

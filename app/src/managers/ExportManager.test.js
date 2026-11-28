@@ -179,7 +179,7 @@ describe('ExportManager', () => {
 
             ExportManager.copyAppreciation('test-id-1', null);
 
-            expect(UI.showNotification).toHaveBeenCalledWith('Appréciation vide.', 'error');
+            expect(UI.showNotification).toHaveBeenCalledWith('Appréciation vide.', 'warning');
         });
 
         it('should copy appreciation to clipboard', async () => {
@@ -319,7 +319,7 @@ describe('ExportManager', () => {
 
             ExportManager.copyAppreciation('t1-only', null);
             expect(mockClipboard.writeText).not.toHaveBeenCalled();
-            expect(UI.showNotification).toHaveBeenCalledWith('Appréciation vide.', 'error');
+            expect(UI.showNotification).toHaveBeenCalledWith('Appréciation vide.', 'warning');
 
             ExportManager.copyAllResults();
             expect(mockClipboard.writeText).not.toHaveBeenCalled();
@@ -457,12 +457,13 @@ describe('ExportManager', () => {
             expect(UI.showNotification).toHaveBeenCalledWith('Aucune donnée à exporter.', 'warning');
         });
 
-        it('should show info notification before printing', () => {
+        it('should print without showing a transient preparation toast', () => {
             appState.filteredResults = [{ id: '1' }];
 
             ExportManager.exportToPdf();
 
-            expect(UI.showNotification).toHaveBeenCalledWith("Préparation de l'export PDF...", 'info');
+            expect(mockPrint).toHaveBeenCalled();
+            expect(UI.showNotification).not.toHaveBeenCalled();
         });
 
         it('should call window.print', () => {

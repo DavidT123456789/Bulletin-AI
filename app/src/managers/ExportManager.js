@@ -52,7 +52,7 @@ export const ExportManager = {
         const appreciationToCopy = Utils.getPeriodAppreciation(result, currentPeriod);
 
         if (!appreciationToCopy?.trim()) {
-            UI.showNotification('Appréciation vide.', 'error');
+            UI.showNotification('Appréciation vide.', 'warning');
             return Promise.resolve(false);
         }
 
@@ -507,8 +507,6 @@ export const ExportManager = {
             return;
         }
 
-        UI.showNotification("Préparation de l'export PDF...", 'info');
-
         const currentPeriod = appState.currentPeriod;
         const { classLabel, subjectLabel, periodLabel, dateStr } = this._getReportContextMeta();
         const title = `Appréciations${subjectLabel ? ` ${subjectLabel}` : ''}${classLabel ? ` - ${classLabel}` : ''} - ${periodLabel}`;
@@ -617,8 +615,6 @@ export const ExportManager = {
             UI.showNotification('Aucune donnée à exporter pour la classe.', 'warning');
             return;
         }
-
-        UI.showNotification("Préparation du bilan de classe...", 'info');
 
         const { classLabel, subjectLabel: defaultSubject, periodLabel, dateStr } = this._getReportContextMeta();
         const subjectLabel = dashboardData?.subject || defaultSubject;
@@ -797,8 +793,6 @@ export const ExportManager = {
             UI.showNotification('Élève introuvable pour l\'export PDF.', 'warning');
             return;
         }
-
-        UI.showNotification("Préparation de la fiche bilan élève...", 'info');
 
         const currentPeriod = options.period || appState.currentPeriod;
         const includeSensitive = Boolean(options.includeSensitive);

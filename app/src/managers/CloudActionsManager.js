@@ -134,7 +134,6 @@ export const CloudActionsManager = {
             onProgress(null);
             if (!connected) {
                 SyncService._updateCloudIndicator?.('expired');
-                UI.showNotification('Connexion annulée.', 'warning');
                 return false;
             }
             SyncService._updateCloudIndicator?.('connected');
@@ -428,7 +427,6 @@ export const CloudActionsManager = {
         onProgress('Connexion…');
         const connected = await SyncService.connect(this._providerName(SyncService));
         onProgress(null);
-        if (!connected) UI.showNotification('Connexion annulée.', 'warning');
         return connected;
     },
 

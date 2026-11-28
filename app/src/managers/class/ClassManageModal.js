@@ -468,7 +468,6 @@ export const ClassManageModal = {
                         if (newName && newName !== cls.name) {
                             TooltipsUI?.cleanupTooltipsIn?.(row);
                             ClassManager.updateClass(classId, { name: newName });
-                            this._ui?.showNotification(`Classe renommée en "${newName}"`, 'success');
                             this.updateHeaderDisplay();
                             this.renderClassList();
                             refreshList();
@@ -790,7 +789,6 @@ export const ClassManageModal = {
                 this.renderClassList();
                 this.updateHeaderDisplay();
                 refreshList();
-                this._ui?.showNotification?.(`Classes réordonnées par niveau (${sortRangeLabel})`, 'success');
             });
 
             moreMenu.querySelector('#cleanEmptyClassesBtn')?.addEventListener('click', async (e) => {

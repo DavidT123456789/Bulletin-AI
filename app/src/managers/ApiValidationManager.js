@@ -8,7 +8,8 @@
  */
 
 import { appState, UIState } from '../state/State.js';
-import { FALLBACK_CONFIG, PROVIDER_DEFAULT_MODELS, getModelMeta, getApiModelName } from '../config/models.js';
+import { FALLBACK_CONFIG, MODEL_SHORT_NAMES, PROVIDER_DEFAULT_MODELS, getModelMeta, getApiModelName } from '../config/models.js';
+import { PROVIDER_CONFIG } from '../config/providers.js';
 import { DOM } from '../utils/DOM.js';
 import { Utils } from '../utils/Utils.js';
 import { UI } from './UIManager.js';
@@ -79,12 +80,13 @@ export const ApiValidationManager = {
      * Bascule automatiquement vers le modèle recommandé du fournisseur si le modèle actif
      * ne dispose pas de clé API configurée.
      * @param {string} provider
+     * @returns {Promise<string|null>} Nom lisible du modèle sélectionné, ou null si inchangé
      * @private
      */
     async _autoSelectModelIfNeeded(provider) {
-        if (AIService._hasApiKeyForModel(appState.currentAIModel)) return;
+        if (AIService._hasApiKeyForModel(appState.currentAIModel)) return null;
         const recommendedModel = PROVIDER_DEFAULT_MODELS[provider];
-        if (!recommendedModel) return;
+        if (!recommendedModel) return null;
 
         appState.currentAIModel = recommendedModel;
         await StorageManager.saveAppState();
@@ -95,7 +97,7 @@ export const ApiValidationManager = {
             DropdownManager.refresh('aiModelSelect');
         }
         SettingsUIManager.updateHeaderAiModelDisplay();
-        UI.showNotification(`Modèle basculé vers ${recommendedModel}`, 'info');
+        return MODEL_SHORT_NAMES[recommendedModel] || recommendedModel;
     },
 
     /**
@@ -105,14 +107,18 @@ export const ApiValidationManager = {
      * @param {HTMLElement} errorEl - L'élément pour afficher les erreurs
      * @param {HTMLButtonElement} btnEl - Le bouton de validation
      * @param {Function} [onSuccess] - Callback en cas de succès
+     * @param {Object} [options={}]
+     * @param {boolean} [options.silent=false] - Supprime le toast unitaire (ex. test groupé)
+     * @returns {Promise<boolean>} true si la clé est authentifiée
      */
-    async validateApiKeyUI(provider, inputEl, errorEl, btnEl, onSuccess) {
+    async validateApiKeyUI(provider, inputEl, errorEl, btnEl, onSuccess, { silent = false } = {}) {
+        const providerLabel = PROVIDER_CONFIG[provider]?.shortLabel || PROVIDER_CONFIG[provider]?.name || provider;
         const key = inputEl.value.trim();
         if (!key) {
             if (errorEl.dataset) delete errorEl.dataset.missingKeyError;
             errorEl.textContent = "Veuillez entrer une clé.";
             errorEl.style.display = 'block';
-            return;
+            return false;
         }
 
         const previousKey = appState[`${provider}ApiKey`] || '';
@@ -169,7 +175,7 @@ export const ApiValidationManager = {
                         SettingsUIManager.updateApiStatusDisplay();
                         await this._autoSelectModelIfNeeded(provider);
                         if (onSuccess) onSuccess();
-                        return;
+                        return true;
                     }
                     if (this._isTransientValidationError(quotaError)) {
                         // L'étape 1 (/models) a déjà prouvé que la clé est valide :
@@ -190,10 +196,18 @@ export const ApiValidationManager = {
                         await StorageManager.saveAppState();
                         this._syncSettingsSnapshotAfterValidation(provider);
                         SettingsUIManager.updateApiStatusDisplay();
-                        UI.showNotification(`Clé ${provider} authentifiée et sauvegardée !`, 'success');
-                        await this._autoSelectModelIfNeeded(provider);
+                        const switchedModel = await this._autoSelectModelIfNeeded(provider);
+                        if (!silent) {
+                            if (switchedModel) {
+                                UI.showNotification(`Modèle actif : ${switchedModel}`, 'success', 4000, {
+                                    title: `Clé ${providerLabel} enregistrée`
+                                });
+                            } else {
+                                UI.showNotification(`Clé ${providerLabel} authentifiée et sauvegardée.`, 'success');
+                            }
+                        }
                         if (onSuccess) onSuccess();
-                        return;
+                        return true;
                     }
                     throw quotaError;
                 }
@@ -263,13 +277,22 @@ export const ApiValidationManager = {
             await StorageManager.saveAppState();
             this._syncSettingsSnapshotAfterValidation(provider);
             SettingsUIManager.updateApiStatusDisplay();
-            UI.showNotification(`Clé ${provider} validée et sauvegardée !`, 'success');
 
             // ✅ Auto-sélection du modèle si le modèle actuel n'a pas de clé configurée
             // Évite la confusion UX où l'utilisateur valide Mistral mais le modèle reste sur Gemini
-            await this._autoSelectModelIfNeeded(provider);
+            const switchedModel = await this._autoSelectModelIfNeeded(provider);
+            if (!silent) {
+                if (switchedModel) {
+                    UI.showNotification(`Modèle actif : ${switchedModel}`, 'success', 4000, {
+                        title: `Clé ${providerLabel} validée`
+                    });
+                } else {
+                    UI.showNotification(`Clé ${providerLabel} validée et sauvegardée.`, 'success');
+                }
+            }
 
             if (onSuccess) onSuccess();
+            return true;
 
 
         } catch (e) {
@@ -301,6 +324,7 @@ export const ApiValidationManager = {
                 this._syncSettingsSnapshotAfterValidation(provider);
                 await this._autoSelectModelIfNeeded(provider);
                 if (onSuccess) onSuccess();
+                return true;
             } else if (isModelNotFoundError) {
                 appState.apiKeyStatus[provider] = 'valid';
                 appState.validatedApiKeys[provider] = true;
@@ -319,6 +343,7 @@ export const ApiValidationManager = {
                 this._syncSettingsSnapshotAfterValidation(provider);
                 await this._autoSelectModelIfNeeded(provider);
                 if (onSuccess) onSuccess();
+                return true;
             } else if (this._isTransientValidationError(e)) {
                 // Erreur réseau / timeout / surcharge 5xx : ne pas accuser faussement la clé d'être invalide
                 appState[`${provider}ApiKey`] = previousKey;
@@ -333,6 +358,7 @@ export const ApiValidationManager = {
                 errorEl.style.color = 'var(--warning-text)';
 
                 SettingsUIManager.updateApiStatusDisplay();
+                return false;
             } else {
                 // Vraie erreur de clé invalide - effacer la clé de appState
                 appState.validatedApiKeys[provider] = false;
@@ -374,6 +400,7 @@ export const ApiValidationManager = {
                 inputEl.classList.add('input-error');
 
                 SettingsUIManager.updateApiStatusDisplay();
+                return false;
             }
         }
     },

@@ -185,7 +185,7 @@ describe('SpeechRecognitionManager', () => {
         mockRecognition.onend();
 
         expect(input.value).toBe('Dernier mot');
-        expect(UI.showNotification).toHaveBeenCalledWith('Dictée vocale enregistrée', 'success');
+        expect(UI.showNotification).not.toHaveBeenCalled();
     });
 
     it('should commit pending interim text when the session ends', () => {

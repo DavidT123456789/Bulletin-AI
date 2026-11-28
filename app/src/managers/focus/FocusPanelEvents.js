@@ -53,26 +53,10 @@ export const FocusPanelEvents = {
         const focusHeader = panelEl?.querySelector('.focus-header');
         if (focusContent && focusHeader) {
             let scrollRafId = null;
-            const SCROLL_ENTER = 16;
-            const SCROLL_EXIT = 4;
 
             const updateHeaderScrollState = () => {
                 scrollRafId = null;
-                if (!focusHeader || !focusContent) return;
-
-                if (focusHeader.classList.contains('editing')) {
-                    FocusPanelHeader.resetScrollState();
-                } else {
-                    const scrollTop = Math.max(0, focusContent.scrollTop);
-                    const isScrolled = focusHeader.classList.contains('scrolled');
-                    if (!isScrolled && scrollTop >= SCROLL_ENTER) {
-                        focusHeader.classList.add('scrolled');
-                    } else if (isScrolled && scrollTop <= SCROLL_EXIT) {
-                        focusHeader.classList.remove('scrolled');
-                        FocusPanelHeader.syncHeaderOffset();
-                    }
-                }
-
+                FocusPanelHeader.syncScrollState(focusContent);
                 panel.updateScrollAffordances();
             };
 
@@ -128,9 +112,17 @@ export const FocusPanelEvents = {
             focusContent.addEventListener('touchcancel', resetScrollTouch, { passive: true });
 
             if (typeof ResizeObserver !== 'undefined') {
-                const resizeObserver = new ResizeObserver(() => {
-                    FocusPanelHeader.syncHeaderOffset();
-                    panel.updateScrollAffordances();
+                const resizeObserver = new ResizeObserver((entries = []) => {
+                    let headerResized = entries.length === 0;
+                    let contentResized = entries.length === 0;
+                    for (const entry of entries) {
+                        if (entry.target === focusHeader) headerResized = true;
+                        else if (entry.target === focusContent) contentResized = true;
+                    }
+                    const offsetChanged = headerResized ? FocusPanelHeader.syncHeaderOffset() : false;
+                    if (contentResized || offsetChanged) {
+                        panel.updateScrollAffordances();
+                    }
                 });
                 resizeObserver.observe(focusContent);
                 resizeObserver.observe(focusHeader);
@@ -388,8 +380,10 @@ export const FocusPanelEvents = {
                 return;
             }
 
+            const isThresholdPopoverOpen = () => Boolean(document.getElementById('journalThresholdControl')?.classList.contains('open'));
+
             if (e.key === 'Escape') {
-                if (document.getElementById('journalThresholdControl')?.classList.contains('open')) {
+                if (isThresholdPopoverOpen()) {
                     FocusPanelJournal.closeThresholdPopover?.();
                     return;
                 }
@@ -428,10 +422,10 @@ export const FocusPanelEvents = {
                     return;
                 }
                 panel.close();
-            } else if (e.key === 'ArrowLeft' && !isEditing) {
+            } else if (e.key === 'ArrowLeft' && !isEditing && !isThresholdPopoverOpen()) {
                 e.preventDefault();
                 FocusPanelNavigation.navigatePrev();
-            } else if (e.key === 'ArrowRight' && !isEditing) {
+            } else if (e.key === 'ArrowRight' && !isEditing && !isThresholdPopoverOpen()) {
                 e.preventDefault();
                 FocusPanelNavigation.navigateNext();
             }

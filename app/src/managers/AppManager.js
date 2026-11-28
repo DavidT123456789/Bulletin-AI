@@ -309,10 +309,6 @@ export const App = {
     handleAiModelSelectChange() {
         const model = DOM.aiModelSelect.value;
         appState.currentAIModel = model;
-        // Si c'est un modèle Google et qu'on n'a pas de clé, on peut suggérer
-        if (model.startsWith('gemini') && !appState.googleApiKey) {
-            UI.showNotification("Une clé API Google Gemini est requise pour ce modèle.", "info");
-        }
         StorageManager.saveAppState();
         SettingsUIManager.updateHeaderAiModelDisplay();
         SettingsUIManager.renderProviderModelChips?.();

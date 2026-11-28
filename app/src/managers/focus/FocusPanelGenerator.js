@@ -327,7 +327,6 @@ export const FocusPanelGenerator = {
         try {
             await navigator.clipboard.writeText(promptText);
             panel._flashCopyFeedback('copied-prompt', 'Prompt copié !');
-            UI.showNotification('Prompt copié dans le presse-papier', 'prompt');
         } catch (err) {
             console.error('Failed to copy prompt:', err);
             UI.showNotification('Échec de la copie du prompt', 'error');
@@ -536,7 +535,22 @@ export const FocusPanelGenerator = {
                         UI?.hideInlineSpinner?.(generateBtn);
                         panel._updateGenerateButton(result);
                     }
-                    UI?.showNotification?.(`Appréciation générée pour ${result.prenom || result.studentData?.prenom || ''}`, 'info');
+                    const studentLabel = result.prenom || result.studentData?.prenom || 'cet élève';
+                    const isSameClass = appState.currentClassId === generatingForClassId;
+                    const notifOptions = { bypassCoalescing: true };
+                    if (isSameClass) {
+                        notifOptions.action = {
+                            label: 'Voir',
+                            onClick: () => {
+                                if (appState.currentClassId !== generatingForClassId) return;
+                                if (appState.currentPeriod !== generatingForPeriod) {
+                                    UI?.setPeriod?.(generatingForPeriod);
+                                }
+                                panel.open?.(generatingForStudentId);
+                            }
+                        };
+                    }
+                    UI?.showNotification?.(`Appréciation prête pour ${studentLabel}.`, 'success', 5000, notifOptions);
                 }
 
                 panel._updateListRow(result);

@@ -275,7 +275,7 @@ describe('MassImportManager', () => {
             expect(lucas?.appreciation).toBe('Appréciation pour Lucas');
         });
 
-        it('should display "Génération annulée." when cancelled during the first student generation', async () => {
+        it('should stay silent when cancelled before any student generation finishes', async () => {
             const students = [
                 { nom: 'MARTIN', prenom: 'Lucas', periods: { T1: { grade: 15 } }, statuses: [] }
             ];
@@ -289,14 +289,7 @@ describe('MassImportManager', () => {
 
             await MassImportManager.processMassImport(students, 0);
 
-            expect(mockUI.showNotification).not.toHaveBeenCalledWith(
-                expect.stringContaining('erreur inattendue'),
-                'error'
-            );
-            expect(mockUI.showNotification).toHaveBeenCalledWith(
-                'Génération annulée.',
-                'info'
-            );
+            expect(mockUI.showNotification).not.toHaveBeenCalled();
         });
     });
 

@@ -640,21 +640,26 @@ export const ListSelectionManager = {
         UI.hideHeaderProgress(errorCount > 0 || wasAborted);
 
         if (wasAborted) {
-            const abortMsg = successCount > 0
-                ? `Régénération interrompue (${successCount}/${total} régénérée${successCount > 1 ? 's' : ''}).`
-                : 'Régénération annulée.';
-            UI.showNotification(abortMsg, 'warning');
+            if (successCount > 0) {
+                UI.showNotification(
+                    `Régénération interrompue (${successCount}/${total} régénérée${successCount > 1 ? 's' : ''}).`,
+                    'info'
+                );
+            }
             // Restore visual state only for remaining rows still showing "En file" / "Génération..."
             if (isSameBatchContext()) {
                 for (let j = stoppedIndex; j < total; j++) {
                     this.callbacks.updateStudentRow(ids[j]);
                 }
             }
+        } else if (errorCount > 0) {
+            const errorMsg = successCount > 0
+                ? `${successCount}/${total} régénérée${successCount > 1 ? 's' : ''} (${errorCount} erreur${errorCount > 1 ? 's' : ''}).`
+                : `${errorCount} erreur${errorCount > 1 ? 's' : ''} lors de la régénération.`;
+            UI.showNotification(errorMsg, 'warning');
+            if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
         } else {
-            const resultMsg = errorCount > 0
-                ? `Terminé avec ${errorCount} erreur(s).`
-                : `Régénération terminée (${successCount}/${total}).`;
-            UI.showNotification(resultMsg, errorCount > 0 ? "warning" : "success");
+            UI.showNotification(`Régénération terminée (${successCount}/${total}).`, 'success');
             if (successCount > 0) UI?.recordSupportMilestone?.('batch-complete');
         }
 

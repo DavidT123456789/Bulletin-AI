@@ -206,7 +206,7 @@ describe('CloudActionsManager', () => {
 
             expect(await CloudActionsManager.save()).toBe(false);
             expect(SyncServiceMock.refreshStatus).not.toHaveBeenCalled();
-            expect(UI.showNotification).toHaveBeenCalledWith('Connexion annulée.', 'warning');
+            expect(UI.showNotification).not.toHaveBeenCalled();
         });
 
         it('should reconnect and re-check status when refreshStatus detects a server-side expired token', async () => {

@@ -239,6 +239,7 @@ export function getSampleImportData(period = 'T1') {
  */
 const DEMO_JOURNAL_TEMPLATES = {
     durand: [
+        { daysAgo: 18, tags: ['oubli'], note: '' },
         { daysAgo: 10, tags: ['progres'], note: 'Méthode bien appliquée lors de l\'exercice en autonomie.' },
         { daysAgo: 2, tags: ['remarque'], note: 'Point parents prévu vendredi.', isPrivate: true }
     ],

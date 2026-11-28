@@ -778,7 +778,6 @@ export const StorageManager = {
             return result;
         });
         this._lastMigrationChanged = migrationNeeded;
-        if (migrationNeeded && UI) UI.showNotification("Données mises à jour vers le nouveau format.", 'info');
         return migratedResults;
     },
 
@@ -902,7 +901,7 @@ export const StorageManager = {
         };
         if (Array.isArray(dataSettings.classes)) {
             dataSettings.classes = dataSettings.classes.map(c => {
-                const { seatingUpdatedAt, seatingValidatedAt, seatingActivityUpdatedAt, seatingActivityValidatedAt, classNoteUpdatedAt, updatedAt, ...rest } = c;
+                const { seatingUpdatedAt, seatingValidatedAt, seatingActivityUpdatedAt, seatingActivityValidatedAt, classNoteUpdatedAt, journalSettingsUpdatedAt, updatedAt, ...rest } = c;
                 if (rest.analyses) {
                     rest.analyses = stripAnalysisHistory(rest.analyses);
                 }
@@ -1067,10 +1066,15 @@ export const StorageManager = {
         this._isFirstLoadSave = false;
 
         const lsSaved = SafeStorage.set(CONFIG.LS_APP_STATE_KEY, stringifiedSettings);
-        if (!lsSaved && UI?.showNotification) {
+        if (lsSaved) {
+            this._lsQuotaNotified = false;
+        } else if (!this._lsQuotaNotified && UI?.showNotification) {
+            this._lsQuotaNotified = true;
             UI.showNotification(
                 'Espace de stockage local saturé. Les données élèves restent sauvegardées dans IndexedDB.',
-                'warning'
+                'warning',
+                5000,
+                { group: 'storage-quota' }
             );
         }
 
@@ -1320,8 +1324,6 @@ export const StorageManager = {
                 ]
             });
             SafeStorage.removeSession(STORAGE_KEYS.GOOGLE_TOKEN);
-
-            UI.showNotification('Toutes les données ont été supprimées. Rechargement...', 'success');
 
             await RestoreTransitionManager.performReloadTransition({
                 title: 'Réinitialisation',
@@ -1717,6 +1719,15 @@ export const StorageManager = {
                 if (rClass.classNote !== undefined && (rNoteTs > lNoteTs || (!localC.classNote && rClass.classNote && lNoteTs === 0))) {
                     localC.classNote = rClass.classNote;
                     if (rClass.classNoteUpdatedAt) localC.classNoteUpdatedAt = rClass.classNoteUpdatedAt;
+                }
+                const rJournalTs = rClass.journalSettingsUpdatedAt || 0;
+                const lJournalTs = localC.journalSettingsUpdatedAt || 0;
+                const hasRemoteJournalSettings = rClass.journalThreshold !== undefined || rClass.journalIncludeInAI !== undefined;
+                const hasLocalJournalSettings = localC.journalThreshold !== undefined || localC.journalIncludeInAI !== undefined;
+                if (hasRemoteJournalSettings && (rJournalTs > lJournalTs || (!hasLocalJournalSettings && lJournalTs === 0))) {
+                    if (rClass.journalThreshold !== undefined) localC.journalThreshold = rClass.journalThreshold;
+                    if (rClass.journalIncludeInAI !== undefined) localC.journalIncludeInAI = rClass.journalIncludeInAI;
+                    if (rClass.journalSettingsUpdatedAt) localC.journalSettingsUpdatedAt = rClass.journalSettingsUpdatedAt;
                 }
                 if (rClass.analyses && typeof rClass.analyses === 'object') {
                     if (!localC.analyses || typeof localC.analyses !== 'object') {

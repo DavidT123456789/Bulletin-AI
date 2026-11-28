@@ -54,12 +54,6 @@ export const MassImportManager = {
         let wasAborted = false;
 
         try {
-            // Notification de démarrage (pas d'estimation car le rate limiting est réactif)
-            UI.showNotification(
-                `Génération de ${studentsToProcess.length} élève(s) en cours...`,
-                'info'
-            );
-
             UI.showHeaderProgress(0, studentsToProcess.length);
 
             for (const [index, studentData] of studentsToProcess.entries()) {
@@ -262,7 +256,11 @@ export const MassImportManager = {
                 if (ignoredCount > 0) successMessage += ` ${ignoredCount} ligne(s) ignorée(s).`;
 
                 if (failedImports.length > 0) {
-                    UI.showNotification(`${failedImports.length} erreurs lors de la génération.`, 'warning');
+                    const errCount = failedImports.length;
+                    const errorMsg = successCount > 0
+                        ? `${successCount}/${totalProcessed} générée${successCount > 1 ? 's' : ''} (${errCount} erreur${errCount > 1 ? 's' : ''}).`
+                        : `${errCount} erreur${errCount > 1 ? 's' : ''} lors de la génération.`;
+                    UI.showNotification(errorMsg, 'warning');
                 } else {
                     UI.showNotification(successMessage, 'success');
                 }
@@ -271,11 +269,11 @@ export const MassImportManager = {
                 }
                 appState.importJustCompleted = true;
                 if (DOM.massData) DOM.massData.value = '';
-            } else {
-                const abortMsg = successCount > 0
-                    ? `Génération interrompue (${successCount}/${totalProcessed} générée${successCount > 1 ? 's' : ''}).`
-                    : 'Génération annulée.';
-                UI.showNotification(abortMsg, 'info');
+            } else if (successCount > 0) {
+                UI.showNotification(
+                    `Génération interrompue (${successCount}/${totalProcessed} générée${successCount > 1 ? 's' : ''}).`,
+                    'info'
+                );
             }
 
         } catch (e) {

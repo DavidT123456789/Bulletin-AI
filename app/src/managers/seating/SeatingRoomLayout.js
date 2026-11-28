@@ -1623,14 +1623,20 @@ export const SeatingRoomLayout = {
             if (!appState[gridKey]) appState[gridKey] = {};
             if (!appState[gridKey].specialLayout) appState[gridKey].specialLayout = {};
             appState[gridKey].specialLayout[key] = 'blocked';
-            UI.showNotification('Place condamnée pour toutes les classes (salle)', 'info');
+            UI.showNotification('Place condamnée pour toutes les classes (salle)', 'info', 4000, {
+                group: 'blocked-seat-scope',
+                replaceExisting: true
+            });
         } else if (isGlobal) {
             // Restreindre à la classe en cours
             delete appState[gridKey].specialLayout[key];
             if (currentClass) {
                 if (!currentClass[classSpecialKey]) currentClass[classSpecialKey] = {};
                 currentClass[classSpecialKey][key] = 'blocked';
-                UI.showNotification(`Place condamnée pour ${className} uniquement`, 'info');
+                UI.showNotification(`Place condamnée pour ${className} uniquement`, 'info', 4000, {
+                    group: 'blocked-seat-scope',
+                    replaceExisting: true
+                });
             } else {
                 UI.showNotification('Aucune classe active sélectionnée', 'warning');
                 return;

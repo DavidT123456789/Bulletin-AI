@@ -106,7 +106,7 @@ function handleError(error, context) {
 
     // Notification utilisateur (sauf pour certaines erreurs silencieuses)
     const silentErrors = ['ResizeObserver', 'Script error'];
-    const isSilent = silentErrors.some(s => formattedError.message.includes(s));
+    const isSilent = formattedError.name === 'AbortError' || silentErrors.some(s => formattedError.message.includes(s));
 
     if (CONFIG.showUserNotification && !isSilent) {
         notifyUser(formattedError);

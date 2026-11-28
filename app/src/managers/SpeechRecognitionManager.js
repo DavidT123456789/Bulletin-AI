@@ -696,10 +696,6 @@ export const SpeechRecognitionManager = {
             }
         }
 
-        if (this._gotResult) {
-            UI.showNotification('Dictée vocale enregistrée', 'success');
-        }
-
         const next = this._pendingStart;
 
         this._activeButton = null;
