@@ -40,8 +40,6 @@ export const StudentDataManager = {
             generationSnapshotJournal: [],
             // Journal entry count at generation time (legacy, for backward compat)
             generationSnapshotJournalCount: 0,
-            // Threshold used at generation time (for journal dirty detection)
-            generationThreshold: appState.journalThreshold ?? 2,
             // Period for which the generation was made (for per-period dirty detection)
             generationPeriod: appState.currentPeriod,
             // Historique des versions précédentes (max 5)
@@ -334,7 +332,6 @@ export const StudentDataManager = {
         existingResult.generationPeriod = newResult.generationPeriod;
         existingResult.generationSnapshotJournal = newResult.generationSnapshotJournal;
         existingResult.generationSnapshotJournalCount = newResult.generationSnapshotJournalCount;
-        existingResult.generationThreshold = newResult.generationThreshold;
 
         // Use provided hash, or auto-compute from finalized studentData
         if (newResult.promptHash) {
@@ -407,7 +404,6 @@ export const StudentDataManager = {
         existingResult.generationSnapshot = newResult.generationSnapshot;
         existingResult.generationSnapshotJournal = Utils.deepClone(preserved.journal || []);
         existingResult.generationSnapshotJournalCount = preserved.journal?.length || 0;
-        existingResult.generationThreshold = newResult.generationThreshold ?? appState.journalThreshold ?? 2;
         existingResult.generationPeriod = newResult.generationPeriod;
         existingResult.promptHash = newResult.promptHash ?? existingResult.promptHash;
 

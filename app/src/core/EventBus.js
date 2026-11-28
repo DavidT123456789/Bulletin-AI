@@ -23,7 +23,7 @@ export const EVENTS = Object.freeze({
     APP_SETTINGS_CHANGED: 'settings:changed',
     PERSONALIZATION_RESET: 'settings:personalization-reset',
     SEATING_STATUS_CHANGED: 'seating:status-changed',
-    JOURNAL_THRESHOLD_CHANGED: 'journal:threshold-changed',
+    JOURNAL_AI_SETTINGS_CHANGED: 'journal:ai-settings-changed',
     JOURNAL_UPDATED: 'journal:updated',
     AI_GENERATION_START: 'ai:generation-start',
     AI_FALLBACK: 'ai:fallback',

@@ -38,7 +38,8 @@ vi.mock('./FocusPanelHistory.js', () => ({
 
 vi.mock('./JournalManager.js', () => ({
     JournalManager: {
-        getThreshold: vi.fn(() => 2)
+        isNotesIncludedInAI: vi.fn(() => true),
+        isTagsIncludedInAI: vi.fn(() => true)
     }
 }));
 
@@ -575,7 +576,11 @@ describe('FocusPanelStatus', () => {
             expect(badge.getAttribute('data-tooltip')).toBeNull();
         });
 
-        it('affiche la pastille modified avec tooltip pour les sources manuelles ou importées', () => {
+        it('affiche la pastille modified (alerte -> coche) avec tooltip adapté pour les sources manuelles ou importées', () => {
+            const expectedOrigin = {
+                manual: "depuis l'écriture",
+                imported: "depuis l'import"
+            };
             for (const source of ['manual', 'imported']) {
                 const student = {
                     id: 'student-1',
@@ -590,6 +595,11 @@ describe('FocusPanelStatus', () => {
                     }
                 };
 
+                const status = FocusPanelStatus.getAppreciationStatus(student, 'T1');
+                expect(status.isDirty).toBe(true);
+                expect(status.isReview).toBe(true);
+                expect(status.tooltip).toContain(expectedOrigin[source]);
+
                 FocusPanelStatus.updateAppreciationStatus(student);
 
                 const badge = document.getElementById('focusAppreciationBadge');
@@ -598,6 +608,8 @@ describe('FocusPanelStatus', () => {
                 expect(badge.getAttribute('role')).toBe('button');
                 expect(badge.getAttribute('tabindex')).toBe('0');
                 expect(badge.getAttribute('data-tooltip')).toContain('Cliquer pour marquer comme vérifiée');
+                expect(badge.querySelector('.badge-icon-default')?.getAttribute('icon')).toBe('solar:danger-circle-linear');
+                expect(badge.querySelector('.badge-icon-confirm')?.getAttribute('icon')).toBe('ph:check-bold');
 
                 FocusPanelStatus.updateAppreciationStatus(student, { state: 'uptodate' });
                 expect(badge.classList.contains('visible')).toBe(false);

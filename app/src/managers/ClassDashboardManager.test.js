@@ -597,7 +597,8 @@ describe('ClassDashboardManager - Safe DOM handling & Analytics', () => {
         appState.currentClassId = 'class-1';
         appState.currentPeriod = 'T2';
         appState.anonymizeData = true;
-        appState.journalThreshold = 2;
+        appState.journalIncludeNotes = true;
+        appState.journalIncludeTags = true;
 
         appState.generatedResults = [
             {

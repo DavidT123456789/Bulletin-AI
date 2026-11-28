@@ -41,7 +41,8 @@ const buildBaseSummary = (overrides = {}) => ({
     statuses: [],
     journal: {
         includedInAI: true,
-        threshold: 1,
+        includeNotes: true,
+        includeTags: true,
         tags: [],
         notes: [],
         standaloneLabels: [],
@@ -142,5 +143,37 @@ describe('FocusPanelGenerator._buildPromptSummaryHtml', () => {
         expect(rgpdHtml).toContain("Non transmis à l'IA (repère local · RGPD)");
         expect(rgpdHtml).toContain('Délégué');
         expect(rgpdHtml).toContain('« Prendre en compte l&#39;engagement citoyen de l&#39;élève si pertinent. »');
+    });
+
+    it('affiche le motif explicite quand seul un canal est désactivé dans le récapitulatif Journal', () => {
+        const tagsDisabled = buildBaseSummary({
+            journal: {
+                includedInAI: true,
+                includeNotes: true,
+                includeTags: false,
+                tags: [],
+                notes: [],
+                standaloneLabels: [],
+                privateCount: 0,
+                totalCount: 1
+            }
+        });
+        expect(FocusPanelGenerator._buildPromptSummaryHtml(tagsDisabled))
+            .toContain('Aucune observation écrite transmise (tags désactivés)');
+
+        const notesDisabled = buildBaseSummary({
+            journal: {
+                includedInAI: true,
+                includeNotes: false,
+                includeTags: true,
+                tags: [],
+                notes: [],
+                standaloneLabels: [],
+                privateCount: 0,
+                totalCount: 1
+            }
+        });
+        expect(FocusPanelGenerator._buildPromptSummaryHtml(notesDisabled))
+            .toContain('Aucun tag transmis (observations écrites désactivées)');
     });
 });

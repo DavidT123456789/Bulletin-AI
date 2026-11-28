@@ -14,7 +14,8 @@ vi.mock('../state/State.js', () => ({
         useSubjectPersonalization: false,
         generatedResults: [],
         filteredResults: [],
-        journalThreshold: 2
+        journalIncludeNotes: true,
+        journalIncludeTags: true
     },
     userSettings: {
         academic: {

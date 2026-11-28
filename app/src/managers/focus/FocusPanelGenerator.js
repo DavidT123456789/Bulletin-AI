@@ -266,8 +266,12 @@ export const FocusPanelGenerator = {
             } else if (j.totalCount > 0 && j.privateCount === j.totalCount) {
                 const plural = j.privateCount > 1 ? 's' : '';
                 journalHtml = `<span class="ai-data-muted">Aucune observation transmise (${j.privateCount} privée${plural} exclue${plural})</span>`;
+            } else if (j.includeTags === false) {
+                journalHtml = `<span class="ai-data-muted">Aucune observation écrite transmise (tags désactivés)</span>`;
+            } else if (j.includeNotes === false) {
+                journalHtml = `<span class="ai-data-muted">Aucun tag transmis (observations écrites désactivées)</span>`;
             } else {
-                journalHtml = `<span class="ai-data-muted">Aucune observation transmise · tags isolés (seuil ${esc(j.threshold)}×)</span>`;
+                journalHtml = `<span class="ai-data-muted">Aucune observation transmise</span>`;
             }
             rows.push({ label: 'Journal', valueHtml: journalHtml });
         }

@@ -14,8 +14,8 @@ vi.mock('../state/State.js', () => ({
         currentPeriod: 'T1',
         currentClassId: null,
         classes: [],
-        journalThreshold: 2,
-        journalIncludeInAI: true,
+        journalIncludeNotes: true,
+        journalIncludeTags: true,
         generatedResults: []
     },
     userSettings: {
@@ -44,8 +44,9 @@ describe('JournalManager', () => {
         appState.currentClassId = null;
         appState.classes = [];
         appState.periodSystem = 'trimestres';
-        appState.journalThreshold = 2;
-        appState.journalIncludeInAI = true;
+        appState.journalIncludeNotes = true;
+        appState.journalIncludeTags = true;
+        delete appState.journalIncludeInAI;
         appState.generatedResults = [
             {
                 id: 'student-1',
@@ -190,15 +191,21 @@ describe('JournalManager', () => {
     });
 
     describe('getEmptyStateCopy', () => {
-        it('returns period-specific title and AI-aware subtitle', () => {
-            appState.classes = [{ id: 'c1', name: '3A', journalIncludeInAI: true }];
-            const aiOn = JournalManager.getEmptyStateCopy('c1', 'T2');
-            expect(aiOn.title).toContain('T2');
-            expect(aiOn.subtitle).toContain('transmis à l\'IA');
+        it('returns period-specific title and channel-aware subtitle', () => {
+            appState.classes = [{ id: 'c1', name: '3A', journalIncludeNotes: true, journalIncludeTags: true }];
+            const bothOn = JournalManager.getEmptyStateCopy('c1', 'T2');
+            expect(bothOn.title).toContain('T2');
+            expect(bothOn.subtitle).toContain('observations écrites et tags transmis à l\'IA');
 
-            appState.classes[0].journalIncludeInAI = false;
-            const aiOff = JournalManager.getEmptyStateCopy('c1', 'T2');
-            expect(aiOff.subtitle).toContain('bloc-notes personnel');
+            appState.classes[0].journalIncludeTags = false;
+            expect(JournalManager.getEmptyStateCopy('c1', 'T2').subtitle).toContain('observations écrites transmises à l\'IA');
+
+            appState.classes[0].journalIncludeNotes = false;
+            appState.classes[0].journalIncludeTags = true;
+            expect(JournalManager.getEmptyStateCopy('c1', 'T2').subtitle).toContain('tags transmis à l\'IA');
+
+            appState.classes[0].journalIncludeTags = false;
+            expect(JournalManager.getEmptyStateCopy('c1', 'T2').subtitle).toContain('bloc-notes personnel');
         });
     });
 
@@ -254,92 +261,96 @@ describe('JournalManager', () => {
             expect(summary.standaloneLabels).toEqual([]);
             expect(summary.notes).toHaveLength(2);
             expect(summary.notes[0].uiTagLabels).toEqual([]);
-            expect(summary.notes[1].uiTagLabels).toEqual(['Progrès']);
+            expect(summary.notes[1].uiTagLabels).toEqual(['Progrès (1×)']);
+            expect(summary.compactText).toBe('1 tag · 2 obs. écrites');
         });
     });
 
-    describe('synthesizeForPrompt & isEntryIsolated (notes rédigées vs tags rapides & mode Hors IA)', () => {
-        it('transmet toujours une note rédigée même si son tag est sous le seuil ≥2 et ne la marque jamais isolée', () => {
-            const entry = JournalManager.addEntry('student-1', {
+    describe('synthesizeForPrompt & canaux indépendants (Observations écrites / Tags / Hors IA)', () => {
+        it('transmet une note rédigée sans tag et transmet tout tag non privé avec sa fréquence (N×)', () => {
+            JournalManager.addEntry('student-1', {
                 tags: [],
                 note: 'Excellent exposé oral devant la classe'
             });
 
-            const counts = JournalManager.countTags('student-1', 'T1');
-            expect(JournalManager.isEntryIsolated(entry, counts, 2)).toBe(false);
-
             const synthesis = JournalManager.synthesizeForPrompt('student-1', 'T1');
-            expect(synthesis).toContain('Notes: "Excellent exposé oral devant la classe"');
+            expect(synthesis).toBe('Notes: "Excellent exposé oral devant la classe"');
             expect(synthesis).not.toContain('Observations:');
-        });
 
-        it('continue de filtrer les tags rapides sans texte sous le seuil et les marque isolés', () => {
-            const singleTag = JournalManager.addEntry('student-1', {
-                tags: ['bavardage'],
-                note: ''
-            });
-
-            const counts = JournalManager.countTags('student-1', 'T1');
-            expect(JournalManager.isEntryIsolated(singleTag, counts, 2)).toBe(true);
-            expect(JournalManager.synthesizeForPrompt('student-1', 'T1')).toBe('');
-
-            // À la 2e occurrence, le tag atteint le seuil
             JournalManager.addEntry('student-1', { tags: ['bavardage'], note: '' });
-            const counts2 = JournalManager.countTags('student-1', 'T1');
-            expect(JournalManager.isEntryIsolated(singleTag, counts2, 2)).toBe(false);
-            expect(JournalManager.synthesizeForPrompt('student-1', 'T1')).toContain('Observations: Bavardage');
+            expect(JournalManager.synthesizeForPrompt('student-1', 'T1'))
+                .toBe('Observations: Bavardage (1×). Notes: "Excellent exposé oral devant la classe"');
+
+            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: '' });
+            expect(JournalManager.synthesizeForPrompt('student-1', 'T1'))
+                .toBe('Observations: Bavardage (2×). Notes: "Excellent exposé oral devant la classe"');
         });
 
-        it('respecte le mode bloc-notes personnel (Hors IA) global et par classe', () => {
+        it('pilote indépendamment Observations écrites et Tags (4 combinaisons + migration legacy journalIncludeInAI)', () => {
             appState.classes = [
-                { id: 'c1', name: '3A', journalIncludeInAI: false },
-                { id: 'c2', name: '3B', journalIncludeInAI: true }
+                { id: 'c-both', name: '3A', journalIncludeNotes: true, journalIncludeTags: true },
+                { id: 'c-notes', name: '3B', journalIncludeNotes: true, journalIncludeTags: false },
+                { id: 'c-tags', name: '3C', journalIncludeNotes: false, journalIncludeTags: true },
+                { id: 'c-off', name: '3D', journalIncludeNotes: false, journalIncludeTags: false },
+                { id: 'c-legacy-off', name: '3E', journalIncludeInAI: false }
             ];
-            appState.generatedResults = [
-                { id: 's1', classId: 'c1', journal: [] },
-                { id: 's2', classId: 'c2', journal: [] }
+            const entries = [
+                { id: 'j1', period: 'T1', tags: ['oubli'], note: '' },
+                { id: 'j2', period: 'T1', tags: ['progres'], note: 'Méthode bien appliquée en autonomie.' },
+                { id: 'j3', period: 'T1', tags: ['remarque'], note: 'Point parents vendredi.', isPrivate: true }
             ];
 
-            const e1 = JournalManager.addEntry('s1', { tags: ['bavardage'], note: 'Avertissement' });
-            JournalManager.addEntry('s1', { tags: ['bavardage'], note: '' });
-            JournalManager.addEntry('s2', { tags: ['participation+'], note: 'Très pertinent' });
+            // 1. ON / ON (Sophie) : 2 tags (Oubli 1× + Progrès 1× sur la note) · 1 obs. écrite, zéro doublon
+            const both = JournalManager.getAISummary({ id: 's1', classId: 'c-both', journal: entries }, 'T1');
+            expect(both.compactText).toBe('2 tags · 1 obs. écrite');
+            expect(both.standaloneLabels).toEqual(['Oubli d\'affaires (1×)']);
+            expect(both.transmittedTagIds).toEqual(['oubli', 'progres']);
+            expect(JournalManager.synthesizeForPrompt({ id: 's1', classId: 'c-both', journal: entries }, 'T1'))
+                .toBe('Observations: Oubli d\'affaires (1×). Notes: "[Progrès (1×)] Méthode bien appliquée en autonomie."');
 
-            // Classe c1 en mode Hors IA : rien transmis, rien grisé comme isolé
-            expect(JournalManager.isIncludedInAI('c1')).toBe(false);
-            expect(JournalManager.getSignificantTagIds('s1', 'T1')).toEqual([]);
-            expect(JournalManager.synthesizeForPrompt('s1', 'T1')).toBe('');
-            expect(JournalManager.isEntryIsolated(e1, { bavardage: 1 }, 2, 'c1')).toBe(false);
+            // 2. Observations écrites ON / Tags OFF : aucune fuite de tag (y compris retrait du préfixe [Progrès])
+            const notesOnly = JournalManager.getAISummary({ id: 's2', classId: 'c-notes', journal: entries }, 'T1');
+            expect(notesOnly.compactText).toBe('1 observation écrite');
+            expect(notesOnly.tags).toEqual([]);
+            expect(notesOnly.transmittedTagIds).toEqual([]);
+            expect(notesOnly.notes).toEqual([{ text: 'Méthode bien appliquée en autonomie.', extraTagLabels: [], uiTagLabels: [] }]);
+            expect(JournalManager.synthesizeForPrompt({ id: 's2', classId: 'c-notes', journal: entries }, 'T1'))
+                .toBe('Notes: "Méthode bien appliquée en autonomie."');
 
-            // Classe c2 active malgré c1 désactivée
-            expect(JournalManager.isIncludedInAI('c2')).toBe(true);
-            expect(JournalManager.synthesizeForPrompt('s2', 'T1')).toContain('Très pertinent');
+            // 3. Observations écrites OFF / Tags ON : uniquement les tags avec fréquences, zéro texte libre
+            const tagsOnly = JournalManager.getAISummary({ id: 's3', classId: 'c-tags', journal: entries }, 'T1');
+            expect(tagsOnly.compactText).toBe('2 tags');
+            expect(tagsOnly.notes).toEqual([]);
+            expect(tagsOnly.standaloneLabels).toEqual(['Oubli d\'affaires (1×)', 'Progrès (1×)']);
+            expect(JournalManager.synthesizeForPrompt({ id: 's3', classId: 'c-tags', journal: entries }, 'T1'))
+                .toBe('Observations: Oubli d\'affaires (1×), Progrès (1×)');
 
-            // État vide affiche le sous-titre bloc-notes personnel en mode Hors IA
-            appState.generatedResults[0].journal = [];
-            expect(JournalManager.renderTimeline('s1', 'T1')).toContain('Mode bloc-notes personnel');
+            // 4. OFF / OFF & legacy journalIncludeInAI: false -> Hors IA total
+            expect(JournalManager.isIncludedInAI('c-off')).toBe(false);
+            expect(JournalManager.synthesizeForPrompt({ id: 's4', classId: 'c-off', journal: entries }, 'T1')).toBe('');
+            expect(JournalManager.isIncludedInAI('c-legacy-off')).toBe(false);
+            expect(JournalManager.isNotesIncludedInAI('c-legacy-off')).toBe(false);
+            expect(JournalManager.isTagsIncludedInAI('c-legacy-off')).toBe(false);
         });
 
-        it('préfixe une note rédigée par le libellé de son tag explicite quand le tag est sous le seuil, sans dupliquer les tags déjà significatifs ni "remarque"', () => {
-            // 1. Tag explicite sous seuil + note -> préfixe "[Bavardage]"
+        it('préfixe une note rédigée par le libellé de son tag (1×) sans dupliquer les tags répétés (2×+)', () => {
             JournalManager.addEntry('student-1', {
                 tags: ['bavardage'],
                 note: 'avec son voisin'
             });
             expect(JournalManager.synthesizeForPrompt('student-1', 'T1'))
-                .toBe('Notes: "[Bavardage] avec son voisin"');
+                .toBe('Notes: "[Bavardage (1×)] avec son voisin"');
 
-            // 2. Si le tag devient significatif (2e occurrence), il passe dans Observations: sans doublon de préfixe
             JournalManager.addEntry('student-1', {
                 tags: ['bavardage'],
                 note: ''
             });
             const synth2 = JournalManager.synthesizeForPrompt('student-1', 'T1');
-            expect(synth2).toContain('Observations: Bavardage');
-            expect(synth2).toContain('Notes: "avec son voisin"');
-            expect(synth2).not.toContain('[Bavardage]');
+            expect(synth2).toBe('Observations: Bavardage (2×). Notes: "avec son voisin"');
+            expect(synth2).not.toContain('[Bavardage');
         });
 
-        it('exclut les entrées privées (isPrivate) de la synthèse IA et des compteurs tout en les affichant en timeline', () => {
+        it('exclut les entrées privées (isPrivate) de la synthèse IA et conserve un seuil interne ≥2 pour les tendances de classe', () => {
             const priv = JournalManager.addEntry('student-1', {
                 tags: ['bavardage'],
                 note: 'Incident confidentiel famille',
@@ -358,20 +369,17 @@ describe('JournalManager', () => {
             expect(priv.isPrivate).toBe(true);
             expect(pub.isPrivate).toBeUndefined();
 
-            // 1 seule occurrence non-privée de bavardage -> ne franchit pas le seuil 2
+            // Tendances de classe (ClassDashboard) : exige ≥2 occurrences non privées
             expect(JournalManager.getSignificantTagIds('student-1', 'T1')).toEqual([]);
             const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
             expect(synth).not.toContain('Incident confidentiel famille');
+            expect(synth).toContain('Bavardage (1×)');
             expect(synth).toContain('Bonne intervention orale');
 
-            // Une entrée privée n'est jamais marquée "isolée" pour l'IA
-            const counts = JournalManager.countTags('student-1', 'T1', { excludePrivate: true });
-            expect(JournalManager.isEntryIsolated(priv, counts, 2)).toBe(false);
-
-            // Bascule de privé à public via updateEntry -> devient visible pour l'IA
+            // Bascule de privé à public -> atteint 2× pour les tendances de classe
             JournalManager.updateEntry('student-1', priv.id, { isPrivate: false });
             expect(JournalManager.getSignificantTagIds('student-1', 'T1')).toEqual(['bavardage']);
-            expect(JournalManager.synthesizeForPrompt('student-1', 'T1')).toContain('Incident confidentiel famille');
+            expect(JournalManager.synthesizeForPrompt('student-1', 'T1')).toContain('Bavardage (2×)');
 
             // Re-marquer privé -> ré-apparaît avec le badge Privé dans la timeline HTML
             JournalManager.updateEntry('student-1', priv.id, { isPrivate: true });
@@ -393,67 +401,33 @@ describe('JournalManager', () => {
             }
         });
 
-        it('calcule getAISummary en mode Hors IA, sous le seuil et combiné tags + notes', () => {
-            // Hors IA
-            appState.journalIncludeInAI = false;
-            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: 'Bavarde' });
-            const offSummary = JournalManager.getAISummary('student-1', 'T1');
-            expect(offSummary.includedInAI).toBe(false);
-            expect(offSummary.displayText).toBe('');
-
-            // Actif, tag seul sous le seuil (threshold = 2), note privée exclue
-            appState.journalIncludeInAI = true;
-            appState.generatedResults[0].journal = [];
-            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: '' });
-            JournalManager.addEntry('student-1', { tags: [], note: 'Note perso', isPrivate: true });
-            const belowSummary = JournalManager.getAISummary('student-1', 'T1');
-            expect(belowSummary.includedInAI).toBe(true);
-            expect(belowSummary.tags).toEqual([]);
-            expect(belowSummary.notes).toEqual([]);
-            expect(belowSummary.privateCount).toBe(1);
-            expect(belowSummary.displayText).toBe('');
-
-            // Seuil atteint + note écrite -> résumé combiné exact
-            JournalManager.addEntry('student-1', { tags: ['bavardage'], note: '' });
-            JournalManager.addEntry('student-1', { tags: ['participation+'], note: 'Aide ses camarades' });
-            const combined = JournalManager.getAISummary('student-1', 'T1');
-            expect(combined.tags.map(t => t.label)).toEqual(['Bavardage']);
-            expect(combined.notes).toHaveLength(1);
-            expect(combined.displayText).toContain('Bavardage');
-            expect(combined.displayText).not.toContain('(×2)');
-            expect(combined.displayText).toContain('Aide ses camarades');
-        });
-
-        it('traduit Attitude + / Attitude - en libellés IA explicites tout en gardant les badges UI courts', () => {
+        it('traduit Attitude + / Attitude - en libellés IA explicites avec fréquence tout en gardant les badges UI courts', () => {
             expect(JournalManager.getPromptLabel('attitude+')).toBe('Attitude positive');
             expect(JournalManager.getPromptLabel('attitude-')).toBe('Attitude à revoir');
             expect(JournalManager.getPromptLabel('bavardage')).toBe('Bavardage');
             expect(JournalManager.getPromptLabel('inconnu')).toBe('inconnu');
 
-            // 1. Sous le seuil avec note -> UI lisible sans crochets, prompt avec préfixe [Attitude à revoir]
             JournalManager.addEntry('student-1', { tags: ['attitude-'], note: 'Soupirs répétés en classe' });
-            const underSummary = JournalManager.getAISummary('student-1', 'T1');
-            expect(underSummary.displayText).toBe('Attitude à revoir : « Soupirs répétés en classe »');
-            expect(underSummary.displayText).not.toContain('[');
-            expect(underSummary.transmittedCount).toBe(1);
-            expect(underSummary.compactText).toBe('1 observation');
-            expect(underSummary.transmittedTagIds).toEqual(['attitude-']);
+            const singleSummary = JournalManager.getAISummary('student-1', 'T1');
+            expect(singleSummary.displayText).toBe('Attitude à revoir (1×) : « Soupirs répétés en classe »');
+            expect(singleSummary.transmittedCount).toBe(1);
+            expect(singleSummary.compactText).toBe('1 tag · 1 obs. écrite');
+            expect(singleSummary.transmittedTagIds).toEqual(['attitude-']);
             expect(JournalManager.synthesizeForPrompt('student-1', 'T1'))
-                .toBe('Notes: "[Attitude à revoir] Soupirs répétés en classe"');
+                .toBe('Notes: "[Attitude à revoir (1×)] Soupirs répétés en classe"');
 
-            // 2. Au-dessus du seuil -> Observations utilise le promptLabel, timeline conserve "Attitude -"
             JournalManager.addEntry('student-1', { tags: ['attitude-'], note: '' });
             JournalManager.addEntry('student-1', { tags: ['attitude+'], note: '' });
             JournalManager.addEntry('student-1', { tags: ['attitude+'], note: '' });
             const summary = JournalManager.getAISummary('student-1', 'T1');
-            expect(summary.tags.map(t => t.label)).toEqual(['Attitude à revoir', 'Attitude positive']);
+            expect(summary.tags.map(t => t.formattedLabel)).toEqual(['Attitude à revoir (2×)', 'Attitude positive (2×)']);
             expect(summary.displayText).not.toContain('Attitude -');
             expect(summary.displayText).not.toContain('Attitude +');
             expect(summary.transmittedCount).toBe(4);
-            expect(summary.compactText).toBe('4 observations');
+            expect(summary.compactText).toBe('2 tags · 1 obs. écrite');
 
             const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
-            expect(synth).toContain('Observations: Attitude à revoir, Attitude positive');
+            expect(synth).toContain('Observations: Attitude à revoir (2×), Attitude positive (2×)');
             expect(synth).not.toContain('Attitude -');
             expect(synth).not.toContain('Attitude +');
 
@@ -463,71 +437,22 @@ describe('JournalManager', () => {
             expect(html).toContain('Attitude +');
         });
 
-        it('garantit la cohérence SSOT (transmittedTagIds, compactText invariant selon le seuil, below-threshold par tag)', () => {
-            // Note rédigée unique avec tag "progres" + note privée "remarque"
-            JournalManager.addEntry('student-1', {
-                tags: ['progres'],
-                note: 'Méthode bien appliquée lors de l\'exercice en autonomie.'
-            });
-            JournalManager.addEntry('student-1', {
-                tags: [],
-                note: 'Point parents prévu vendredi.',
-                isPrivate: true
-            });
-
-            // Identique en Dès 1, Dès 2 et Dès 3 : pas de bascule visuelle, ni de doublon, ni de variation du prompt
-            const syntheses = [];
-            for (const threshold of [1, 2, 3]) {
-                appState.journalThreshold = threshold;
-                const summary = JournalManager.getAISummary('student-1', 'T1');
-                expect(summary.transmittedTagIds).toEqual(['progres']);
-                expect(summary.transmittedCount).toBe(1);
-                expect(summary.compactText).toBe('1 observation');
-                expect(summary.displayText).toContain('Progrès : « Méthode bien appliquée');
-                expect(summary.displayText).not.toContain('[Progrès]');
-                syntheses.push(JournalManager.synthesizeForPrompt('student-1', 'T1'));
-            }
-            expect(syntheses[0]).toBe('Notes: "[Progrès] Méthode bien appliquée lors de l\'exercice en autonomie."');
-            expect(syntheses[1]).toBe(syntheses[0]);
-            expect(syntheses[2]).toBe(syntheses[0]);
-
-            // excludeRemarque filtre le tag technique tout en préservant l'id sur les vrais tags
-            appState.journalThreshold = 2;
-            JournalManager.addEntry('student-1', { tags: [], note: 'Note libre publique' });
-            const withoutRemarque = JournalManager.getAggregatedCounts('student-1', 'T1', {
-                excludePrivate: true,
-                excludeRemarque: true
-            });
-            expect(withoutRemarque.map(t => t.id)).toEqual(['progres']);
-
-            // Entrée multi-tags sans note : un tag au-dessus du seuil, l'autre en dessous -> grisage par tag
-            appState.generatedResults[0].journal = [];
-            JournalManager.addEntry('student-1', { tags: ['participation+'], note: '' });
-            JournalManager.addEntry('student-1', { tags: ['participation+', 'progres'], note: '' });
-            const timelineHtml = JournalManager.renderTimeline('student-1', 'T1');
-            expect(timelineHtml).not.toContain('journal-entry  isolated');
-            expect(timelineHtml).toContain('class="journal-tag below-threshold"');
-            expect(JournalManager.getAISummary('student-1', 'T1').transmittedTagIds).toEqual(['participation+']);
-        });
-
-        it('exclut le tag technique remarque des signaux IA même au-dessus du seuil, tout en le conservant dans countTags', () => {
+        it('exclut le tag technique remarque des signaux IA tout en le conservant dans countTags', () => {
             JournalManager.addEntry('student-1', { tags: [], note: 'Note libre 1' });
             JournalManager.addEntry('student-1', { tags: [], note: 'Note libre 2' });
 
-            // Compteur UI conservé
             expect(JournalManager.countTags('student-1', 'T1')).toEqual({ remarque: 2 });
             expect(JournalManager.getAggregatedCounts('student-1', 'T1')).toHaveLength(1);
+            expect(JournalManager.getAggregatedCounts('student-1', 'T1', { excludeRemarque: true })).toEqual([]);
 
-            // Exclu des signaux transmis à l'IA et des tendances
             expect(JournalManager.getSignificantTagIds('student-1', 'T1')).toEqual([]);
             const summary = JournalManager.getAISummary('student-1', 'T1');
             expect(summary.tags).toEqual([]);
+            expect(summary.compactText).toBe('2 observations écrites');
             expect(summary.displayText).not.toContain('Remarque');
 
             const synth = JournalManager.synthesizeForPrompt('student-1', 'T1');
-            expect(synth).not.toContain('Observations:');
-            expect(synth).not.toContain('Remarque');
-            expect(synth).toContain('Notes: "Note libre 1" | "Note libre 2"');
+            expect(synth).toBe('Notes: "Note libre 1" | "Note libre 2"');
         });
     });
 
@@ -785,27 +710,27 @@ describe('JournalManager', () => {
         });
     });
 
-    describe('renderTimeline period isolation & virtual class threshold targeting', () => {
-        it('ne compte pas les tags d\'autres périodes quand renderTimeline est appelé sans argument period', () => {
+    describe('renderTimeline period isolation & channel switch UI', () => {
+        it('ne mélange pas les entrées d\'autres périodes quand renderTimeline et getAISummary sont appelés sur la période courante', () => {
             appState.currentPeriod = 'T2';
-            appState.journalThreshold = 2;
             appState.generatedResults = [{
                 id: 'student-1',
                 name: 'DUPONT Jean',
                 journal: [
-                    { id: 'j_t1', date: '2026-10-01T10:00:00.000Z', tags: ['bavardage'], note: '', period: 'T1' },
+                    { id: 'j_t1', date: '2026-10-01T10:00:00.000Z', tags: ['bavardage'], note: 'Note T1', period: 'T1' },
                     { id: 'j_t2', date: '2026-11-01T10:00:00.000Z', tags: ['bavardage'], note: '', period: 'T2' }
                 ]
             }];
 
             const html = JournalManager.renderTimeline('student-1');
-            expect(html).toContain('isolated');
-            expect(html).toContain('below-threshold');
+            expect(html).not.toContain('Note T1');
+            expect(html).not.toContain('journal-isolated-badge');
+            expect(JournalManager.getAISummary('student-1').standaloneLabels).toEqual(['Bavardage (1×)']);
         });
 
-        it('cible la classe physique de l\'élève (et non une classe virtuelle) lors du changement de seuil ou navigation clavier', () => {
+        it('cible la classe physique de l\'élève (et non une classe virtuelle) lors du basculement des switches Observations écrites / Tags', () => {
             vi.useFakeTimers();
-            const physicalClass = { id: 'grp-3a-1', name: '3A Grp 1', journalThreshold: 2, journalIncludeInAI: true };
+            const physicalClass = { id: 'grp-3a-1', name: '3A Grp 1', journalIncludeNotes: true, journalIncludeTags: true };
             appState.classes = [physicalClass];
             userSettings.academic.classes = [physicalClass];
             appState.currentClassId = 'virtual_3a';
@@ -835,16 +760,9 @@ describe('JournalManager', () => {
                         </button>
                         <div id="journalThresholdPopover">
                             <span id="journalThresholdScope"></span>
-                            <input type="checkbox" id="journalIncludeAIToggle" checked>
-                            <div id="journalThresholdStepperBlock">
-                                <div id="journalThresholdSegmented" data-active-index="1">
-                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="1">Dès 1</button>
-                                    <button type="button" class="ui-segment journal-threshold-option active" data-threshold="2">Dès 2</button>
-                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="3">Dès 3</button>
-                                </div>
-                                <span id="thresholdHintText"></span>
-                            </div>
-                            <div id="journalAiOffHint" class="is-hidden"></div>
+                            <input type="checkbox" id="journalIncludeNotesToggle" checked>
+                            <input type="checkbox" id="journalIncludeTagsToggle" checked>
+                            <div id="journalAiPopoverHint"></div>
                         </div>
                     </div>
                 </div>
@@ -859,35 +777,43 @@ describe('JournalManager', () => {
                 FocusPanelJournal.render(appState.generatedResults[0]);
 
                 expect(document.getElementById('journalThresholdScope').textContent).toBe('Classe : 3A Grp 1');
+                expect(document.getElementById('journalThresholdValue').textContent).toContain('1 tag');
 
-                // Clic sur "Dès 1" en vue classe virtuelle -> met à jour grp-3a-1 (et non virtual_3a)
-                const opt1 = document.querySelector('.journal-threshold-option[data-threshold="1"]');
-                opt1.click();
+                // Désactiver Tags en vue classe virtuelle -> met à jour grp-3a-1
+                const tagsToggle = document.getElementById('journalIncludeTagsToggle');
+                expect(tagsToggle.checked).toBe(true);
+                tagsToggle.checked = false;
+                tagsToggle.dispatchEvent(new Event('change', { bubbles: true }));
                 vi.runAllTimers();
 
-                expect(physicalClass.journalThreshold).toBe(1);
+                expect(physicalClass.journalIncludeTags).toBe(false);
+                expect(physicalClass.journalIncludeNotes).toBe(true);
                 expect(typeof physicalClass.journalSettingsUpdatedAt).toBe('number');
                 expect(updateClassSpy).toHaveBeenCalledWith(
                     'grp-3a-1',
-                    expect.objectContaining({ journalThreshold: 1, journalSettingsUpdatedAt: expect.any(Number) })
+                    expect.objectContaining({
+                        journalIncludeNotes: true,
+                        journalIncludeTags: false,
+                        journalSettingsUpdatedAt: expect.any(Number)
+                    })
                 );
-                expect(document.getElementById('journalThresholdSegmented').dataset.activeIndex).toBe('0');
-                expect(document.getElementById('journalThresholdValue').textContent).toContain('1 observation');
+                expect(document.getElementById('journalThresholdValue').textContent).toBe('Aucune observation écrite à transmettre');
 
-                // Flèche droite sur "Dès 1" -> bascule proprement sur "Dès 2"
-                opt1.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+                // Réactiver Tags -> revient à 1 tag
+                tagsToggle.checked = true;
+                tagsToggle.dispatchEvent(new Event('change', { bubbles: true }));
                 vi.runAllTimers();
-                expect(physicalClass.journalThreshold).toBe(2);
-                expect(document.getElementById('journalThresholdSegmented').dataset.activeIndex).toBe('1');
+                expect(physicalClass.journalIncludeTags).toBe(true);
+                expect(document.getElementById('journalThresholdValue').textContent).toContain('1 tag');
             } finally {
                 updateClassSpy.mockRestore();
                 vi.useRealTimers();
             }
         });
 
-        it('met à jour en place la timeline et les compteurs sans détruire les <iconify-icon> lors d\'un changement de seuil ou du mode Hors IA', () => {
+        it('met à jour en place les classes monotones (.is-tags-excluded / .is-notes-excluded / .is-ai-excluded), le placeholder et le pied de carte sans détruire les <iconify-icon>', () => {
             vi.useFakeTimers();
-            const physicalClass = { id: 'cls-1', name: '3ème A', journalThreshold: 1, journalIncludeInAI: true };
+            const physicalClass = { id: 'cls-1', name: '3ème A', journalIncludeNotes: true, journalIncludeTags: true };
             appState.classes = [physicalClass];
             userSettings.academic.classes = [physicalClass];
             appState.currentClassId = 'cls-1';
@@ -898,7 +824,7 @@ describe('JournalManager', () => {
                 name: 'DUPONT Thomas',
                 journal: [
                     { id: 'j1', date: '2026-11-28T10:00:00.000Z', tags: ['oubli'], note: '', period: 'T1' },
-                    { id: 'j2', date: '2026-11-28T09:00:00.000Z', tags: ['participation+'], note: '', period: 'T1' }
+                    { id: 'j2', date: '2026-11-28T09:00:00.000Z', tags: ['progres'], note: 'Méthode bien appliquée.', period: 'T1' }
                 ]
             }];
 
@@ -922,16 +848,9 @@ describe('JournalManager', () => {
                         </button>
                         <div id="journalThresholdPopover">
                             <span id="journalThresholdScope"></span>
-                            <input type="checkbox" id="journalIncludeAIToggle" checked>
-                            <div id="journalThresholdStepperBlock">
-                                <div id="journalThresholdSegmented" data-active-index="0">
-                                    <button type="button" class="ui-segment journal-threshold-option active" data-threshold="1">Dès 1×</button>
-                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="2">Dès 2×</button>
-                                    <button type="button" class="ui-segment journal-threshold-option" data-threshold="3">Dès 3×</button>
-                                </div>
-                                <span id="thresholdHintText"></span>
-                            </div>
-                            <div id="journalAiOffHint" class="is-hidden"></div>
+                            <input type="checkbox" id="journalIncludeNotesToggle" checked>
+                            <input type="checkbox" id="journalIncludeTagsToggle" checked>
+                            <div id="journalAiPopoverHint"></div>
                         </div>
                     </div>
                 </div>
@@ -945,55 +864,63 @@ describe('JournalManager', () => {
                 });
                 FocusPanelJournal.render(appState.generatedResults[0]);
 
+                const section = document.getElementById('focusJournalSection');
                 const entryNodesBefore = Array.from(document.querySelectorAll('.journal-entry'));
                 const timelineIconsBefore = Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'));
                 const headerIconsBefore = Array.from(document.querySelectorAll('#focusJournalCount .journal-count-tag iconify-icon'));
+                const notesToggle = document.getElementById('journalIncludeNotesToggle');
+                const tagsToggle = document.getElementById('journalIncludeTagsToggle');
+                const noteInput = document.getElementById('journalNoteInput');
+                const popoverHint = document.getElementById('journalAiPopoverHint');
+
                 expect(entryNodesBefore).toHaveLength(2);
                 expect(timelineIconsBefore).toHaveLength(2);
                 expect(headerIconsBefore).toHaveLength(2);
+                expect(document.getElementById('journalThresholdValue').textContent).toBe("Transmis à l'IA : 2 tags · 1 obs. écrite");
+                expect(noteInput.placeholder).toBe("Observation écrite (optionnel, transmise à l'IA)…");
+                expect(popoverHint.textContent).toBe('Les entrées Privé ne sont jamais transmises.');
 
-                // Dès 1× -> Dès 2× : bascule visuelle en place (isolated + below-threshold + info icon), mêmes nœuds DOM & icônes
-                document.querySelector('.journal-threshold-option[data-threshold="2"]').click();
+                // 1. Couper Tags -> conserve les couleurs sémantiques, met à jour le pied de carte et les infobulles d'en-tête
+                tagsToggle.checked = false;
+                tagsToggle.dispatchEvent(new Event('change', { bubbles: true }));
                 vi.runAllTimers();
 
-                const entryNodesAfter2 = Array.from(document.querySelectorAll('.journal-entry'));
-                const timelineIconsAfter2 = Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'));
-                const headerIconsAfter2 = Array.from(document.querySelectorAll('#focusJournalCount .journal-count-tag iconify-icon'));
-
-                expect(entryNodesAfter2).toEqual(entryNodesBefore);
-                expect(timelineIconsAfter2).toEqual(timelineIconsBefore);
-                expect(headerIconsAfter2).toEqual(headerIconsBefore);
-                expect(entryNodesAfter2.every(el => el.classList.contains('isolated'))).toBe(true);
-                expect(document.querySelectorAll('#journalTimelineContainer .journal-tag.below-threshold')).toHaveLength(2);
-                expect(document.querySelectorAll('#journalTimelineContainer .journal-entry-info')).toHaveLength(2);
-                expect(document.querySelectorAll('#focusJournalCount .journal-count-tag.below-threshold')).toHaveLength(2);
-                expect(statusRefreshSpy).toHaveBeenCalledWith({ dirtyOnly: true });
-
-                // Dès 2× -> Dès 3× : met à jour le tooltip de .journal-entry-info en place sans recréer l'icône info
-                const infoIconsBefore3 = Array.from(document.querySelectorAll('#journalTimelineContainer .journal-entry-info'));
-                document.querySelector('.journal-threshold-option[data-threshold="3"]').click();
-                vi.runAllTimers();
-
-                expect(Array.from(document.querySelectorAll('#journalTimelineContainer .journal-entry-info'))).toEqual(infoIconsBefore3);
-                expect(infoIconsBefore3[0].getAttribute('data-tooltip')).toContain('3×');
-
-                // Retour Dès 1× : retire isolated/below-threshold/info sans reconstruire les icônes
-                document.querySelector('.journal-threshold-option[data-threshold="1"]').click();
-                vi.runAllTimers();
-
+                expect(Array.from(document.querySelectorAll('.journal-entry'))).toEqual(entryNodesBefore);
                 expect(Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'))).toEqual(timelineIconsBefore);
                 expect(Array.from(document.querySelectorAll('#focusJournalCount .journal-count-tag iconify-icon'))).toEqual(headerIconsBefore);
-                expect(document.querySelectorAll('#journalTimelineContainer .journal-entry.isolated')).toHaveLength(0);
-                expect(document.querySelectorAll('#journalTimelineContainer .journal-entry-info')).toHaveLength(0);
+                expect(section.classList.contains('is-ai-excluded')).toBe(false);
+                expect(document.getElementById('journalThresholdValue').textContent).toBe("Transmis à l'IA : 1 observation écrite");
+                expect(statusRefreshSpy).toHaveBeenCalledWith({ dirtyOnly: true });
 
-                // Toggle Hors IA : préserve les icônes des entrées et met à jour l'icône du pied de carte
-                const toggle = document.getElementById('journalIncludeAIToggle');
-                toggle.checked = false;
-                toggle.dispatchEvent(new Event('change', { bubbles: true }));
+                // 2. Couper aussi Observations écrites -> mode bloc-notes perso (OFF/OFF : garde les couleurs, passe le pied de carte en cadenas)
+                notesToggle.checked = false;
+                notesToggle.dispatchEvent(new Event('change', { bubbles: true }));
                 vi.runAllTimers();
 
                 expect(Array.from(document.querySelectorAll('#journalTimelineContainer .journal-tag iconify-icon'))).toEqual(timelineIconsBefore);
+                expect(section.classList.contains('is-ai-excluded')).toBe(true);
                 expect(document.getElementById('journalThresholdIcon').getAttribute('icon')).toBe('solar:lock-keyhole-minimalistic-linear');
+                expect(document.getElementById('journalThresholdValue').textContent).toBe("Journal personnel · Non transmis à l'IA");
+                expect(noteInput.placeholder).toBe('Observation personnelle (optionnel)…');
+                expect(popoverHint.textContent).toBe("Journal personnel : rien n'est transmis à l'IA.");
+
+                // 3. Réactiver uniquement Tags -> Tags ON, Observations écrites OFF
+                tagsToggle.checked = true;
+                tagsToggle.dispatchEvent(new Event('change', { bubbles: true }));
+                vi.runAllTimers();
+
+                expect(section.classList.contains('is-ai-excluded')).toBe(false);
+                expect(document.getElementById('journalThresholdValue').textContent).toBe("Transmis à l'IA : 2 tags");
+                expect(noteInput.placeholder).toBe("Note personnelle (optionnel, non transmise à l'IA)…");
+
+                // 4. Journal vide avec les 2 canaux actifs
+                notesToggle.checked = true;
+                notesToggle.dispatchEvent(new Event('change', { bubbles: true }));
+                vi.runAllTimers();
+                appState.generatedResults[0].journal = [];
+                FocusPanelJournal.render(appState.generatedResults[0]);
+                expect(document.getElementById('journalThresholdValue').textContent).toBe('Aucune observation transmise');
+                expect(document.getElementById('journalNoteInput').placeholder).toBe("Observation écrite (optionnel, transmise à l'IA)…");
             } finally {
                 updateClassSpy.mockRestore();
                 vi.useRealTimers();

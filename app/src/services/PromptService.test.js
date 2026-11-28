@@ -1155,29 +1155,24 @@ describe('PromptService', () => {
             expect(customPrompts.appreciationSystem).toContain("respectant les indications et les observations fournies");
             expect(customPrompts.analysisUser).toContain("Indications de l'enseignant :");
 
-            // Les badges ambigus Attitude - / Attitude + sont transmis avec leurs libellés explicites dans les prompts
-            const prevThreshold = appState.journalThreshold;
-            appState.journalThreshold = 1;
-            try {
-                const attitudePrompts = PromptService.getAllPrompts({
-                    nom: 'MARTIN',
-                    prenom: 'Sophie',
-                    statuses: [],
-                    currentPeriod: 'S2',
-                    periods: {
-                        S1: { grade: 9.0 },
-                        S2: { grade: 10.5, context: 'Les efforts portent leurs fruits.' }
-                    },
-                    journal: [
-                        { id: 'j-att', period: 'S2', tags: ['attitude-'], note: '' }
-                    ]
-                });
-                expect(attitudePrompts.appreciationUser).toContain('Observations du professeur : Attitude à revoir');
-                expect(attitudePrompts.appreciationUser).not.toContain('Attitude -');
-                expect(attitudePrompts.analysisUser).toContain('Observations : Attitude à revoir');
-            } finally {
-                appState.journalThreshold = prevThreshold;
-            }
+            // Les badges ambigus Attitude - / Attitude + sont transmis avec leurs libellés explicites + fréquence (N×) et consigne de pondération
+            const attitudePrompts = PromptService.getAllPrompts({
+                nom: 'MARTIN',
+                prenom: 'Sophie',
+                statuses: [],
+                currentPeriod: 'S2',
+                periods: {
+                    S1: { grade: 9.0 },
+                    S2: { grade: 10.5, context: 'Les efforts portent leurs fruits.' }
+                },
+                journal: [
+                    { id: 'j-att', period: 'S2', tags: ['attitude-'], note: '' }
+                ]
+            });
+            expect(attitudePrompts.appreciationUser).toContain('Observations du professeur : Attitude à revoir (1×)');
+            expect(attitudePrompts.appreciationUser).not.toContain('Attitude -');
+            expect(attitudePrompts.appreciationSystem).toContain('Pondère les tags du journal selon leur fréquence (N×)');
+            expect(attitudePrompts.analysisUser).toContain('Observations : Attitude à revoir (1×)');
         });
 
         it('sépare systemPrompt et userPrompt dans getRefinementPrompts avec cible de mots pour concise (>= 16 mots) et règles anti-sigles', () => {
@@ -1331,49 +1326,59 @@ describe('PromptService', () => {
         });
     });
 
-    describe('_extractJournalSynthesis — étanchéité mode Hors IA', () => {
-        it('ne transmet aucune note rédigée quand la classe ou le réglage global est en mode Hors IA', () => {
+    describe('_extractJournalSynthesis — étanchéité des canaux Notes / Tags et mode Hors IA', () => {
+        it('ne laisse fuiter ni note rédigée ni tag selon les réglages de classe et globaux', () => {
             const prevClasses = appState.classes;
             const prevClassId = appState.currentClassId;
-            const prevInclude = appState.journalIncludeInAI;
+            const prevNotes = appState.journalIncludeNotes;
+            const prevTags = appState.journalIncludeTags;
 
             try {
                 appState.classes = [
-                    { id: 'c-private', name: '3A', journalIncludeInAI: false },
-                    { id: 'c-active', name: '3B', journalIncludeInAI: true }
+                    { id: 'c-private', name: '3A', journalIncludeNotes: false, journalIncludeTags: false },
+                    { id: 'c-tags-only', name: '3B', journalIncludeNotes: false, journalIncludeTags: true },
+                    { id: 'c-notes-only', name: '3C', journalIncludeNotes: true, journalIncludeTags: false },
+                    { id: 'c-active', name: '3D', journalIncludeNotes: true, journalIncludeTags: true }
                 ];
                 appState.currentClassId = 'c-private';
-                appState.journalIncludeInAI = true;
+                appState.journalIncludeNotes = true;
+                appState.journalIncludeTags = true;
 
-                const privateStudent = {
-                    id: 'stu-priv',
-                    classId: 'c-private',
-                    journal: [
-                        { id: 'j1', period: 'T1', tags: ['bavardage'], note: 'Note confidentielle prof' },
-                        { id: 'j2', period: 'T1', tags: ['bavardage'], note: '' }
-                    ]
-                };
-                const activeStudent = {
-                    id: 'stu-act',
-                    classId: 'c-active',
-                    journal: [
-                        { id: 'j3', period: 'T1', tags: ['participation+'], note: 'Très pertinent à l\'oral' }
-                    ]
-                };
+                const sampleJournal = [
+                    { id: 'j1', period: 'T1', tags: ['bavardage'], note: 'Note confidentielle prof' },
+                    { id: 'j2', period: 'T1', tags: ['oubli'], note: '' }
+                ];
+                const noteOnlyJournal = [
+                    { id: 'j3', period: 'T1', tags: [], note: 'Mémo purement textuel' }
+                ];
 
-                // Mode Hors IA classe : aucune fuite via le fallback studentData.journal
-                expect(PromptService._extractJournalSynthesis(privateStudent, 'T1')).toBe('');
-                // Classe active : note rédigée transmise normalement
-                expect(PromptService._extractJournalSynthesis(activeStudent, 'T1')).toContain('Très pertinent à l\'oral');
+                // Mode Hors IA (OFF/OFF) : aucune fuite via le fallback studentData.journal
+                expect(PromptService._extractJournalSynthesis({ id: 'stu-priv', classId: 'c-private', journal: sampleJournal }, 'T1')).toBe('');
+
+                // Tags seuls (Notes OFF / Tags ON) : transmet uniquement les tags, jamais les notes (même sur entrée texte seul)
+                expect(PromptService._extractJournalSynthesis({ id: 'stu-tags', classId: 'c-tags-only', journal: sampleJournal }, 'T1'))
+                    .toBe('Observations: Bavardage (1×), Oubli d\'affaires (1×)');
+                expect(PromptService._extractJournalSynthesis({ id: 'stu-tags-2', classId: 'c-tags-only', journal: noteOnlyJournal }, 'T1'))
+                    .toBe('');
+
+                // Observations écrites seules (Notes ON / Tags OFF) : transmet uniquement le texte nu sans préfixe tag
+                expect(PromptService._extractJournalSynthesis({ id: 'stu-notes', classId: 'c-notes-only', journal: sampleJournal }, 'T1'))
+                    .toBe('Notes: "Note confidentielle prof"');
+
+                // Les 2 actifs (ON/ON)
+                expect(PromptService._extractJournalSynthesis({ id: 'stu-act', classId: 'c-active', journal: sampleJournal }, 'T1'))
+                    .toBe('Observations: Oubli d\'affaires (1×). Notes: "[Bavardage (1×)] Note confidentielle prof"');
 
                 // Mode Hors IA global sans classId
                 appState.currentClassId = null;
-                appState.journalIncludeInAI = false;
-                expect(PromptService._extractJournalSynthesis({ journal: privateStudent.journal }, 'T1')).toBe('');
+                appState.journalIncludeNotes = false;
+                appState.journalIncludeTags = false;
+                expect(PromptService._extractJournalSynthesis({ journal: sampleJournal }, 'T1')).toBe('');
             } finally {
                 appState.classes = prevClasses;
                 appState.currentClassId = prevClassId;
-                appState.journalIncludeInAI = prevInclude;
+                appState.journalIncludeNotes = prevNotes;
+                appState.journalIncludeTags = prevTags;
             }
         });
     });
@@ -1383,16 +1388,18 @@ describe('PromptService', () => {
             const prevAnon = appState.anonymizeData;
             const prevClasses = appState.classes;
             const prevClassId = appState.currentClassId;
-            const prevInclude = appState.journalIncludeInAI;
+            const prevNotes = appState.journalIncludeNotes;
+            const prevTags = appState.journalIncludeTags;
             const prevResults = appState.generatedResults;
 
             try {
                 Utils.getPeriods.mockReturnValue(['T1', 'T2', 'T3']);
                 StatsService.analyserEvolution.mockReturnValue([{ periode: 'T1-T2', valeur: 2.5, type: 'very-positive' }]);
                 appState.anonymizeData = true;
-                appState.classes = [{ id: 'c1', name: '3A', journalIncludeInAI: true }];
+                appState.classes = [{ id: 'c1', name: '3A', journalIncludeNotes: true, journalIncludeTags: true }];
                 appState.currentClassId = 'c1';
-                appState.journalIncludeInAI = true;
+                appState.journalIncludeNotes = true;
+                appState.journalIncludeTags = true;
 
                 const student = {
                     id: 'stu-sum',
@@ -1453,15 +1460,18 @@ describe('PromptService', () => {
                 appState.anonymizeData = prevAnon;
                 appState.classes = prevClasses;
                 appState.currentClassId = prevClassId;
-                appState.journalIncludeInAI = prevInclude;
+                appState.journalIncludeNotes = prevNotes;
+                appState.journalIncludeTags = prevTags;
                 appState.generatedResults = prevResults;
             }
         });
 
         it('modifie getPromptHash lorsqu\'une entrée du journal bascule isPrivate', () => {
-            const prevInclude = appState.journalIncludeInAI;
+            const prevNotes = appState.journalIncludeNotes;
+            const prevTags = appState.journalIncludeTags;
             try {
-                appState.journalIncludeInAI = true;
+                appState.journalIncludeNotes = true;
+                appState.journalIncludeTags = true;
                 const baseStudent = {
                     id: 'stu-hash',
                     nom: 'Martin',
@@ -1483,51 +1493,46 @@ describe('PromptService', () => {
 
                 expect(hashPrivate).not.toBe(hashPublic);
             } finally {
-                appState.journalIncludeInAI = prevInclude;
+                appState.journalIncludeNotes = prevNotes;
+                appState.journalIncludeTags = prevTags;
             }
         });
 
-        it('garde getPromptHash invariant entre Dès 1, Dès 2 et Dès 3 pour une note écrite taguée sans tag isolé, mais le modifie pour un tag sans note', () => {
-            const prevInclude = appState.journalIncludeInAI;
-            const prevThreshold = appState.journalThreshold;
+        it('modifie getPromptHash selon l\'état des switches Observations écrites et Tags', () => {
+            const prevNotes = appState.journalIncludeNotes;
+            const prevTags = appState.journalIncludeTags;
             try {
-                appState.journalIncludeInAI = true;
-                const writtenOnlyStudent = {
-                    id: 'stu-written',
+                const student = {
+                    id: 'stu-channels',
                     nom: 'Durand',
                     prenom: 'Emma',
                     currentPeriod: 'T1',
                     statuses: [],
                     periods: { T1: { grade: 13.5, context: '' } },
                     journal: [
-                        { id: 'e1', period: 'T1', tags: ['progres'], note: 'Méthode bien appliquée en autonomie.' }
-                    ]
-                };
-                const tagOnlyStudent = {
-                    ...writtenOnlyStudent,
-                    id: 'stu-tag-only',
-                    journal: [
-                        { id: 'e2', period: 'T1', tags: ['bavardage'], note: '' }
+                        { id: 'e1', period: 'T1', tags: ['progres'], note: 'Méthode bien appliquée en autonomie.' },
+                        { id: 'e2', period: 'T1', tags: ['oubli'], note: '' }
                     ]
                 };
 
-                appState.journalThreshold = 1;
-                const writtenHash1 = PromptService.getPromptHash(writtenOnlyStudent);
-                const tagOnlyHash1 = PromptService.getPromptHash(tagOnlyStudent);
+                appState.journalIncludeNotes = true;
+                appState.journalIncludeTags = true;
+                const hashBoth = PromptService.getPromptHash(student);
 
-                appState.journalThreshold = 2;
-                const writtenHash2 = PromptService.getPromptHash(writtenOnlyStudent);
-                const tagOnlyHash2 = PromptService.getPromptHash(tagOnlyStudent);
+                appState.journalIncludeTags = false;
+                const hashNotesOnly = PromptService.getPromptHash(student);
 
-                appState.journalThreshold = 3;
-                const writtenHash3 = PromptService.getPromptHash(writtenOnlyStudent);
+                appState.journalIncludeNotes = false;
+                appState.journalIncludeTags = true;
+                const hashTagsOnly = PromptService.getPromptHash(student);
 
-                expect(writtenHash1).toBe(writtenHash2);
-                expect(writtenHash2).toBe(writtenHash3);
-                expect(tagOnlyHash1).not.toBe(tagOnlyHash2);
+                appState.journalIncludeTags = false;
+                const hashNone = PromptService.getPromptHash(student);
+
+                expect(new Set([hashBoth, hashNotesOnly, hashTagsOnly, hashNone]).size).toBe(4);
             } finally {
-                appState.journalIncludeInAI = prevInclude;
-                appState.journalThreshold = prevThreshold;
+                appState.journalIncludeNotes = prevNotes;
+                appState.journalIncludeTags = prevTags;
             }
         });
     });

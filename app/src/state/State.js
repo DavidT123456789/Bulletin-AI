@@ -38,9 +38,9 @@ export const userSettings = {
         useSubjectPersonalization: true,
         evolutionThresholds: { ...DEFAULT_EVOLUTION_THRESHOLDS },
         subjects: {},
-        // Journal threshold: minimum occurrences for a tag to be included in AI prompt
-        journalThreshold: 2,
-        journalIncludeInAI: true,
+        // Journal AI transmission channels (per-class override supported)
+        journalIncludeNotes: true,
+        journalIncludeTags: true,
         // Multi-class support
         classes: [],           // Array of Class objects: { id, name, year, subject, createdAt, updatedAt }
         currentClassId: null,  // Currently selected class ID (null = default/legacy mode)
@@ -178,8 +178,8 @@ const propertyMap = {
     useSubjectPersonalization: () => userSettings.academic,
     evolutionThresholds: () => userSettings.academic,
     subjects: () => userSettings.academic,
-    journalThreshold: () => userSettings.academic,
-    journalIncludeInAI: () => userSettings.academic,
+    journalIncludeNotes: () => userSettings.academic,
+    journalIncludeTags: () => userSettings.academic,
     classes: () => userSettings.academic,
     currentClassId: () => userSettings.academic,
     seatingGrid: () => userSettings.academic,

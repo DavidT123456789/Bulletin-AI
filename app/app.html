@@ -821,35 +821,28 @@
                                     <iconify-icon class="journal-ai-footer-chevron" icon="solar:tuning-2-linear" aria-hidden="true"></iconify-icon>
                                 </button>
                                 <div class="journal-threshold-popover" id="journalThresholdPopover">
-                                    <div class="threshold-popover-toggle-row">
-                                        <div class="threshold-toggle-text">
-                                            <label class="threshold-toggle-label" for="journalIncludeAIToggle">Transmettre à l'IA</label>
-                                            <span class="threshold-scope-label" id="journalThresholdScope">Réglage de la classe</span>
-                                        </div>
-                                        <label class="toggle-switch small">
-                                            <input type="checkbox" id="journalIncludeAIToggle" checked>
-                                            <span class="slider"></span>
-                                        </label>
+                                    <div class="journal-ai-popover-header">
+                                        <span class="journal-ai-popover-title">Transmettre à l'IA</span>
+                                        <span class="threshold-scope-label" id="journalThresholdScope">Réglage de la classe</span>
                                     </div>
-                                    <div class="threshold-stepper-block" id="journalThresholdStepperBlock">
-                                        <div class="threshold-popover-header">Tags sans texte</div>
-                                        <div class="ui-segmented-control css-driven journal-threshold-segmented"
-                                            id="journalThresholdSegmented" role="radiogroup"
-                                            aria-label="Tags sans texte" data-active-index="1">
-                                            <div class="ui-glider" aria-hidden="true"></div>
-                                            <button type="button" class="ui-segment journal-threshold-option" role="radio"
-                                                aria-checked="false" data-threshold="1">Dès 1×</button>
-                                            <button type="button" class="ui-segment journal-threshold-option active" role="radio"
-                                                aria-checked="true" data-threshold="2">Dès 2×</button>
-                                            <button type="button" class="ui-segment journal-threshold-option" role="radio"
-                                                aria-checked="false" data-threshold="3">Dès 3×</button>
+                                    <div class="journal-ai-toggle-list">
+                                        <div class="threshold-popover-toggle-row threshold-popover-toggle-row--item">
+                                            <label class="threshold-toggle-label" for="journalIncludeNotesToggle">Observations écrites</label>
+                                            <label class="toggle-switch small">
+                                                <input type="checkbox" id="journalIncludeNotesToggle" checked>
+                                                <span class="slider"></span>
+                                            </label>
                                         </div>
-                                        <div class="threshold-popover-hint">
-                                            <span id="thresholdHintText">Un tag sans texte est transmis dès 2 occurrences. Les observations écrites (hors Privé) le sont toujours.</span>
+                                        <div class="threshold-popover-toggle-row threshold-popover-toggle-row--item">
+                                            <label class="threshold-toggle-label" for="journalIncludeTagsToggle">Tags</label>
+                                            <label class="toggle-switch small">
+                                                <input type="checkbox" id="journalIncludeTagsToggle" checked>
+                                                <span class="slider"></span>
+                                            </label>
                                         </div>
                                     </div>
-                                    <div class="threshold-popover-hint threshold-ai-off-hint is-hidden" id="journalAiOffHint">
-                                        Mode bloc-notes personnel : rien n'est transmis à l'IA.
+                                    <div class="threshold-popover-hint journal-ai-popover-hint" id="journalAiPopoverHint">
+                                        Les entrées Privé ne sont jamais transmises.
                                     </div>
                                 </div>
                             </div>

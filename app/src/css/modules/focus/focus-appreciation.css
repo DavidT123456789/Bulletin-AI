@@ -314,16 +314,19 @@
 }
 
 .appreciation-status-badge.modified {
+    position: relative;
     background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);
+    font-size: 15px;
     cursor: pointer;
-    transition: background var(--transition-fast, 0.15s ease), transform var(--transition-fast, 0.15s ease);
+    transition: background var(--transition-fast, 0.15s ease),
+        color var(--transition-fast, 0.15s ease),
+        transform var(--transition-fast, 0.15s ease);
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.appreciation-status-badge.modified:hover {
-    background: rgba(var(--warning-rgb), 0.24);
-    transform: scale(1.05);
+.appreciation-status-badge.modified .badge-icon-confirm {
+    font-size: 13px;
 }
 
 .appreciation-status-badge.modified:active {
@@ -331,7 +334,9 @@
 }
 
 .appreciation-status-badge.modified:focus-visible {
-    outline: 2px solid var(--warning-text);
+    background: rgba(var(--success-rgb), 0.16);
+    color: var(--success-text);
+    outline: 2px solid var(--success-text);
     outline-offset: 2px;
 }
 
@@ -1453,9 +1458,9 @@
         transform: scale(1.1);
     }
 
-    .btn[data-refine-type]:not(:disabled):not(.disabled):hover {
-        color: var(--chip-hover-color) !important;
-        background: rgba(var(--chip-rgb), var(--chip-bg-opacity, 0.14)) !important;
+    .btn[data-refine-type]:not(:disabled):not(.disabled):not(.active):not(.is-limit-recommended):not(.is-generating):hover {
+        color: var(--text-primary) !important;
+        background: color-mix(in srgb, rgb(var(--chip-rgb)) 11%, var(--tonal-bg)) !important;
         border-color: transparent !important;
         box-shadow: none !important;
     }
@@ -1471,6 +1476,13 @@
     .btn-ai-outline:hover:not(:disabled):not(.disabled):not([data-refine-type]) {
         background: var(--tonal-hover-bg);
         color: var(--text-primary);
+        box-shadow: none;
+    }
+
+    .btn[data-refine-type="concise"].is-limit-recommended:not(:disabled):not(.disabled):not(.is-generating):hover {
+        background: rgba(var(--chip-rgb), 0.2);
+        color: var(--chip-hover-color);
+        border-color: transparent;
         box-shadow: none;
     }
 }
@@ -1783,6 +1795,51 @@
 
 .dirty-indicator.error-indicator {
     color: var(--error-text);
+}
+
+/* Mutualized review-to-verify cross-fade (Focus header badge & List review indicator) */
+:is(.appreciation-status-badge.modified, .dirty-indicator.is-review) .badge-icon-default,
+:is(.appreciation-status-badge.modified, .dirty-indicator.is-review) .badge-icon-confirm {
+    transition: opacity 0.16s cubic-bezier(0.32, 0.72, 0, 1),
+        transform 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:is(.appreciation-status-badge.modified, .dirty-indicator.is-review) .badge-icon-confirm {
+    position: absolute;
+    opacity: 0;
+    transform: scale(0.75);
+}
+
+@media (hover: hover) {
+    .appreciation-status-badge.modified:hover {
+        background: rgba(var(--success-rgb), 0.16);
+        color: var(--success-text);
+        transform: scale(1.05);
+    }
+
+    .dirty-indicator.is-review:hover {
+        color: var(--success-text);
+    }
+
+    :is(.appreciation-status-badge.modified, .dirty-indicator.is-review):hover .badge-icon-default {
+        opacity: 0;
+        transform: scale(0.75);
+    }
+
+    :is(.appreciation-status-badge.modified, .dirty-indicator.is-review):hover .badge-icon-confirm {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+:is(.appreciation-status-badge.modified, .dirty-indicator.is-review):focus-visible .badge-icon-default {
+    opacity: 0;
+    transform: scale(0.75);
+}
+
+:is(.appreciation-status-badge.modified, .dirty-indicator.is-review):focus-visible .badge-icon-confirm {
+    opacity: 1;
+    transform: scale(1);
 }
 
 /* === Premium Enter/Leave Animations for Dirty Indicator === */

@@ -265,6 +265,7 @@
     .focus-appreciation-header .appreciation-status-badge.modified.icon-only {
         position: relative;
         overflow: visible;
+        font-size: 13px;
     }
 
     .focus-appreciation-header .appreciation-status-badge.modified.icon-only::after {

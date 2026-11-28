@@ -635,6 +635,10 @@ export const PromptService = {
         const fromManager = JournalManager.synthesizeForPrompt(studentData, currentPeriod);
         if (fromManager) return fromManager;
 
+        if (JournalManager.isNotesIncludedInAI?.(resolvedClassId) === false) {
+            return '';
+        }
+
         if (!Array.isArray(studentData?.journal) || studentData.journal.length === 0) {
             return '';
         }
@@ -949,6 +953,9 @@ export const PromptService = {
                 coherenceNotes.push("Appuie-toi uniquement sur les données fournies : n'invente ni attitude, ni participation, ni méthode de travail qui n'y figurent pas.");
             } else {
                 coherenceNotes.push("Aucune moyenne chiffrée n'est disponible : appuie-toi uniquement sur les indications et les observations fournies, sans suggérer de niveau chiffré ni inventer d'attitude, de participation ou de méthode de travail absentes du dossier.");
+            }
+            if (/\(\d+×\)/.test(journalSynthesis)) {
+                coherenceNotes.push("Pondère les tags du journal selon leur fréquence (N×) : une occurrence unique (1×) reste un fait ponctuel à nuancer sans généraliser en habitude, tandis qu'une répétition (2× ou plus) traduit une tendance régulière.");
             }
             systemParts.push(coherenceNotes.join(' '));
         }

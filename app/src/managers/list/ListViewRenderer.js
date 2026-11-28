@@ -343,9 +343,16 @@ export const ListViewRenderer = {
                     // no-op when unchanged, toggle indicator in place when changed, never rebuilds row icons.
                     if (status.hasContent) {
                         if (Boolean(existingIndicator) !== shouldBeOnlyDirty) {
-                            this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
-                        } else if (shouldBeOnlyDirty && existingIndicator && existingIndicator.getAttribute('data-tooltip') !== status.tooltip) {
-                            TooltipsUI.updateTooltip?.(existingIndicator, status.tooltip);
+                            this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip, status.isReview);
+                        } else if (shouldBeOnlyDirty && existingIndicator) {
+                            const wasReview = existingIndicator.classList.contains('is-review');
+                            if (wasReview !== status.isReview) {
+                                existingIndicator.classList.toggle('is-review', status.isReview);
+                                existingIndicator.innerHTML = this._getDirtyIndicatorMarkup(status.isReview);
+                            }
+                            if (existingIndicator.getAttribute('data-tooltip') !== status.tooltip) {
+                                TooltipsUI.updateTooltip?.(existingIndicator, status.tooltip);
+                            }
                         }
                     }
                 } else {
@@ -367,7 +374,7 @@ export const ListViewRenderer = {
                         && isCopiedUnchanged
                         && Boolean(existingIndicator) !== shouldBeOnlyDirty
                     ) {
-                        this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip);
+                        this.updateDirtyIndicatorOnly(appreciationCell, shouldBeOnlyDirty, status.tooltip, status.isReview);
                     } else {
                         this.updateRowContent(row, result);
                     }
@@ -384,22 +391,38 @@ export const ListViewRenderer = {
     },
 
     /**
+     * Retourne le balisage d'icônes d'une pastille « données modifiées » :
+     * - Texte IA : flèche de rafraîchissement (clic = régénérer)
+     * - Texte manuel/importé : alerte qui bascule en coche au survol (clic = marquer comme vérifiée)
+     * @param {boolean} isReview
+     * @returns {string}
+     * @private
+     */
+    _getDirtyIndicatorMarkup(isReview) {
+        if (isReview) {
+            return '<iconify-icon class="badge-icon-default" icon="solar:danger-circle-bold" aria-hidden="true"></iconify-icon><iconify-icon class="badge-icon-confirm" icon="solar:check-circle-bold" aria-hidden="true"></iconify-icon>';
+        }
+        return '<iconify-icon icon="solar:refresh-linear" aria-hidden="true"></iconify-icon>';
+    },
+
+    /**
      * Optimized update for dirty indicator only (no flash, subtle animation)
      * @param {HTMLElement} cell - The appreciation-cell element
      * @param {boolean} shouldBeDirty - Whether dirty indicator should be shown
      * @param {string} [tooltip=''] - Status tooltip from FocusPanelStatus.getAppreciationStatus
+     * @param {boolean} [isReview=false] - True for manual/imported review indicator
      * @private
      */
-    updateDirtyIndicatorOnly(cell, shouldBeDirty, tooltip = 'Données modifiées depuis la génération<br><span class="kbd-hint">Cliquer pour régénérer</span>') {
+    updateDirtyIndicatorOnly(cell, shouldBeDirty, tooltip = 'Données modifiées depuis la génération<br><span class="kbd-hint">Cliquer pour régénérer</span>', isReview = false) {
         const existingIndicator = cell.querySelector('.dirty-indicator:not(.dirty-indicator-leave)');
 
         if (shouldBeDirty && !existingIndicator) {
             cell.querySelectorAll('.dirty-indicator-leave').forEach(el => el.remove());
             // ADD dirty indicator with fade-in animation
             const indicator = document.createElement('span');
-            indicator.className = 'dirty-indicator tooltip dirty-indicator-enter';
+            indicator.className = `dirty-indicator${isReview ? ' is-review' : ''} tooltip dirty-indicator-enter`;
             indicator.setAttribute('data-tooltip', tooltip);
-            indicator.innerHTML = '<iconify-icon icon="solar:danger-circle-bold"></iconify-icon>';
+            indicator.innerHTML = this._getDirtyIndicatorMarkup(isReview);
 
             const wrapper = cell.querySelector('.appreciation-preview-wrapper');
             if (wrapper) {
@@ -1020,8 +1043,9 @@ export const ListViewRenderer = {
                 // REGENERATION ERROR: Keep previous appreciation visible, show red error indicator
                 indicatorBadge = `<span class="dirty-indicator error-indicator tooltip" data-tooltip="${Utils.escapeHtml(status.tooltip)}"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
             } else if (status.isDirty) {
-                // DIRTY DATA: Show warning indicator
-                indicatorBadge = `<span class="dirty-indicator tooltip" data-tooltip="${Utils.escapeHtml(status.tooltip)}"><iconify-icon icon="solar:danger-circle-bold"></iconify-icon></span>`;
+                // DIRTY DATA: Refresh icon for AI-generated text, review-to-check indicator for human/imported text
+                const reviewClass = status.isReview ? ' is-review' : '';
+                indicatorBadge = `<span class="dirty-indicator${reviewClass} tooltip" data-tooltip="${Utils.escapeHtml(status.tooltip)}">${this._getDirtyIndicatorMarkup(status.isReview)}</span>`;
             }
 
             let overflowBadge = '';

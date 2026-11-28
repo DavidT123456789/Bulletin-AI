@@ -75,14 +75,14 @@ export const GlobalListeners = {
             }
         });
 
-        let thresholdRefreshTimer = null;
-        bus.on(EVENTS.JOURNAL_THRESHOLD_CHANGED, (payload) => {
-            if (thresholdRefreshTimer) {
-                clearTimeout(thresholdRefreshTimer);
+        let journalSettingsRefreshTimer = null;
+        bus.on(EVENTS.JOURNAL_AI_SETTINGS_CHANGED, (payload) => {
+            if (journalSettingsRefreshTimer) {
+                clearTimeout(journalSettingsRefreshTimer);
             }
             const targetClassId = payload?.classId ?? appState.currentClassId ?? null;
-            thresholdRefreshTimer = setTimeout(() => {
-                thresholdRefreshTimer = null;
+            journalSettingsRefreshTimer = setTimeout(() => {
+                journalSettingsRefreshTimer = null;
                 try {
                     if (!ListViewManager?.updateStudentRow) return;
 
@@ -100,7 +100,7 @@ export const GlobalListeners = {
                         ResultsUIManager.updateGenerateButtonState();
                     }
                 } catch (err) {
-                    console.warn('[GlobalListeners] Failed to update rows on threshold change:', err);
+                    console.warn('[GlobalListeners] Failed to update rows on journal AI settings change:', err);
                 }
             }, 0);
         });

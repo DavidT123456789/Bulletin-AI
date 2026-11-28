@@ -138,23 +138,29 @@ export const FocusPanelStatus = {
 
         if (currentContext !== snapshotContext) return true;
 
-        // 3. Compare Journal (Hors IA ignores all; otherwise tags >= threshold + all written notes)
+        // 3. Compare Journal (independent Notes & Tags channels, excluding private entries)
         const currentJournal = current.journal || [];
-        const currentIncludedInAI = JournalManager.isIncludedInAI?.() !== false;
-        const currentThreshold = JournalManager.getThreshold();
+        const currentIncludeNotes = JournalManager.isNotesIncludedInAI?.() !== false;
+        const currentIncludeTags = JournalManager.isTagsIncludedInAI?.() !== false;
 
-        // Helper to get tags that meet threshold (excluding private entries)
-        const getActiveTags = (entries, thresh, included = true) => {
+        // Helper to get transmitted tags with counts (excluding private entries & technical 'remarque')
+        const getActiveTags = (entries, included = true) => {
             if (!included) return [];
             const counts = {};
             entries.forEach(e => {
                 if (e?.isPrivate) return;
-                if (e.tags) e.tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
+                if (e.tags) {
+                    e.tags.forEach(t => {
+                        if (t && t !== 'remarque') counts[t] = (counts[t] || 0) + 1;
+                    });
+                }
             });
-            return Object.keys(counts).filter(t => counts[t] >= thresh).sort();
+            return Object.entries(counts)
+                .map(([t, count]) => `${t}:${count}`)
+                .sort();
         };
 
-        // Helper to get relevant written notes (non-private written notes transmitted when AI inclusion is active)
+        // Helper to get relevant written notes (non-private written notes transmitted when Notes channel is active)
         const getRelevantNotes = (entries, included = true) => {
             if (!included) return '';
             return entries
@@ -164,22 +170,19 @@ export const FocusPanelStatus = {
                 .join('||');
         };
 
-        // Get what the AI would see NOW (current journal + current threshold)
-        const currentActiveTags = getActiveTags(currentJournal, currentThreshold, currentIncludedInAI);
-        const currentNotes = getRelevantNotes(currentJournal, currentIncludedInAI);
+        // Get what the AI would see NOW (current journal + active channels)
+        const currentActiveTags = getActiveTags(currentJournal, currentIncludeTags);
+        const currentNotes = getRelevantNotes(currentJournal, currentIncludeNotes);
 
         if (snapshot.journal) {
             // Full snapshot available
             const snapshotJournal = snapshot.journal;
-            // Use snapshot's threshold (what the AI saw at generation time)
-            const snapshotThreshold = snapshot.threshold ?? currentThreshold;
-            const snapshotIncluded = snapshot.journalIncludeInAI !== false;
+            const snapshotIncludeNotes = snapshot.journalIncludeNotes ?? (snapshot.journalIncludeInAI !== false);
+            const snapshotIncludeTags = snapshot.journalIncludeTags ?? (snapshot.journalIncludeInAI !== false);
 
             // Get what the AI SAW at generation time
-            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotThreshold, snapshotIncluded);
-            const snapshotNotes = getRelevantNotes(snapshotJournal, snapshotIncluded);
-
-
+            const snapshotActiveTags = getActiveTags(snapshotJournal, snapshotIncludeTags);
+            const snapshotNotes = getRelevantNotes(snapshotJournal, snapshotIncludeNotes);
 
             // Compare: is what the AI would see NOW different from what it SAW?
             if (!Utils.isEqual(currentActiveTags, snapshotActiveTags)) {
@@ -276,8 +279,7 @@ export const FocusPanelStatus = {
         const snapshot = {
             ...result.generationSnapshot,
             journal: result.generationSnapshotJournal,
-            journalCount: result.generationSnapshotJournalCount,
-            threshold: result.generationThreshold
+            journalCount: result.generationSnapshotJournalCount
         };
 
         return this.compareDataWithSnapshot({
@@ -317,6 +319,8 @@ export const FocusPanelStatus = {
         const effectiveApp = periodApp || ((result?.generationPeriod === period) ? result?.appreciation : null);
         const hasContent = this.hasRealContent(effectiveApp);
         const isDirty = hasContent && !isGenerating && !hasError && this.checkDirtyState(result);
+        const source = isDirty ? this._resolveSource(result) : 'none';
+        const isReview = isDirty && source !== 'ai';
 
         let state = 'uptodate';
         let tooltip = '';
@@ -338,10 +342,13 @@ export const FocusPanelStatus = {
             tooltip = 'En attente';
         } else if (isDirty) {
             state = 'dirty';
-            const isAI = this._resolveSource(result) === 'ai';
-            tooltip = isAI
-                ? 'Données modifiées depuis la génération<br><span class="kbd-hint">Cliquer pour régénérer</span>'
-                : 'Données modifiées depuis l\'écriture<br><span class="kbd-hint">Cliquer pour marquer comme vérifiée</span>';
+            if (source === 'ai') {
+                tooltip = 'Données modifiées depuis la génération<br><span class="kbd-hint">Cliquer pour régénérer</span>';
+            } else if (source === 'imported') {
+                tooltip = 'Données modifiées depuis l\'import<br><span class="kbd-hint">Cliquer pour marquer comme vérifiée</span>';
+            } else {
+                tooltip = 'Données modifiées depuis l\'écriture<br><span class="kbd-hint">Cliquer pour marquer comme vérifiée</span>';
+            }
         } else {
             state = 'uptodate';
             tooltip = '';
@@ -356,6 +363,7 @@ export const FocusPanelStatus = {
             isRegenerationError,
             appreciation: (effectiveApp || '').trim(),
             isDirty,
+            isReview,
             tooltip
         };
     },
@@ -460,7 +468,7 @@ export const FocusPanelStatus = {
             case 'hidden':
                 break;
             case 'modified':
-                badge.innerHTML = '<iconify-icon icon="solar:refresh-linear"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon class="badge-icon-default" icon="solar:danger-circle-linear" aria-hidden="true"></iconify-icon><iconify-icon class="badge-icon-confirm" icon="ph:check-bold" aria-hidden="true"></iconify-icon>';
                 badge.classList.add('visible', 'modified', 'icon-only');
                 badge.setAttribute('role', 'button');
                 badge.setAttribute('tabindex', '0');

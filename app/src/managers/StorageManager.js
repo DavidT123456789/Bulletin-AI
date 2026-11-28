@@ -304,9 +304,17 @@ export const StorageManager = {
             userSettings.academic.virtualClassAnalyses = settings.virtualClassAnalyses;
         }
 
-        // Journal threshold
-        if (settings.journalThreshold !== undefined) userSettings.academic.journalThreshold = settings.journalThreshold;
-        if (settings.journalIncludeInAI !== undefined) userSettings.academic.journalIncludeInAI = settings.journalIncludeInAI !== false;
+        // Journal AI transmission channels (with migration from legacy journalIncludeInAI)
+        if (settings.journalIncludeNotes !== undefined) {
+            userSettings.academic.journalIncludeNotes = settings.journalIncludeNotes !== false;
+        } else if (settings.journalIncludeInAI !== undefined) {
+            userSettings.academic.journalIncludeNotes = settings.journalIncludeInAI !== false;
+        }
+        if (settings.journalIncludeTags !== undefined) {
+            userSettings.academic.journalIncludeTags = settings.journalIncludeTags !== false;
+        } else if (settings.journalIncludeInAI !== undefined) {
+            userSettings.academic.journalIncludeTags = settings.journalIncludeInAI !== false;
+        }
 
         if (settings.currentAIModel !== undefined) {
             userSettings.api.currentAIModel = migrateLegacyModelId(settings.currentAIModel);
@@ -834,8 +842,8 @@ export const StorageManager = {
 
             deletedItems: runtimeState.data?.deletedItems || { students: [], classes: [] },
 
-            journalThreshold: userSettings.academic.journalThreshold,
-            journalIncludeInAI: userSettings.academic.journalIncludeInAI,
+            journalIncludeNotes: userSettings.academic.journalIncludeNotes,
+            journalIncludeTags: userSettings.academic.journalIncludeTags,
         };
     },
 
@@ -1722,11 +1730,27 @@ export const StorageManager = {
                 }
                 const rJournalTs = rClass.journalSettingsUpdatedAt || 0;
                 const lJournalTs = localC.journalSettingsUpdatedAt || 0;
-                const hasRemoteJournalSettings = rClass.journalThreshold !== undefined || rClass.journalIncludeInAI !== undefined;
-                const hasLocalJournalSettings = localC.journalThreshold !== undefined || localC.journalIncludeInAI !== undefined;
+                const hasRemoteJournalSettings =
+                    rClass.journalIncludeNotes !== undefined ||
+                    rClass.journalIncludeTags !== undefined ||
+                    rClass.journalIncludeInAI !== undefined;
+                const hasLocalJournalSettings =
+                    localC.journalIncludeNotes !== undefined ||
+                    localC.journalIncludeTags !== undefined ||
+                    localC.journalIncludeInAI !== undefined;
                 if (hasRemoteJournalSettings && (rJournalTs > lJournalTs || (!hasLocalJournalSettings && lJournalTs === 0))) {
-                    if (rClass.journalThreshold !== undefined) localC.journalThreshold = rClass.journalThreshold;
-                    if (rClass.journalIncludeInAI !== undefined) localC.journalIncludeInAI = rClass.journalIncludeInAI;
+                    if (rClass.journalIncludeNotes !== undefined) {
+                        localC.journalIncludeNotes = rClass.journalIncludeNotes !== false;
+                    } else if (rClass.journalIncludeInAI !== undefined) {
+                        localC.journalIncludeNotes = rClass.journalIncludeInAI !== false;
+                    }
+                    if (rClass.journalIncludeTags !== undefined) {
+                        localC.journalIncludeTags = rClass.journalIncludeTags !== false;
+                    } else if (rClass.journalIncludeInAI !== undefined) {
+                        localC.journalIncludeTags = rClass.journalIncludeInAI !== false;
+                    }
+                    delete localC.journalIncludeInAI;
+                    delete localC.journalThreshold;
                     if (rClass.journalSettingsUpdatedAt) localC.journalSettingsUpdatedAt = rClass.journalSettingsUpdatedAt;
                 }
                 if (rClass.analyses && typeof rClass.analyses === 'object') {
@@ -2108,8 +2132,8 @@ export const StorageManager = {
                         privacy: settings.privacy || appState.privacy || { ...DEFAULT_PRIVACY_SETTINGS },
                         seatingGrid: isMerge ? (settings.seatingGrid || appState.seatingGrid) : (settings.seatingGrid ?? null),
                         seatingActivityGrid: isMerge ? (settings.seatingActivityGrid || appState.seatingActivityGrid) : (settings.seatingActivityGrid ?? null),
-                        journalThreshold: settings.journalThreshold ?? appState.journalThreshold,
-                        journalIncludeInAI: settings.journalIncludeInAI ?? appState.journalIncludeInAI,
+                        journalIncludeNotes: settings.journalIncludeNotes ?? (settings.journalIncludeInAI !== undefined ? settings.journalIncludeInAI !== false : appState.journalIncludeNotes),
+                        journalIncludeTags: settings.journalIncludeTags ?? (settings.journalIncludeInAI !== undefined ? settings.journalIncludeInAI !== false : appState.journalIncludeTags),
                         activeView: settings.activeView || backup.activeView || appState.activeView || 'list'
                     });
                     userSettings.api.currentAIModel = appState.currentAIModel;

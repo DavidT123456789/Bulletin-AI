@@ -294,39 +294,52 @@ export const JournalManager = {
     },
 
     /**
-     * Get the effective journal threshold for a student/class
-     * @param {string} [classId] - Optional class ID
-     * @returns {number} Threshold value (default 2)
+     * Resolve a journal AI transmission channel flag for a class (or globally),
+     * with backward-compatible fallback on legacy `journalIncludeInAI`.
+     * @param {'journalIncludeNotes'|'journalIncludeTags'} key
+     * @param {string|null} [classId=null]
+     * @returns {boolean}
+     * @private
      */
-    getThreshold(classId = null) {
-        // 1. Try to get specific class
+    _isChannelIncludedInAI(key, classId = null) {
         const targetClassId = classId || appState.currentClassId;
         if (targetClassId) {
             const classObj = appState.classes?.find(c => c.id === targetClassId);
-            if (classObj && classObj.journalThreshold !== undefined) {
-                return classObj.journalThreshold;
+            if (classObj) {
+                if (classObj[key] !== undefined) return classObj[key] !== false;
+                if (classObj.journalIncludeInAI !== undefined) return classObj.journalIncludeInAI !== false;
             }
         }
-
-        // 2. Fallback to global setting or default
-        return appState.journalThreshold ?? 2;
+        if (appState[key] !== undefined) return appState[key] !== false;
+        return appState.journalIncludeInAI !== false;
     },
 
     /**
-     * Check whether journal entries are transmitted to AI for a class (or globally)
-     * When false, the journal works as a purely personal notepad.
+     * Check whether written journal observations are transmitted to AI for a class (or globally).
      * @param {string|null} [classId=null] - Optional class ID
-     * @returns {boolean} True if journal is included in AI prompts (default true)
+     * @returns {boolean} True if written notes are included in AI prompts (default true)
+     */
+    isNotesIncludedInAI(classId = null) {
+        return this._isChannelIncludedInAI('journalIncludeNotes', classId);
+    },
+
+    /**
+     * Check whether journal tags are transmitted to AI for a class (or globally).
+     * @param {string|null} [classId=null] - Optional class ID
+     * @returns {boolean} True if tags are included in AI prompts (default true)
+     */
+    isTagsIncludedInAI(classId = null) {
+        return this._isChannelIncludedInAI('journalIncludeTags', classId);
+    },
+
+    /**
+     * Check whether at least one journal channel (notes or tags) is transmitted to AI.
+     * When false, the journal works as a purely personal notepad (Hors IA).
+     * @param {string|null} [classId=null] - Optional class ID
+     * @returns {boolean} True if notes or tags are included in AI prompts (default true)
      */
     isIncludedInAI(classId = null) {
-        const targetClassId = classId || appState.currentClassId;
-        if (targetClassId) {
-            const classObj = appState.classes?.find(c => c.id === targetClassId);
-            if (classObj && classObj.journalIncludeInAI !== undefined) {
-                return classObj.journalIncludeInAI !== false;
-            }
-        }
-        return appState.journalIncludeInAI !== false;
+        return this.isNotesIncludedInAI(classId) || this.isTagsIncludedInAI(classId);
     },
 
     /**
@@ -352,20 +365,21 @@ export const JournalManager = {
     },
 
     /**
-     * Get significant tag IDs (meeting threshold) for a student on a period, sorted by frequency
-     * Excludes private entries.
+     * Get recurrent tag IDs for class-wide trend aggregation (e.g., ClassDashboardManager).
+     * Uses an internal recurrence floor (default 2) and excludes private entries.
      * @param {string|Object} studentOrId - Student ID or student object
      * @param {string|null} [period=null] - Optional period filter
-     * @returns {string[]} Array of significant tag IDs
+     * @param {Object} [options={}]
+     * @param {number} [options.minCount=2] - Minimum occurrences to qualify as a class trend
+     * @returns {string[]} Array of recurrent tag IDs sorted by frequency
      */
-    getSignificantTagIds(studentOrId, period = null) {
+    getSignificantTagIds(studentOrId, period = null, { minCount = 2 } = {}) {
         const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
         const aiEntries = entries.filter(e => !e.isPrivate);
-        if (aiEntries.length === 0 || !this.isIncludedInAI(classId)) return [];
-        const threshold = this.getThreshold(classId);
+        if (aiEntries.length === 0 || !this.isTagsIncludedInAI(classId)) return [];
         const tagCounts = this.countTags(aiEntries);
         return Object.entries(tagCounts)
-            .filter(([tagId, count]) => tagId !== 'remarque' && count >= threshold)
+            .filter(([tagId, count]) => tagId !== 'remarque' && count >= minCount)
             .sort((a, b) => b[1] - a[1])
             .map(([tagId]) => tagId);
     },
@@ -382,22 +396,25 @@ export const JournalManager = {
 
     /**
      * Build structured AI synthesis summary for UI transparency and prompt injection (SSOT).
-     * Excludes private entries and technical fallback tag 'remarque'; includes all written non-private notes up to 12 notes / 1200 chars.
+     * Independently respects `includeNotes` and `includeTags`, excludes private entries and technical
+     * fallback tag 'remarque', formats tags with their frequency `(N×)`, and caps written notes to 12 / 1200 chars.
      * @param {string|Object} studentOrId - Student ID or student object
      * @param {string|null} [period=null] - Optional period filter
-     * @returns {{ includedInAI: boolean, threshold: number, tags: Array<{id: string, label: string, count: number}>, notes: Array<{text: string, extraTagLabels: string[]}>, transmittedTagIds: string[], privateCount: number, totalCount: number, displayText: string, compactText: string }}
+     * @returns {{ includedInAI: boolean, includeNotes: boolean, includeTags: boolean, tags: Array<{id: string, label: string, count: number, formattedLabel: string}>, notes: Array<{text: string, extraTagLabels: string[], uiTagLabels: string[]}>, standaloneLabels: string[], transmittedTagIds: string[], transmittedCount: number, privateCount: number, totalCount: number, displayText: string, compactText: string }}
      */
     getAISummary(studentOrId, period = null) {
         const { entries, classId } = this._resolveStudentPeriodEntries(studentOrId, period);
-        const includedInAI = this.isIncludedInAI(classId);
-        const threshold = this.getThreshold(classId);
+        const includeNotes = this.isNotesIncludedInAI(classId);
+        const includeTags = this.isTagsIncludedInAI(classId);
+        const includedInAI = includeNotes || includeTags;
         const privateCount = entries.filter(e => e.isPrivate === true).length;
         const totalCount = entries.length;
 
         if (!includedInAI) {
             return {
                 includedInAI: false,
-                threshold,
+                includeNotes: false,
+                includeTags: false,
                 tags: [],
                 notes: [],
                 standaloneLabels: [],
@@ -426,27 +443,33 @@ export const JournalManager = {
             }
         }
 
-        const tags = Object.entries(tagCounts)
-            .filter(([tagId, count]) => tagId !== 'remarque' && count >= threshold)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([tagId, count]) => ({
-                id: tagId,
-                label: this.getPromptLabel(tagId),
-                count
-            }));
+        const tags = includeTags
+            ? Object.entries(tagCounts)
+                .filter(([tagId, count]) => tagId !== 'remarque' && count > 0)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([tagId, count]) => {
+                    const label = this.getPromptLabel(tagId);
+                    return {
+                        id: tagId,
+                        label,
+                        count,
+                        formattedLabel: `${label} (${count}×)`
+                    };
+                })
+            : [];
 
-        const significantSet = new Set(tags.map(t => t.id));
-        // Standalone tags (shared by UI and prompt): repeated trends (count >= 2) or tags with at least one tag-only occurrence.
-        // Prevents a single written note's tag from shifting between "Observations: Tag. Notes: ..." and 'Notes: "[Tag] ..."'
-        // when threshold = 1 (which would alter promptHash on students with no tag-only entries).
-        const standaloneTags = tags.filter(t => t.count >= 2 || (tagOnlyCounts[t.id] || 0) > 0);
+        // Standalone tags: when notes are also active, tags that only appear once on a single written note
+        // are attached directly to that note as "[Label (1×)]" to avoid repeating the same tag twice.
+        const standaloneTags = includeNotes
+            ? tags.filter(t => t.count >= 2 || (tagOnlyCounts[t.id] || 0) > 0)
+            : tags;
         const standaloneTagSet = new Set(standaloneTags.map(t => t.id));
+        const transmittedTagIdSet = new Set(tags.map(t => t.id));
 
-        const rawNotes = writtenEntries.slice(-12);
+        const rawNotes = includeNotes ? writtenEntries.slice(-12) : [];
         const notes = [];
         const noteDisplayParts = [];
-        const transmittedTagIdSet = new Set(significantSet);
         const includedNoteEntries = new Set();
         let totalNoteChars = 0;
 
@@ -457,14 +480,16 @@ export const JournalManager = {
             totalNoteChars += text.length;
             includedNoteEntries.add(e);
 
-            const explicitTagIds = (Array.isArray(e.tags) ? e.tags : [])
-                .filter(tagId => tagId && tagId !== 'remarque');
+            const explicitTagIds = includeTags
+                ? (Array.isArray(e.tags) ? e.tags : []).filter(tagId => tagId && tagId !== 'remarque')
+                : [];
             const extraTagLabels = [];
 
             for (const tagId of explicitTagIds) {
                 transmittedTagIdSet.add(tagId);
                 if (!standaloneTagSet.has(tagId)) {
-                    extraTagLabels.push(this.getPromptLabel(tagId));
+                    const count = tagCounts[tagId] || 1;
+                    extraTagLabels.push(`${this.getPromptLabel(tagId)} (${count}×)`);
                 }
             }
 
@@ -475,18 +500,29 @@ export const JournalManager = {
             );
         }
 
-        const standaloneLabels = standaloneTags.map(t => t.label);
+        const standaloneLabels = standaloneTags.map(t => t.formattedLabel);
         const transmittedCount = aiEntries.filter(e =>
             includedNoteEntries.has(e) ||
-            (Array.isArray(e.tags) && e.tags.some(tagId => significantSet.has(tagId)))
+            (includeTags && Array.isArray(e.tags) && e.tags.some(tagId => transmittedTagIdSet.has(tagId)))
         ).length;
-        const compactText = transmittedCount > 0
-            ? `${transmittedCount} observation${transmittedCount > 1 ? 's' : ''}`
-            : '';
+        const transmittedTagCount = includeTags ? transmittedTagIdSet.size : 0;
+        const writtenCount = notes.length;
+
+        let compactText = '';
+        if (transmittedTagCount > 0 && writtenCount > 0) {
+            const tagPart = `${transmittedTagCount} tag${transmittedTagCount > 1 ? 's' : ''}`;
+            const writtenPart = `${writtenCount} obs. écrite${writtenCount > 1 ? 's' : ''}`;
+            compactText = `${tagPart} · ${writtenPart}`;
+        } else if (writtenCount > 0) {
+            compactText = `${writtenCount} observation${writtenCount > 1 ? 's' : ''} écrite${writtenCount > 1 ? 's' : ''}`;
+        } else if (transmittedTagCount > 0) {
+            compactText = `${transmittedTagCount} tag${transmittedTagCount > 1 ? 's' : ''}`;
+        }
 
         return {
             includedInAI: true,
-            threshold,
+            includeNotes,
+            includeTags,
             tags,
             notes,
             standaloneLabels,
@@ -502,10 +538,10 @@ export const JournalManager = {
     /**
      * Synthesize journal entries for prompt injection
      * Creates a compact summary suitable for the AI prompt.
-     * - Returns '' when journal is set to personal notepad mode (Hors IA).
+     * - Returns '' when both channels are off (Hors IA).
      * - Excludes private entries.
-     * - Tag-only entries require meeting the threshold (default 2).
-     * - Written notes (entry.note.trim().length > 0) are included (up to 12 notes / 1200 chars).
+     * - Includes non-private tags with explicit frequency `(N×)` when `includeTags` is active.
+     * - Includes written notes (up to 12 notes / 1200 chars) when `includeNotes` is active.
      * @param {string|Object} studentId - Student ID or student object
      * @param {string} [period] - Optional period filter (defaults to active period)
      * @returns {string} Synthesized text for prompt (empty if no entries or Hors IA)
@@ -529,26 +565,6 @@ export const JournalManager = {
         }
 
         return parts.join('. ');
-    },
-
-    /**
-     * Check if an entry is "isolated" (tag-only entry whose tags are all below threshold)
-     * Written notes, private entries, and entries in personal notepad mode (Hors IA) are never dimmed as isolated.
-     * @param {Object} entry - Journal entry object
-     * @param {Object} tagCounts - Pre-computed tag counts { tagId: count }
-     * @param {number} [threshold] - Threshold value (optional, computed if not provided)
-     * @param {string|null} [classId=null] - Optional class ID
-     * @returns {boolean} True if tag-only entry is below threshold and AI transmission is active
-     */
-    isEntryIsolated(entry, tagCounts, threshold = null, classId = null) {
-        if (!entry || entry.isPrivate === true || !this.isIncludedInAI(classId)) return false;
-        // Written observations are always transmitted to AI -> never isolated
-        if (this._hasWrittenNote(entry)) return false;
-        const limit = threshold ?? this.getThreshold(classId || appState.currentClassId);
-        // Tag-only entry is isolated if ALL its tags are below limit
-        const tags = Array.isArray(entry.tags) ? entry.tags : [];
-        if (tags.length === 0) return false;
-        return tags.every(tagId => (tagCounts[tagId] || 0) < limit);
     },
 
     /**
@@ -584,110 +600,57 @@ export const JournalManager = {
     },
 
     /**
-     * Build tooltip text for a single tag below the AI threshold (SSOT)
-     * @param {string} tagLabel
-     * @param {number} threshold
+     * Get contextual placeholder text for the draft textarea according to AI transmission channels (SSOT)
+     * @param {boolean} [includeNotes=true]
+     * @param {boolean} [includeTags=true]
      * @returns {string}
      */
-    getTagBelowThresholdTooltip(tagLabel, threshold) {
-        return `${tagLabel} : sous le seuil ≥${threshold} (tag seul non retenu)`;
-    },
-
-    /**
-     * Build tooltip HTML for an isolated journal entry below threshold (SSOT)
-     * @param {number} threshold
-     * @returns {string}
-     */
-    getIsolatedEntryTooltip(threshold) {
-        return `Observation isolée (&lt; ${threshold}×) — non transmise à l'IA<br>Ajoutez une précision ou répétez l'observation`;
-    },
-
-    /**
-     * Compute AI visual state for a single journal entry and its visible tags (SSOT shared by
-     * initial HTML rendering and surgical in-place threshold/Hors-IA updates).
-     * @param {Object} entry - Journal entry
-     * @param {Object} tagCounts - Pre-computed non-private tag counts { tagId: count }
-     * @param {number} threshold - Active threshold
-     * @param {string|null} [classId=null] - Student class ID
-     * @returns {{ isPrivate: boolean, isIsolated: boolean, isolatedTooltip: string, tagStates: Array<{ tagId: string, tag: Object, isBelow: boolean, tooltip: string }> }}
-     */
-    getEntryVisualState(entry, tagCounts, threshold, classId = null) {
-        const isPrivate = entry?.isPrivate === true;
-        const includeInAI = this.isIncludedInAI(classId);
-        const hasNote = this._hasWrittenNote(entry);
-        const isIsolated = this.isEntryIsolated(entry, tagCounts, threshold, classId);
-        const visibleTagIds = (Array.isArray(entry?.tags) ? entry.tags : []).filter(tagId => tagId !== 'remarque');
-
-        const tagStates = [];
-        for (const tagId of visibleTagIds) {
-            const tag = this.getTag(tagId);
-            if (!tag) continue;
-            const isBelow = !isPrivate && includeInAI && !hasNote && (tagCounts[tagId] || 0) < threshold;
-            const tooltip = isBelow && !isIsolated
-                ? this.getTagBelowThresholdTooltip(tag.label, threshold)
-                : '';
-            tagStates.push({ tagId, tag, isBelow, tooltip });
+    getDraftPlaceholder(includeNotes = true, includeTags = true) {
+        if (includeNotes) {
+            return "Observation écrite (optionnel, transmise à l'IA)…";
         }
-
-        return {
-            isPrivate,
-            isIsolated,
-            isolatedTooltip: isIsolated ? this.getIsolatedEntryTooltip(threshold) : '',
-            tagStates
-        };
+        return includeTags
+            ? "Note personnelle (optionnel, non transmise à l'IA)…"
+            : 'Observation personnelle (optionnel)…';
     },
 
     /**
      * Render a single journal entry card HTML (shared by renderTimeline & inline edit crossfade)
      * @param {Object} entry - Journal entry
-     * @param {Object} tagCounts - Pre-computed tag counts
-     * @param {number} threshold - Active threshold
-     * @param {string|null} [classId=null] - Student class ID
      * @param {string} [extraClass=''] - Optional animation/extra CSS class
      * @returns {string} HTML string
      */
-    renderEntryCard(entry, tagCounts, threshold, classId = null, extraClass = '') {
-        const { isPrivate, isIsolated, isolatedTooltip, tagStates } = this.getEntryVisualState(
-            entry,
-            tagCounts,
-            threshold,
-            classId
-        );
+    renderEntryCard(entry, extraClass = '') {
+        const isPrivate = entry?.isPrivate === true;
+        const visibleTagIds = (Array.isArray(entry?.tags) ? entry.tags : []).filter(tagId => tagId !== 'remarque');
 
-        const tagsHTML = tagStates.map(({ tagId, tag, isBelow, tooltip }) => {
-            const belowClass = isBelow ? ' below-threshold' : '';
-            const tagTooltipAttr = tooltip ? ` data-tooltip="${Utils.escapeHtml(tooltip)}"` : '';
-            return `<span class="journal-tag${belowClass}" data-tag-id="${Utils.escapeHtml(String(tagId))}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}"${tagTooltipAttr}>
+        const tagsHTML = visibleTagIds.map(tagId => {
+            const tag = this.getTag(tagId);
+            if (!tag) return '';
+            return `<span class="journal-tag" data-tag-id="${Utils.escapeHtml(String(tagId))}" style="--tag-color: ${tag.color}; --tag-ink: ${tag.ink}">
                 <iconify-icon icon="${tag.icon}"></iconify-icon> ${tag.label}
             </span>`;
         }).join('');
 
         const privateClass = isPrivate ? 'is-private' : '';
         const privateBadge = isPrivate
-            ? `<span class="journal-private-badge tooltip" data-tooltip="Note personnelle (non transmise à l'IA)"><iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon> Privé</span>`
-            : '';
-
-        const isolatedClass = isIsolated ? 'isolated' : '';
-
-        const infoIcon = isIsolated
-            ? `<span class="journal-entry-info tooltip" data-tooltip="${isolatedTooltip}"><iconify-icon icon="solar:info-circle-linear"></iconify-icon></span>`
+            ? `<span class="journal-private-badge tooltip" data-tooltip="Observation personnelle (non transmise à l'IA)"><iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon> Privé</span>`
             : '';
 
         const safeEntryId = Utils.escapeHtml(String(entry.id ?? ''));
-        const hasTagHeader = Boolean(tagsHTML || infoIcon);
+        const hasTagHeader = Boolean(tagsHTML);
         const noteTextHtml = entry.note ? Utils.escapeHtml(entry.note) : '';
         const contentBodyHTML = hasTagHeader
             ? `
                     <div class="journal-entry-tags">
                         ${tagsHTML}
                         ${privateBadge}
-                        ${infoIcon}
                     </div>
                     ${noteTextHtml ? `<div class="journal-entry-note">${noteTextHtml}</div>` : ''}`
             : `<div class="journal-entry-note journal-entry-note--standalone">${noteTextHtml}${privateBadge ? (noteTextHtml ? ' ' : '') + privateBadge : ''}</div>`;
 
         return `
-            <div class="journal-entry ${extraClass} ${isolatedClass} ${privateClass}" data-entry-id="${safeEntryId}">
+            <div class="journal-entry ${extraClass} ${privateClass}" data-entry-id="${safeEntryId}">
                 <div class="journal-entry-date">${this.formatDate(entry.date)}</div>
                 <div class="journal-entry-content">${contentBodyHTML}
                 </div>
@@ -716,9 +679,18 @@ export const JournalManager = {
         const title = periodLabel
             ? `Aucune observation pour le ${periodLabel}`
             : 'Aucune observation pour cette période';
-        const subtitle = this.isIncludedInAI(classId)
-            ? 'Faits datés au fil de la période (observations écrites et tags répétés transmis à l\'IA)'
-            : 'Mode bloc-notes personnel (non transmis à l\'IA)';
+        const includeNotes = this.isNotesIncludedInAI(classId);
+        const includeTags = this.isTagsIncludedInAI(classId);
+        let subtitle;
+        if (includeNotes && includeTags) {
+            subtitle = 'Faits datés au fil de la période (observations écrites et tags transmis à l\'IA)';
+        } else if (includeNotes) {
+            subtitle = 'Faits datés au fil de la période (observations écrites transmises à l\'IA)';
+        } else if (includeTags) {
+            subtitle = 'Faits datés au fil de la période (tags transmis à l\'IA)';
+        } else {
+            subtitle = 'Mode bloc-notes personnel (non transmis à l\'IA)';
+        }
         return { title, subtitle };
     },
 
@@ -756,10 +728,6 @@ export const JournalManager = {
             `;
         }
 
-        // Compute tag counts for threshold check (visual feedback — exclude private entries)
-        const tagCounts = this.countTags(entries, null, { excludePrivate: true });
-        const threshold = this.getThreshold(classId);
-
         // Sort by date (newest first)
         const sortedEntries = [...entries].sort((a, b) =>
             new Date(b.date) - new Date(a.date)
@@ -768,11 +736,11 @@ export const JournalManager = {
         const entriesHTML = sortedEntries.map(entry => {
             // IF EDITING THIS ENTRY: Render Inline Editor
             if (entry.id === editingEntryId) {
-                return this.renderDraftPreview(entry);
+                return this.renderDraftPreview(entry, classId);
             }
 
             const animationClass = entry.id === highlightEntryId ? highlightClass : '';
-            return this.renderEntryCard(entry, tagCounts, threshold, classId, animationClass);
+            return this.renderEntryCard(entry, animationClass);
         }).join('');
 
         return `<div class="journal-timeline">${entriesHTML}</div>`;
@@ -780,15 +748,19 @@ export const JournalManager = {
 
     /**
      * Render the draft preview container (or inline editor)
-     * @param {Object} [entry] - Optional entry to edit. If null, renders "New Entry" mode.
+     * @param {Object|null} [entry=null] - Optional entry to edit. If null, renders "New Entry" mode.
+     * @param {string|null} [classId=null] - Optional class ID for AI-aware placeholder copy
      * @returns {string} HTML string
      */
-    renderDraftPreview(entry = null) {
+    renderDraftPreview(entry = null, classId = null) {
         const isEdit = !!entry;
         const noteValue = isEdit ? (entry.note || '') : '';
         const dateStr = isEdit ? entry.date : new Date().toISOString();
         const formattedDate = this.formatDate(dateStr);
         const labelText = isEdit ? 'Modifier l\'observation' : 'Nouvelle observation';
+        const includeNotes = this.isNotesIncludedInAI(classId);
+        const includeTags = this.isTagsIncludedInAI(classId);
+        const placeholderText = this.getDraftPlaceholder(includeNotes, includeTags);
 
         const selectedTags = isEdit && Array.isArray(entry.tags)
             ? entry.tags.filter(tagId => tagId !== 'remarque')
@@ -818,7 +790,7 @@ export const JournalManager = {
 
                         <div class="journal-draft-input-wrap">
                             <textarea class="journal-note-input" id="journalNoteInput"
-                                placeholder="Précision ou contexte (optionnel)..."
+                                placeholder="${Utils.escapeHtml(placeholderText)}"
                                 rows="2" maxlength="280">${Utils.escapeHtml(noteValue)}</textarea>
                             <button type="button" id="journalNoteMicBtn" class="focus-mic-btn tooltip"
                                 data-tooltip="Dictée vocale" aria-label="Dicter la note">
@@ -837,7 +809,7 @@ export const JournalManager = {
                         <div class="journal-draft-actions-footer">
                             <button type="button" class="journal-private-toggle${isPrivate ? ' is-active' : ''} tooltip"
                                 id="journalDraftPrivateBtn" aria-pressed="${isPrivate ? 'true' : 'false'}"
-                                data-tooltip="Note personnelle : exclue de l'IA">
+                                data-tooltip="Observation personnelle : exclue de l'IA">
                                 <iconify-icon icon="solar:lock-keyhole-minimalistic-linear" aria-hidden="true"></iconify-icon>
                                 <span>Privé</span>
                             </button>

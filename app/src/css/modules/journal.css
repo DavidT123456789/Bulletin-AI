@@ -443,26 +443,38 @@
         visibility 0s linear 0s;
 }
 
+.journal-ai-popover-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.journal-ai-popover-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+}
+
+.journal-ai-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .threshold-popover-toggle-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding-bottom: 12px;
-    margin-bottom: 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.threshold-toggle-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
 }
 
 .threshold-toggle-label {
     font-size: 12.5px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-primary);
     cursor: pointer;
     user-select: none;
@@ -479,58 +491,10 @@
     white-space: nowrap;
 }
 
-.threshold-stepper-block {
-    text-align: left;
-    transition: opacity 0.16s ease;
-}
-
-.threshold-stepper-block.is-disabled {
-    opacity: 0.4;
-    pointer-events: none;
-}
-
-.threshold-popover-header {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-    letter-spacing: -0.01em;
-}
-
-.journal-threshold-segmented {
-    width: 100%;
-    height: 30px;
-    margin-bottom: 8px;
-}
-
-.journal-threshold-segmented .ui-segment {
-    font-size: 11.5px;
-    padding: 0 6px;
-}
-
-.threshold-ai-off-hint {
+.journal-ai-popover-hint {
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    max-height: 64px;
-    opacity: 1;
-    overflow: hidden;
-    transition:
-        max-height 0.22s var(--ease-spring),
-        opacity 0.16s var(--ease-material),
-        margin-top 0.22s var(--ease-spring),
-        padding-top 0.22s var(--ease-spring),
-        border-color 0.16s var(--ease-material);
-}
-
-.threshold-ai-off-hint.is-hidden {
-    max-height: 0;
-    opacity: 0;
-    margin-top: 0;
-    padding-top: 0;
-    border-top-color: transparent;
-    pointer-events: none;
 }
 
 .threshold-popover-hint {
@@ -1210,22 +1174,12 @@
     font-size: 10px;
 }
 
-/* Off state (below threshold or private when AI is active) — Neutral gray ink;
-   only transmitted tags keep their semantic color */
-.journal-tag.below-threshold,
-.journal-entry.isolated .journal-tag,
+/* Private entry dimming when AI is active — semantic tag colors & note legibility remain intact in all channel modes */
 .journal-section:not(.is-ai-excluded) .journal-entry.is-private .journal-tag {
     color: var(--text-tertiary);
     font-weight: 500;
 }
 
-.journal-tag.below-threshold[data-tooltip] {
-    cursor: help;
-}
-
-.journal-tag.journal-count-tag.below-threshold:hover,
-.journal-tag.below-threshold:hover,
-.journal-entry.isolated:hover .journal-tag,
 .journal-section:not(.is-ai-excluded) .journal-entry.is-private:hover .journal-tag {
     color: var(--text-secondary);
 }
@@ -1236,6 +1190,7 @@
     line-height: 1.4;
     /* FIX: Increase top margin to compensate for removed tag bottom margin */
     margin-top: 6px;
+    transition: color var(--transition-fast);
 }
 
 .journal-entry-note--standalone {
@@ -1249,16 +1204,15 @@
     vertical-align: -1px;
 }
 
-.journal-entry.is-private .journal-entry-note {
+.journal-section:not(.is-ai-excluded) .journal-entry.is-private .journal-entry-note {
     color: var(--text-tertiary);
-    transition: color var(--transition-fast);
 }
 
-.journal-entry.is-private:hover .journal-entry-note {
+.journal-section:not(.is-ai-excluded) .journal-entry.is-private:hover .journal-entry-note {
     color: var(--text-secondary);
 }
 
-/* Private entry indicator (only rendered on entries marked private) */
+/* Entry status pill: solid pill for deliberate Privacy lock */
 .journal-private-badge {
     display: inline-flex;
     align-items: center;
@@ -1268,38 +1222,18 @@
     border-radius: var(--radius-pill);
     font-size: 10.5px;
     font-weight: 500;
-    background: var(--tonal-bg);
     color: var(--text-tertiary);
+    background: var(--tonal-bg);
     border: 1px solid var(--border-subtle);
     cursor: help;
     box-sizing: border-box;
-}
-
-/* Info Icon for Isolated Entries (inline badge with tags) */
-.journal-entry-info {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    color: var(--text-tertiary);
-    font-size: 13px;
-    opacity: 0;
-    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
-    cursor: help;
     flex-shrink: 0;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
-.journal-entry.isolated:hover .journal-entry-info,
-.journal-entry.isolated:focus-within .journal-entry-info {
-    opacity: 0.85;
-}
-
-.journal-entry-info:hover {
-    opacity: 1 !important;
-    color: var(--text-primary);
-    background: var(--item-hover-bg);
+.journal-private-badge:hover {
+    color: var(--text-secondary);
+    border-color: var(--border-color-hover);
 }
 
 /* === Entry Actions Group === */
@@ -1444,11 +1378,6 @@
 .journal-entry-delete.confirm-delete:active {
     transform: scale(0.96);
     background: color-mix(in srgb, var(--error-color), black 8%);
-}
-
-/* === Isolated Entry (below threshold) === */
-.journal-entry.isolated .journal-entry-date {
-    cursor: help;
 }
 
 /* Entry Animation - height-calibrated slide-in */
@@ -1615,8 +1544,7 @@
 /* Touch-friendly: Larger tap targets on mobile touch devices */
 @media (pointer: coarse) and (max-width: 768px) {
 
-    .journal-entry-actions,
-    .journal-entry-info {
+    .journal-entry-actions {
         opacity: 0.75;
     }
 
@@ -1650,10 +1578,6 @@
 
     .journal-pill-btn {
         min-height: 34px;
-    }
-
-    .journal-threshold-segmented {
-        height: 40px;
     }
 }
 

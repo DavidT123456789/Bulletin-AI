@@ -213,8 +213,9 @@ export const FocusPanelJournal = {
                 if (pendingStudentId && this._getCurrentStudentId() === pendingStudentId) {
                     this._refreshStatus({ dirtyOnly: true });
                 }
-                bus.emit(EVENTS.JOURNAL_THRESHOLD_CHANGED, {
-                    newThreshold: JournalManager.getThreshold(pendingClassId),
+                bus.emit(EVENTS.JOURNAL_AI_SETTINGS_CHANGED, {
+                    includeNotes: JournalManager.isNotesIncludedInAI(pendingClassId),
+                    includeTags: JournalManager.isTagsIncludedInAI(pendingClassId),
                     includeInAI: JournalManager.isIncludedInAI(pendingClassId),
                     classId: pendingClassId
                 });
@@ -232,14 +233,21 @@ export const FocusPanelJournal = {
                     flushDeferredThresholdUpdates();
                 }
 
+                const resolvedChannels = {
+                    journalIncludeNotes: updates.journalIncludeNotes ?? JournalManager.isNotesIncludedInAI(effectiveClassId),
+                    journalIncludeTags: updates.journalIncludeTags ?? JournalManager.isTagsIncludedInAI(effectiveClassId)
+                };
+
                 const payloadWithTimestamp = effectiveClassId
-                    ? { ...updates, journalSettingsUpdatedAt: Date.now() }
-                    : updates;
+                    ? { ...resolvedChannels, journalSettingsUpdatedAt: Date.now() }
+                    : resolvedChannels;
 
                 if (targetClass) {
+                    delete targetClass.journalIncludeInAI;
+                    delete targetClass.journalThreshold;
                     Object.assign(targetClass, payloadWithTimestamp);
                 } else {
-                    Object.assign(appState, updates);
+                    Object.assign(appState, resolvedChannels);
                 }
 
                 if (result) {
@@ -261,53 +269,23 @@ export const FocusPanelJournal = {
                 this._thresholdDeferredTimer = setTimeout(flushDeferredThresholdUpdates, 0);
             };
 
-            // AI Inclusion toggle ("Transmettre à l'IA" / Hors IA personal notepad mode)
-            const includeAIToggle = document.getElementById('journalIncludeAIToggle');
-            if (includeAIToggle) {
-                includeAIToggle.addEventListener('change', (e) => {
+            // Written observations toggle ("Observations écrites")
+            const includeNotesToggle = document.getElementById('journalIncludeNotesToggle');
+            if (includeNotesToggle) {
+                includeNotesToggle.addEventListener('change', (e) => {
                     e.stopPropagation();
-                    applyJournalAISetting({ journalIncludeInAI: Boolean(includeAIToggle.checked) });
+                    applyJournalAISetting({ journalIncludeNotes: Boolean(includeNotesToggle.checked) });
                 });
             }
 
-            // Threshold segmented buttons (1, 2, 3)
-            const selectThresholdOption = (newValue) => {
-                const targetClassId = this._resolveTargetClassId();
-                if (!JournalManager.isIncludedInAI(targetClassId)) return;
-                if (Number.isNaN(newValue) || newValue < 1 || newValue > 3) return;
-                if (newValue === JournalManager.getThreshold(targetClassId)) return;
-                applyJournalAISetting({ journalThreshold: newValue });
-            };
-
-            const thresholdOptions = Array.from(
-                thresholdControl.querySelectorAll('.journal-threshold-option[data-threshold]')
-            );
-            thresholdOptions.forEach((btn, idx) => {
-                btn.addEventListener('click', (e) => {
+            // Tags toggle ("Tags")
+            const includeTagsToggle = document.getElementById('journalIncludeTagsToggle');
+            if (includeTagsToggle) {
+                includeTagsToggle.addEventListener('change', (e) => {
                     e.stopPropagation();
-                    selectThresholdOption(parseInt(btn.dataset.threshold, 10));
+                    applyJournalAISetting({ journalIncludeTags: Boolean(includeTagsToggle.checked) });
                 });
-                btn.addEventListener('keydown', (e) => {
-                    let nextIdx = -1;
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                        nextIdx = (idx + 1) % thresholdOptions.length;
-                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                        nextIdx = (idx - 1 + thresholdOptions.length) % thresholdOptions.length;
-                    } else if (e.key === 'Home') {
-                        nextIdx = 0;
-                    } else if (e.key === 'End') {
-                        nextIdx = thresholdOptions.length - 1;
-                    }
-                    if (nextIdx === -1) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const nextBtn = thresholdOptions[nextIdx];
-                    if (nextBtn && !nextBtn.disabled) {
-                        nextBtn.focus();
-                        selectThresholdOption(parseInt(nextBtn.dataset.threshold, 10));
-                    }
-                });
-            });
+            }
         }
 
         // Note button in header & empty-header click (Ajouter une observation)
@@ -351,8 +329,8 @@ export const FocusPanelJournal = {
         if (journalContent) {
             journalContent.addEventListener('click', (e) => {
                 const deleteBtn = e.target.closest('.journal-entry-delete');
-                const infoIcon = e.target.closest('.journal-entry-info');
-                if (deleteBtn || infoIcon) return;
+                const statusBadge = e.target.closest('.journal-private-badge');
+                if (deleteBtn || statusBadge) return;
 
                 const editBtn = e.target.closest('.journal-entry-edit');
                 const entryEl = e.target.closest('.journal-entry');
@@ -558,7 +536,7 @@ export const FocusPanelJournal = {
         if (!draftPreview || !timelineContainer) {
             TooltipsUI.cleanupTooltipsIn(contentEl);
             contentEl.innerHTML = `
-                ${JournalManager.renderDraftPreview()}
+                ${JournalManager.renderDraftPreview(null, result.classId)}
                 <div class="journal-timeline-container" id="journalTimelineContainer"></div>
             `;
             draftPreview = contentEl.querySelector('#journalDraftPreview');
@@ -658,64 +636,7 @@ export const FocusPanelJournal = {
 
         if (entries.length === 0) {
             this._syncEmptyStateCopy(contentEl.querySelector('.journal-empty'), classId);
-            this._updateCountBadge(result, aiSummary);
-            return;
         }
-
-        const threshold = JournalManager.getThreshold(classId);
-        const tagCounts = JournalManager.countTags(entries, null, { excludePrivate: true });
-        const entriesById = new Map(entries.map(e => [String(e.id), e]));
-
-        contentEl.querySelectorAll('.journal-entry[data-entry-id]').forEach(entryEl => {
-            const entry = entriesById.get(entryEl.dataset.entryId);
-            if (!entry) return;
-
-            const { isIsolated, isolatedTooltip, tagStates } = JournalManager.getEntryVisualState(
-                entry,
-                tagCounts,
-                threshold,
-                classId
-            );
-            entryEl.classList.toggle('isolated', isIsolated);
-
-            const tagsContainer = entryEl.querySelector('.journal-entry-tags');
-            if (!tagsContainer) return;
-
-            const tagStateById = new Map(tagStates.map(s => [s.tagId, s]));
-            tagsContainer.querySelectorAll('.journal-tag[data-tag-id]').forEach(tagEl => {
-                const tagState = tagStateById.get(tagEl.dataset.tagId);
-                if (!tagState) return;
-                tagEl.classList.toggle('below-threshold', tagState.isBelow);
-
-                if (tagState.tooltip) {
-                    TooltipsUI.updateTooltip(tagEl, tagState.tooltip);
-                } else {
-                    if (tagEl.hasAttribute('data-tooltip')) {
-                        tagEl.removeAttribute('data-tooltip');
-                        delete tagEl.dataset.tooltip;
-                    }
-                    if (tagEl._tippy) {
-                        TooltipsUI.cleanupTooltipsIn(tagEl);
-                    }
-                }
-            });
-
-            const existingInfo = tagsContainer.querySelector('.journal-entry-info');
-            if (isIsolated) {
-                if (existingInfo) {
-                    TooltipsUI.updateTooltip(existingInfo, isolatedTooltip);
-                } else {
-                    const infoEl = document.createElement('span');
-                    infoEl.className = 'journal-entry-info tooltip';
-                    infoEl.innerHTML = '<iconify-icon icon="solar:info-circle-linear"></iconify-icon>';
-                    tagsContainer.appendChild(infoEl);
-                    TooltipsUI.updateTooltip(infoEl, isolatedTooltip);
-                }
-            } else if (existingInfo) {
-                TooltipsUI.cleanupTooltipsIn(existingInfo);
-                existingInfo.remove();
-            }
-        });
 
         this._updateCountBadge(result, aiSummary);
     },
@@ -851,14 +772,14 @@ export const FocusPanelJournal = {
         const countBadge = document.getElementById('focusJournalCount');
         if (countBadge) {
             const includeInAI = JournalManager.isIncludedInAI(result.classId);
+            const includeTags = JournalManager.isTagsIncludedInAI(result.classId);
             const aggregated = JournalManager.getAggregatedCounts(result.id, appState.currentPeriod, {
                 excludePrivate: includeInAI,
                 excludeRemarque: true
             });
 
             if (aggregated.length > 0) {
-                const threshold = JournalManager.getThreshold(result.classId);
-                const summary = includeInAI
+                const summary = includeTags
                     ? (precomputedSummary || JournalManager.getAISummary(result, appState.currentPeriod))
                     : null;
                 const transmittedTagIds = new Set(summary?.transmittedTagIds || []);
@@ -868,21 +789,18 @@ export const FocusPanelJournal = {
                 const visibleItems = aggregated.slice(0, maxVisible);
                 const overflowItems = aggregated.slice(maxVisible);
 
-                // Build state & tooltip for each visible count tag
+                // Build tooltip for each visible count tag (semantic tag colors always remain active)
                 const visibleMeta = visibleItems.map(item => {
-                    const isBelow = includeInAI && !transmittedTagIds.has(item.id);
                     const rawLabel = item.label;
                     let tooltipText;
-                    if (isBelow) {
-                        tooltipText = item.count >= threshold
-                            ? `${rawLabel} : ${item.count} (hors top 5 transmis à l'IA)`
-                            : `${rawLabel} : ${item.count} (sous le seuil ≥${threshold}, non transmis à l'IA)`;
-                    } else if (includeInAI && item.count < threshold) {
-                        tooltipText = `${rawLabel} : ${item.count} (transmis via observation écrite)`;
+                    if (!includeTags) {
+                        tooltipText = `${rawLabel} : ${item.count} (non transmis à l'IA)`;
+                    } else if (!transmittedTagIds.has(item.id)) {
+                        tooltipText = `${rawLabel} : ${item.count} (hors top 5 transmis à l'IA)`;
                     } else {
                         tooltipText = `${rawLabel} : ${item.count}`;
                     }
-                    return { item, isBelow, tooltipText };
+                    return { item, tooltipText };
                 });
 
                 const existingTags = Array.from(countBadge.querySelectorAll('.journal-count-tag'));
@@ -896,10 +814,8 @@ export const FocusPanelJournal = {
                     && (existingOverflow ? existingOverflow.textContent : null) === expectedOverflowText;
 
                 if (canPatchInPlace) {
-                    visibleMeta.forEach(({ isBelow, tooltipText }, i) => {
-                        const tagEl = existingTags[i];
-                        tagEl.classList.toggle('below-threshold', isBelow);
-                        TooltipsUI.updateTooltip(tagEl, tooltipText);
+                    visibleMeta.forEach(({ tooltipText }, i) => {
+                        TooltipsUI.updateTooltip(existingTags[i], tooltipText);
                     });
                     if (existingOverflow && overflowItems.length > 0) {
                         const overflowTooltip = overflowItems
@@ -912,13 +828,11 @@ export const FocusPanelJournal = {
                 }
 
                 // Render top 3 tag counts + neutral +N overflow pill to keep header compact
-                let html = visibleMeta.map(({ item, isBelow, tooltipText }) => {
-                    const belowClass = isBelow ? ' below-threshold' : '';
-                    return `
-                    <span class="journal-tag journal-count-tag${belowClass}" data-tag-id="${Utils.escapeHtml(String(item.id))}" data-count="${item.count}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
+                let html = visibleMeta.map(({ item, tooltipText }) => `
+                    <span class="journal-tag journal-count-tag" data-tag-id="${Utils.escapeHtml(String(item.id))}" data-count="${item.count}" style="--tag-color: ${item.color}; --tag-ink: ${item.ink || item.color}" data-tooltip="${Utils.escapeHtml(tooltipText)}">
                         <iconify-icon icon="${item.icon}"></iconify-icon> ${item.count}
                     </span>
-                `}).join('');
+                `).join('');
 
                 if (overflowItems.length > 0) {
                     const overflowTooltip = overflowItems
@@ -982,8 +896,9 @@ export const FocusPanelJournal = {
             ? appState.generatedResults?.find(r => r.id === this._getCurrentStudentId())
             : null);
         const targetClassId = this._resolveTargetClassId(targetResult);
-        const threshold = JournalManager.getThreshold(targetClassId);
-        const includeInAI = JournalManager.isIncludedInAI(targetClassId);
+        const includeNotes = JournalManager.isNotesIncludedInAI(targetClassId);
+        const includeTags = JournalManager.isTagsIncludedInAI(targetClassId);
+        const includeInAI = includeNotes || includeTags;
         const currentClass = targetClassId ? ClassManager.getClassById(targetClassId) : null;
         const summary = precomputedSummary || (targetResult
             ? JournalManager.getAISummary(targetResult, appState.currentPeriod)
@@ -998,9 +913,13 @@ export const FocusPanelJournal = {
             footerText = `Transmis à l'IA : ${footerSummaryText}`;
         } else if (summary && summary.totalCount > 0 && summary.privateCount === summary.totalCount) {
             const plural = summary.privateCount > 1 ? 's' : '';
-            footerText = `Aucune observation transmise · ${summary.privateCount} note${plural} privée${plural}`;
+            footerText = `Aucune observation transmise · ${summary.privateCount} obs. privée${plural}`;
+        } else if (summary && summary.totalCount > 0 && !includeTags) {
+            footerText = 'Aucune observation écrite à transmettre';
+        } else if (summary && summary.totalCount > 0 && !includeNotes) {
+            footerText = 'Aucun tag à transmettre';
         } else {
-            footerText = 'Aucune observation transmise · tags isolés';
+            footerText = 'Aucune observation transmise';
         }
 
         // Update footer label & icon
@@ -1026,51 +945,37 @@ export const FocusPanelJournal = {
             scopeLabel.textContent = currentClass ? `Classe : ${currentClass.name}` : 'Réglage global';
         }
 
-        // Update AI toggle & segmented block state
-        const includeAIToggle = document.getElementById('journalIncludeAIToggle');
-        if (includeAIToggle) {
-            includeAIToggle.checked = includeInAI;
+        // Update channel switches
+        const includeNotesToggle = document.getElementById('journalIncludeNotesToggle');
+        if (includeNotesToggle) {
+            includeNotesToggle.checked = includeNotes;
         }
-        this._updateEmptyHint(targetClassId);
-        const stepperBlock = document.getElementById('journalThresholdStepperBlock');
-        if (stepperBlock) {
-            stepperBlock.classList.toggle('is-disabled', !includeInAI);
-        }
-        const aiOffHint = document.getElementById('journalAiOffHint');
-        if (aiOffHint) {
-            aiOffHint.classList.toggle('is-hidden', includeInAI);
+        const includeTagsToggle = document.getElementById('journalIncludeTagsToggle');
+        if (includeTagsToggle) {
+            includeTagsToggle.checked = includeTags;
         }
 
-        // Update segmented control (1, 2, 3) & glider index
+        this._updateEmptyHint(targetClassId);
+
         const section = document.getElementById('focusJournalSection');
         if (section) {
             section.classList.toggle('is-ai-excluded', !includeInAI);
         }
         const thresholdControl = document.getElementById('journalThresholdControl');
-        const segmented = document.getElementById('journalThresholdSegmented');
         if (thresholdControl) {
             thresholdControl.classList.toggle('is-ai-excluded', !includeInAI);
         }
-        if (segmented) {
-            const clampedIndex = Math.max(0, Math.min(2, threshold - 1));
-            segmented.dataset.activeIndex = String(clampedIndex);
-            segmented.querySelectorAll('.journal-threshold-option[data-threshold]').forEach(opt => {
-                const val = parseInt(opt.dataset.threshold, 10);
-                const isSelected = val === Math.max(1, Math.min(3, threshold));
-                opt.classList.toggle('active', isSelected);
-                opt.setAttribute('aria-checked', isSelected ? 'true' : 'false');
-                opt.disabled = !includeInAI;
-            });
+        const noteInput = document.getElementById('journalNoteInput');
+        if (noteInput) {
+            noteInput.placeholder = JournalManager.getDraftPlaceholder(includeNotes, includeTags);
         }
 
-        // Update dynamic contextual hint
-        const hintEl = document.getElementById('thresholdHintText');
+        // Update concise footer hint inside popover
+        const hintEl = document.getElementById('journalAiPopoverHint');
         if (hintEl) {
-            if (threshold <= 1) {
-                hintEl.textContent = 'Tous les tags et les observations écrites (hors Privé) sont transmis.';
-            } else {
-                hintEl.textContent = `Un tag sans texte est transmis dès ${threshold} occurrences. Les observations écrites (hors Privé) le sont toujours.`;
-            }
+            hintEl.textContent = includeInAI
+                ? 'Les entrées Privé ne sont jamais transmises.'
+                : 'Journal personnel : rien n\'est transmis à l\'IA.';
         }
 
         // Update tooltip on button (concise 1-line action hint)
@@ -1081,10 +986,12 @@ export const FocusPanelJournal = {
             let tooltip;
             if (!includeInAI) {
                 tooltip = 'Réactiver la transmission du journal à l\'IA';
-            } else if (threshold <= 1) {
+            } else if (includeNotes && includeTags) {
                 tooltip = 'Régler la transmission à l\'IA';
+            } else if (includeNotes) {
+                tooltip = 'Régler la transmission à l\'IA · Observations écrites seules';
             } else {
-                tooltip = `Régler la transmission à l'IA · Tags sans texte dès ${threshold}×`;
+                tooltip = 'Régler la transmission à l\'IA · Tags seuls';
             }
             TooltipsUI.updateTooltip(btn, tooltip);
         }
@@ -1196,14 +1103,8 @@ export const FocusPanelJournal = {
 
         let entryWrapper = null;
         if (entry && result) {
-            const classId = result.classId || null;
-            const tagCounts = JournalManager.countTags(result.id, appState.currentPeriod, { excludePrivate: true });
-            const threshold = JournalManager.getThreshold(classId);
             const entryHTML = JournalManager.renderEntryCard(
                 entry,
-                tagCounts,
-                threshold,
-                classId,
                 isIncoming ? 'is-incoming' : ''
             );
 
