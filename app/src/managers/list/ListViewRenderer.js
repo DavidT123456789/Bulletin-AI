@@ -402,7 +402,7 @@ export const ListViewRenderer = {
         if (isReview) {
             return '<iconify-icon class="badge-icon-default" icon="solar:danger-circle-bold" aria-hidden="true"></iconify-icon><iconify-icon class="badge-icon-confirm" icon="solar:check-circle-bold" aria-hidden="true"></iconify-icon>';
         }
-        return '<iconify-icon icon="solar:refresh-linear" aria-hidden="true"></iconify-icon>';
+        return '<iconify-icon icon="solar:refresh-circle-bold" aria-hidden="true"></iconify-icon>';
     },
 
     /**

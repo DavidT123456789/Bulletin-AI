@@ -608,7 +608,7 @@ describe('FocusPanelStatus', () => {
                 expect(badge.getAttribute('role')).toBe('button');
                 expect(badge.getAttribute('tabindex')).toBe('0');
                 expect(badge.getAttribute('data-tooltip')).toContain('Cliquer pour marquer comme vérifiée');
-                expect(badge.querySelector('.badge-icon-default')?.getAttribute('icon')).toBe('solar:danger-circle-linear');
+                expect(badge.querySelector('.badge-icon-default')?.getAttribute('icon')).toBe('ph:exclamation-mark-bold');
                 expect(badge.querySelector('.badge-icon-confirm')?.getAttribute('icon')).toBe('ph:check-bold');
 
                 FocusPanelStatus.updateAppreciationStatus(student, { state: 'uptodate' });

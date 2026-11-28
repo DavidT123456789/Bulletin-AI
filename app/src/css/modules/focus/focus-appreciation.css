@@ -317,16 +317,12 @@
     position: relative;
     background: rgba(var(--warning-rgb), 0.13);
     color: var(--warning-text);
-    font-size: 15px;
+    font-size: 13px;
     cursor: pointer;
     transition: background var(--transition-fast, 0.15s ease),
         color var(--transition-fast, 0.15s ease),
         transform var(--transition-fast, 0.15s ease);
     animation: badge-pop-in 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.appreciation-status-badge.modified .badge-icon-confirm {
-    font-size: 13px;
 }
 
 .appreciation-status-badge.modified:active {

@@ -468,7 +468,7 @@ export const FocusPanelStatus = {
             case 'hidden':
                 break;
             case 'modified':
-                badge.innerHTML = '<iconify-icon class="badge-icon-default" icon="solar:danger-circle-linear" aria-hidden="true"></iconify-icon><iconify-icon class="badge-icon-confirm" icon="ph:check-bold" aria-hidden="true"></iconify-icon>';
+                badge.innerHTML = '<iconify-icon class="badge-icon-default" icon="ph:exclamation-mark-bold" aria-hidden="true"></iconify-icon><iconify-icon class="badge-icon-confirm" icon="ph:check-bold" aria-hidden="true"></iconify-icon>';
                 badge.classList.add('visible', 'modified', 'icon-only');
                 badge.setAttribute('role', 'button');
                 badge.setAttribute('tabindex', '0');
