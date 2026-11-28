@@ -815,14 +815,15 @@
                             <!-- Threshold & AI inclusion transparency bar -->
                             <div class="journal-threshold-control" id="journalThresholdControl">
                                 <button type="button" class="journal-threshold-btn journal-ai-footer-btn tooltip"
-                                    id="journalThresholdBtn" data-tooltip="Réglage de transmission du journal à l'IA">
+                                    id="journalThresholdBtn" data-tooltip="Réglage de transmission du journal à l'IA"
+                                    aria-haspopup="dialog" aria-expanded="false" aria-controls="journalThresholdPopover">
                                     <iconify-icon id="journalThresholdIcon" icon="solar:stars-line-duotone" aria-hidden="true"></iconify-icon>
                                     <span class="journal-ai-footer-text" id="journalThresholdValue">Transmis à l'IA : aucune</span>
                                     <iconify-icon class="journal-ai-footer-chevron" icon="solar:tuning-2-linear" aria-hidden="true"></iconify-icon>
                                 </button>
-                                <div class="journal-threshold-popover" id="journalThresholdPopover">
+                                <div class="journal-threshold-popover" id="journalThresholdPopover" role="dialog" aria-labelledby="journalAiPopoverTitle">
                                     <div class="journal-ai-popover-header">
-                                        <span class="journal-ai-popover-title">Transmettre à l'IA</span>
+                                        <span class="journal-ai-popover-title" id="journalAiPopoverTitle">Transmettre à l'IA</span>
                                         <span class="threshold-scope-label" id="journalThresholdScope">Réglage de la classe</span>
                                     </div>
                                     <div class="journal-ai-toggle-list">

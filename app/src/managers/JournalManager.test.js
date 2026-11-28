@@ -902,7 +902,7 @@ describe('JournalManager', () => {
                 expect(document.getElementById('journalThresholdIcon').getAttribute('icon')).toBe('solar:lock-keyhole-minimalistic-linear');
                 expect(document.getElementById('journalThresholdValue').textContent).toBe("Journal personnel · Non transmis à l'IA");
                 expect(noteInput.placeholder).toBe('Observation personnelle (optionnel)…');
-                expect(popoverHint.textContent).toBe("Journal personnel : rien n'est transmis à l'IA.");
+                expect(popoverHint.textContent).toBe("Activez un canal pour alimenter l'IA.");
 
                 // 3. Réactiver uniquement Tags -> Tags ON, Observations écrites OFF
                 tagsToggle.checked = true;

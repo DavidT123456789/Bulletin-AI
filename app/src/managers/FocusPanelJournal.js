@@ -154,6 +154,14 @@ export const FocusPanelJournal = {
         const thresholdControl = document.getElementById('journalThresholdControl');
         if (!thresholdControl || !thresholdControl.classList.contains('open')) return;
         thresholdControl.classList.remove('open');
+        const thresholdBtn = document.getElementById('journalThresholdBtn');
+        if (thresholdBtn) {
+            thresholdBtn.setAttribute('aria-expanded', 'false');
+            thresholdBtn._tippy?.enable?.();
+            if (options?.restoreFocus) {
+                thresholdBtn.focus();
+            }
+        }
         if (!options?.causedByHistory && !options?.silentHistory && HistoryManager.isOpen('focusJournalThreshold')) {
             HistoryManager.handleManualClose('focusJournalThreshold');
         }
@@ -175,7 +183,10 @@ export const FocusPanelJournal = {
                     this.closeThresholdPopover();
                 } else {
                     thresholdControl.classList.add('open');
+                    thresholdBtn.setAttribute('aria-expanded', 'true');
                     this._updateThresholdUI();
+                    thresholdBtn._tippy?.hide?.();
+                    thresholdBtn._tippy?.disable?.();
                     HistoryManager.pushState('focusJournalThreshold', (opts) => this.closeThresholdPopover(opts));
                 }
             });
@@ -188,7 +199,7 @@ export const FocusPanelJournal = {
             });
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && thresholdControl.classList.contains('open')) {
-                    this.closeThresholdPopover();
+                    this.closeThresholdPopover({ restoreFocus: true });
                 }
             });
 
@@ -975,7 +986,7 @@ export const FocusPanelJournal = {
         if (hintEl) {
             hintEl.textContent = includeInAI
                 ? 'Les entrées Privé ne sont jamais transmises.'
-                : 'Journal personnel : rien n\'est transmis à l\'IA.';
+                : 'Activez un canal pour alimenter l\'IA.';
         }
 
         // Update tooltip on button (concise 1-line action hint)
