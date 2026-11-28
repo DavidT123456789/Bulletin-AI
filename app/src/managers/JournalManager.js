@@ -683,7 +683,7 @@ export const JournalManager = {
         const includeTags = this.isTagsIncludedInAI(classId);
         let subtitle;
         if (includeNotes && includeTags) {
-            subtitle = 'Faits datés au fil de la période (observations écrites et tags transmis à l\'IA)';
+            subtitle = 'Faits datés au fil de la période (tags et observations écrites transmis à l\'IA)';
         } else if (includeNotes) {
             subtitle = 'Faits datés au fil de la période (observations écrites transmises à l\'IA)';
         } else if (includeTags) {

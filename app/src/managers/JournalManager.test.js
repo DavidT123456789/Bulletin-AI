@@ -195,7 +195,7 @@ describe('JournalManager', () => {
             appState.classes = [{ id: 'c1', name: '3A', journalIncludeNotes: true, journalIncludeTags: true }];
             const bothOn = JournalManager.getEmptyStateCopy('c1', 'T2');
             expect(bothOn.title).toContain('T2');
-            expect(bothOn.subtitle).toContain('observations écrites et tags transmis à l\'IA');
+            expect(bothOn.subtitle).toContain('tags et observations écrites transmis à l\'IA');
 
             appState.classes[0].journalIncludeTags = false;
             expect(JournalManager.getEmptyStateCopy('c1', 'T2').subtitle).toContain('observations écrites transmises à l\'IA');
